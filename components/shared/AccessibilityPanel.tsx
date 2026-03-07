@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+
 import { 
   Eye, Text, Contrast, 
   Volume2, VolumeX, 
@@ -9,6 +10,8 @@ import {
   Maximize2, Minimize2, Palette,
   RotateCcw, UserCheck
 } from 'lucide-react';
+
+import { Button } from '@/app/components/ui/Button';
 
 interface AccessibilitySettings {
   fontSize: 'normal' | 'large' | 'x-large' | 'xx-large';
@@ -346,12 +349,13 @@ export default function AccessibilityPanel() {
                 <div className="mt-3 p-2 rounded bg-yellow-50 border border-yellow-100 text-yellow-800 text-sm flex items-center justify-between gap-3">
                   <div>Accessibility defaults updated — <strong>highlight links</strong> are now OFF by default.</div>
                   <div className="flex gap-2">
-                    <Button size="xs" onClick={applyNewDefaults}>Apply new defaults</Button>
-                    <Button size="xs" variant="ghost" onClick={dismissDefaultsNotice}>Dismiss</Button>
+                    <Button size="sm" onClick={applyNewDefaults}>Apply new defaults</Button>
+                    <Button size="sm" variant="ghost" onClick={dismissDefaultsNotice}>Dismiss</Button>
                   </div>
                 </div>
               )}
                 Customise your viewing experience for better accessibility
+                {/* Trigger redeploy: trivial change */}
               </p>
             </div>
 
