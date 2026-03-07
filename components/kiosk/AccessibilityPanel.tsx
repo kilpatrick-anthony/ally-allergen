@@ -275,7 +275,7 @@ export default function AccessibilityPanel() {
                       <div className="mt-3 p-2 rounded bg-yellow-50 border border-yellow-100 text-yellow-800 text-sm flex items-center justify-between gap-3">
                         <div>Accessibility defaults updated — <strong>highlight links</strong> are now OFF by default.</div>
                         <div className="flex gap-2">
-                          <Button size="xs" onClick={() => {
+                          <Button size="sm" onClick={() => {
                             const defaults = {
                               fontSize: 'normal',
                               fontFamily: 'default',
@@ -292,7 +292,7 @@ export default function AccessibilityPanel() {
                             localStorage.setItem('accessibilityDefaultsMigrated', 'true')
                             setShowDefaultsNotice(false)
                           }}>Apply new defaults</Button>
-                          <Button size="xs" variant="ghost" onClick={() => {
+                          <Button size="sm" variant="ghost" onClick={() => {
                             localStorage.setItem('accessibilityDefaultsMigrated', 'true')
                             setShowDefaultsNotice(false)
                           }}>Dismiss</Button>
