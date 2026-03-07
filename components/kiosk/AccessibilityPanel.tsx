@@ -277,15 +277,15 @@ export default function AccessibilityPanel() {
                         <div className="flex gap-2">
                           <Button size="sm" onClick={() => {
                             const defaults = {
-                              fontSize: 'normal',
-                              fontFamily: 'default',
-                              contrast: 'normal',
+                              fontSize: 'normal' as const,
+                              fontFamily: 'default' as const,
+                              contrast: 'normal' as const,
                               speech: false,
                               speechRate: 1,
                               reducedMotion: false,
                               highlightLinks: false,
-                              letterSpacing: 'normal',
-                              lineHeight: 'normal'
+                              letterSpacing: 'normal' as const,
+                              lineHeight: 'normal' as const
                             }
                             applySettings(defaults)
                             try { localStorage.setItem('accessibilitySettings', JSON.stringify(defaults)) } catch {}
