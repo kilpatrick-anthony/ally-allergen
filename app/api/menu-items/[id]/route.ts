@@ -1,0 +1,262 @@
+import { createServiceClient } from '@/lib/supabase/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { jwtVerify } from 'jose'
+import { cookies } from 'next/headers'
+
+const getUserBusinessId = async (
+  supabase: ReturnType<typeof createServiceClient>,
+  userId: string
+) => {
+  const { data: userBusiness } = await supabase
+    .from('user_businesses')
+    .select('business_id')
+    .eq('user_id', userId)
+    .single()
+
+  return userBusiness?.business_id || null
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+
+    const cookieStore = await cookies()
+    const authToken = cookieStore.get('auth-token')?.value
+
+    if (!authToken) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const secret = new TextEncoder().encode(process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret')
+    const { payload } = await jwtVerify(authToken, secret)
+    const userId = payload.userId as string
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const supabase = createServiceClient()
+    const businessId = await getUserBusinessId(supabase, userId)
+
+    if (!businessId) {
+      return NextResponse.json({ error: 'Business not found' }, { status: 404 })
+    }
+
+    const { data: menuItem, error } = await supabase
+      .from('menu_items')
+      .select('*')
+      .eq('id', id)
+      .eq('business_id', businessId)
+      .single()
+
+    if (error) {
+      console.error('Error fetching menu item:', error)
+      return NextResponse.json({ error: 'Menu item not found' }, { status: 404 })
+    }
+
+    const { data: menuIngredients } = await supabase
+      .from('menu_item_ingredients')
+      .select('ingredient_id')
+      .eq('menu_item_id', id)
+
+    const ingredients = (menuIngredients || []).map((row) => String(row.ingredient_id))
+
+    return NextResponse.json({
+      menuItem: {
+        ...menuItem,
+        ingredients
+      }
+    })
+  } catch (error: any) {
+    console.error('Unexpected error:', error)
+    return NextResponse.json(
+      { error: error.message || 'An unexpected error occurred' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+
+    const cookieStore = await cookies()
+    const authToken = cookieStore.get('auth-token')?.value
+
+    if (!authToken) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const secret = new TextEncoder().encode(process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret')
+    const { payload } = await jwtVerify(authToken, secret)
+    const userId = payload.userId as string
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const body = await request.json()
+
+    if (!body?.name || typeof body.name !== 'string') {
+      return NextResponse.json({ error: 'Name is required' }, { status: 400 })
+    }
+
+    const supabase = createServiceClient()
+    const businessId = await getUserBusinessId(supabase, userId)
+
+    if (!businessId) {
+      return NextResponse.json({ error: 'Business not found' }, { status: 404 })
+    }
+
+    const updatePayload = {
+      name: body.name,
+      description: body.description || '',
+      category: body.category || '',
+      site_id: typeof body.site_id === 'string' && body.site_id.trim() !== ''
+        ? body.site_id
+        : null,
+      allergen_warnings: body.allergen_warnings || {},
+      is_active: body.status ? body.status === 'active' : body.is_active ?? true,
+      price: typeof body.price === 'number' ? body.price : 0,
+      display_order: typeof body.display_order === 'number' ? body.display_order : 0,
+      updated_at: new Date().toISOString()
+    }
+
+    let { data: menuItem, error } = await supabase
+      .from('menu_items')
+      .update(updatePayload)
+      .eq('id', id)
+      .eq('business_id', businessId)
+      .select()
+      .single()
+
+    if (error && error.code === 'PGRST204' && error.message?.includes('allergen_warnings')) {
+      const { allergen_warnings: _allergenWarnings, ...fallbackPayload } = updatePayload
+      const retry = await supabase
+        .from('menu_items')
+        .update(fallbackPayload)
+        .eq('id', id)
+        .eq('business_id', businessId)
+        .select()
+        .single()
+      menuItem = retry.data
+      error = retry.error
+    }
+
+    if (error) {
+      console.error('Error updating menu item:', error)
+      return NextResponse.json({
+        error: error.message || 'Failed to update menu item',
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      }, { status: 500 })
+    }
+
+    const ingredients = Array.isArray(body.ingredients) ? body.ingredients : []
+
+    const { error: deleteError } = await supabase
+      .from('menu_item_ingredients')
+      .delete()
+      .eq('menu_item_id', id)
+
+    if (deleteError) {
+      console.error('Error clearing menu item ingredients:', deleteError)
+    }
+
+    if (ingredients.length > 0) {
+      const ingredientRows = ingredients.map((ingredientId: string) => ({
+        menu_item_id: id,
+        ingredient_id: ingredientId,
+        quantity: '',
+        is_optional: false
+      }))
+
+      const { error: ingredientError } = await supabase
+        .from('menu_item_ingredients')
+        .insert(ingredientRows)
+
+      if (ingredientError) {
+        console.error('Error linking menu item ingredients:', ingredientError)
+      }
+    }
+
+    return NextResponse.json({
+      menuItem: {
+        ...menuItem,
+        ingredients
+      }
+    })
+  } catch (error: any) {
+    console.error('Unexpected error:', error)
+    return NextResponse.json(
+      { error: error.message || 'An unexpected error occurred' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+
+    const cookieStore = await cookies()
+    const authToken = cookieStore.get('auth-token')?.value
+
+    if (!authToken) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const secret = new TextEncoder().encode(process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret')
+    const { payload } = await jwtVerify(authToken, secret)
+    const userId = payload.userId as string
+
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const supabase = createServiceClient()
+    const businessId = await getUserBusinessId(supabase, userId)
+
+    if (!businessId) {
+      return NextResponse.json({ error: 'Business not found' }, { status: 404 })
+    }
+
+    const { error: ingredientError } = await supabase
+      .from('menu_item_ingredients')
+      .delete()
+      .eq('menu_item_id', id)
+
+    if (ingredientError) {
+      console.error('Error deleting menu item ingredients:', ingredientError)
+    }
+
+    const { error } = await supabase
+      .from('menu_items')
+      .delete()
+      .eq('id', id)
+      .eq('business_id', businessId)
+
+    if (error) {
+      console.error('Error deleting menu item:', error)
+      return NextResponse.json({ error: 'Failed to delete menu item' }, { status: 500 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error: any) {
+    console.error('Unexpected error:', error)
+    return NextResponse.json(
+      { error: error.message || 'An unexpected error occurred' },
+      { status: 500 }
+    )
+  }
+}

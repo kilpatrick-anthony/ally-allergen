@@ -1,15 +1,20 @@
+/* app/globals.css - COMPLETE WORKING VERSION */
 @import "tailwindcss";
 
+/* Enable class-based dark mode so dark: utilities respond to the .dark class on <html> */
+@custom-variant dark (&:is(.dark *));
+
+/* ===== ACCESSIBILITY VARIABLES ===== */
 :root {
+  --font-atkinson: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --font-arsenal: 'Arsenal', system-ui, sans-serif;
+  --font-verdana-pro: 'Verdana Pro', 'Verdana', system-ui, sans-serif;
   --background: #ffffff;
   --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --accessibility-font-size: 100%;
+  --letter-spacing: 0.02em;
+  --line-height: 1.6;
+  --primary-color: #1A5D1A;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -19,8 +24,614 @@
   }
 }
 
+/* Dark mode styles */
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
+.dark body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Additional dark mode overrides for common elements.
+   Kept in @layer base so explicit dark: utility classes always take priority. */
+@layer base {
+  .dark .bg-white {
+    background-color: #1f2937;
+  }
+
+  .dark .bg-gray-50 {
+    background-color: #111827;
+  }
+
+  .dark .text-gray-900 {
+    color: #f3f4f6;
+  }
+
+  .dark .text-gray-800 {
+    color: #e5e7eb;
+  }
+
+  .dark .text-gray-700 {
+    color: #d1d5db;
+  }
+
+  .dark .text-gray-600 {
+    color: #9ca3af;
+  }
+
+  .dark .text-gray-500 {
+    color: #6b7280;
+  }
+
+  .dark .border-gray-300 {
+    border-color: #374151;
+  }
+
+  .dark .border-gray-200 {
+    border-color: #4b5563;
+  }
+
+  .dark .border-gray-100 {
+    border-color: #374151;
+  }
+}
+
+/* ===== BASE STYLES ===== */
+html {
+  font-size: var(--accessibility-font-size, 100%);
+  letter-spacing: var(--letter-spacing, 0.02em);
+  line-height: var(--line-height, 1.6);
+  transition: font-size 0.3s ease, letter-spacing 0.3s ease, line-height 0.3s ease;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-arsenal), system-ui, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+}
+
+/* ===== ACCESSIBILITY FOCUS STATES ===== */
+*:focus {
+  outline: 2px solid var(--primary-color, #1A5D1A);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ===== TYPOGRAPHY ===== */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: 0.025em;
+}
+
+/* ===== ACCESSIBILITY PANEL STYLES ===== */
+/* Font classes for accessibility panel */
+html.font-dyslexic,
+html.font-dyslexic body,
+html.dyslexia-mode,
+html.dyslexia-mode body {
+  font-family: var(--font-atkinson), sans-serif !important;
+  letter-spacing: 0.05em !important;
+  word-spacing: 0.1em !important;
+  line-height: 1.8 !important;
+}
+
+html.font-dyslexic p,
+html.font-dyslexic li,
+html.font-dyslexic span:not(.icon),
+html.dyslexia-mode p,
+html.dyslexia-mode li,
+html.dyslexia-mode span:not(.icon) {
+  font-size: 1.1em !important;
+}
+
+html.font-dyslexic h1,
+html.font-dyslexic h2,
+html.font-dyslexic h3,
+html.font-dyslexic h4,
+html.dyslexia-mode h1,
+html.dyslexia-mode h2,
+html.dyslexia-mode h3,
+html.dyslexia-mode h4 {
+  letter-spacing: 0.1em !important;
+  margin-bottom: 1.5em !important;
+}
+
+html.font-dyslexic button,
+html.dyslexia-mode button {
+  padding: 0.75em 1em !important;
+  margin: 0.25em !important;
+}
+
+/* High Contrast Font Mode */
+html.font-high-contrast,
+html.font-high-contrast body,
+html.high-contrast-font,
+html.high-contrast-font body {
+  font-family: 'Arial Black', 'Verdana', sans-serif !important;
+  font-weight: 900 !important;
+  text-shadow: 1px 1px 0 #000 !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Arsenal Font Mode */
+html.font-arsenal,
+html.font-arsenal body,
+html.arsenal-font,
+html.arsenal-font body {
+  font-family: var(--font-arsenal), sans-serif !important;
+}
+
+/* Verdana Pro Font Mode */
+html.font-verdana-pro,
+html.font-verdana-pro body,
+html.verdana-pro-font,
+html.verdana-pro-font body {
+  font-family: var(--font-verdana-pro), sans-serif !important;
+}
+
+/* Contrast classes */
+html.contrast-high,
+html.contrast-high body,
+[data-contrast="high"] {
+  --background: #000000 !important;
+  --foreground: #FFFF00 !important;
+  --primary-color: #00FFFF !important;
+}
+
+html.contrast-inverted,
+html.contrast-inverted body,
+[data-contrast="inverted"] {
+  --background: #FFFF00 !important;
+  --foreground: #000000 !important;
+  --primary-color: #FF00FF !important;
+}
+
+html.contrast-high body,
+html.contrast-inverted body,
+[data-contrast="high"] body,
+[data-contrast="inverted"] body {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+html.contrast-high a,
+html.contrast-high button,
+html.contrast-high [role="button"],
+html.contrast-inverted a,
+html.contrast-inverted button,
+html.contrast-inverted [role="button"],
+[data-contrast="high"] a,
+[data-contrast="high"] button,
+[data-contrast="high"] [role="button"],
+[data-contrast="inverted"] a,
+[data-contrast="inverted"] button,
+[data-contrast="inverted"] [role="button"] {
+  color: var(--primary-color) !important;
+  border: 3px solid var(--primary-color) !important;
+  background: transparent !important;
+}
+
+html.contrast-high h1,
+html.contrast-high h2,
+html.contrast-high h3,
+html.contrast-high h4,
+[data-contrast="high"] h1,
+[data-contrast="high"] h2,
+[data-contrast="high"] h3,
+[data-contrast="high"] h4 {
+  text-shadow: 2px 2px 0 #000;
+}
+
+/* Default/Reset contrast */
+html.contrast-normal {
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary-color: #1A5D1A;
+}
+
+@media (prefers-color-scheme: dark) {
+  html.contrast-normal {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+/* Highlight Links Mode */
+html.highlight-links a,
+html.highlight-links button,
+html.highlight-links [role="button"],
+.highlight-links a,
+.highlight-links button,
+.highlight-links [role="button"] {
+  position: relative;
+  background: linear-gradient(120deg, #d4fc79 0%, #96e6a1 100%) !important;
+  border: 2px solid #38a169 !important;
+}
+
+html.highlight-links a::after,
+html.highlight-links button::after,
+html.highlight-links [role="button"]::after,
+.highlight-links a::after,
+.highlight-links button::after,
+.highlight-links [role="button"]::after {
+  content: "★";
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 12px;
+  color: #e53e3e;
+}
+
+/* Reduced Motion */
+html.reduced-motion *,
+html.reduced-motion *::before,
+html.reduced-motion *::after,
+.reduced-motion *,
+.reduced-motion *::before,
+.reduced-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* ===== UTILITY STYLES ===== */
+/* Better number readability */
+.dyslexia-mode .price,
+html.font-dyslexic .price {
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Increase tap targets */
+button, 
+a, 
+[role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Better focus indicators */
+:focus-visible {
+  outline: 4px solid var(--primary-color, #1A5D1A) !important;
+  outline-offset: 4px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 0 0 8px rgba(26, 93, 26, 0.2) !important;
+}
+
+/* Reduce motion for sensitive users */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  
+  button, 
+  a, 
+  [role="button"] {
+    border: 2px solid #000000 !important;
+  }
+}
+
+/* Screen Reader Only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Print Styles */
+@media print {
+  .accessibility-toggle,
+  .accessibility-panel {
+    display: none !important;
+  }
+  
+  body {
+    font-size: 12pt !important;
+    line-height: 1.5 !important;
+    color: #000 !important;
+    background: #fff !important;
+  }
+  
+  a {
+    color: #000 !important;
+    text-decoration: underline !important;
+  }
+  
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 90%;
+  }
+}
+
+/* ===== CUSTOM SCROLLBAR WITH YOUR COLORS ===== */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #8dd8d2; /* Your primary-300 color */
+  border-radius: 6px;
+  border: 3px solid #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #68cbc3; /* Your primary-400 color */
+}
+
+/* For toggle switches */
+input[type="checkbox"]:checked + div {
+  background-color: #10b981 !important;
+}
+
+input[type="checkbox"]:checked + div > div {
+  transform: translateX(1.5rem) !important;
+}
+
+/* Hide native scrollbar for specific containers (keeps scrolling but removes visual track) */
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
+/* Subtle shadow above footer to separate it from nav */
+.footer-shadow {
+  box-shadow: inset 0 8px 12px -8px rgba(2,6,23,0.12);
+}
+
+/* Selection colors */
+::selection {
+  background-color: rgba(0, 56, 66, 0.3); /* #003842 with opacity */
+  color: #000;
+}
+
+::-moz-selection {
+  background-color: rgba(0, 56, 66, 0.3);
+  color: #000;
+}
+
+/* Disabled elements */
+button:disabled,
+a:disabled,
+[role="button"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #e5e7eb !important;
+  color: #6b7280 !important;
+}
+
+/* Force inheritance */
+html {
+  --accessibility-font-size: var(--accessibility-font-size, 100%);
+  --letter-spacing: var(--letter-spacing, 0.02em);
+  --line-height: var(--line-height, 1.6);
+}
+
+/* Ensure body inherits */
+body {
+  font-size: inherit !important;
+  letter-spacing: inherit !important;
+  line-height: inherit !important;
+}
+
+/* Focus in high contrast modes */
+html.contrast-high :focus-visible,
+html.contrast-inverted :focus-visible,
+[data-contrast="high"] :focus-visible,
+[data-contrast="inverted"] :focus-visible {
+  outline: 4px solid var(--primary-color) !important;
+  outline-offset: 6px !important;
+  box-shadow: 0 0 0 4px var(--background) !important;
+}
+
+/* ===== NEW DESIGN SYSTEM UTILITIES ===== */
+/* Gradient backgrounds using your colors */
+.gradient-bg {
+  background: linear-gradient(135deg, #003842 0%, #42b8ac 100%);
+}
+
+.gradient-text {
+  background: linear-gradient(to right, #003842, #42b8ac);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Glass morphism effect */
+.glass-card {
+  backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 20px -2px rgba(0, 56, 66, 0.08);
+}
+
+/* Page header styling */
+.page-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.page-header h1 {
+  font-size: 1.875rem;
+  font-weight: bold;
+  color: #111827;
+  margin-bottom: 0.5rem;
+}
+
+.page-header p {
+  color: #6b7280;
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Accessibility-friendly animations */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+}
+
+/* Responsive typography with accessibility support */
+@media (min-width: 640px) {
+  html {
+    font-size: calc(var(--accessibility-font-size, 100%) * 1.05);
+  }
+}
+
+@media (min-width: 1024px) {
+  html {
+    font-size: calc(var(--accessibility-font-size, 100%) * 1.1);
+  }
+}
+
+/* Dark mode compatibility */
+@media (prefers-color-scheme: dark) {
+  .glass-card {
+    background: rgba(17, 24, 39, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .gradient-bg {
+    background: linear-gradient(135deg, #001f26 0%, #2a7068 100%);
+  }
+  
+  .page-header {
+    border-color: #374151;
+  }
+  
+  .page-header h1 {
+    color: #f9fafb;
+  }
+  
+  .page-header p {
+    color: #d1d5db;
+  }
+}
+
+/* Ensure accessibility modes work with new design */
+html.font-dyslexic .glass-card,
+html.dyslexia-mode .glass-card {
+  letter-spacing: 0.05em !important;
+  line-height: 1.8 !important;
+}
+
+html.contrast-high .glass-card,
+html.contrast-inverted .glass-card,
+[data-contrast="high"] .glass-card,
+[data-contrast="inverted"] .glass-card {
+  border: 3px solid var(--primary-color) !important;
+}
+
+/* Updated :focus-visible for new design system */
+:focus-visible {
+  outline: 2px solid #003842 !important;
+  outline-offset: 2px !important;
+  border-radius: 4px !important;
+}
+
+/* Ensure buttons remain accessible */
+button,
+[role="button"] {
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  position: relative;
+}
+
+/* Button active state feedback */
+button:active::after,
+[role="button"]:active::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 2px solid #003842;
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  [role="button"] {
+    transition: none;
+  }
+  
+  button:active::after,
+  [role="button"]:active::after {
+    animation: none;
+  }
+}
+
+/* Custom scrollbar class for specific elements */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #8dd8d2;
+  border-radius: 6px;
+  border: 3px solid #f3f4f6;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #68cbc3;
 }

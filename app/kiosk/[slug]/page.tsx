@@ -1,0 +1,1686 @@
+// app/kiosk/[slug]/page.tsx - FIXED VERSION
+'use client'
+
+import React, { useState, useEffect, useRef } from 'react'
+import { useParams, useSearchParams } from 'next/navigation'
+import { 
+  Filter, Search, AlertCircle, Check, X, QrCode, Download, 
+  FileText, Shield, ChefHat, Package, MapPin, Calendar,
+  Wheat, Fish, Egg, Nut, Leaf, Milk, Carrot, Shell, 
+  Circle, Sprout, Shrimp, Cookie, Beaker, ArrowRight, Clock, Home, Table2, Grid3x3,
+  ChevronDown, ChevronUp, CheckSquare, Square
+} from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
+import AccessibilityPanel from '@/components/shared/AccessibilityPanel'
+import Link from 'next/link'
+import { translations, type LanguageCode } from '@/lib/translations'
+import AllergenTableView from '@/components/kiosk/AllergenTableView'
+import { generateAllergenTablePDF } from '@/lib/pdf/allergenTablePDF'
+import { GLUTEN_TYPES, TREE_NUT_TYPES, type GlutenType, type TreeNutType } from '@/types/allergen'
+
+// Import your design system components
+import { Container } from '@/app/components/layout/Container'
+import { Card } from '@/app/components/layout/Card'
+import { Button } from '@/app/components/ui/Button'
+import { Badge } from '@/app/components/ui/Badge'
+
+// Import offline functionality
+import { useOfflineKioskData, type Business, type MenuItem } from '@/lib/hooks/useOfflineKioskData'
+import OfflineIndicator from '@/components/kiosk/OfflineIndicator'
+import { useDeviceHeartbeat } from '@/lib/hooks/useDeviceHeartbeat'
+
+// ===== TRACKING FUNCTIONS =====
+async function trackPageView(slug: string) {
+  console.log('📊 [Dev] Track page view for:', slug)
+}
+
+async function trackQRScan(slug: string, scanSource: string) {
+  console.log('📊 [Dev] Track QR scan for:', slug, 'source:', scanSource)
+}
+
+async function trackDownload(slug: string, downloadType: string) {
+  console.log('📊 [Dev] Track download for:', slug, 'type:', downloadType)
+}
+
+async function trackFilterUsage(slug: string, selectedAllergens: string[]) {
+  console.log('📊 [Dev] Track filter usage for:', slug, 'allergens:', selectedAllergens)
+}
+
+async function trackSearch(slug: string, searchQuery: string) {
+  console.log('📊 [Dev] Track search for:', slug, 'query:', searchQuery)
+}
+
+async function trackTimeOnPage(slug: string, timeOnPage: number) {
+  console.log('📊 [Dev] Track time on page for:', slug, 'time:', timeOnPage, 'seconds')
+}
+
+// ===== CONSTANTS =====
+// Sleek allergen icons with polished styling - EU 14 Allergen List (Official Order)
+// Matching the admin color scheme for consistency
+const ALLERGENS = [
+  { 
+    id: 'contains_cereals_gluten', 
+    name: '1. Gluten', 
+    icon: <Wheat className="w-4 h-4" />,
+    color: 'bg-[#f59e0b15] text-[#f59e0b] border border-[#f59e0b40]',
+    hoverColor: 'hover:bg-[#f59e0b25]',
+    bgColor: '#f59e0b'
+  },
+  { 
+    id: 'contains_crustaceans', 
+    name: '2. Crustaceans', 
+    icon: <Shell className="w-4 h-4" />,
+    color: 'bg-[#ef444415] text-[#ef4444] border border-[#ef444440]',
+    hoverColor: 'hover:bg-[#ef444425]',
+    bgColor: '#ef4444'
+  },
+  { 
+    id: 'contains_eggs', 
+    name: '3. Eggs', 
+    icon: <Egg className="w-4 h-4" />,
+    color: 'bg-[#f9731615] text-[#f97316] border border-[#f9731640]',
+    hoverColor: 'hover:bg-[#f9731625]',
+    bgColor: '#f97316'
+  },
+  { 
+    id: 'contains_fish', 
+    name: '4. Fish', 
+    icon: <Fish className="w-4 h-4" />,
+    color: 'bg-[#3b82f615] text-[#3b82f6] border border-[#3b82f640]',
+    hoverColor: 'hover:bg-[#3b82f625]',
+    bgColor: '#3b82f6'
+  },
+  { 
+    id: 'contains_peanuts', 
+    name: '5. Peanuts', 
+    icon: <Nut className="w-4 h-4" />,
+    color: 'bg-[#92400e15] text-[#92400e] border border-[#92400e40]',
+    hoverColor: 'hover:bg-[#92400e25]',
+    bgColor: '#92400e'
+  },
+  { 
+    id: 'contains_soybeans', 
+    name: '6. Soybeans', 
+    icon: <Sprout className="w-4 h-4" />,
+    color: 'bg-[#16a34a15] text-[#16a34a] border border-[#16a34a40]',
+    hoverColor: 'hover:bg-[#16a34a25]',
+    bgColor: '#16a34a'
+  },
+  { 
+    id: 'contains_milk', 
+    name: '7. Milk', 
+    icon: <Milk className="w-4 h-4" />,
+    color: 'bg-[#8b5cf615] text-[#8b5cf6] border border-[#8b5cf640]',
+    hoverColor: 'hover:bg-[#8b5cf625]',
+    bgColor: '#8b5cf6'
+  },
+  { 
+    id: 'contains_nuts', 
+    name: '8. Tree Nuts', 
+    icon: <Nut className="w-4 h-4" />,
+    color: 'bg-[#b4530915] text-[#b45309] border border-[#b4530940]',
+    hoverColor: 'hover:bg-[#b4530925]',
+    bgColor: '#b45309'
+  },
+  { 
+    id: 'contains_celery', 
+    name: '9. Celery', 
+    icon: <Carrot className="w-4 h-4" />,
+    color: 'bg-[#84cc1615] text-[#84cc16] border border-[#84cc1640]',
+    hoverColor: 'hover:bg-[#84cc1625]',
+    bgColor: '#84cc16'
+  },
+  { 
+    id: 'contains_mustard', 
+    name: '10. Mustard', 
+    icon: <Circle className="w-4 h-4" />,
+    color: 'bg-[#eab30815] text-[#eab308] border border-[#eab30840]',
+    hoverColor: 'hover:bg-[#eab30825]',
+    bgColor: '#eab308'
+  },
+  { 
+    id: 'contains_sesame', 
+    name: '11. Sesame', 
+    icon: <Circle className="w-3 h-3" />,
+    color: 'bg-[#d9730015] text-[#d97300] border border-[#d9730040]',
+    hoverColor: 'hover:bg-[#d9730025]',
+    bgColor: '#d97300'
+  },
+  { 
+    id: 'contains_sulphites', 
+    name: '12. Sulphites', 
+    icon: <Beaker className="w-4 h-4" />,
+    color: 'bg-[#a855f715] text-[#a855f7] border border-[#a855f740]',
+    hoverColor: 'hover:bg-[#a855f725]',
+    bgColor: '#a855f7'
+  },
+  { 
+    id: 'contains_lupin', 
+    name: '13. Lupin', 
+    icon: <Leaf className="w-4 h-4" />,
+    color: 'bg-[#6366f115] text-[#6366f1] border border-[#6366f140]',
+    hoverColor: 'hover:bg-[#6366f125]',
+    bgColor: '#6366f1'
+  },
+  { 
+    id: 'contains_molluscs', 
+    name: '14. Molluscs', 
+    icon: <Shell className="w-4 h-4" />,
+    color: 'bg-[#14b8a615] text-[#14b8a6] border border-[#14b8a640]',
+    hoverColor: 'hover:bg-[#14b8a625]',
+    bgColor: '#14b8a6'
+  }
+]
+
+const CATEGORY_NAMES: Record<string, string> = {
+  'acai_bowls': 'Açai Bowls',
+  'smoothies': 'Smoothies',
+  'juices': 'Fresh Juices',
+  'toppings': 'Toppings',
+  'extras': 'Extras',
+  'main': 'Main Courses',
+  'starters': 'Starters',
+  'desserts': 'Desserts',
+  'drinks': 'Drinks',
+  'appetizers': 'Appetizers',
+  'sides': 'Side Dishes',
+  'salads': 'Salads',
+  'breakfast': 'Breakfast',
+  'lunch': 'Lunch',
+  'dinner': 'Dinner'
+}
+
+// Production ready - no mock data (data fetched via useOfflineKioskData hook)
+
+// ===== CONSTANTS =====
+const INACTIVITY_TIMEOUT = 45000 // 45 seconds - CHANGE THIS VALUE
+const WARNING_TIME = 15000 // 15 seconds before reset - CHANGE THIS VALUE
+
+// Examples:
+// 10000 = 10 seconds
+// 30000 = 30 seconds
+// 60000 = 1 minute
+// 120000 = 2 minutes
+// 180000 = 3 minutes
+// 300000 = 5 minutes
+
+// ===== HELPER FUNCTIONS =====
+function downloadQRCode() {
+  const svg = document.getElementById('qr-code-svg') as SVGElement | null
+  if (!svg) return
+  
+  const svgData = new XMLSerializer().serializeToString(svg)
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  const img = new Image()
+  
+  img.onload = () => {
+    canvas.width = img.width
+    canvas.height = img.height
+    ctx?.drawImage(img, 0, 0)
+    
+    const pngUrl = canvas.toDataURL('image/png')
+    const downloadLink = document.createElement('a')
+    downloadLink.href = pngUrl
+    downloadLink.download = 'allergen-menu-qrcode.png'
+    document.body.appendChild(downloadLink)
+    downloadLink.click()
+    document.body.removeChild(downloadLink)
+  }
+  
+  img.src = 'data:image/svg+xml;base64,' + btoa(svgData)
+}
+
+async function generatePDF(includeFilters: boolean = false) {
+  console.log('Generating PDF...', includeFilters ? 'with filters' : 'full menu')
+  // This function will be replaced with generateAllergenTablePDF call in the component
+}
+
+export default function KioskPage() {
+  const params = useParams()
+  const searchParams = useSearchParams()
+  const slug = params.slug as string
+  const siteIdParam = searchParams.get('site_id')
+  
+  // Use offline-enabled data hook
+  const {
+    business,
+    menuItems,
+    loading,
+    error,
+    isOffline,
+    isStale,
+    lastUpdated,
+    refresh,
+  } = useOfflineKioskData(slug)
+
+  // Send periodic heartbeats to track device status
+  useDeviceHeartbeat({
+    siteId: siteIdParam || undefined,
+    businessId: business?.id,
+    enabled: !loading && !!business,
+    intervalMs: 60000 // 1 minute
+  })
+  
+  const [selectedAllergens, setSelectedAllergens] = useState<string[]>([])
+  const [expandedAllergens, setExpandedAllergens] = useState<string[]>([])
+  const [selectedGlutenTypes, setSelectedGlutenTypes] = useState<GlutenType[]>([])
+  const [selectedTreeNutTypes, setSelectedTreeNutTypes] = useState<TreeNutType[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showQRCode, setShowQRCode] = useState(false)
+  const [showPDFOptions, setShowPDFOptions] = useState(false)
+  const [generatingPDF, setGeneratingPDF] = useState(false)
+  const [kioskStarted, setKioskStarted] = useState(false)
+  const [showInactivityWarning, setShowInactivityWarning] = useState(false)
+  const [remainingSeconds, setRemainingSeconds] = useState(0)
+  const [activeView, setActiveView] = useState<'landing' | 'filters' | 'menu'>('landing')
+  const [emailInput, setEmailInput] = useState('')
+  const [showEmailInput, setShowEmailInput] = useState(false)
+  const [currentLanguage, setCurrentLanguage] = useState<LanguageCode>(
+    (typeof window !== 'undefined' ? localStorage.getItem('defaultLanguage') as LanguageCode || 'en' : 'en') as LanguageCode
+  )
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
+  const [menuViewMode, setMenuViewMode] = useState<'cards' | 'table'>('table')
+  
+  const t = translations[currentLanguage]
+  
+  // Refs for timeout management
+  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const warningTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const lastActivityRef = useRef<number>(Date.now())
+  const pageLoadTime = useRef(Date.now())
+
+  // Listen for language changes from admin settings
+  useEffect(() => {
+    const handleLanguageChange = (event: CustomEvent<LanguageCode>) => {
+      setCurrentLanguage(event.detail)
+    }
+
+    window.addEventListener('languageChange', handleLanguageChange as EventListener)
+
+    return () => {
+      window.removeEventListener('languageChange', handleLanguageChange as EventListener)
+    }
+  }, [])
+
+  // ===== INACTIVITY TIMER SETUP =====
+  useEffect(() => {
+    if (!kioskStarted) return
+
+    // Setup activity listeners
+    const handleActivity = () => {
+      lastActivityRef.current = Date.now()
+      setShowInactivityWarning(false)
+      resetInactivityTimer()
+    }
+
+    // Touch events for touch screen devices
+    const touchEvents = ['touchstart', 'touchmove', 'touchend']
+    touchEvents.forEach(event => {
+      document.addEventListener(event, handleActivity, true)
+    })
+
+    // Mouse events for desktop testing
+    const mouseEvents = ['click', 'mousemove', 'mousedown']
+    mouseEvents.forEach(event => {
+      document.addEventListener(event, handleActivity, true)
+    })
+
+    // Keyboard events
+    document.addEventListener('keydown', handleActivity, true)
+    
+    // Scroll events
+    window.addEventListener('scroll', handleActivity, true)
+
+    // Initial timer setup
+    resetInactivityTimer()
+
+    return () => {
+      // Cleanup listeners
+      touchEvents.forEach(event => {
+        document.removeEventListener(event, handleActivity, true)
+      })
+      mouseEvents.forEach(event => {
+        document.removeEventListener(event, handleActivity, true)
+      })
+      document.removeEventListener('keydown', handleActivity, true)
+      window.removeEventListener('scroll', handleActivity, true)
+
+      // Cleanup timers
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current)
+      if (warningTimerRef.current) clearTimeout(warningTimerRef.current)
+      if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current)
+    }
+  }, [kioskStarted])
+
+  // ===== RESET INACTIVITY TIMER =====
+  const resetInactivityTimer = () => {
+    // Clear existing timers
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current)
+    if (warningTimerRef.current) clearTimeout(warningTimerRef.current)
+    if (countdownIntervalRef.current) clearInterval(countdownIntervalRef.current)
+
+    // Set warning timer (appears 30 seconds before reset)
+    warningTimerRef.current = setTimeout(() => {
+      setShowInactivityWarning(true)
+      setRemainingSeconds(Math.ceil(WARNING_TIME / 1000))
+
+      // Start countdown
+      countdownIntervalRef.current = setInterval(() => {
+        setRemainingSeconds(prev => {
+          if (prev <= 1) {
+            if (countdownIntervalRef.current) {
+              clearInterval(countdownIntervalRef.current)
+            }
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }, INACTIVITY_TIMEOUT - WARNING_TIME)
+
+    // Set reset timer (auto-reset to home screen)
+    inactivityTimerRef.current = setTimeout(() => {
+      handleInactivityReset()
+    }, INACTIVITY_TIMEOUT)
+  }
+
+  // ===== HANDLE INACTIVITY RESET =====
+  const handleInactivityReset = () => {
+    console.log('⏱️ [Kiosk] Inactivity timeout - Returning to home screen')
+    setKioskStarted(false)
+    setShowInactivityWarning(false)
+    setRemainingSeconds(0)
+    
+    // Clear any selections
+    setSelectedAllergens([])
+    setSearchQuery('')
+  }
+
+  // ===== DISMISS WARNING =====
+  const handleDismissWarning = () => {
+    lastActivityRef.current = Date.now()
+    setShowInactivityWarning(false)
+    resetInactivityTimer()
+  }
+
+  // Track page view on load
+  useEffect(() => {
+    if (slug) {
+      trackPageView(slug)
+    }
+  }, [slug])
+
+  // Track search queries
+  useEffect(() => {
+    if (searchQuery) {
+      const timeoutId = setTimeout(() => {
+        trackSearch(slug, searchQuery)
+      }, 500)
+      
+      return () => clearTimeout(timeoutId)
+    }
+  }, [searchQuery, slug])
+
+  // Track filter usage
+  useEffect(() => {
+    if (selectedAllergens.length > 0) {
+      trackFilterUsage(slug, selectedAllergens)
+    }
+  }, [selectedAllergens, slug])
+
+  // Track time on page when leaving
+  useEffect(() => {
+    return () => {
+      const timeOnPage = Math.floor((Date.now() - pageLoadTime.current) / 1000)
+      trackTimeOnPage(slug, timeOnPage)
+    }
+  }, [slug])
+
+  // Scroll to top when view changes
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [activeView])
+
+  // Scroll to top when kiosk starts
+  useEffect(() => {
+    if (kioskStarted) {
+      window.scrollTo(0, 0)
+    }
+  }, [kioskStarted])
+
+  function toggleAllergen(allergenId: string) {
+    // If it's gluten or tree nuts, toggle expansion instead
+    if (allergenId === 'contains_cereals_gluten' || allergenId === 'contains_nuts') {
+      setExpandedAllergens(prev => 
+        prev.includes(allergenId)
+          ? prev.filter(id => id !== allergenId)
+          : [...prev, allergenId]
+      )
+      return
+    }
+    
+    setSelectedAllergens(prev => 
+      prev.includes(allergenId)
+        ? prev.filter(id => id !== allergenId)
+        : [...prev, allergenId]
+    )
+  }
+
+  function toggleGlutenType(glutenType: GlutenType) {
+    setSelectedGlutenTypes(prev =>
+      prev.includes(glutenType)
+        ? prev.filter(t => t !== glutenType)
+        : [...prev, glutenType]
+    )
+  }
+
+  function toggleTreeNutType(nutType: TreeNutType) {
+    setSelectedTreeNutTypes(prev =>
+      prev.includes(nutType)
+        ? prev.filter(t => t !== nutType)
+        : [...prev, nutType]
+    )
+  }
+
+  function selectAllGlutenTypes() {
+    const allGlutenKeys = GLUTEN_TYPES.map(g => g.key)
+    if (selectedGlutenTypes.length === allGlutenKeys.length) {
+      // All selected, deselect all
+      setSelectedGlutenTypes([])
+    } else {
+      // Select all
+      setSelectedGlutenTypes(allGlutenKeys)
+    }
+  }
+
+  function selectAllTreeNutTypes() {
+    const allNutKeys = TREE_NUT_TYPES.map(n => n.key)
+    if (selectedTreeNutTypes.length === allNutKeys.length) {
+      // All selected, deselect all
+      setSelectedTreeNutTypes([])
+    } else {
+      // Select all
+      setSelectedTreeNutTypes(allNutKeys)
+    }
+  }
+
+  function clearFilters() {
+    setSelectedAllergens([])
+    setSelectedGlutenTypes([])
+    setSelectedTreeNutTypes([])
+    setExpandedAllergens([])
+    setSearchQuery('')
+  }
+
+  function getAllergensForItem(item: MenuItem): string[] {
+    return ALLERGENS
+      .filter(allergen => item[allergen.id as keyof MenuItem] === true)
+      .map(allergen => allergen.name)
+  }
+
+  function filterMenuItems() {
+    return menuItems.filter(item => {
+      if (searchQuery && !item.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+        return false
+      }
+      
+      // Check regular allergens
+      if (selectedAllergens.length > 0) {
+        const hasSelectedAllergen = selectedAllergens.some(allergenId => 
+          item[allergenId as keyof MenuItem] === true
+        )
+        if (hasSelectedAllergen) {
+          return false
+        }
+      }
+      
+      // Check specific gluten types
+      if (selectedGlutenTypes.length > 0 && item.contains_cereals_gluten) {
+        // If item has cereals_gluten_levels, check specific types
+        const itemGlutenLevels = (item as any).cereals_gluten_levels
+        if (itemGlutenLevels) {
+          const hasSelectedGluten = selectedGlutenTypes.some(glutenType => {
+            const level = itemGlutenLevels[glutenType]
+            return level && level !== 'none'
+          })
+          if (hasSelectedGluten) return false
+        } else {
+          // No specific levels, assume all gluten types if contains_cereals_gluten is true
+          return false
+        }
+      }
+      
+      // Check specific tree nut types
+      if (selectedTreeNutTypes.length > 0 && item.contains_nuts) {
+        // If item has nuts_levels, check specific types
+        const itemNutLevels = (item as any).nuts_levels
+        if (itemNutLevels) {
+          const hasSelectedNut = selectedTreeNutTypes.some(nutType => {
+            const level = itemNutLevels[nutType]
+            return level && level !== 'none'
+          })
+          if (hasSelectedNut) return false
+        } else {
+          // No specific levels, assume all nut types if contains_nuts is true
+          return false
+        }
+      }
+      
+      return true
+    })
+  }
+
+  function getCategoryDisplayName(category: string): string {
+    return CATEGORY_NAMES[category.toLowerCase()] || 
+           category.split('_').map(word => 
+             word.charAt(0).toUpperCase() + word.slice(1)
+           ).join(' ')
+  }
+
+  // Handle PDF generation with table format
+  const handleGeneratePDF = async (includeFilters: boolean = false) => {
+    if (!business) return
+    
+    setGeneratingPDF(true)
+    try {
+      // Check if PDF download is allowed (trial limits)
+      const response = await fetch('/api/pdf/track-download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          downloadType: includeFilters ? 'filtered_pdf' : 'full_pdf',
+          siteId: siteIdParam || null
+        })
+      })
+      
+      const result = await response.json()
+      
+      if (!response.ok || !result.allowed) {
+        setGeneratingPDF(false)
+        alert(result.error || 'PDF download limit reached. Please upgrade your plan to continue.')
+        return
+      }
+      
+      const itemsToInclude = includeFilters ? filteredItems : menuItems
+      
+      await generateAllergenTablePDF({
+        business: business,
+        items: itemsToInclude,
+        title: includeFilters && selectedAllergens.length > 0 
+          ? `Allergen Guide (${selectedAllergens.length} allergen${selectedAllergens.length > 1 ? 's' : ''} filtered)`
+          : 'Complete Allergen Information Guide',
+        showLegend: true
+      })
+      
+      await trackDownload(slug, includeFilters ? 'filtered_pdf' : 'full_pdf')
+    } catch (error) {
+      console.error('Error generating PDF:', error)
+      alert('Sorry, there was an error generating the PDF. Please try again.')
+    } finally {
+      setGeneratingPDF(false)
+    }
+  }
+
+  // Track when user starts the kiosk
+  const handleStartKiosk = () => {
+    setKioskStarted(true)
+    trackKioskInteraction(slug, 'home_screen_start')
+  }
+
+  // Helper function for tracking
+  async function trackKioskInteraction(slug: string, action: string) {
+    console.log('📊 [Dev] Kiosk interaction:', action, 'for:', slug)
+  }
+
+  // ===== INACTIVITY WARNING MODAL =====
+  const InactivityWarning = () => (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <Card className="max-w-md w-full animate-pulse">
+        <div className="p-8 text-center">
+          <div className="p-4 bg-amber-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <Clock className="h-8 w-8 text-amber-600 animate-spin" />
+          </div>
+
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Inactivity Warning
+          </h2>
+
+          <p className="text-gray-600 mb-6">
+            No activity detected. This kiosk will return to the home screen in:
+          </p>
+
+          <div className="mb-8">
+            <div className="text-5xl font-bold text-amber-600 font-mono">
+              {String(remainingSeconds).padStart(2, '0')}s
+            </div>
+            <p className="text-sm text-gray-500 mt-2">Tap anywhere to continue</p>
+          </div>
+
+          <div className="w-full bg-gray-200 rounded-full h-2 mb-8 overflow-hidden">
+            <div
+              className="bg-gradient-to-r from-amber-500 to-red-500 h-full transition-all"
+              style={{
+                width: `${(remainingSeconds / Math.ceil(WARNING_TIME / 1000)) * 100}%`,
+              }}
+            ></div>
+          </div>
+
+          <Button
+            variant="primary"
+            fullWidth
+            onClick={handleDismissWarning}
+          >
+            Continue Using Kiosk
+          </Button>
+        </div>
+      </Card>
+    </div>
+  )
+
+  // ===== HOME SCREEN =====
+  if (!kioskStarted) {
+    return (
+      <div className="min-h-screen bg-white relative overflow-hidden flex items-center justify-center">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Subtle wave patterns */}
+          <svg className="absolute top-0 left-0 w-full h-32 opacity-30" preserveAspectRatio="none" viewBox="0 0 1200 120">
+            <path d="M0,40 Q300,10 600,40 T1200,40 L1200,0 L0,0 Z" fill="url(#wave1)" />
+            <defs>
+              <linearGradient id="wave1" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#42b8ac" stopOpacity="0.1" />
+                <stop offset="50%" stopColor="#7EC850" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#A8D83F" stopOpacity="0.1" />
+              </linearGradient>
+            </defs>
+          </svg>
+          <svg className="absolute bottom-0 right-0 w-full h-32 opacity-30" preserveAspectRatio="none" viewBox="0 0 1200 120">
+            <path d="M0,80 Q300,110 600,80 T1200,80 L1200,120 L0,120 Z" fill="url(#wave2)" />
+            <defs>
+              <linearGradient id="wave2" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#003842" stopOpacity="0.1" />
+                <stop offset="50%" stopColor="#42b8ac" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#003842" stopOpacity="0.1" />
+              </linearGradient>
+            </defs>
+          </svg>
+          {/* Subtle dots pattern */}
+          <div className="absolute top-1/4 right-1/4 flex gap-3">
+            <div className="w-3 h-3 rounded-full bg-[#42b8ac]/20"></div>
+            <div className="w-3 h-3 rounded-full bg-[#7EC850]/20"></div>
+            <div className="w-3 h-3 rounded-full bg-[#A8D83F]/20"></div>
+          </div>
+          <div className="absolute bottom-1/3 left-1/4 flex gap-3">
+            <div className="w-3 h-3 rounded-full bg-[#003842]/20"></div>
+            <div className="w-3 h-3 rounded-full bg-[#42b8ac]/20"></div>
+            <div className="w-3 h-3 rounded-full bg-[#7EC850]/20"></div>
+          </div>
+        </div>
+
+        <AccessibilityPanel />
+
+        <div className="relative z-10 w-full max-w-2xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center justify-center mb-8 mt-16">
+              <div className="p-8 bg-white rounded-3xl shadow-2xl border-2 border-[#003842]/10">
+                <img 
+                  src="/allyjen-logo.svg" 
+                  alt="AllyJen Logo" 
+                  className="h-48 w-48 object-contain"
+                />
+              </div>
+            </div>
+
+            <h1 className="text-3xl md:text-4xl font-bold text-[#003842] mb-3 leading-tight">
+              {business?.kiosk_display_name || business?.name}
+            </h1>
+
+            <p className="text-base md:text-lg text-gray-600 mb-8 max-w-xl mx-auto">
+              {t.homeSubtitle}
+            </p>
+
+            <button
+              onClick={handleStartKiosk}
+              className="inline-flex items-center gap-3 px-10 py-4 bg-gradient-to-r from-[#003842] to-[#42b8ac] text-white rounded-2xl font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 group mb-8"
+            >
+              <span>{t.startBrowsing}</span>
+              <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
+            </button>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 max-w-2xl mx-auto">
+              <div className="bg-[#003842] rounded-xl p-6 border border-[#003842]/20 hover:shadow-lg transition-all">
+                <Shield className="h-8 w-8 text-white mx-auto mb-3" />
+                <h3 className="text-white font-semibold mb-1">{t.homeSafeDining}</h3>
+                <p className="text-white/90 text-sm">{t.homeSafeDiningDesc}</p>
+              </div>
+
+              <div className="bg-[#003842] rounded-xl p-6 border border-[#003842]/20 hover:shadow-lg transition-all">
+                <Package className="h-8 w-8 text-white mx-auto mb-3" />
+                <h3 className="text-white font-semibold mb-1">{t.homeDetailedMenu}</h3>
+                <p className="text-white/90 text-sm">{t.homeDetailedMenuDesc}</p>
+              </div>
+
+              <div className="bg-[#003842] rounded-xl p-6 border border-[#003842]/20 hover:shadow-lg transition-all">
+                <FileText className="h-8 w-8 text-white mx-auto mb-3" />
+                <h3 className="text-white font-semibold mb-1">{t.homeDownloadGuides}</h3>
+                <p className="text-white/90 text-sm">{t.homeDownloadGuidesDesc}</p>
+              </div>
+            </div>
+
+            <p className="text-gray-500 text-sm mt-8 max-w-md mx-auto">
+              {t.pressButton}
+            </p>
+
+            <div className="mt-12 pt-8 border-t border-gray-200">
+              <p className="text-gray-600 text-sm mb-3">
+                {t.questionsAboutAllergens}
+              </p>
+              {business && (
+                <div className="flex items-center justify-center gap-4 flex-wrap text-gray-700 text-sm">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" />
+                    <span>{business.name}</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-8">
+              <Badge variant="primary">{t.devMode}</Badge>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ===== MENU DISPLAY =====
+  const filteredItems = filterMenuItems()
+  const categories = Array.from(new Set(menuItems.map(item => item.category)))
+  const kioskUrl = typeof window !== 'undefined' ? `${window.location.origin}/kiosk/${slug}` : ''
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-[#f0f9f8] to-gray-50 relative">
+      {showInactivityWarning && <InactivityWarning />}
+
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-white shadow-md border-b">
+        <Container>
+          <div className="py-4">
+            {/* Offline Indicator */}
+            {(isOffline || isStale) && (
+              <div className="mb-4">
+                <OfflineIndicator
+                  isOffline={isOffline}
+                  isStale={isStale}
+                  lastUpdated={lastUpdated}
+                  onRefresh={refresh}
+                  showDetails={true}
+                />
+              </div>
+            )}
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <img 
+                  src="/allyjen-logo.svg" 
+                  alt="AllyJen Logo" 
+                  className="h-12 w-12 object-contain"
+                />
+                <div className="p-3 bg-gradient-to-br from-[#003842] to-[#42b8ac] rounded-xl shadow-sm">
+                  <ChefHat className="h-7 w-7 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-2xl font-bold text-[#003842]">
+                    {business?.kiosk_display_name || `${business?.name} Menu`}
+                  </h1>
+                  <p className="text-gray-600 text-sm flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    Powered by AllyJen • {business?.name}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="relative hidden md:block">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none" style={{ color: '#8dd8d2' }} />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search menu items..."
+                    style={{
+                      borderColor: '#8dd8d2',
+                      color: '#2a7068',
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#68cbc3'
+                      e.target.style.boxShadow = '0 0 0 3px rgba(66, 184, 172, 0.1)'
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#8dd8d2'
+                      e.target.style.boxShadow = 'none'
+                    }}
+                    className="pl-10 pr-4 py-1.5 rounded-lg border-2 bg-white w-64 transition-colors focus:outline-none font-sans font-medium text-sm"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" icon={FileText} onClick={() => setShowPDFOptions(true)}>
+                    {t.emailMenu}
+                  </Button>
+                  <Button variant="outline" size="sm" icon={QrCode} onClick={() => setShowQRCode(true)}>
+                    {t.qrCodeButton}
+                  </Button>
+                  
+                  {/* Language Dropdown */}
+                  <div className="relative">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+                    >
+                      <span className="font-semibold">{t.abbr}</span>
+                    </Button>
+                    {showLanguageMenu && (
+                      <div className="absolute right-0 top-full mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-50 min-w-max">
+                        {(Object.entries(translations) as [LanguageCode, any][]).map(([code, lang]) => (
+                          <button
+                            key={code}
+                            onClick={() => {
+                              setCurrentLanguage(code)
+                              setShowLanguageMenu(false)
+                              // Save to localStorage and notify other components
+                              localStorage.setItem('defaultLanguage', code)
+                              window.dispatchEvent(new CustomEvent('languageChange', { detail: code }))
+                            }}
+                            className={`w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2 ${
+                              currentLanguage === code ? 'bg-[#42b8ac]/10 text-[#003842] font-semibold' : ''
+                            }`}
+                          >
+                            <span className="text-lg">{lang.flag}</span>
+                            <span>{lang.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    icon={Home}
+                    onClick={() => {
+                      setActiveView('landing')
+                      setShowInactivityWarning(false)
+                    }}
+                    title="Return to home screen"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 md:hidden">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none" style={{ color: '#8dd8d2' }} />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search menu items..."
+                  style={{
+                    borderColor: '#8dd8d2',
+                    color: '#2a7068',
+                  }}
+                  onFocus={(e) => {
+                    e.target.style.borderColor = '#68cbc3'
+                    e.target.style.boxShadow = '0 0 0 3px rgba(66, 184, 172, 0.1)'
+                  }}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#8dd8d2'
+                    e.target.style.boxShadow = 'none'
+                  }}
+                  className="pl-10 pr-4 py-1.5 rounded-lg border-2 bg-white w-full transition-colors focus:outline-none font-sans font-medium text-sm"
+                />
+              </div>
+            </div>
+          </div>
+        </Container>
+      </header>
+
+      <Container className="py-8">
+        {/* Landing Page View */}
+        {activeView === 'landing' && (
+          <>
+            {/* Quick Action Tiles */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {/* Search by Allergen Tile */}
+              <button
+                onClick={() => setActiveView('filters')}
+                className="text-left transition-transform hover:scale-105"
+              >
+                <Card className="p-8 bg-gradient-to-br from-red-50 to-red-100 border border-red-200 hover:shadow-lg transition-shadow h-full">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-red-600 rounded-xl shadow-sm flex-shrink-0">
+                      <Filter className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-red-900 mb-2">{t.avoidAllergens}</h3>
+                      <p className="text-red-700 text-sm mb-3">
+                        {t.avoidAllergensDesc}
+                      </p>
+                      <div className="inline-block px-4 py-2 bg-red-600 text-white rounded-lg font-medium text-sm hover:bg-red-700 transition">
+                        {t.startFiltering}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </button>
+
+              {/* Search Menu Tile */}
+              <button
+                onClick={() => setActiveView('menu')}
+                className="text-left transition-transform hover:scale-105"
+              >
+                <Card className="p-8 bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 hover:shadow-lg transition-shadow h-full">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-blue-600 rounded-xl shadow-sm flex-shrink-0">
+                      <Search className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-blue-900 mb-2">{t.browseFullMenu}</h3>
+                      <p className="text-blue-700 text-sm mb-3">
+                        {t.browseFullMenuDesc}
+                      </p>
+                      <div className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition">
+                        {t.viewMenu}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </button>
+
+              {/* QR Code Download Tile */}
+              <button
+                onClick={() => setShowQRCode(true)}
+                className="text-left transition-transform hover:scale-105"
+              >
+                <Card className="p-8 bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 hover:shadow-lg transition-shadow h-full">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-purple-600 rounded-xl shadow-sm flex-shrink-0">
+                      <QrCode className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-purple-900 mb-2">{t.saveMenuToPhone}</h3>
+                      <p className="text-purple-700 text-sm mb-3">
+                        {t.saveMenuToPhoneDesc}
+                      </p>
+                      <div className="inline-block px-4 py-2 bg-purple-600 text-white rounded-lg font-medium text-sm hover:bg-purple-700 transition">
+                        {t.showQRCode}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </button>
+            </div>
+
+            {/* Disclaimer Section */}
+            <Card className="p-8 bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-orange-600 rounded-xl shadow-sm flex-shrink-0 mt-1">
+                  <AlertCircle className="h-6 w-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-lg font-bold text-orange-900 mb-3">{t.crossContamination}</h2>
+                  <p className="text-orange-800 text-sm mb-4">
+                    {t.disclaimerText}
+                  </p>
+                  <h3 className="text-sm font-semibold text-orange-900 mb-3">{t.importantNotice}</h3>
+                  <ul className="text-orange-800 text-sm space-y-2 mb-4">
+                    <li className="flex gap-2">
+                      <span className="font-medium min-w-fit">{t.peanuts}:</span>
+                      <span>{t.peanutsDesc}</span>
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-medium min-w-fit">{t.treeNuts}:</span>
+                      <span>{t.treeNutsDesc}</span>
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-medium min-w-fit">{t.dairyGluten}:</span>
+                      <span>{t.dairyGlutenDesc}</span>
+                    </li>
+                  </ul>
+                  <p className="text-orange-800 text-sm mb-3">
+                    {t.severeAllergyWarning}
+                  </p>
+                  <p className="text-orange-800 text-sm font-medium">
+                    {t.appreciateUnderstanding}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </>
+        )}
+
+        {/* Allergen Filter View */}
+        {activeView === 'filters' && (
+          <>
+            {/* Allergen Filter Section */}
+            <Card className="mb-8">
+              <div className="p-6 border-b">
+                <h2 className="text-lg font-semibold text-[#003842] flex items-center gap-2">
+                  <Filter className="h-5 w-5" />
+                  Filter by Allergens
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Click allergens to exclude items containing them from the menu
+                </p>
+              </div>
+
+              <div className="p-6">
+                <div className="flex flex-wrap gap-3">
+                  {ALLERGENS.map(allergen => {
+                    const isSelected = selectedAllergens.includes(allergen.id)
+                    const isExpanded = expandedAllergens.includes(allergen.id)
+                    const hasSubtypes = allergen.id === 'contains_cereals_gluten' || allergen.id === 'contains_nuts'
+                    
+                    return (
+                      <div key={allergen.id} className="contents">
+                        <button
+                          onClick={() => toggleAllergen(allergen.id)}
+                          className={`inline-flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium border-2 transition-all ${
+                            isSelected || isExpanded
+                              ? 'shadow-md ring-2'
+                              : 'border-gray-300 hover:shadow-lg hover:scale-105'
+                          }`}
+                          style={{
+                            backgroundColor: (isSelected || isExpanded) ? `${allergen.bgColor}20` : '#fff',
+                            color: (isSelected || isExpanded) ? allergen.bgColor : '#374151',
+                            borderColor: (isSelected || isExpanded) ? allergen.bgColor : '#d1d5db'
+                          }}
+                        >
+                          <span style={{ color: allergen.bgColor }}>{allergen.icon}</span>
+                          <span className="font-semibold">{allergen.name}</span>
+                          {hasSubtypes && (
+                            isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+                          )}
+                          {!hasSubtypes && isSelected && <X className="h-4 w-4 ml-1" style={{ color: allergen.bgColor }} />}
+                        </button>
+                        
+                        {/* Gluten Subtypes */}
+                        {allergen.id === 'contains_cereals_gluten' && isExpanded && (
+                          <div className="w-full ml-8 flex flex-wrap gap-2 mt-2 mb-2">
+                            {GLUTEN_TYPES.map(glutenType => {
+                              const isGlutenSelected = selectedGlutenTypes.includes(glutenType.key)
+                              return (
+                                <button
+                                  key={glutenType.key}
+                                  onClick={() => toggleGlutenType(glutenType.key)}
+                                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
+                                    isGlutenSelected
+                                      ? 'shadow-sm'
+                                      : 'hover:shadow-md'
+                                  }`}
+                                  style={{
+                                    backgroundColor: isGlutenSelected ? `${allergen.bgColor}25` : `${allergen.bgColor}08`,
+                                    color: allergen.bgColor,
+                                    borderColor: isGlutenSelected ? allergen.bgColor : `${allergen.bgColor}40`
+                                  }}
+                                >
+                                  <Wheat className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
+                                  <span>{glutenType.name}</span>
+                                  {isGlutenSelected && <X className="h-3 w-3" />}
+                                </button>
+                              )
+                            })}
+                            {/* Select All Button */}
+                            <button
+                              onClick={selectAllGlutenTypes}
+                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border-2 transition-all hover:shadow-md"
+                              style={{
+                                backgroundColor: selectedGlutenTypes.length === GLUTEN_TYPES.length ? `${allergen.bgColor}30` : '#fff',
+                                color: allergen.bgColor,
+                                borderColor: allergen.bgColor,
+                                borderStyle: 'dashed'
+                              }}
+                            >
+                              {selectedGlutenTypes.length === GLUTEN_TYPES.length ? (
+                                <>
+                                  <CheckSquare className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
+                                  <span>Deselect All</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Square className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
+                                  <span>Select All</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
+                        
+                        {/* Tree Nut Subtypes */}
+                        {allergen.id === 'contains_nuts' && isExpanded && (
+                          <div className="w-full ml-8 flex flex-wrap gap-2 mt-2 mb-2">
+                            {TREE_NUT_TYPES.map(nutType => {
+                              const isNutSelected = selectedTreeNutTypes.includes(nutType.key)
+                              return (
+                                <button
+                                  key={nutType.key}
+                                  onClick={() => toggleTreeNutType(nutType.key)}
+                                  className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
+                                    isNutSelected
+                                      ? 'shadow-sm'
+                                      : 'hover:shadow-md'
+                                  }`}
+                                  style={{
+                                    backgroundColor: isNutSelected ? `${allergen.bgColor}25` : `${allergen.bgColor}08`,
+                                    color: allergen.bgColor,
+                                    borderColor: isNutSelected ? allergen.bgColor : `${allergen.bgColor}40`
+                                  }}
+                                >
+                                  <Nut className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
+                                  <span>{nutType.name}</span>
+                                  {isNutSelected && <X className="h-3 w-3" />}
+                                </button>
+                              )
+                            })}
+                            {/* Select All Button */}
+                            <button
+                              onClick={selectAllTreeNutTypes}
+                              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border-2 transition-all hover:shadow-md"
+                              style={{
+                                backgroundColor: selectedTreeNutTypes.length === TREE_NUT_TYPES.length ? `${allergen.bgColor}30` : '#fff',
+                                color: allergen.bgColor,
+                                borderColor: allergen.bgColor,
+                                borderStyle: 'dashed'
+                              }}
+                            >
+                              {selectedTreeNutTypes.length === TREE_NUT_TYPES.length ? (
+                                <>
+                                  <CheckSquare className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
+                                  <span>Deselect All</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Square className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
+                                  <span>Select All</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {(selectedAllergens.length > 0 || selectedGlutenTypes.length > 0 || selectedTreeNutTypes.length > 0) && (
+                  <div className="mt-6 p-4 bg-gradient-to-r from-red-50 to-red-100 border border-red-200 rounded-xl">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                        <div>
+                          <span className="font-medium text-red-800">Excluding items containing:</span>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {selectedAllergens.map(id => {
+                              const allergen = ALLERGENS.find(a => a.id === id)
+                              return allergen ? (
+                                <span 
+                                  key={id} 
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border"
+                                  style={{
+                                    backgroundColor: `${allergen.bgColor}15`,
+                                    color: allergen.bgColor,
+                                    borderColor: `${allergen.bgColor}40`
+                                  }}
+                                >
+                                  <span style={{ color: allergen.bgColor }}>{allergen.icon}</span>
+                                  {allergen.name}
+                                </span>
+                              ) : null
+                            })}
+                            {selectedGlutenTypes.map(glutenType => {
+                              const gluten = GLUTEN_TYPES.find(g => g.key === glutenType)
+                              const allergen = ALLERGENS.find(a => a.id === 'contains_cereals_gluten')
+                              return gluten && allergen ? (
+                                <span 
+                                  key={glutenType} 
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border"
+                                  style={{
+                                    backgroundColor: `${allergen.bgColor}15`,
+                                    color: allergen.bgColor,
+                                    borderColor: `${allergen.bgColor}40`
+                                  }}
+                                >
+                                  <Wheat className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
+                                  {gluten.name}
+                                </span>
+                              ) : null
+                            })}
+                            {selectedTreeNutTypes.map(nutType => {
+                              const nut = TREE_NUT_TYPES.find(n => n.key === nutType)
+                              const allergen = ALLERGENS.find(a => a.id === 'contains_nuts')
+                              return nut && allergen ? (
+                                <span 
+                                  key={nutType} 
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border"
+                                  style={{
+                                    backgroundColor: `${allergen.bgColor}15`,
+                                    color: allergen.bgColor,
+                                    borderColor: `${allergen.bgColor}40`
+                                  }}
+                                >
+                                  <Nut className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
+                                  {nut.name}
+                                </span>
+                              ) : null
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={clearFilters} className="text-red-700">
+                        Clear All
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {/* Menu Items in Filter View */}
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-[#003842] mb-6">Menu Items</h2>
+
+              {filteredItems.length === 0 ? (
+                <Card className="text-center py-12">
+                  <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No items match your filters</h3>
+                  <p className="text-gray-600 mb-4">Try adjusting your filters or search term</p>
+                  {selectedAllergens.length > 0 && (
+                    <Button variant="primary" onClick={clearFilters} className="mx-auto">
+                      Clear Allergen Filters
+                    </Button>
+                  )}
+                </Card>
+              ) : (
+                <div className="space-y-6">
+                  {categories.map(category => {
+                    const categoryItems = filteredItems.filter(item => item.category === category)
+                    if (categoryItems.length === 0) return null
+
+                    return (
+                      <div key={category} className="space-y-4">
+                        <h3 className="text-xl font-bold text-[#003842]">
+                          {getCategoryDisplayName(category)}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {categoryItems.map(item => {
+                            const itemAllergens = getAllergensForItem(item)
+                            const allergenDetails = ALLERGENS.filter(allergen => item[allergen.id as keyof MenuItem] === true)
+
+                            return (
+                              <Card key={item.id} className="h-full">
+                                <div className="p-6">
+                                  <h4 className="text-lg font-semibold text-[#003842]">{item.name}</h4>
+                                  <p className="text-gray-600 text-sm mt-1">€{item.price.toFixed(2)}</p>
+                                  {item.description && <p className="text-gray-600 mt-3">{item.description}</p>}
+
+                                  {allergenDetails.length > 0 && (
+                                    <div className="mt-4 pt-4 border-t border-gray-200">
+                                      <p className="text-sm font-medium text-gray-700 mb-2">Contains:</p>
+                                      <div className="flex flex-wrap gap-2">
+                                        {allergenDetails.map(allergen => (
+                                          <div 
+                                            key={allergen.id} 
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
+                                            style={{
+                                              backgroundColor: `${allergen.bgColor}15`,
+                                              color: allergen.bgColor,
+                                              borderColor: `${allergen.bgColor}40`
+                                            }}
+                                          >
+                                            <span style={{ color: allergen.bgColor }}>{allergen.icon}</span>
+                                            <span>{allergen.name}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </Card>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Info Section - Moved to Bottom */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Total Menu Items</p>
+                    <p className="text-2xl font-bold text-[#003842]">{menuItems.length}</p>
+                  </div>
+                  <div className="p-3 bg-[#f0f9f8] rounded-lg">
+                    <Package className="h-6 w-6 text-[#42b8ac]" />
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Allergen-Free Options</p>
+                    <p className="text-2xl font-bold text-[#003842]">
+                      {menuItems.filter(item => getAllergensForItem(item).length === 0).length}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-green-100 rounded-lg">
+                    <Check className="h-6 w-6 text-green-600" />
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Current Filters</p>
+                    <p className="text-2xl font-bold text-[#003842]">{selectedAllergens.length}</p>
+                  </div>
+                  <div className="p-3 bg-amber-100 rounded-lg">
+                    <Filter className="h-6 w-6 text-amber-600" />
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Back to Menu Button - Bottom Left */}
+            <div className="mt-8 flex items-center gap-4">
+              <button
+                onClick={() => setActiveView('landing')}
+                className="inline-flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-gray-900 font-medium rounded-lg hover:bg-gray-100 transition"
+              >
+                <ArrowRight className="h-4 w-4 rotate-180" />
+                Back to Menu
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* Menu Browse View */}
+        {activeView === 'menu' && (
+          <>
+            {/* Menu Items Header with View Toggle */}
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-[#003842]">Menu Items</h2>
+                
+                {/* View Mode Toggle */}
+                <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setMenuViewMode('cards')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-md transition ${
+                      menuViewMode === 'cards'
+                        ? 'bg-white text-[#003842] shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <Grid3x3 className="h-4 w-4" />
+                    <span className="text-sm font-medium">Cards</span>
+                  </button>
+                  <button
+                    onClick={() => setMenuViewMode('table')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-md transition ${
+                      menuViewMode === 'table'
+                        ? 'bg-white text-[#003842] shadow-sm'
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <Table2 className="h-4 w-4" />
+                    <span className="text-sm font-medium">Table</span>
+                  </button>
+                </div>
+              </div>
+
+              {filteredItems.length === 0 ? (
+                <Card className="text-center py-12">
+                  <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No items match your filters</h3>
+                  <p className="text-gray-600 mb-4">Try adjusting your filters or search term</p>
+                  {selectedAllergens.length > 0 && (
+                    <Button variant="primary" onClick={clearFilters} className="mx-auto">
+                      Clear Allergen Filters
+                    </Button>
+                  )}
+                </Card>
+              ) : menuViewMode === 'table' ? (
+                /* Table View */
+                <AllergenTableView 
+                  items={filteredItems} 
+                  compact={false}
+                  showLegend={true}
+                />
+              ) : (
+                /* Card View */
+                <div className="space-y-6">
+                  {categories.map(category => {
+                    const categoryItems = filteredItems.filter(item => item.category === category)
+                    if (categoryItems.length === 0) return null
+
+                    return (
+                      <div key={category} className="space-y-4">
+                        <h3 className="text-xl font-bold text-[#003842]">
+                          {getCategoryDisplayName(category)}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {categoryItems.map(item => {
+                            const itemAllergens = getAllergensForItem(item)
+                            const allergenDetails = ALLERGENS.filter(allergen => item[allergen.id as keyof MenuItem] === true)
+
+                            return (
+                              <Card key={item.id} className="h-full">
+                                <div className="p-6">
+                                  <h4 className="text-lg font-semibold text-[#003842]">{item.name}</h4>
+                                  <p className="text-gray-600 text-sm mt-1">€{item.price.toFixed(2)}</p>
+                                  {item.description && <p className="text-gray-600 mt-3">{item.description}</p>}
+
+                                  {allergenDetails.length > 0 && (
+                                    <div className="mt-4 pt-4 border-t border-gray-200">
+                                      <p className="text-sm font-medium text-gray-700 mb-2">Contains:</p>
+                                      <div className="flex flex-wrap gap-2">
+                                        {allergenDetails.map(allergen => (
+                                          <div 
+                                            key={allergen.id} 
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
+                                            style={{
+                                              backgroundColor: `${allergen.bgColor}15`,
+                                              color: allergen.bgColor,
+                                              borderColor: `${allergen.bgColor}40`
+                                            }}
+                                          >
+                                            <span style={{ color: allergen.bgColor }}>{allergen.icon}</span>
+                                            <span>{allergen.name}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </Card>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Info Section - Moved to Bottom */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Total Menu Items</p>
+                    <p className="text-2xl font-bold text-[#003842]">{menuItems.length}</p>
+                  </div>
+                  <div className="p-3 bg-[#f0f9f8] rounded-lg">
+                    <Package className="h-6 w-6 text-[#42b8ac]" />
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Allergen-Free Options</p>
+                    <p className="text-2xl font-bold text-[#003842]">
+                      {menuItems.filter(item => getAllergensForItem(item).length === 0).length}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-green-100 rounded-lg">
+                    <Check className="h-6 w-6 text-green-600" />
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Current Filters</p>
+                    <p className="text-2xl font-bold text-[#003842]">{selectedAllergens.length}</p>
+                  </div>
+                  <div className="p-3 bg-amber-100 rounded-lg">
+                    <Filter className="h-6 w-6 text-amber-600" />
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Back to Menu Button - Bottom Left */}
+            <div className="mt-8 flex items-center gap-4">
+              <button
+                onClick={() => setActiveView('landing')}
+                className="inline-flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-gray-900 font-medium rounded-lg hover:bg-gray-100 transition"
+              >
+                <ArrowRight className="h-4 w-4 rotate-180" />
+                Back to Menu
+              </button>
+            </div>
+          </>
+        )}
+
+      {/* QR Code Modal */}
+      {showQRCode && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-[#003842]">Scan to Save Menu</h3>
+                <button onClick={() => setShowQRCode(false)} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="flex justify-center p-4 bg-white rounded-lg border border-gray-200">
+                <QRCodeSVG id="qr-code-svg" value={kioskUrl} size={256} level="H" bgColor="#FFFFFF" fgColor="#003842" />
+              </div>
+              <p className="text-sm text-gray-600 text-center mt-4">Scan with your phone camera to save this allergen menu</p>
+              <div className="mt-6 flex gap-3 justify-center">
+                <Button variant="primary" icon={Download} onClick={downloadQRCode}>
+                  Download QR
+                </Button>
+                <Button variant="ghost" onClick={() => setShowQRCode(false)}>
+                  Close
+                </Button>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* PDF Options Modal */}
+      {showPDFOptions && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-[#003842]">Download Allergen Guide</h3>
+                <button onClick={() => { setShowPDFOptions(false); setShowEmailInput(false); setEmailInput(''); }} className="text-gray-400 hover:text-gray-600">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <Button 
+                  variant="primary" 
+                  className="w-full justify-start h-auto py-4" 
+                  onClick={async () => {
+                    await handleGeneratePDF(false)
+                    setShowPDFOptions(false)
+                  }}
+                  disabled={generatingPDF}
+                >
+                  <FileText className="h-5 w-5 text-white mr-3" />
+                  <div className="text-left flex-1">
+                    <div className="font-semibold">Download Full Menu (Table Format)</div>
+                    <div className="text-sm opacity-90">Complete allergen information for all {menuItems.length} items</div>
+                  </div>
+                </Button>
+
+                {selectedAllergens.length > 0 && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start h-auto py-4" 
+                    onClick={async () => {
+                      await handleGeneratePDF(true)
+                      setShowPDFOptions(false)
+                    }}
+                    disabled={generatingPDF}
+                  >
+                    <Filter className="h-5 w-5 text-[#42b8ac] mr-3" />
+                    <div className="text-left flex-1">
+                      <div className="font-semibold text-gray-900">Download Filtered Menu</div>
+                      <div className="text-sm text-gray-600">
+                        {filteredItems.length} items without {selectedAllergens.length} selected allergen(s)
+                      </div>
+                    </div>
+                  </Button>
+                )}
+
+                <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded-lg">
+                  <p className="font-medium mb-1">📋 Table format includes:</p>
+                  <ul className="list-disc list-inside space-y-1 ml-2">
+                    <li>All items in rows</li>
+                    <li>14 EU allergens in columns</li>
+                    <li>Color-coded severity levels</li>
+                    <li>Specific sub-types (e.g., wheat, almonds)</li>
+                  </ul>
+                </div>
+              </div>
+
+              {generatingPDF && (
+                <div className="mt-4 text-center">
+                  <div className="inline-flex items-center gap-2 text-sm text-gray-600">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#42b8ac] border-t-transparent"></div>
+                    Generating PDF...
+                  </div>
+                </div>
+              )}
+            </div>
+          </Card>
+        </div>
+      )}
+      </Container>
+    </div>
+  )
+}

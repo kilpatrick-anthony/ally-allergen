@@ -1,0 +1,71 @@
+
+> ally-allergen@0.1.0 dev
+> next dev
+
+⚠ Port 3000 is in use by an unknown process, using available port 3001 instead.
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /workspaces/codespaces-blank/package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * /workspaces/codespaces-blank/ally-allergen/package-lock.json
+
+▲ Next.js 16.1.1 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://10.0.1.62:3001
+- Environments: .env.local
+
+✓ Starting...
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+✓ Ready in 935ms
+○ Compiling / ...
+⚠ Unsupported metadata viewport is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+⚠ Unsupported metadata themeColor is configured in metadata export in /. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ GET / 200 in 4.6s (compile: 4.3s, render: 239ms)
+ GET /api/health 200 in 2.7s (compile: 1733ms, render: 1015ms)
+ GET /api/test-db 200 in 3.1s (compile: 1687ms, render: 1366ms)
+○ Compiling /kiosk/[slug] ...
+⚠ Unsupported metadata viewport is configured in metadata export in /kiosk/[slug]. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+⚠ Unsupported metadata themeColor is configured in metadata export in /kiosk/[slug]. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+ GET /kiosk/oakberry-dublin 200 in 4.4s (compile: 4.2s, render: 185ms)
+⚠ Unsupported metadata viewport is configured in metadata export in /admin. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+⚠ Unsupported metadata themeColor is configured in metadata export in /admin. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+⨯ ReferenceError: Check is not defined
+    at AdminDashboard (app/admin/page.tsx:382:24)
+  380 |                   <li className="flex items-start gap-2">
+  381 |                     <div className="p-1 bg-green-100 rounded mt-0.5">
+> 382 |                       <Check className="h-3 w-3 text-green-600" />
+      |                        ^
+  383 |                     </div>
+  384 |                     <span>Consistent allergen information across locations</span>
+  385 |                   </li> {
+  digest: '3493891101'
+}
+ GET /admin 200 in 2.0s (compile: 1043ms, render: 973ms)
+⚠ Unsupported metadata viewport is configured in metadata export in /admin. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+⚠ Unsupported metadata themeColor is configured in metadata export in /admin. Please move it to viewport export instead.
+Read more: https://nextjs.org/docs/app/api-reference/functions/generate-viewport
+⨯ ReferenceError: Check is not defined
+    at AdminDashboard (app/admin/page.tsx:382:24)
+  380 |                   <li className="flex items-start gap-2">
+  381 |                     <div className="p-1 bg-green-100 rounded mt-0.5">
+> 382 |                       <Check className="h-3 w-3 text-green-600" />
+      |                        ^
+  383 |                     </div>
+  384 |                     <span>Consistent allergen information across locations</span>
+  385 |                   </li> {
+  digest: '3493891101'
+}
+ GET /admin 200 in 484ms (compile: 4ms, render: 480ms)
+✓ Compiled in 540ms

@@ -1,0 +1,573 @@
+/* app/globals.css - MERGED VERSION */
+@import "tailwindcss";
+
+/* Accessibility Variables */
+:root {
+  --font-atkinson: 'Atkinson Hyperlegible', system-ui, sans-serif;
+  --background: #ffffff;
+  --foreground: #171717;
+  --accessibility-font-size: 100%;
+  --letter-spacing: 0.02em;
+  --line-height: 1.6;
+  --primary-color: #1A5D1A;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+/* Apply accessibility settings to root and ensure inheritance */
+html {
+  font-size: var(--accessibility-font-size, 100%);
+  letter-spacing: var(--letter-spacing, 0.02em);
+  line-height: var(--line-height, 1.6);
+  transition: font-size 0.3s ease, letter-spacing 0.3s ease, line-height 0.3s ease;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-atkinson), system-ui, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-size: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  @apply antialiased text-gray-900 bg-gray-50;
+}
+
+/* Better focus states for accessibility */
+*:focus {
+  outline: 2px solid var(--primary-color, #1A5D1A);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Improve contrast for low vision */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  letter-spacing: 0.025em;
+}
+
+/* ===== ACCESSIBILITY PANEL SPECIFIC STYLES ===== */
+
+/* Font classes for accessibility panel */
+html.font-dyslexic,
+html.font-dyslexic body,
+html.dyslexia-mode,
+html.dyslexia-mode body {
+  font-family: var(--font-atkinson), sans-serif !important;
+  letter-spacing: 0.05em !important;
+  word-spacing: 0.1em !important;
+  line-height: 1.8 !important;
+}
+
+html.font-dyslexic p,
+html.font-dyslexic li,
+html.font-dyslexic span:not(.icon),
+html.dyslexia-mode p,
+html.dyslexia-mode li,
+html.dyslexia-mode span:not(.icon) {
+  font-size: 1.1em !important;
+}
+
+html.font-dyslexic h1,
+html.font-dyslexic h2,
+html.font-dyslexic h3,
+html.font-dyslexic h4,
+html.dyslexia-mode h1,
+html.dyslexia-mode h2,
+html.dyslexia-mode h3,
+html.dyslexia-mode h4 {
+  letter-spacing: 0.1em !important;
+  margin-bottom: 1.5em !important;
+}
+
+html.font-dyslexic button,
+html.dyslexia-mode button {
+  padding: 0.75em 1em !important;
+  margin: 0.25em !important;
+}
+
+/* High Contrast Font Mode */
+html.font-high-contrast,
+html.font-high-contrast body,
+html.high-contrast-font,
+html.high-contrast-font body {
+  font-family: 'Arial Black', 'Verdana', sans-serif !important;
+  font-weight: 900 !important;
+  text-shadow: 1px 1px 0 #000 !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Contrast classes for accessibility panel */
+html.contrast-high,
+html.contrast-high body,
+[data-contrast="high"] {
+  --background: #000000 !important;
+  --foreground: #FFFF00 !important;
+  --primary-color: #00FFFF !important;
+}
+
+html.contrast-inverted,
+html.contrast-inverted body,
+[data-contrast="inverted"] {
+  --background: #FFFF00 !important;
+  --foreground: #000000 !important;
+  --primary-color: #FF00FF !important;
+}
+
+html.contrast-high body,
+html.contrast-inverted body,
+[data-contrast="high"] body,
+[data-contrast="inverted"] body {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+html.contrast-high a,
+html.contrast-high button,
+html.contrast-high [role="button"],
+html.contrast-inverted a,
+html.contrast-inverted button,
+html.contrast-inverted [role="button"],
+[data-contrast="high"] a,
+[data-contrast="high"] button,
+[data-contrast="high"] [role="button"],
+[data-contrast="inverted"] a,
+[data-contrast="inverted"] button,
+[data-contrast="inverted"] [role="button"] {
+  color: var(--primary-color) !important;
+  border: 3px solid var(--primary-color) !important;
+  background: transparent !important;
+}
+
+html.contrast-high h1,
+html.contrast-high h2,
+html.contrast-high h3,
+html.contrast-high h4,
+[data-contrast="high"] h1,
+[data-contrast="high"] h2,
+[data-contrast="high"] h3,
+[data-contrast="high"] h4 {
+  text-shadow: 2px 2px 0 #000;
+}
+
+/* Default/Reset contrast */
+html.contrast-normal {
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary-color: #1A5D1A;
+}
+
+@media (prefers-color-scheme: dark) {
+  html.contrast-normal {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+/* Highlight Links Mode */
+html.highlight-links a,
+html.highlight-links button,
+html.highlight-links [role="button"],
+.highlight-links a,
+.highlight-links button,
+.highlight-links [role="button"] {
+  position: relative;
+  background: linear-gradient(120deg, #d4fc79 0%, #96e6a1 100%) !important;
+  border: 2px solid #38a169 !important;
+}
+
+html.highlight-links a::after,
+html.highlight-links button::after,
+html.highlight-links [role="button"]::after,
+.highlight-links a::after,
+.highlight-links button::after,
+.highlight-links [role="button"]::after {
+  content: "★";
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  font-size: 12px;
+  color: #e53e3e;
+}
+
+/* Manual Reduced Motion Class (for Accessibility Panel) */
+html.reduced-motion *,
+html.reduced-motion *::before,
+html.reduced-motion *::after,
+.reduced-motion *,
+.reduced-motion *::before,
+.reduced-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* ===== END ACCESSIBILITY PANEL STYLES ===== */
+
+/* Better number readability (important for prices) */
+.dyslexia-mode .price,
+html.font-dyslexic .price {
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Increase tap targets for mobile users */
+button, 
+a, 
+[role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Better focus indicators */
+:focus-visible {
+  outline: 4px solid var(--primary-color, #1A5D1A) !important;
+  outline-offset: 4px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 0 0 8px rgba(26, 93, 26, 0.2) !important;
+}
+
+/* Reduce motion for sensitive users (system preference) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support (system preference) */
+@media (prefers-contrast: high) {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  
+  button, 
+  a, 
+  [role="button"] {
+    border: 2px solid #000000 !important;
+  }
+}
+
+/* Screen Reader Only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Print Styles for Accessibility */
+@media print {
+  .accessibility-toggle,
+  .accessibility-panel {
+    display: none !important;
+  }
+  
+  body {
+    font-size: 12pt !important;
+    line-height: 1.5 !important;
+    color: #000 !important;
+    background: #fff !important;
+  }
+  
+  a {
+    color: #000 !important;
+    text-decoration: underline !important;
+  }
+  
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 90%;
+  }
+}
+
+/* Custom scrollbar for accessibility - Updated with your colors */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 6px;
+  border: 3px solid #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* For toggle switches in Accessibility Panel - UPDATED */
+input[type="checkbox"]:checked + div {
+  background-color: #10b981 !important; /* green-500 */
+}
+
+input[type="checkbox"]:checked + div > div {
+  transform: translateX(1.5rem) !important;
+}
+
+/* Selection colors for better visibility */
+::selection {
+  background-color: rgba(0, 56, 66, 0.3); /* Using your #003842 color */
+  color: #000;
+}
+
+::-moz-selection {
+  background-color: rgba(0, 56, 66, 0.3); /* Using your #003842 color */
+  color: #000;
+}
+
+/* Ensure proper contrast for disabled elements */
+button:disabled,
+a:disabled,
+[role="button"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #e5e7eb !important;
+  color: #6b7280 !important;
+}
+
+/* Force inheritance for accessibility features */
+html {
+  --accessibility-font-size: var(--accessibility-font-size, 100%);
+  --letter-spacing: var(--letter-spacing, 0.02em);
+  --line-height: var(--line-height, 1.6);
+}
+
+/* Ensure body inherits from html */
+body {
+  font-size: inherit !important;
+  letter-spacing: inherit !important;
+  line-height: inherit !important;
+}
+
+/* Improve visibility for focus in high contrast modes */
+html.contrast-high :focus-visible,
+html.contrast-inverted :focus-visible,
+[data-contrast="high"] :focus-visible,
+[data-contrast="inverted"] :focus-visible {
+  outline: 4px solid var(--primary-color) !important;
+  outline-offset: 6px !important;
+  box-shadow: 0 0 0 4px var(--background) !important;
+}
+
+/* ===== NEW DESIGN SYSTEM ADDITIONS ===== */
+
+@layer components {
+  /* Custom scrollbar with your colors */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-primary-300 rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary-400;
+  }
+
+  /* Gradient backgrounds using your colors */
+  .gradient-bg {
+    background: linear-gradient(135deg, #003842 0%, #42b8ac 100%);
+  }
+  
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-900 to-primary-500 bg-clip-text text-transparent;
+  }
+  
+  /* Glass morphism effect */
+  .glass-card {
+    @apply backdrop-blur-lg bg-white/80 border border-white/20 shadow-soft;
+  }
+  
+  /* Page header styling */
+  .page-header {
+    @apply mb-8 pb-6 border-b border-gray-200;
+  }
+  
+  .page-header h1 {
+    @apply text-3xl font-bold text-gray-900 mb-2;
+  }
+  
+  .page-header p {
+    @apply text-gray-600;
+  }
+
+  /* Accessibility-friendly buttons */
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .btn-secondary {
+    @apply bg-primary-50 text-primary-700 hover:bg-primary-100 focus:ring-2 focus:ring-primary-300 focus:ring-offset-2;
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Accessible form controls */
+  .form-input {
+    @apply border-gray-300 focus:border-primary-500 focus:ring-primary-500;
+    font-size: inherit;
+    line-height: inherit;
+  }
+
+  .form-input:focus {
+    outline: 2px solid #003842;
+    outline-offset: 2px;
+  }
+
+  /* Accessible cards */
+  .card {
+    @apply bg-white border border-gray-200 rounded-xl shadow-soft;
+    font-size: inherit;
+    line-height: inherit;
+  }
+
+  .card:focus-within {
+    @apply ring-2 ring-primary-500 ring-offset-2;
+  }
+
+  /* High contrast mode compatibility */
+  @media (prefers-contrast: high) {
+    .card {
+      border: 2px solid #000;
+    }
+    
+    .btn-primary {
+      border: 2px solid #000;
+    }
+  }
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Accessibility-friendly animations */
+@media (prefers-reduced-motion: no-preference) {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+}
+
+/* Responsive typography with accessibility support */
+@media (min-width: 640px) {
+  html {
+    font-size: calc(var(--accessibility-font-size, 100%) * 1.05);
+  }
+}
+
+@media (min-width: 1024px) {
+  html {
+    font-size: calc(var(--accessibility-font-size, 100%) * 1.1);
+  }
+}
+
+/* Dark mode compatibility with your colors */
+@media (prefers-color-scheme: dark) {
+  .card {
+    @apply bg-gray-900 border-gray-700;
+  }
+  
+  .gradient-bg {
+    background: linear-gradient(135deg, #001f26 0%, #2a7068 100%);
+  }
+}
+
+/* Ensure accessibility modes work with new design */
+html.font-dyslexic .card,
+html.dyslexia-mode .card {
+  letter-spacing: 0.05em !important;
+  line-height: 1.8 !important;
+}
+
+html.contrast-high .card,
+html.contrast-inverted .card,
+[data-contrast="high"] .card,
+[data-contrast="inverted"] .card {
+  border: 3px solid var(--primary-color) !important;
+}
+
+/* Updated :focus-visible for new design system */
+:focus-visible {
+  outline: 2px solid #003842 !important; /* Your primary color */
+  outline-offset: 2px !important;
+  border-radius: 4px !important;
+}
+
+/* Ensure buttons remain accessible with new styles */
+button,
+[role="button"] {
+  @apply transition-colors duration-200;
+  position: relative;
+}
+
+button:active::after,
+[role="button"]:active::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border: 2px solid #003842;
+  border-radius: 8px;
+  animation: pulse 0.3s ease-out;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.1); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:active::after,
+  [role="button"]:active::after {
+    animation: none;
+  }
+}

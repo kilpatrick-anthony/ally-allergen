@@ -1,0 +1,29 @@
+{
+  "name": "AllyJen Kiosk",
+  "short_name": "Ally Kiosk",
+  "description": "Offline-capable allergen information kiosk for restaurants",
+  "start_url": "/kiosk",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#42b8ac",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["food", "health", "lifestyle"],
+  "screenshots": [],
+  "scope": "/",
+  "lang": "en-US",
+  "dir": "ltr"
+}

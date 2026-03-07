@@ -1,0 +1,12 @@
+<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Person with arms raised -->
+  <circle cx="18" cy="8" r="5" fill="#1a1a1a"/>
+  <path d="M 18 14 L 10 22 Q 8 24 8 26 L 8 32 Q 8 34 10 36" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 18 14 L 26 22 Q 28 24 28 26 L 28 32 Q 28 34 26 36" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 18 22 L 14 44 Q 13 48 14 52" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 18 22 L 22 44 Q 23 48 22 52" stroke="#1a1a1a" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Checkmark circle on bottom right -->
+  <circle cx="48" cy="48" r="12" fill="#1a1a1a"/>
+  <path d="M 42 48 L 46 52 L 54 44" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
