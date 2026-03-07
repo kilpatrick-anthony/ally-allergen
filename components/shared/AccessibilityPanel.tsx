@@ -355,7 +355,7 @@ export default function AccessibilityPanel() {
                 </div>
               )}
                 Customise your viewing experience for better accessibility
-                {/* Trigger redeploy: trivial change */}
+                {/* Trigger redeploy: another trivial change */}
               </p>
             </div>
 
