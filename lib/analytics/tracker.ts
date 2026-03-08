@@ -22,7 +22,7 @@ interface TrackPDFDownloadParams {
 }
 
 class AnalyticsTracker {
-  private supabase = createClient()
+  private supabase = typeof window !== 'undefined' ? createClient() : null
   private sessionId: string | null = null
 
   constructor() {
@@ -42,6 +42,7 @@ class AnalyticsTracker {
 
   async trackPageView(params: TrackPageViewParams) {
     try {
+      if (!this.supabase) return
       const { data: deviceData } = this.getDeviceInfo()
       
       await this.supabase.from('page_views').insert({
@@ -66,6 +67,7 @@ class AnalyticsTracker {
 
   async trackQRScan(params: TrackQRScanParams) {
     try {
+      if (!this.supabase) return
       const { data: deviceData, location } = await this.getDeviceInfoWithLocation()
       
       await this.supabase.from('qr_code_scans').insert({
@@ -86,6 +88,7 @@ class AnalyticsTracker {
 
   async trackPDFDownload(params: TrackPDFDownloadParams) {
     try {
+      if (!this.supabase) return
       const { data: deviceData } = this.getDeviceInfo()
       
       await this.supabase.from('pdf_downloads').insert({
@@ -142,6 +145,7 @@ class AnalyticsTracker {
 
   private async updateSession(slug: string) {
     try {
+      if (!this.supabase) return
       // Check if session exists
       const { data: existingSession } = await this.supabase
         .from('user_sessions')
