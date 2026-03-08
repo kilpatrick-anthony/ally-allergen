@@ -1,8 +1,6 @@
 // app/admin/layout.tsx
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { ReactNode, useEffect, useState } from 'react'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import { Building2, User, LogOut } from 'lucide-react'
@@ -24,7 +22,6 @@ interface AdminLayoutProps {
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter()
-  const supabase = createClient()
   const { t } = useTranslation()
   const [brandColors, setBrandColors] = useState<BrandColors>({
     primary_color: '#003842',
@@ -76,6 +73,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
 
     // Sign out from Supabase (fire and forget)
+    const supabase = createClient()
     supabase.auth.signOut().catch(err => {
       console.error('Sign out error (non-blocking):', err)
     })
