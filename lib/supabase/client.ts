@@ -5,12 +5,8 @@ export function createClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Missing Supabase environment variables')
-  }
-  
   // Create client with additional options
-  const client = createBrowserClient(supabaseUrl, supabaseKey, {
+  const client = createBrowserClient(supabaseUrl || '', supabaseKey || '', {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
