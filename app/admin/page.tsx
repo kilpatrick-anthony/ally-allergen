@@ -15,6 +15,7 @@ import { Button } from '../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { NotificationsPanel } from '@/components/admin/NotificationsPanel'
 import { useTranslation } from '@/lib/hooks/useTranslation'
+import { AllyjenLogo } from '@/components/icons'
 
 export default function AdminDashboard() {
   const { t } = useTranslation()
@@ -184,18 +185,16 @@ export default function AdminDashboard() {
   return (
     <Container>
       {/* Welcome Header */}
-      <div className="text-center mb-12">
+      <div className="rounded-2xl bg-gradient-to-br from-[#003842] to-[#42b8ac] text-white text-center mb-12 py-12 px-6">
         <div className="inline-flex items-center justify-center mb-6">
-          <img
-            src={encodeURI('/Transparent AllyJen.svg')}
-            alt="AllyJen Logo"
-            className="h-48 w-auto object-contain"
-          />
+          <div className="bg-white rounded-2xl shadow-2xl relative h-32 w-56 overflow-hidden">
+            <AllyjenLogo className="absolute inset-0 h-32 w-56 max-w-none max-h-none left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
+          </div>
         </div>
-        <h1 className="text-2xl font-bold text-[#003842] dark:text-[#42b8ac] mb-1">
+        <h1 className="text-2xl font-bold text-white mb-1">
           {t('admin.welcomeToAllyJen')}
         </h1>
-        <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+        <p className="text-xl text-white/80 max-w-2xl mx-auto">
           {t('admin.welcomeSubtitle')}
         </p>
       </div>
