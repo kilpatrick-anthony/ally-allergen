@@ -70,8 +70,7 @@ export default function LandingPage() {
         <Container>
           <div className="flex items-center justify-between py-4">
             <div className="flex items-center gap-2">
-              <Shield className="h-8 w-8 text-[#42b8ac]" />
-              <span className="text-2xl font-bold text-[#003842]">AllyJen</span>
+              <img src="/Logo-AllyJen-Transparent BG.svg" alt="AllyJen Logo" className="h-10 w-auto object-contain" />
             </div>
             <div className="flex items-center gap-4">
               <Link href="/auth/signin">
@@ -83,34 +82,38 @@ export default function LandingPage() {
       </header>
 
       {/* Hero Section */}
-      <section className="py-20 bg-gradient-to-br from-[#f0f9f8] to-white">
+      <section className="py-20 bg-gradient-to-br from-[#003842] to-[#42b8ac]">
         <Container>
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#42b8ac]/10 rounded-full text-[#42b8ac] text-sm font-medium mb-6">
+            <div className="flex justify-center mb-8">
+              <img src="/Logo-AllyJen-Transparent BG.svg" alt="AllyJen Logo" className="h-40 w-auto object-contain drop-shadow-2xl" />
+            </div>
+
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full text-white text-sm font-medium mb-6">
               <Star className="h-4 w-4" />
               Trusted by food service businesses worldwide
             </div>
             
-            <h1 className="text-5xl md:text-6xl font-bold text-[#003842] mb-6">
+            <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
               Allergen Management Made Simple
             </h1>
 
-            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
               Keep your customers safe with comprehensive allergen tracking,
               automated warnings, and customer-facing kiosks—all in one platform.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button variant="primary" className="px-8 py-3 text-lg" onClick={() => document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })}>
+              <Button variant="primary" className="px-8 py-3 text-lg bg-white text-[#003842] hover:bg-gray-100" onClick={() => document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })}>
                 Get Started
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
-              <Button variant="outline" className="px-8 py-3 text-lg">
+              <Button variant="outline" className="px-8 py-3 text-lg border-white text-white hover:bg-white/10">
                 Watch Demo
               </Button>
             </div>
 
-            <p className="text-sm text-gray-500 mt-4">
+            <p className="text-sm text-white/60 mt-4">
               Contact us to learn how we can help your business
             </p>
           </div>
@@ -467,8 +470,7 @@ export default function LandingPage() {
         <Container>
           <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <div className="flex items-center gap-2">
-              <Shield className="h-6 w-6 text-[#42b8ac]" />
-              <span className="text-xl font-bold text-[#003842]">AllyJen</span>
+              <img src="/Logo-AllyJen-Transparent BG.svg" alt="AllyJen Logo" className="h-8 w-auto object-contain" />
             </div>
             
             <div className="flex gap-8 text-sm text-gray-600">

@@ -83,9 +83,11 @@ function SignInContent() {
       {/* Left: Brand section */}
       <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-gradient-to-br from-[#003842] to-[#42b8ac] text-white p-12 relative">
         <div className="mb-8">
-          <div className="bg-white rounded-2xl shadow-2xl relative h-32 w-56 mx-auto overflow-hidden">
-            <AllyjenLogo className="absolute inset-0 h-32 w-56 max-w-none max-h-none left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
-          </div>
+          <img
+            src="/Logo-AllyJen-Transparent BG.svg"
+            alt="AllyJen Logo"
+            className="h-40 w-auto object-contain drop-shadow-2xl"
+          />
         </div>
         <h1 className="text-5xl font-extrabold mb-4 tracking-tight text-white drop-shadow-lg">What's Occurring?</h1>
         <div className="absolute bottom-8 text-xs text-white/60">&copy; {new Date().getFullYear()} AllyJen</div>
