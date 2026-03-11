@@ -5,11 +5,10 @@ import { useState, useEffect, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Shield, Mail, Lock, CheckCircle } from 'lucide-react'
+import { Mail, Lock, CheckCircle } from 'lucide-react'
 import { Container } from '@/app/components/layout/Container'
 import { Card } from '@/app/components/layout/Card'
 import { Button } from '@/app/components/ui/Button'
-import { AllyjenLogo } from '@/components/icons';
 
 function SignInContent() {
   const searchParams = useSearchParams()
@@ -79,29 +78,35 @@ function SignInContent() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
+    <div className="min-h-screen flex flex-col md:flex-row" style={{ fontFamily: "var(--font-atkinson), sans-serif" }}>
       {/* Left: Brand section */}
-      <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-gradient-to-br from-[#003842] to-[#42b8ac] text-white p-12 relative">
-        <div className="mb-8">
-          <div className="bg-white rounded-2xl shadow-2xl relative h-32 w-56 mx-auto overflow-hidden">
-            <AllyjenLogo className="absolute inset-0 h-32 w-56 max-w-none max-h-none left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
-          </div>
+      <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-[#003842] text-white p-12 relative overflow-hidden">
+        {/* decorative blobs */}
+        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-[#42b8ac]/20 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-[#42b8ac]/10 blur-3xl pointer-events-none" />
+        <div className="relative z-10 flex flex-col items-center text-center -mt-24">
+          <img src="/Logo-AllyJen-Transparent%20BG.svg" alt="AllyJen" className="h-80 w-auto mb-10" />
+          <h2 className="text-3xl font-extrabold text-white mb-3 leading-tight">
+            Serving <span className="text-[#42b8ac]">Confidence</span>
+          </h2>
+          <p className="text-white/60 text-sm max-w-xs">
+            The complete allergen management solution for Irish & EU food businesses
+          </p>
         </div>
-        <h1 className="text-5xl font-extrabold mb-4 tracking-tight text-white drop-shadow-lg">What's Occurring?</h1>
-        <div className="absolute bottom-8 text-xs text-white/60">&copy; {new Date().getFullYear()} AllyJen</div>
+        <div className="absolute bottom-8 text-xs text-white/40">&copy; {new Date().getFullYear()} AllyJen Solutions LTD.</div>
       </div>
       {/* Right: Sign-in form */}
-      <div className="flex flex-1 flex-col justify-center items-center bg-white/90 min-h-screen px-4 py-12">
+      <div className="flex flex-1 flex-col justify-center items-center bg-white min-h-screen px-4 py-12">
         <div className="w-full max-w-md">
+          {/* Mobile logo */}
           <div className="mb-8 md:hidden flex flex-col items-center">
-            <div className="mb-4">
-              <div className="bg-white rounded-2xl shadow-2xl relative h-16 w-32 mx-auto overflow-hidden">
-                <AllyjenLogo className="absolute inset-0 h-16 w-32 max-w-none max-h-none left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
-              </div>
-            </div>
-            <h1 className="text-3xl font-extrabold text-[#003842] mb-2 tracking-tight">What's Occurring?</h1>
+            <img src="/Logo-AllyJen-Transparent%20BG.svg" alt="AllyJen" className="h-40 w-auto mb-4" />
           </div>
-          <Card className="w-full p-8 shadow-2xl rounded-2xl border border-gray-100 bg-white/95">
+          <div className="mb-8">
+            <h1 className="text-2xl font-extrabold text-[#003842] mb-1">Welcome back</h1>
+            <p className="text-gray-500 text-sm">Sign in to your AllyJen account</p>
+          </div>
+          <Card className="w-full p-8 shadow-xl rounded-2xl border border-gray-100 bg-white">
             <form onSubmit={handleSignIn} className="space-y-7">
               {successMessage && (
                 <div className="p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm flex items-center gap-2">
@@ -152,18 +157,7 @@ function SignInContent() {
                   />
                 </div>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    id="remember-me"
-                    name="remember-me"
-                    type="checkbox"
-                    className="h-4 w-4 text-[#42b8ac] focus:ring-[#42b8ac] border-gray-300 rounded"
-                  />
-                  <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
-                    Remember me
-                  </label>
-                </div>
+              <div className="flex justify-end">
                 <Link href="/auth/reset-password" className="text-sm text-[#42b8ac] hover:text-[#003842] font-semibold">
                   Forgot password?
                 </Link>
@@ -171,14 +165,14 @@ function SignInContent() {
               <Button
                 type="submit"
                 variant="primary"
-                className="w-full py-3 text-lg font-bold"
+                className="w-full py-3 text-base font-bold bg-[#003842] hover:bg-[#42b8ac] text-white rounded-lg transition-colors"
                 disabled={loading}
               >
-                {loading ? 'Signing in...' : 'Sign In'}
+                {loading ? 'Signing in…' : 'Sign In'}
               </Button>
-              <div className="text-center text-base text-gray-600 mt-4">
+              <div className="text-center text-base text-gray-600">
                 Don't have an account?{' '}
-                <Link href="/" className="text-[#42b8ac] hover:text-[#003842] font-semibold">
+                <Link href="/#contact-form" className="text-[#42b8ac] hover:text-[#003842] font-semibold">
                   Contact us
                 </Link>
               </div>
@@ -193,13 +187,10 @@ function SignInContent() {
 export default function SignIn() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-[#f0f9f8] to-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#003842] flex items-center justify-center">
         <div className="text-center">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac] mx-auto"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin mx-auto" style={{animationDirection: 'reverse', animationDuration: '1s'}}></div>
-          </div>
-          <p className="text-sm text-gray-600 mt-4 font-medium">Loading...</p>
+          <img src="/Logo-AllyJen-Transparent%20BG.svg" alt="AllyJen" className="h-16 w-auto mx-auto mb-6 opacity-80" />
+          <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#42b8ac]/30 border-t-[#42b8ac] mx-auto"></div>
         </div>
       </div>
     }>
