@@ -17,16 +17,23 @@ function SignInContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [rememberMe, setRememberMe] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
-  // Get email and message from URL params
+  // Get email and message from URL params; restore remembered email
   useEffect(() => {
     const emailParam = searchParams.get('email')
     const messageParam = searchParams.get('message')
     
     if (emailParam) {
       setEmail(emailParam)
+    } else {
+      const remembered = localStorage.getItem('rememberMe_email')
+      if (remembered) {
+        setEmail(remembered)
+        setRememberMe(true)
+      }
     }
     if (messageParam) {
       setSuccessMessage(messageParam)
@@ -49,6 +56,7 @@ function SignInContent() {
         body: JSON.stringify({
           email,
           password,
+          rememberMe,
         })
       })
 
@@ -67,6 +75,13 @@ function SignInContent() {
 
       console.log('✅ Sign-in successful, user:', result.email)
       console.log('→ Redirecting to /admin...')
+
+      // Persist or clear remembered email
+      if (rememberMe) {
+        localStorage.setItem('rememberMe_email', email)
+      } else {
+        localStorage.removeItem('rememberMe_email')
+      }
       
       // Redirect immediately - cookies are already set server-side
       window.location.href = '/admin'
@@ -161,7 +176,16 @@ function SignInContent() {
                   />
                 </div>
               </div>
-              <div className="flex justify-end">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-[#42b8ac] focus:ring-[#42b8ac] cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-600">Remember me</span>
+                </label>
                 <Link href="/auth/reset-password" className="text-sm text-[#42b8ac] hover:text-[#003842] font-semibold">
                   Forgot password?
                 </Link>

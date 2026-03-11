@@ -6,7 +6,7 @@ import { SignJWT } from 'jose'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { email, password } = body
+    const { email, password, rememberMe } = body
 
     console.log('🔐 Server-side sign-in started for:', email)
 
@@ -87,7 +87,8 @@ export async function POST(request: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      // rememberMe: 30-day persistent cookie; otherwise session cookie (expires on browser close)
+      ...(rememberMe ? { maxAge: 60 * 60 * 24 * 30 } : {}),
       path: '/'
     })
 
