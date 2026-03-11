@@ -186,9 +186,6 @@ function SignInContent() {
                   />
                   <span className="text-sm text-gray-600">Remember me</span>
                 </label>
-                <Link href="/auth/reset-password" className="text-sm text-[#42b8ac] hover:text-[#003842] font-semibold">
-                  Forgot password?
-                </Link>
               </div>
               <Button
                 type="submit"
@@ -198,11 +195,23 @@ function SignInContent() {
               >
                 {loading ? 'Signing in…' : 'Sign In'}
               </Button>
-              <div className="text-center text-base text-gray-600">
-                Don't have an account?{' '}
-                <Link href="/#contact-form" className="text-[#42b8ac] hover:text-[#003842] font-semibold">
-                  Contact us
-                </Link>
+              <div className="text-center space-y-2">
+                <div>
+                  <Link href="/auth/reset-password" className="text-sm text-[#42b8ac] hover:text-[#003842] font-semibold">
+                    Forgot password?
+                  </Link>
+                </div>
+                <div className="text-base text-gray-600">
+                  Don't have an account?{' '}
+                  <Link href="/#contact-form" className="text-[#42b8ac] hover:text-[#003842] font-semibold">
+                    Contact us
+                  </Link>
+                </div>
+                <div>
+                  <Link href="/" className="text-sm text-gray-400 hover:text-[#003842]">
+                    ← Back to home
+                  </Link>
+                </div>
               </div>
             </form>
           </Card>
