@@ -35,31 +35,33 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row" style={{ fontFamily: "var(--font-atkinson), sans-serif" }}>
-      {/* Left: Brand section */}
-      <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-[#003842] text-white p-12 relative overflow-hidden">
+      {/* Left: Brand section — full panel on desktop, compact banner on mobile */}
+      <div className="flex flex-col justify-center items-center w-full md:w-1/2 bg-[#003842] text-white relative overflow-hidden
+                      py-8 px-6 md:p-12 md:min-h-screen">
         <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-[#42b8ac]/20 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-[#42b8ac]/10 blur-3xl pointer-events-none" />
-        <div className="relative z-10 flex flex-col items-center text-center -mt-24">
-          <img src="/Logo-AllyJen-Transparent%20BG.svg" alt="AllyJen" className="h-80 w-auto mb-10" />
-          <h2 className="text-3xl font-extrabold text-white mb-3 leading-tight">
-            Serving <span className="text-[#42b8ac]">Confidence</span>
-          </h2>
-          <p className="text-white/60 text-sm max-w-xs">
-            The complete allergen management solution for Irish &amp; EU food businesses
-          </p>
+        <div className="relative z-10 flex flex-row items-center gap-4 md:flex-col md:text-center md:-mt-24">
+          <img
+            src="/Logo-AllyJen-Transparent%20BG.svg"
+            alt="AllyJen"
+            className="h-20 w-auto md:h-80 md:mb-10"
+          />
+          <div className="flex flex-col md:items-center">
+            <h2 className="text-xl md:text-3xl font-extrabold text-white mb-1 md:mb-3 leading-tight">
+              Serving <span className="text-[#42b8ac]">Confidence</span>
+            </h2>
+            <p className="text-white/60 text-xs md:text-sm md:max-w-xs">
+              The complete allergen management solution for Irish &amp; EU food businesses
+            </p>
+          </div>
         </div>
-        <div className="absolute bottom-8 text-xs text-white/40">&copy; {new Date().getFullYear()} AllyJen Solutions LTD.</div>
+        <div className="hidden md:block absolute bottom-8 text-xs text-white/40">&copy; {new Date().getFullYear()} AllyJen Solutions LTD.</div>
       </div>
 
       {/* Right: Form */}
-      <div className="flex flex-1 flex-col justify-center items-center bg-white min-h-screen px-4 py-12">
+      <div className="flex flex-1 flex-col justify-center items-center bg-white px-4 py-12">
         <div className="w-full max-w-md">
-          {/* Mobile logo */}
-          <div className="mb-8 md:hidden flex flex-col items-center">
-            <img src="/Logo-AllyJen-Transparent%20BG.svg" alt="AllyJen" className="h-40 w-auto mb-4" />
-          </div>
-
-          <div className="mb-8">
+          <div className="mb-8 text-center">
             <h1 className="text-2xl font-extrabold text-[#003842] mb-1">Reset your password</h1>
             <p className="text-gray-500 text-sm">
               Enter your email and we'll send you a reset link
