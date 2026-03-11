@@ -240,7 +240,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── CONTACT FORM ── */}
-      <section id="contact-form" className="py-24 bg-white">
+      <section id="contact-form" className="py-12 bg-white">
         <Container>
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-14">
