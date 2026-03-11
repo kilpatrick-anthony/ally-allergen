@@ -121,9 +121,6 @@ export default function LandingPage() {
 
             {/* Right – text */}
             <div className="flex-1 text-center lg:text-left">
-              <span className="inline-block mb-4 px-4 py-1.5 rounded-full bg-[#42b8ac]/20 text-[#42b8ac] text-xs font-semibold uppercase tracking-widest">
-                Built for Irish &amp; EU Food Businesses
-              </span>
               <h1 className="text-3xl md:text-4xl xl:text-5xl font-extrabold text-white leading-none mb-6">
                 Serve every customer with <span className="text-[#42b8ac]">complete</span><br />
                 <span className="text-[#42b8ac]">peace of mind.</span>

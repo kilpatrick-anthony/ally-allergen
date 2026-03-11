@@ -106,7 +106,7 @@ function SignInContent() {
       {/* Right: Sign-in form */}
       <div className="flex flex-1 flex-col justify-center items-center bg-white px-4 py-12">
         <div className="w-full max-w-md">
-          <div className="mb-8">
+          <div className="mb-8 text-center">
             <h1 className="text-2xl font-extrabold text-[#003842] mb-1">Welcome back</h1>
             <p className="text-gray-500 text-sm">Sign in to your AllyJen account</p>
           </div>
