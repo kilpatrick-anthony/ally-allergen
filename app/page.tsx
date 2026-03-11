@@ -109,7 +109,7 @@ export default function LandingPage() {
         <Container>
           <div className="relative flex flex-col lg:flex-row items-center gap-12 py-20 lg:py-28">
             {/* Left – photo */}
-            <div className="flex-1 w-full max-w-lg lg:max-w-none">
+            <div className="flex-1 w-full lg:max-w-none">
               <div className="rounded-2xl overflow-hidden shadow-2xl ring-4 ring-[#42b8ac]/30">
                 <img
                   src="/Home%20Image.svg"
