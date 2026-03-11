@@ -155,7 +155,7 @@ export default function LandingPage() {
         <Container>
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-extrabold text-[#003842] mb-3">
-              Everything You Need, Nothing You Don't
+              Save Time. Reduce Risk. Build Trust.
             </h2>
             <p className="text-lg text-gray-500 max-w-xl mx-auto">
               Purpose-built for Irish and EU food service businesses from day one.

@@ -34,9 +34,9 @@ export async function generateMetadata(): Promise<Metadata> {
     ...(isProduction && !isGitHubCodespaces && { manifest: "/manifest.json" }),
     icons: {
       icon: [
-        { url: '/AllyJen Logo 1702251917.svg', type: 'image/svg+xml' },
+        { url: '/Logo-AllyJen.png', type: 'image/png' },
       ],
-      apple: '/AllyJen Logo 1702251917.svg',
+      apple: '/Logo-AllyJen.png',
     },
     appleWebApp: {
       capable: true,
