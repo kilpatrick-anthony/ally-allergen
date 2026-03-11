@@ -69,7 +69,7 @@ export default function LandingPage() {
     {
       icon: <Zap className="h-6 w-6 text-[#42b8ac]" />,
       title: 'Real-Time Menu Updates',
-      desc: 'Change an ingredient and every linked menu item and kiosk updates instantly, with no manual re-checks needed.',
+      desc: 'Change an ingredient and every linked menu item and kiosk updates instantly. Save precious time and printing costs.',
     },
     {
       icon: <Building className="h-6 w-6 text-[#42b8ac]" />,
