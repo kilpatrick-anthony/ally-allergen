@@ -406,6 +406,8 @@ export default function SettingsPage() {
               stripeConnected: businessData?.settings?.stripeConnected ?? false,
               sessionTimeout: businessData?.sessionTimeout ?? prev.sessionTimeout,
               logoUrl: businessData?.settings?.logoUrl ?? prev.logoUrl,
+              primaryColor: businessData?.settings?.primaryColor ?? prev.primaryColor,
+              secondaryColor: businessData?.settings?.secondaryColor ?? prev.secondaryColor,
               twoFactorAuth: twoFactorEnabled
             }));
           } else {
@@ -497,7 +499,9 @@ export default function SettingsPage() {
           businessPostalCode: settings.businessPostalCode,
           businessCountry: settings.businessCountry,
           businessPhone: settings.businessPhone,
-          sessionTimeout: settings.sessionTimeout
+          sessionTimeout: settings.sessionTimeout,
+          primaryColor: settings.primaryColor,
+          secondaryColor: settings.secondaryColor
         })
       })
       if (!res.ok) {
