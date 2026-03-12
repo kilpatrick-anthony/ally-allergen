@@ -1,9 +1,11 @@
 import nodemailer from 'nodemailer';
 
+const port = Number(process.env.EMAIL_PORT) || 465
+
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
-  port: Number(process.env.EMAIL_PORT),
-  secure: true, // true for 465, false for 587
+  port,
+  secure: port === 465, // true for SSL on 465, false for STARTTLS on 587
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
