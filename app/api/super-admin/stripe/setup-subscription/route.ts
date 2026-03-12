@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     }
 
     // For now, check if user has admin email - in production you'd have proper roles
-    const isSuperAdmin = user.email === 'anthony@allyjen.ie'
+    const isSuperAdmin = user.email === process.env.SUPER_ADMIN_EMAIL
     if (!isSuperAdmin) {
       return NextResponse.json({ error: 'Super admin access required' }, { status: 403 })
     }

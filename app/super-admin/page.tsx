@@ -89,7 +89,7 @@ export default function SuperAdminDashboard() {
 
         // For now, we'll check if the user has a specific email or role
         // In production, you'd have a proper role-based system
-        const isAdmin = session?.user?.email === 'anthony@allyjen.ie' ||
+        const isAdmin = session?.user?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL ||
                        session?.user?.role === 'super_admin'
 
         if (!isAdmin) {
