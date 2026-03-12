@@ -3,7 +3,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, CheckCircle } from 'lucide-react'
 import { Card } from '@/app/components/layout/Card'
@@ -15,8 +15,46 @@ function UpdatePasswordContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
+  const [sessionReady, setSessionReady] = useState(false)
   const router = useRouter()
   const supabase = createClient()
+
+  // Exchange the recovery token from the URL hash for a Supabase session
+  useEffect(() => {
+    const exchangeToken = async () => {
+      // Supabase puts the recovery token in the URL hash: #access_token=...&type=recovery
+      const hash = window.location.hash
+      if (hash && hash.includes('access_token')) {
+        const params = new URLSearchParams(hash.substring(1))
+        const accessToken = params.get('access_token')
+        const refreshToken = params.get('refresh_token') || ''
+        const type = params.get('type')
+
+        if (accessToken && type === 'recovery') {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+          if (error) {
+            setError('Invalid or expired reset link. Please request a new one.')
+            return
+          }
+          // Clear the hash from the URL so tokens aren't exposed
+          window.history.replaceState(null, '', window.location.pathname)
+          setSessionReady(true)
+          return
+        }
+      }
+      // No token in hash — check if there's already an active session (e.g. page refresh)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        setSessionReady(true)
+      } else {
+        setError('Invalid or expired reset link. Please request a new one.')
+      }
+    }
+    exchangeToken()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -84,6 +122,14 @@ function UpdatePasswordContent() {
                   <p className="font-semibold text-[#003842] text-lg mb-1">Password updated!</p>
                   <p className="text-gray-500 text-sm">Redirecting you to sign in…</p>
                 </div>
+              </div>
+            ) : !sessionReady && !error ? (
+              <div className="flex flex-col items-center justify-center py-8 gap-3">
+                <div className="relative h-10 w-10">
+                  <div className="absolute inset-0 rounded-full border-4 border-[#003842]/20"></div>
+                  <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#42b8ac] animate-spin"></div>
+                </div>
+                <p className="text-gray-500 text-sm">Verifying reset link…</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
