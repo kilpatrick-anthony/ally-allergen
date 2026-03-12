@@ -15,7 +15,6 @@ import { Button } from '../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { NotificationsPanel } from '@/components/admin/NotificationsPanel'
 import { useTranslation } from '@/lib/hooks/useTranslation'
-import { AllyjenLogo } from '@/components/icons'
 
 export default function AdminDashboard() {
   const { t } = useTranslation()
@@ -84,7 +83,10 @@ export default function AdminDashboard() {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#42b8ac] mx-auto mb-4"></div>
+          <div className="relative h-12 w-12 mx-auto mb-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+          </div>
           <p className="text-gray-600 dark:text-gray-400">Loading dashboard...</p>
         </div>
       </div>
@@ -185,18 +187,16 @@ export default function AdminDashboard() {
   return (
     <Container>
       {/* Welcome Header */}
-      <div className="rounded-2xl bg-gradient-to-br from-[#003842] to-[#42b8ac] text-white text-center mb-12 py-12 px-6">
-        <div className="inline-flex items-center justify-center mb-6">
-          <div className="bg-white rounded-2xl shadow-2xl relative h-32 w-56 overflow-hidden">
-            <AllyjenLogo className="absolute inset-0 h-32 w-56 max-w-none max-h-none left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
-          </div>
+      <div className="rounded-2xl bg-gradient-to-br from-[#003842] to-[#42b8ac] text-white mb-12 overflow-hidden">
+        <div className="relative w-full">
+          <img
+            src="/Home%20Image%202%20(1400%20x%20350%20px)%20(1).svg"
+            alt=""
+            aria-hidden="true"
+            className="w-full object-cover"
+          />
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-[#003842]" />
         </div>
-        <h1 className="text-2xl font-bold text-white mb-1">
-          {t('admin.welcomeToAllyJen')}
-        </h1>
-        <p className="text-xl text-white/80 max-w-2xl mx-auto">
-          {t('admin.welcomeSubtitle')}
-        </p>
       </div>
 
       {/* Quick Start Guide */}

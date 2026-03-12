@@ -11,7 +11,8 @@ import {
   ChevronDown, Filter as FilterIcon, Leaf, Heart, 
   Flame, Droplet, Utensils, Zap, Apple, WheatOff, 
   Moon, Star, Sprout, Globe, Dna, MapPin, Wheat, 
-  Shell, Egg, Fish, TreeDeciduous, Carrot, Sparkles, Flower2, Nut, Milk, Truck, CircleDot
+  Shell, Egg, Fish, TreeDeciduous, Carrot, Sparkles, Flower2, Nut, Milk, Truck, CircleDot,
+  Bean, Salad, Sun, Circle, Beaker, Snail
 } from 'lucide-react'
 
 // Import design system components
@@ -71,7 +72,8 @@ const getIconComponent = (iconName: string) => {
   const icons: Record<string, any> = {
     Wheat, Shell, Egg, Fish, Nut, Sprout, Milk, TreeDeciduous,
     Carrot, Droplet, Sparkles, Flame, Flower2, Leaf, Apple, WheatOff,
-    Moon, Star, Globe, Dna, MapPin, CircleDot
+    Moon, Star, Globe, Dna, MapPin, CircleDot,
+    Bean, Salad, Sun, Circle, Beaker, Snail
   };
   return icons[iconName] || AlertCircle;
 };
@@ -227,7 +229,10 @@ export default function IngredientsPage() {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#42b8ac] mx-auto mb-4"></div>
+          <div className="relative h-12 w-12 mx-auto mb-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+          </div>
           <p className="text-gray-600 dark:text-gray-400">Loading ingredients...</p>
         </div>
       </div>

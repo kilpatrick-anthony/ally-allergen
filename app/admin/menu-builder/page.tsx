@@ -220,8 +220,6 @@ export default function MenuBuilderPage() {
   }
 
   useEffect(() => {
-    console.log('🍽️ Menu Builder loading')
-
     const fetchData = async () => {
       setLoading(true)
       try {
@@ -451,7 +449,10 @@ export default function MenuBuilderPage() {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#42b8ac] mx-auto mb-4"></div>
+          <div className="relative h-12 w-12 mx-auto mb-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+          </div>
           <p className="text-gray-600 dark:text-gray-400">Loading menu builder...</p>
         </div>
       </div>
@@ -486,10 +487,10 @@ export default function MenuBuilderPage() {
           <div className="flex justify-between items-center">
             <div>
               <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">
-                Create New Menu Item
+                {editingItem ? 'Edit Menu Item' : 'Create New Menu Item'}
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                Add a new item to your menu
+                {editingItem ? 'Update the details for this item' : 'Add a new item to your menu'}
               </p>
             </div>
             {editingItem && (

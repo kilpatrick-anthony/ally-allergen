@@ -232,7 +232,10 @@ export default function SupplierEditPage() {
       <Container>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#42b8ac] mx-auto mb-4"></div>
+            <div className="relative h-12 w-12 mx-auto mb-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+            </div>
             <p className="text-gray-600">Loading supplier...</p>
           </div>
         </div>
@@ -278,7 +281,7 @@ export default function SupplierEditPage() {
               <Edit className="h-6 w-6 text-amber-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Edit Supplier</h1>
+              <h1 className="text-3xl font-bold text-[#003842] dark:text-white">Edit Supplier</h1>
               <p className="text-gray-600">Supplier ID: {supplierId}</p>
             </div>
           </div>
@@ -353,7 +356,7 @@ export default function SupplierEditPage() {
               <MessageSquare className="h-6 w-6 text-emerald-600" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">Supplier Notes</h2>
+              <h2 className="text-xl font-bold text-[#003842] dark:text-white">Supplier Notes</h2>
               <p className="text-gray-600">Add time-stamped notes for this supplier.</p>
             </div>
           </div>

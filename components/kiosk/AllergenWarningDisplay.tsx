@@ -1,7 +1,7 @@
 // components/kiosk/AllergenWarningDisplay.tsx
 'use client';
 
-import { AlertCircle, AlertTriangle, Info, Wheat, Shell, Egg, Fish, Nut, Sprout, Milk, Leaf, Carrot, Circle, Beaker } from 'lucide-react';
+import { AlertCircle, AlertTriangle, Info, Wheat, Shell, Egg, Fish, Nut, Sprout, Milk, Leaf, Carrot, Circle, Beaker, TreeDeciduous, Flower2, Bean, Salad, Sun, Snail } from 'lucide-react';
 import type { AllergenWarnings } from '@/types/allergen';
 import { 
   ALLERGEN_LIST, 
@@ -15,8 +15,9 @@ import {
 // Helper to get icon component
 const getIconComponent = (iconName: string) => {
   const icons: Record<string, any> = {
-    Wheat, Shell, Egg, Fish, Nut, Sprout, Milk, TreeDeciduous: Nut, Carrot, Droplet: Circle,
-    Sparkles: Circle, Flame: Circle, Flower2: Beaker, Leaf, Circle
+    Wheat, Shell, Egg, Fish, Nut, Sprout, Milk, TreeDeciduous,
+    Carrot, Leaf, Circle, Beaker, Flower2,
+    Bean, Salad, Sun, Snail
   };
   return icons[iconName] || Circle;
 };

@@ -118,10 +118,13 @@ export default function SiteKioskPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center py-24">
         <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-green-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading site...</p>
+          <div className="relative h-12 w-12 mx-auto mb-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 font-medium">Loading site...</p>
         </div>
       </div>
     );
@@ -136,7 +139,7 @@ export default function SiteKioskPage() {
           <p className="text-gray-600 mb-6">{error || 'The requested site could not be found.'}</p>
           <a 
             href="/" 
-            className="inline-block px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            className="inline-block px-6 py-3 bg-[#003842] text-white rounded-lg hover:bg-[#003842]/90"
           >
             Return Home
           </a>
@@ -153,7 +156,7 @@ export default function SiteKioskPage() {
           <div className="flex items-center justify-between max-w-4xl mx-auto mb-6">
             <div className="inline-flex items-center gap-3 px-6 py-3 bg-white rounded-2xl shadow-sm border border-gray-200">
               <div className="p-2 bg-green-100 rounded-lg">
-                <Building className="h-6 w-6 text-green-600" />
+                <Building className="h-6 w-6 text-[#42b8ac]" />
               </div>
               <div className="text-left">
                 <h1 className="text-3xl font-bold text-gray-900">
@@ -220,7 +223,7 @@ export default function SiteKioskPage() {
               <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
                 <div className="flex items-start gap-3">
                   <div className="p-2 bg-green-100 rounded-lg">
-                    <Phone className="h-5 w-5 text-green-600" />
+                    <Phone className="h-5 w-5 text-[#42b8ac]" />
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">{site.phone}</p>

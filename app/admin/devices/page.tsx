@@ -11,7 +11,6 @@ import { Container } from '@/app/components/layout/Container'
 import { Card } from '@/app/components/layout/Card'
 import { Button } from '@/app/components/ui/Button'
 import { Badge } from '@/app/components/ui/Badge'
-import { createClient } from '@/lib/supabase/client'
 
 interface Device {
   id: string
@@ -50,28 +49,37 @@ export default function DeviceMonitoringPage() {
     try {
       setRefreshing(true)
       setError(null)
-      const supabase = createClient()
 
-      // Fetch from view
-      const { data, error: fetchError } = await supabase
-        .from('device_status_summary')
-        .select('*')
-        .order('is_online', { ascending: false })
-        .order('last_heartbeat', { ascending: false })
+      const response = await fetch('/api/devices')
+      const data = await response.json()
 
-      if (fetchError) throw fetchError
+      if (!response.ok) throw new Error(data.error || 'Failed to fetch devices')
 
-      setDevices(data || [])
+      const list: Device[] = (data.devices || []).map((d: any) => ({
+        ...d,
+        is_online: d.status === 'online',
+        minutes_since_heartbeat: d.last_heartbeat
+          ? (Date.now() - new Date(d.last_heartbeat).getTime()) / 60000
+          : 9999,
+        site_name: d.site?.name ?? '',
+        site_email: '',
+        business_name: '',
+        admin_email: '',
+        active_alerts: 0,
+        total_sessions: 0,
+        total_interactions: 0,
+        first_seen: d.created_at ?? '',
+      }))
 
-      // Calculate stats
-      const total = data?.length || 0
-      const online = data?.filter(d => d.is_online).length || 0
+      setDevices(list)
+
+      const total = list.length
+      const online = list.filter(d => d.is_online).length
       const offline = total - online
-      const alerts = data?.reduce((sum, d) => sum + (d.active_alerts || 0), 0) || 0
+      const alerts = list.reduce((sum, d) => sum + (d.active_alerts || 0), 0)
 
       setStats({ total, online, offline, alerts })
     } catch (err) {
-      console.error('Error fetching devices:', err)
       setError(err instanceof Error ? err.message : 'Failed to load devices')
     } finally {
       setRefreshing(false)
@@ -85,23 +93,8 @@ export default function DeviceMonitoringPage() {
     // Auto-refresh every minute
     const interval = setInterval(fetchDevices, 60000)
 
-    // Set up real-time subscription
-    const supabase = createClient()
-    const channel = supabase
-      .channel('device-monitoring')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'kiosk_devices' },
-        () => {
-          console.log('Device status changed, refreshing...')
-          fetchDevices()
-        }
-      )
-      .subscribe()
-
     return () => {
       clearInterval(interval)
-      channel.unsubscribe()
     }
   }, [])
 
@@ -129,10 +122,13 @@ export default function DeviceMonitoringPage() {
   if (loading) {
     return (
       <Container>
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center justify-center py-24">
           <div className="text-center">
-            <RefreshCw className="h-8 w-8 animate-spin text-[#42b8ac] mx-auto mb-4" />
-            <p className="text-gray-600">Loading devices...</p>
+            <div className="relative h-12 w-12 mx-auto mb-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 font-medium">Loading devices...</p>
           </div>
         </div>
       </Container>

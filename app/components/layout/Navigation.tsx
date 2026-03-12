@@ -15,7 +15,8 @@ import {
   Package,
   Download,
   ChefHat,
-  HelpCircle
+  HelpCircle,
+  Monitor
 } from 'lucide-react'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 
@@ -31,6 +32,7 @@ export function Navigation() {
     { name: t('admin.suppliers'), href: '/admin/suppliers', icon: ShoppingBag },
     { name: t('admin.analytics'), href: '/admin/analytics', icon: BarChart },
     { name: t('admin.downloads'), href: '/admin/downloads', icon: Download },
+    { name: t('admin.devices'), href: '/admin/devices', icon: Monitor },
     { name: t('admin.settings'), href: '/admin/settings', icon: Settings },
     { name: t('admin.help'), href: '/admin/help', icon: HelpCircle }
   ]

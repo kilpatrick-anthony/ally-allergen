@@ -155,21 +155,21 @@ export default function HelpPage() {
       title: 'Video Tutorials',
       description: 'Watch step-by-step video guides',
       icon: Video,
-      href: '#videos',
+      href: '#help-topics',
       color: 'red'
     },
     {
       title: 'Documentation',
       description: 'Read detailed documentation',
       icon: Book,
-      href: '#docs',
+      href: '#help-topics',
       color: 'blue'
     },
     {
       title: 'Contact Support',
       description: 'Get help from our team',
       icon: MessageCircle,
-      href: '#contact',
+      href: 'mailto:support@allyjen.com',
       color: 'green'
     },
     {
@@ -287,7 +287,7 @@ export default function HelpPage() {
       </Card>
 
       {/* Help Topics */}
-      <div className="mb-6">
+      <div className="mb-6" id="help-topics">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
           {activeCategory === 'all' ? 'All Topics' : categories.find(c => c.id === activeCategory)?.name}
           <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">({filteredTopics.length})</span>
@@ -364,24 +364,6 @@ export default function HelpPage() {
         </div>
       </Card>
 
-      {/* Development Note */}
-      <Card className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-        <div className="flex items-start gap-3">
-          <Book className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-          <div>
-            <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-1">Content Placeholder</h3>
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              This help page structure is ready for your custom content. Each topic can be expanded into a full guide with:
-            </p>
-            <ul className="mt-2 space-y-1 text-sm text-blue-700 dark:text-blue-300">
-              <li>• Step-by-step instructions</li>
-              <li>• Screenshots and videos</li>
-              <li>• Best practices and tips</li>
-              <li>• Common troubleshooting solutions</li>
-            </ul>
-          </div>
-        </div>
-      </Card>
     </Container>
   )
 }

@@ -313,7 +313,10 @@ export default function SupplierDocsPage() {
       <Container>
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#42b8ac] mx-auto mb-4"></div>
+            <div className="relative h-12 w-12 mx-auto mb-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+            </div>
             <p className="text-gray-600">Loading documents...</p>
           </div>
         </div>
@@ -354,7 +357,7 @@ export default function SupplierDocsPage() {
               <FileText className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Supplier Documents</h1>
+              <h1 className="text-3xl font-bold text-[#003842] dark:text-white">Supplier Documents</h1>
               <p className="text-gray-600">{supplier.name}</p>
             </div>
           </div>

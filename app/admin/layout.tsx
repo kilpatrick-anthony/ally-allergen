@@ -110,22 +110,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
         {/* Sidebar */}
         <div className="fixed inset-y-0 left-0 w-[224px] bg-gradient-to-br from-[#003842] to-[#42b8ac] border-r border-[#42b8ac]/20 shadow-lg z-50 flex flex-col">
-          {/* Logo — top with subtle gradient frame */}
-          <div className="w-full px-4 pt-4">
-            <div style={{ padding: 2, borderRadius: 8, background: 'linear-gradient(135deg, #003842 0%, #42b8ac 100%)' }}>
-              <div className="bg-white rounded-md flex items-center justify-center overflow-visible" style={{ padding: 1, height: '4.5rem' }}>
-                <img
-                  src={encodeURI('/AllyJen Logo 1702251917.svg')}
-                  alt="AllyJen Logo"
-                  className="h-24 w-auto object-contain"
-                  style={{ display: 'block' }}
-                />
-              </div>
-            </div>
+          {/* Logo */}
+          <div className="w-full px-4 flex items-center justify-center">
+            <img
+              src="/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg"
+              alt="AllyJen Logo"
+              className="h-32 w-auto object-contain"
+            />
           </div>
 
           {/* Navigation - non-scrollable on lg (scrollable on small screens) */}
-          <div className="flex-1 overflow-y-auto lg:overflow-hidden p-4">
+          <div className="flex-1 overflow-y-auto lg:overflow-hidden px-4 pb-4 -mt-4">
             <Navigation />
           </div>
 

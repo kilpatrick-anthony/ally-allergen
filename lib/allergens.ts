@@ -1,8 +1,8 @@
 // lib/allergens.ts - Allergen configuration and utilities
 
 import {
-  Wheat, Fish, Egg, Milk, Shell, Nut, Carrot, Sprout, 
-  Circle, Leaf, Beaker, Droplet, Sparkles, Flame, Flower2, type LucideIcon
+  Wheat, Fish, Egg, Milk, Shell, Bean, Salad, Sprout, 
+  Circle, Leaf, Beaker, Sun, Flower2, TreeDeciduous, Snail, type LucideIcon
 } from 'lucide-react'
 
 export type AllergenInfo = {
@@ -52,7 +52,7 @@ export const ALLERGENS: AllergenInfo[] = [
     id: 'peanuts',
     name: 'Peanuts',
     shortName: 'Peanuts',
-    icon: Nut,
+    icon: Bean,
     color: 'bg-[#92400e15] text-[#92400e] border border-[#92400e40]',
     bgColor: '#92400e'
   },
@@ -76,7 +76,7 @@ export const ALLERGENS: AllergenInfo[] = [
     id: 'nuts',
     name: 'Tree Nuts',
     shortName: 'Tree Nuts',
-    icon: Nut,
+    icon: TreeDeciduous,
     color: 'bg-[#b4530915] text-[#b45309] border border-[#b4530940]',
     bgColor: '#b45309'
   },
@@ -84,7 +84,7 @@ export const ALLERGENS: AllergenInfo[] = [
     id: 'celery',
     name: 'Celery',
     shortName: 'Celery',
-    icon: Carrot,
+    icon: Salad,
     color: 'bg-[#84cc1615] text-[#84cc16] border border-[#84cc1640]',
     bgColor: '#84cc16'
   },
@@ -92,7 +92,7 @@ export const ALLERGENS: AllergenInfo[] = [
     id: 'mustard',
     name: 'Mustard',
     shortName: 'Mustard',
-    icon: Droplet,
+    icon: Sun,
     color: 'bg-[#eab30815] text-[#eab308] border border-[#eab30840]',
     bgColor: '#eab308'
   },
@@ -100,7 +100,7 @@ export const ALLERGENS: AllergenInfo[] = [
     id: 'sesame',
     name: 'Sesame',
     shortName: 'Sesame',
-    icon: Sparkles,
+    icon: Circle,
     color: 'bg-[#d9730015] text-[#d97300] border border-[#d9730040]',
     bgColor: '#d97300'
   },
@@ -108,7 +108,7 @@ export const ALLERGENS: AllergenInfo[] = [
     id: 'sulphites',
     name: 'Sulphites',
     shortName: 'Sulphites',
-    icon: Flame,
+    icon: Beaker,
     color: 'bg-[#a855f715] text-[#a855f7] border border-[#a855f740]',
     bgColor: '#a855f7'
   },
@@ -124,7 +124,7 @@ export const ALLERGENS: AllergenInfo[] = [
     id: 'molluscs',
     name: 'Molluscs',
     shortName: 'Molluscs',
-    icon: Shell,
+    icon: Snail,
     color: 'bg-[#14b8a615] text-[#14b8a6] border border-[#14b8a640]',
     bgColor: '#14b8a6'
   }

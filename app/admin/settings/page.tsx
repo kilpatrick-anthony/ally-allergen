@@ -368,15 +368,9 @@ export default function SettingsPage() {
   useEffect(() => {
     const fetchDefaults = async () => {
       try {
-        // Debug: log cookie info
-        if (typeof window !== 'undefined') {
-          console.log('DEBUG: document.cookie:', document.cookie);
-        }
         // Get user session (includes businessId, email, name)
         const sessionRes = await fetch('/api/auth/session');
-        console.log('DEBUG: /api/auth/session status:', sessionRes.status);
         const sessionText = await sessionRes.clone().text();
-        console.log('DEBUG: /api/auth/session response:', sessionText);
         if (sessionRes.status === 401) {
           // Force sign out on 401
           if (typeof window !== 'undefined') {
@@ -397,9 +391,7 @@ export default function SettingsPage() {
           setBusinessId(sessionData.user.businessId);
           // Fetch business info
           const businessRes = await fetch(`/api/business/${sessionData.user.businessId}`);
-          console.log('DEBUG: /api/business response status:', businessRes.status);
           const businessText = await businessRes.clone().text();
-          console.log('DEBUG: /api/business response:', businessText);
           if (businessRes.ok) {
             const businessData = JSON.parse(businessText);
             setSettings(prev => ({
@@ -432,7 +424,6 @@ export default function SettingsPage() {
       } catch (err) {
         // On error, force sign out
         if (typeof window !== 'undefined') {
-          console.log('DEBUG: fetchDefaults error:', err);
           window.location.href = '/auth/signin';
         }
       }
@@ -569,7 +560,10 @@ export default function SettingsPage() {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#42b8ac] mx-auto mb-4"></div>
+          <div className="relative h-12 w-12 mx-auto mb-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+          </div>
           <p className="text-gray-600">Loading settings...</p>
         </div>
       </div>
@@ -1269,7 +1263,7 @@ export default function SettingsPage() {
                             localStorage.setItem('notificationsEnabled', newValue.toString());
                           }
                         }}
-                        className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                        className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#42b8ac] focus:ring-offset-2 ${
                           settings.notificationsEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
                         }`}
                       >
@@ -1306,7 +1300,7 @@ export default function SettingsPage() {
                                   localStorage.setItem('datasheetAuditEnabled', newValue.toString());
                                 }
                               }}
-                              className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                              className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#42b8ac] focus:ring-offset-2 ${
                                 settings.datasheetAuditEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
                               }`}
                             >
@@ -1355,7 +1349,7 @@ export default function SettingsPage() {
                                   localStorage.setItem('ingredientsAuditEnabled', newValue.toString());
                                 }
                               }}
-                              className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                              className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#42b8ac] focus:ring-offset-2 ${
                                 settings.ingredientsAuditEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
                               }`}
                             >
@@ -1404,7 +1398,7 @@ export default function SettingsPage() {
                                   localStorage.setItem('menuAuditEnabled', newValue.toString());
                                 }
                               }}
-                              className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                              className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#42b8ac] focus:ring-offset-2 ${
                                 settings.menuAuditEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
                               }`}
                             >
@@ -1453,7 +1447,7 @@ export default function SettingsPage() {
                                   localStorage.setItem('supplierAuditEnabled', newValue.toString());
                                 }
                               }}
-                              className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                              className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#42b8ac] focus:ring-offset-2 ${
                                 settings.supplierAuditEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
                               }`}
                             >

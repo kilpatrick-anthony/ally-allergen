@@ -99,16 +99,16 @@ export const ALLERGEN_LIST = [
   { id: 'crustaceans', name: 'Crustaceans', number: 2, color: '#ef4444', icon: 'Shell' },
   { id: 'eggs', name: 'Eggs', number: 3, color: '#f97316', icon: 'Egg' },
   { id: 'fish', name: 'Fish', number: 4, color: '#3b82f6', icon: 'Fish' },
-  { id: 'peanuts', name: 'Peanuts', number: 5, color: '#92400e', icon: 'Sprout' },
-  { id: 'soybeans', name: 'Soybeans', number: 6, color: '#16a34a', icon: 'Leaf' },
+  { id: 'peanuts', name: 'Peanuts', number: 5, color: '#92400e', icon: 'Bean' },
+  { id: 'soybeans', name: 'Soybeans', number: 6, color: '#16a34a', icon: 'Sprout' },
   { id: 'milk', name: 'Milk', number: 7, color: '#8b5cf6', icon: 'Milk' },
   { id: 'nuts', name: 'Tree Nuts', number: 8, hasSubtypes: true, color: '#b45309', icon: 'TreeDeciduous' },
-  { id: 'celery', name: 'Celery', number: 9, color: '#84cc16', icon: 'Carrot' },
-  { id: 'mustard', name: 'Mustard', number: 10, color: '#eab308', icon: 'Droplet' },
-  { id: 'sesame', name: 'Sesame seeds', number: 11, color: '#d97706', icon: 'Sparkles' },
-  { id: 'sulphites', name: 'Sulphur dioxide and sulphites', number: 12, color: '#6366f1', icon: 'Flame' },
+  { id: 'celery', name: 'Celery', number: 9, color: '#84cc16', icon: 'Salad' },
+  { id: 'mustard', name: 'Mustard', number: 10, color: '#eab308', icon: 'Sun' },
+  { id: 'sesame', name: 'Sesame seeds', number: 11, color: '#d97706', icon: 'Circle' },
+  { id: 'sulphites', name: 'Sulphur dioxide and sulphites', number: 12, color: '#6366f1', icon: 'Beaker' },
   { id: 'lupin', name: 'Lupin', number: 13, color: '#ec4899', icon: 'Flower2' },
-  { id: 'molluscs', name: 'Molluscs', number: 14, color: '#06b6d4', icon: 'Globe' }
+  { id: 'molluscs', name: 'Molluscs', number: 14, color: '#06b6d4', icon: 'Snail' }
 ] as const;
 
 // Gluten sub-types

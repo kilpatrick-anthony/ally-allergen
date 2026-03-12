@@ -138,10 +138,13 @@ export default function EditSitePage() {
   if (loading) {
     return (
       <Container>
-        <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="flex justify-center items-center py-24">
           <div className="text-center">
-            <Loader2 className="h-12 w-12 animate-spin text-[#42b8ac] mx-auto mb-4" />
-            <p className="text-gray-600">Loading site...</p>
+            <div className="relative h-12 w-12 mx-auto mb-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 font-medium">Loading site...</p>
           </div>
         </div>
       </Container>
@@ -161,7 +164,7 @@ export default function EditSitePage() {
             Back to Site Details
           </Link>
           
-          <h1 className="text-3xl font-bold text-gray-900">Edit Site</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Edit Site</h1>
           <p className="text-gray-600 mt-2">
             Update information for {formData.name}
           </p>
@@ -222,7 +225,7 @@ export default function EditSitePage() {
                       required
                       value={formData.name}
                       onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                       placeholder="e.g., Oakberry Dublin City Centre"
                     />
                   </div>
@@ -235,7 +238,7 @@ export default function EditSitePage() {
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                     >
                       <option value="active">Active</option>
                       <option value="inactive">Inactive</option>
@@ -261,7 +264,7 @@ export default function EditSitePage() {
                       type="text"
                       value={formData.address}
                       onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                       placeholder="e.g., 12 Grafton Street"
                     />
                   </div>
@@ -275,7 +278,7 @@ export default function EditSitePage() {
                       type="text"
                       value={formData.city}
                       onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                       placeholder="e.g., Dublin"
                     />
                   </div>
@@ -289,7 +292,7 @@ export default function EditSitePage() {
                       type="text"
                       value={formData.country}
                       onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                       placeholder="e.g., Ireland"
                     />
                   </div>
@@ -303,7 +306,7 @@ export default function EditSitePage() {
                       type="text"
                       value={formData.eircode}
                       onChange={(e) => setFormData(prev => ({ ...prev, eircode: e.target.value.toUpperCase() }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white uppercase"
                       placeholder="e.g., D02 XY45"
                       maxLength={8}
                     />
@@ -331,7 +334,7 @@ export default function EditSitePage() {
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                       placeholder="+353 1 234 5678"
                     />
                   </div>
@@ -345,7 +348,7 @@ export default function EditSitePage() {
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                       placeholder="location@example.com"
                     />
                   </div>

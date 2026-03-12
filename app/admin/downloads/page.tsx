@@ -26,7 +26,6 @@ import { generateComplianceReportPDF } from '@/lib/pdf/complianceReportPDF'
 import { generateSiteOverviewReportPDF } from '@/lib/pdf/siteOverviewReportPDF'
 
 export default function DownloadsPage() {
-  console.log('🎯 DownloadsPage component rendered')
   
   const [loading, setLoading] = useState(true)
   const [guideLoading, setGuideLoading] = useState(false)
@@ -50,33 +49,25 @@ export default function DownloadsPage() {
   const [dataLoaded, setDataLoaded] = useState(false)
 
   useEffect(() => {
-    console.log('📥 Downloads page loading')
     const timer = setTimeout(() => {
       if (!dataLoaded) {
         setLoading(false)
-        console.log('✅ Downloads UI ready (data may still be loading)')
       }
     }, 800)
     return () => clearTimeout(timer)
   }, [dataLoaded])
 
   useEffect(() => {
-    console.log('🚀 loadGuideData useEffect triggered')
     const loadGuideData = async () => {
-      console.log('🔄 loadGuideData function started')
       try {
-        // Get user session and business data from server API
-        console.log('🔍 Fetching business data from server API...')
         const businessResponse = await fetch('/api/business/data')
         if (!businessResponse.ok) {
-          console.error('❌ Business data API failed:', businessResponse.status)
           setDataLoaded(true)
           setLoading(false)
           return
         }
         
         const businessData = await businessResponse.json()
-        console.log('✅ Business data loaded from API:', businessData)
         
         setBusiness(businessData.business || null)
         setSites(businessData.sites || [])
@@ -84,18 +75,9 @@ export default function DownloadsPage() {
         setIngredients(businessData.ingredients || [])
         setSuppliers(businessData.suppliers || [])
         
-        console.log('✅ Business data loaded successfully:', { 
-          business: businessData.business?.name, 
-          sites: businessData.sites?.length, 
-          menuItems: businessData.menuItems?.length, 
-          ingredients: businessData.ingredients?.length,
-          suppliers: businessData.suppliers?.length 
-        })
-        console.log('🔄 Setting dataLoaded to true')
         setDataLoaded(true)
         setLoading(false)
       } catch (err) {
-        console.error('❌ Error loading guide data:', err)
         setDataLoaded(true)
         setLoading(false)
       }
@@ -481,7 +463,10 @@ export default function DownloadsPage() {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#42b8ac] mx-auto mb-4"></div>
+          <div className="relative h-12 w-12 mx-auto mb-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+          </div>
           <p className="text-gray-600 dark:text-gray-400">Loading downloads...</p>
         </div>
       </div>

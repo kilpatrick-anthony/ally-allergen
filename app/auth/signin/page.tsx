@@ -227,7 +227,10 @@ export default function SignIn() {
       <div className="min-h-screen bg-[#003842] flex items-center justify-center">
         <div className="text-center">
           <img src="/Logo-AllyJen-Transparent%20BG.svg" alt="AllyJen" className="h-16 w-auto mx-auto mb-6 opacity-80" />
-          <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#42b8ac]/30 border-t-[#42b8ac] mx-auto"></div>
+          <div className="relative h-12 w-12 mx-auto">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-white/30 animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+          </div>
         </div>
       </div>
     }>

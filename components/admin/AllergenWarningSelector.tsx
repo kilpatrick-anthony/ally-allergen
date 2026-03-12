@@ -5,7 +5,8 @@ import { useState } from 'react';
 import { 
   AlertCircle, Info, AlertTriangle, ChevronDown, ChevronUp,
   Wheat, Shell, Egg, Fish, Sprout, Milk, TreeDeciduous, 
-  Carrot, Droplet, Sparkles, Flame, Flower2, Nut, CircleDot
+  Carrot, Droplet, Sparkles, Flame, Flower2, Nut, CircleDot,
+  Bean, Salad, Sun, Circle, Beaker, Snail
 } from 'lucide-react';
 import { Card } from '@/app/components/layout/Card';
 import { Badge } from '@/app/components/ui/Badge';
@@ -152,7 +153,8 @@ export default function AllergenWarningSelector({
   const getIconComponent = (iconName: string) => {
     const icons: Record<string, any> = {
       Wheat, Shell, Egg, Fish, Nut, Sprout, Milk, TreeDeciduous,
-      Carrot, Droplet, Sparkles, Flame, Flower2
+      Carrot, Droplet, Sparkles, Flame, Flower2,
+      Bean, Salad, Sun, Circle, Beaker, Snail
     };
     return icons[iconName] || Info;
   };

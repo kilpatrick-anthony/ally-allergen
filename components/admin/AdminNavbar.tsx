@@ -29,8 +29,8 @@ export default function AdminNavbar({ brandColors }: AdminNavbarProps) {
   const supabase = createClient();
 
   const currentBrandColors = brandColors || {
-    primary_color: '#1A5D1A',
-    secondary_color: '#F5B041',
+    primary_color: '#003842',
+    secondary_color: '#42b8ac',
     logo_url: null
   };
 
@@ -66,7 +66,7 @@ export default function AdminNavbar({ brandColors }: AdminNavbarProps) {
           <div className="flex items-center">
             <div className="flex items-center">
               <img
-                src={encodeURI('/AllyJen Logo 1702251917.svg')}
+                src="/Logo-AllyJen.svg"
                 alt="AllyJen Logo"
                 className="h-10 w-auto object-contain mr-3"
                 style={{ maxWidth: '160px' }}
@@ -81,9 +81,6 @@ export default function AdminNavbar({ brandColors }: AdminNavbarProps) {
               <h1 className="text-xl font-bold text-gray-900 ml-1">
                 Ally Admin
               </h1>
-              <span className="ml-2 text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">
-                Dev Mode
-              </span>
             </div>
             
             {/* Desktop Navigation */}
@@ -150,7 +147,6 @@ export default function AdminNavbar({ brandColors }: AdminNavbarProps) {
                   <div className="px-4 py-2 border-b">
                     <p className="text-sm font-medium text-gray-900">Admin User</p>
                     <p className="text-xs text-gray-500">owner@example.com</p>
-                    <p className="text-xs text-green-600 mt-1">(Development Mode)</p>
                   </div>
                   <Link
                     href="/admin/profile"
@@ -230,7 +226,6 @@ export default function AdminNavbar({ brandColors }: AdminNavbarProps) {
             </Link>
             <button
               onClick={() => {
-                console.log('🚪 DEVELOPMENT MODE: Mobile logout');
                 setIsMenuOpen(false);
                 setTimeout(() => {
                   window.location.href = '/auth/signin';
@@ -239,7 +234,7 @@ export default function AdminNavbar({ brandColors }: AdminNavbarProps) {
               className="flex items-center w-full px-3 py-2 rounded-md text-base font-medium text-red-600 hover:bg-gray-100 mt-4"
             >
               <LogOut size={20} className="mr-3" />
-              <span>Logout (Dev Mode)</span>
+              <span>Logout</span>
             </button>
           </div>
         </div>

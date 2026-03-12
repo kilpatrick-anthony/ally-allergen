@@ -310,7 +310,7 @@ export default function NewIngredientPage() {
                   <Package className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-[#003842]">Add New Ingredient</h1>
+                  <h1 className="text-3xl font-bold text-[#003842] dark:text-white">Add New Ingredient</h1>
                   <p className="text-gray-600">
                     Create a new ingredient with allergen information
                   </p>
@@ -323,7 +323,7 @@ export default function NewIngredientPage() {
         {/* Basic Information */}
         <Card className="mb-8">
           <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold text-[#003842]">Basic Information</h2>
+            <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">Basic Information</h2>
             <p className="text-sm text-gray-600">Enter the ingredient details</p>
           </div>
 
@@ -583,7 +583,7 @@ export default function NewIngredientPage() {
             <div className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-[#003842]" />
               <div>
-                <h2 className="text-lg font-semibold text-[#003842]">Allergen Information</h2>
+                <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">Allergen Information</h2>
                 <p className="text-sm text-gray-600">
                   Specify allergen warnings for this ingredient
                 </p>
@@ -603,7 +603,7 @@ export default function NewIngredientPage() {
         <Card className="mb-8">
           <div className="p-6 border-b">
             <div>
-              <h2 className="text-lg font-semibold text-[#003842]">Product Datasheets</h2>
+              <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">Product Datasheets</h2>
               <p className="text-sm text-gray-600">
                 Upload product specification sheets, compliance certificates, and allergen statements
               </p>
