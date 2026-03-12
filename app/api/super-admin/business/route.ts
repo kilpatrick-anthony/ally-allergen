@@ -16,8 +16,7 @@ async function getAuthenticatedSuperAdmin() {
     const userEmail = payload.email as string
 
     const isSuperAdmin =
-      userEmail === 'admin@allyjen.com' ||
-      userEmail === 'admin@allyjen.ie'
+      userEmail === 'anthony@allyjen.ie'
 
     if (!isSuperAdmin) return null
     return { userId, userEmail }
