@@ -1,5 +1,5 @@
 // app/api/signin/route.ts
-import { createServiceClient } from '@/lib/supabase/server'
+import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { SignJWT } from 'jose'
 
@@ -8,8 +8,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { email, password, rememberMe } = body
 
-    console.log('🔐 Server-side sign-in started for:', email)
-
     if (!email || !password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
@@ -17,54 +15,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify credentials using service client
-    const supabase = createServiceClient()
-    
-    // List users and find matching email
-    const { data: { users }, error: listError } = await supabase.auth.admin.listUsers()
-    
-    if (listError) {
-      console.error('❌ List users error:', listError)
-      return NextResponse.json(
-        { error: 'Authentication failed' },
-        { status: 500 }
-      )
-    }
-    
-    const user = users?.find(u => u.email === email)
-    
-    if (!user) {
+    // Use anon key client for signInWithPassword — service role key doesn't work for this
+    const anonClient = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+
+    const { data: authData, error: signInError } = await anonClient.auth.signInWithPassword({ email, password })
+
+    if (signInError || !authData.user) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       )
     }
 
-    // Verify password by attempting sign-in with timeout
-    try {
-      const { error: signInError } = await Promise.race([
-        supabase.auth.signInWithPassword({ email, password }),
-        new Promise<any>((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
-      ])
-      
-      if (signInError) {
-        return NextResponse.json(
-          { error: 'Invalid email or password' },
-          { status: 401 }
-        )
-      }
-    } catch (err: any) {
-      // If timeout, password verification failed
-      if (err.message === 'timeout') {
-        console.log('⚠️ Password check timed out, assuming invalid')
-        return NextResponse.json(
-          { error: 'Invalid email or password' },
-          { status: 401 }
-        )
-      }
-      throw err
-    }
-
+    const user = authData.user
     console.log('✅ Credentials verified for:', user.id)
 
     // Create a simple JWT session token
