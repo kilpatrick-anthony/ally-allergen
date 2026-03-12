@@ -27,6 +27,7 @@ import {
   UserX,
   UserCheck,
   Key,
+  Lock,
   Download,
   Upload,
   RefreshCw
@@ -67,6 +68,11 @@ export default function SuperAdminDashboard() {
   const [showBusinessDetails, setShowBusinessDetails] = useState(false)
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [showSetPasswordModal, setShowSetPasswordModal] = useState(false)
+  const [setPasswordBusiness, setSetPasswordBusiness] = useState<Business | null>(null)
+  const [setPasswordValue, setSetPasswordValue] = useState('')
+  const [setPasswordConfirm, setSetPasswordConfirm] = useState('')
+  const [setPasswordError, setSetPasswordError] = useState('')
 
   const loadBusinesses = async () => {
     try {
@@ -236,6 +242,42 @@ export default function SuperAdminDashboard() {
       alert(`Password reset email sent to ${data.email}`)
     } catch (error: any) {
       alert(error.message || 'Failed to send password reset email')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSetPassword = (business: Business) => {
+    setSetPasswordBusiness(business)
+    setSetPasswordValue('')
+    setSetPasswordConfirm('')
+    setSetPasswordError('')
+    setShowSetPasswordModal(true)
+  }
+
+  const handleSetPasswordSubmit = async () => {
+    if (setPasswordValue.length < 8) {
+      setSetPasswordError('Password must be at least 8 characters.')
+      return
+    }
+    if (setPasswordValue !== setPasswordConfirm) {
+      setSetPasswordError('Passwords do not match.')
+      return
+    }
+    if (!setPasswordBusiness) return
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/super-admin/business/${setPasswordBusiness.id}/set-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: setPasswordValue })
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to set password')
+      setShowSetPasswordModal(false)
+      alert(`Password set successfully for ${data.email}. You can now log in as this user.`)
+    } catch (error: any) {
+      setSetPasswordError(error.message || 'Failed to set password')
     } finally {
       setIsLoading(false)
     }
@@ -612,9 +654,17 @@ export default function SuperAdminDashboard() {
                       <Button
                         variant="ghost"
                         size="sm"
+                        icon={Lock}
+                        onClick={() => handleSetPassword(business)}
+                        title="Set Password"
+                        className="text-blue-600 hover:text-blue-700"
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         icon={Key}
                         onClick={() => handleResetPassword(business)}
-                        title="Reset Password"
+                        title="Send Reset Email"
                       />
                       {business.status === 'active' ? (
                         <Button
@@ -667,6 +717,59 @@ export default function SuperAdminDashboard() {
         onClose={() => setShowBusinessDetails(false)}
         business={selectedBusiness}
       />
+
+      {/* Set Password Modal */}
+      {showSetPasswordModal && setPasswordBusiness && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Set Password</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              Setting a temporary password for{' '}
+              <span className="font-semibold">{setPasswordBusiness.name}</span>
+              {' '}({setPasswordBusiness.contactEmail})
+            </p>
+            {setPasswordError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+                {setPasswordError}
+              </div>
+            )}
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">New Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="password"
+                    value={setPasswordValue}
+                    onChange={e => { setSetPasswordValue(e.target.value); setSetPasswordError('') }}
+                    placeholder="At least 8 characters"
+                    className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="password"
+                    value={setPasswordConfirm}
+                    onChange={e => { setSetPasswordConfirm(e.target.value); setSetPasswordError('') }}
+                    placeholder="Repeat password"
+                    className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setShowSetPasswordModal(false)}>Cancel</Button>
+              <Button variant="primary" className="flex-1" onClick={handleSetPasswordSubmit} disabled={isLoading}>
+                {isLoading ? 'Setting…' : 'Set Password'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Container>
   )
 }
