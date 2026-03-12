@@ -68,49 +68,17 @@ export default function SuperAdminDashboard() {
   const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  // Mock data for demonstration
-  const mockBusinesses: Business[] = [
-    {
-      id: '1',
-      name: 'Joe\'s Café',
-      contactEmail: 'joe@joescafe.com',
-      contactName: 'Joe Smith',
-      phone: '+1 (555) 123-4567',
-      address: '123 Main St, Anytown, USA',
-      status: 'active',
-      plan: 'pro',
-      createdAt: '2024-01-15',
-      subscriptionStatus: 'active',
-      revenue: 299
-    },
-    {
-      id: '2',
-      name: 'Bella\'s Bistro',
-      contactEmail: 'bella@bellasbistro.com',
-      contactName: 'Bella Johnson',
-      phone: '+1 (555) 987-6543',
-      address: '456 Oak Ave, Somewhere, USA',
-      status: 'trial',
-      plan: 'starter',
-      createdAt: '2024-02-01',
-      trialEndsAt: '2024-02-15',
-      subscriptionStatus: 'active',
-      revenue: 99
-    },
-    {
-      id: '3',
-      name: 'Green Leaf Restaurant',
-      contactEmail: 'manager@greenleaf.com',
-      contactName: 'Mike Chen',
-      phone: '+1 (555) 456-7890',
-      address: '789 Pine Rd, Elsewhere, USA',
-      status: 'suspended',
-      plan: 'enterprise',
-      createdAt: '2023-12-01',
-      subscriptionStatus: 'past_due',
-      revenue: 499
+  const loadBusinesses = async () => {
+    try {
+      const response = await fetch('/api/super-admin/business')
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to load businesses')
+      setBusinesses(data.businesses || [])
+      setFilteredBusinesses(data.businesses || [])
+    } catch (error) {
+      console.error('Failed to load businesses:', error)
     }
-  ]
+  }
 
   useEffect(() => {
     // Check if user is super admin
@@ -130,8 +98,7 @@ export default function SuperAdminDashboard() {
         }
 
         setIsSuperAdmin(true)
-        setBusinesses(mockBusinesses)
-        setFilteredBusinesses(mockBusinesses)
+        await loadBusinesses()
       } catch (error) {
         console.error('Failed to check admin status:', error)
         router.push('/auth/signin')
@@ -196,27 +163,9 @@ export default function SuperAdminDashboard() {
     }
   }
 
-  const handleCreateBusiness = (businessData: any) => {
-    // In a real implementation, this would call an API to create the business
-    console.log('Creating business:', businessData)
-
-    // Add to the mock data for demonstration
-    const newBusiness: Business = {
-      id: Date.now().toString(),
-      name: businessData.businessName,
-      contactEmail: businessData.ownerEmail,
-      contactName: businessData.ownerName,
-      phone: businessData.ownerPhone,
-      address: `${businessData.businessAddress}, ${businessData.businessCity}, ${businessData.businessCountry}`,
-      status: businessData.subscriptionStatus === 'trial' ? 'trial' : 'active',
-      plan: businessData.plan,
-      createdAt: new Date().toISOString().split('T')[0],
-      subscriptionStatus: businessData.subscriptionStatus === 'active' ? 'active' : 'trial',
-      revenue: businessData.plan === 'starter' ? 99 : businessData.plan === 'pro' ? 299 : 499
-    }
-
-    setBusinesses(prev => [...prev, newBusiness])
-    alert(`Business "${businessData.businessName}" created successfully!`)
+  const handleCreateBusiness = async (_result: any) => {
+    // BusinessSetupModal already called the API — just refresh the list
+    await loadBusinesses()
   }
 
   const handleViewBusinessDetails = (business: Business) => {
@@ -233,13 +182,15 @@ export default function SuperAdminDashboard() {
     if (!confirm(`Are you sure you want to suspend "${business.name}"? This will disable their access.`)) {
       return
     }
-
     setIsLoading(true)
     try {
-      // In a real implementation, this would call an API
-      setBusinesses(prev => prev.map(b =>
-        b.id === business.id ? { ...b, status: 'suspended' as const } : b
-      ))
+      const response = await fetch(`/api/super-admin/business/${business.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'suspended' })
+      })
+      if (!response.ok) throw new Error('Failed to suspend business')
+      await loadBusinesses()
       alert(`Business "${business.name}" has been suspended`)
     } catch (error) {
       alert('Failed to suspend business')
@@ -251,10 +202,13 @@ export default function SuperAdminDashboard() {
   const handleActivateBusiness = async (business: Business) => {
     setIsLoading(true)
     try {
-      // In a real implementation, this would call an API
-      setBusinesses(prev => prev.map(b =>
-        b.id === business.id ? { ...b, status: 'active' as const } : b
-      ))
+      const response = await fetch(`/api/super-admin/business/${business.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'active' })
+      })
+      if (!response.ok) throw new Error('Failed to activate business')
+      await loadBusinesses()
       alert(`Business "${business.name}" has been activated`)
     } catch (error) {
       alert('Failed to activate business')
@@ -267,13 +221,16 @@ export default function SuperAdminDashboard() {
     if (!confirm(`Send password reset email to ${business.contactEmail}?`)) {
       return
     }
-
     setIsLoading(true)
     try {
-      // In a real implementation, this would call an API
-      alert(`Password reset email sent to ${business.contactEmail}`)
-    } catch (error) {
-      alert('Failed to send password reset email')
+      const response = await fetch(`/api/super-admin/business/${business.id}/reset-password`, {
+        method: 'POST'
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to send reset email')
+      alert(`Password reset email sent to ${data.email}`)
+    } catch (error: any) {
+      alert(error.message || 'Failed to send password reset email')
     } finally {
       setIsLoading(false)
     }
@@ -307,7 +264,11 @@ export default function SuperAdminDashboard() {
       <Container>
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#42b8ac] mx-auto mb-4"></div>
+            <div className="relative h-12 w-12 mx-auto mb-4">
+              <div className="absolute inset-0 rounded-full border-4 border-[#003842]/20"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#42b8ac] animate-spin"></div>
+              <div className="absolute inset-1 rounded-full border-4 border-transparent border-b-[#003842] animate-spin" style={{ animationDirection: 'reverse', animationDuration: '0.8s' }}></div>
+            </div>
             <p className="text-gray-600">Loading super admin dashboard...</p>
           </div>
         </div>
