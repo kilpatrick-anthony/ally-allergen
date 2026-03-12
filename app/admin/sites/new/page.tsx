@@ -70,7 +70,7 @@ export default function NewSitePage() {
       const data = await response.json()
       
       // Redirect to the new site's page
-      router.push(`/admin/sites/${data.slug || data.id}`)
+      router.push(`/admin/sites/${data.site.slug}`)
     } catch (err) {
       console.error('Error creating site:', err)
       setError(err instanceof Error ? err.message : 'Failed to create site')

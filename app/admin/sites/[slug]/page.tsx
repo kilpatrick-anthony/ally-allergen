@@ -138,10 +138,10 @@ export default function SiteKioskPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Site Not Found</h1>
           <p className="text-gray-600 mb-6">{error || 'The requested site could not be found.'}</p>
           <a 
-            href="/" 
+            href="/admin/sites" 
             className="inline-block px-6 py-3 bg-[#003842] text-white rounded-lg hover:bg-[#003842]/90"
           >
-            Return Home
+            Return to Sites
           </a>
         </div>
       </div>
