@@ -217,7 +217,22 @@ export default function SettingsPage() {
             try {
               const parsed = JSON.parse(saved);
               // Exclude darkMode — it is managed exclusively via the 'darkMode' localStorage key
-              const { darkMode: _dm, ...accessibilityOnly } = parsed;
+              // Also exclude business-branding fields — these must come from the DB, not localStorage
+              const {
+                darkMode: _dm,
+                primaryColor: _pc,
+                secondaryColor: _sc,
+                logoUrl: _lu,
+                businessName: _bn,
+                contactEmail: _ce,
+                businessAddress: _ba,
+                businessCity: _bci,
+                businessPostalCode: _bpc,
+                businessCountry: _bco,
+                businessPhone: _bph,
+                stripeConnected: _stripe,
+                ...accessibilityOnly
+              } = parsed;
               // Use dedicated speech keys as authoritative — the blob may be stale
               accessibilityOnly.speech = localStorage.getItem('speechEnabled') === 'true';
               accessibilityOnly.speechRate = parseFloat(localStorage.getItem('speechRate') || String(accessibilityOnly.speechRate || 1));
@@ -516,7 +531,9 @@ export default function SettingsPage() {
         setSettings(prev => ({
           ...prev,
           businessName: businessData?.name ?? prev.businessName,
-          sessionTimeout: businessData?.sessionTimeout ?? prev.sessionTimeout
+          sessionTimeout: businessData?.sessionTimeout ?? prev.sessionTimeout,
+          primaryColor: businessData?.settings?.primaryColor ?? prev.primaryColor,
+          secondaryColor: businessData?.settings?.secondaryColor ?? prev.secondaryColor
         }))
       }
       setHasUnsavedChanges(false)
