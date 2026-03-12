@@ -1,5 +1,6 @@
 // app/api/contact/route.ts
 import { NextRequest, NextResponse } from 'next/server'
+import { sendMail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,26 +14,43 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Here you would typically:
-    // 1. Send an email to your sales/support team
-    // 2. Store the lead in a CRM system
-    // 3. Send a confirmation email to the prospect
-    // 4. Log the contact for analytics
+    const adminEmail = process.env.SUPER_ADMIN_EMAIL || 'anthony@allyjen.ie'
+    const submittedAt = new Date().toLocaleString('en-IE', { timeZone: 'Europe/Dublin' })
 
-    // For now, we'll just log it and return success
-    console.log('New contact form submission:', {
-      name,
-      email,
-      company,
-      phone,
-      message,
-      timestamp: new Date().toISOString()
+    // Send notification to admin
+    await sendMail({
+      to: adminEmail,
+      subject: `New contact form submission from ${company}`,
+      html: `
+        <h2>New Contact Form Submission</h2>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Company:</strong> ${company}</p>
+        ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
+        ${message ? `<p><strong>Message:</strong></p><p>${message.replace(/\n/g, '<br>')}</p>` : ''}
+        <hr>
+        <p style="color:#999;font-size:12px">Submitted at ${submittedAt}</p>
+      `,
+      text: `New Contact Form Submission\n\nName: ${name}\nEmail: ${email}\nCompany: ${company}${phone ? `\nPhone: ${phone}` : ''}${message ? `\n\nMessage:\n${message}` : ''}\n\nSubmitted at ${submittedAt}`
     })
 
-    // In a real implementation, you might use a service like:
-    // - SendGrid/Mailgun for emails
-    // - HubSpot/Salesforce for CRM
-    // - Slack webhook for notifications
+    // Send confirmation to the submitter
+    await sendMail({
+      to: email,
+      subject: `We've received your enquiry – AllyJen`,
+      html: `
+        <h2>Thanks for getting in touch, ${name}!</h2>
+        <p>We've received your enquiry and will get back to you within one business day.</p>
+        <p>Here's a copy of what you sent us:</p>
+        <ul>
+          <li><strong>Company:</strong> ${company}</li>
+          ${phone ? `<li><strong>Phone:</strong> ${phone}</li>` : ''}
+          ${message ? `<li><strong>Message:</strong> ${message}</li>` : ''}
+        </ul>
+        <p>Best regards,<br>The AllyJen Team</p>
+      `,
+      text: `Thanks for getting in touch, ${name}!\n\nWe've received your enquiry and will get back to you within one business day.\n\nBest regards,\nThe AllyJen Team`
+    })
 
     return NextResponse.json({
       success: true,
@@ -41,7 +59,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Contact form error:', error)
     return NextResponse.json(
-      { error: 'Failed to process contact form' },
+      { error: 'Failed to send your message. Please try again or email us directly.' },
       { status: 500 }
     )
   }
