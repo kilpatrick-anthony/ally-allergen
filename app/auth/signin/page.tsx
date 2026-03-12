@@ -82,9 +82,10 @@ function SignInContent() {
       } else {
         localStorage.removeItem('rememberMe_email')
       }
-      
-      // Redirect immediately - cookies are already set server-side
-      window.location.href = '/admin'
+
+      // Redirect to intended destination or default to /admin
+      const redirectTo = searchParams.get('redirect') || '/admin'
+      window.location.href = redirectTo
     } catch (error: any) {
       console.error('❌ Sign in error:', error)
       setError(error.message || 'Invalid email or password')

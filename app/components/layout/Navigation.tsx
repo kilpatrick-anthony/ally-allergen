@@ -16,13 +16,27 @@ import {
   Download,
   ChefHat,
   HelpCircle,
-  Monitor
+  Monitor,
+  Shield
 } from 'lucide-react'
 import { useTranslation } from '@/lib/hooks/useTranslation'
+import { useState, useEffect } from 'react'
 
 export function Navigation() {
   const pathname = usePathname()
   const { t } = useTranslation()
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then(r => r.json())
+      .then(data => {
+        if (data?.user?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL) {
+          setIsSuperAdmin(true)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const navigation = [
     { name: t('admin.dashboard'), href: '/admin', icon: Home },
@@ -34,7 +48,8 @@ export function Navigation() {
     { name: t('admin.downloads'), href: '/admin/downloads', icon: Download },
     { name: t('admin.devices'), href: '/admin/devices', icon: Monitor },
     { name: t('admin.settings'), href: '/admin/settings', icon: Settings },
-    { name: t('admin.help'), href: '/admin/help', icon: HelpCircle }
+    { name: t('admin.help'), href: '/admin/help', icon: HelpCircle },
+    ...(isSuperAdmin ? [{ name: 'Super Admin', href: '/super-admin', icon: Shield }] : [])
   ]
 
   return (

@@ -89,6 +89,11 @@ export default function SuperAdminDashboard() {
 
         // For now, we'll check if the user has a specific email or role
         // In production, you'd have a proper role-based system
+        if (!session?.authenticated) {
+          router.push('/auth/signin?redirect=/super-admin')
+          return
+        }
+
         const isAdmin = session?.user?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL ||
                        session?.user?.role === 'super_admin'
 
