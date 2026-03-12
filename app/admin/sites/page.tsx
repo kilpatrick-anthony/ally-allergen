@@ -305,8 +305,14 @@ export default function SitesPage() {
                 </div>
                 <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                   <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                  {site.phone}
+                  {site.phone || 'Phone not set'}
                 </div>
+                {site.email && (
+                  <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                    <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                    {site.email}
+                  </div>
+                )}
                 <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                   <Clock className="h-4 w-4 mr-2 text-gray-400" />
                   Last sync: {site.lastSync}
