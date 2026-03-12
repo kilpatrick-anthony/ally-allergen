@@ -104,11 +104,21 @@ export async function POST(request: NextRequest) {
 
     const logoUrl = urlData.publicUrl
 
-    // Update business with logo URL
+    // Fetch current settings so we can merge (not overwrite)
+    const { data: currentBusiness } = await supabase
+      .from('businesses')
+      .select('settings')
+      .eq('id', businessId)
+      .single()
+
+    const currentSettings = currentBusiness?.settings || {}
+
+    // Update business with logo URL merged into existing settings
     const { error: updateError } = await supabase
       .from('businesses')
       .update({
         settings: {
+          ...currentSettings,
           logoUrl: logoUrl
         }
       })

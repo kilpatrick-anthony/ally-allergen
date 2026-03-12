@@ -405,6 +405,7 @@ export default function SettingsPage() {
               businessPhone: businessData?.settings?.address?.phone ?? '',
               stripeConnected: businessData?.settings?.stripeConnected ?? false,
               sessionTimeout: businessData?.sessionTimeout ?? prev.sessionTimeout,
+              logoUrl: businessData?.settings?.logoUrl ?? prev.logoUrl,
               twoFactorAuth: twoFactorEnabled
             }));
           } else {
