@@ -193,7 +193,7 @@ export default function AdminDashboard() {
             src="/Home%20Image%202%20(1400%20x%20350%20px)%20(1).svg"
             alt=""
             aria-hidden="true"
-            className="w-full object-cover"
+            className="w-full object-cover min-h-[200px] sm:min-h-0"
           />
         </div>
       </div>
