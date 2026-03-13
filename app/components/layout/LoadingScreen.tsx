@@ -1,13 +1,12 @@
 export function LoadingScreen() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
+    <div className="flex min-h-screen items-center justify-center bg-gray-100 dark:bg-gray-900">
       <div className="text-center">
-        <div className="relative">
-          <div className="h-16 w-16 animate-spin rounded-full border-4 border-gray-200"></div>
-          <div className="absolute left-1/2 top-1/2 h-8 w-8 -translate-x-1/2 -translate-y-1/2 animate-spin rounded-full border-2 border-t-[#42b8ac] border-transparent"></div>
+        <div className="relative mx-auto mb-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
         </div>
-        <p className="mt-6 text-gray-600">Loading your dashboard...</p>
-        <div className="mt-2 text-xs text-gray-400">Optimizing your experience</div>
+        <p className="text-gray-600 dark:text-gray-400">Loading your dashboard...</p>
       </div>
     </div>
   )
