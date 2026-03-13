@@ -107,10 +107,13 @@ export default function ViewIngredientPage() {
   if (loading) {
     return (
       <Container>
-        <div className="flex items-center justify-center min-h-screen">
+        <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
-            <Package className="h-12 w-12 text-gray-400 mx-auto mb-4 animate-pulse" />
-            <p className="text-gray-600">Loading ingredient...</p>
+            <div className="relative h-12 w-12 mx-auto mb-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400">Loading ingredient...</p>
           </div>
         </div>
       </Container>

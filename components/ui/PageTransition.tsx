@@ -28,7 +28,7 @@ export function PageTransition({ children }: PageTransitionProps) {
     <div className="relative min-h-screen">
       {/* Loading overlay */}
       {isLoading && (
-        <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
+        <div className="absolute inset-0 z-50 bg-gray-100/90 dark:bg-gray-900/90 backdrop-blur-sm flex items-center justify-center">
           <div className="text-center">
             <div className="relative">
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac] mx-auto"></div>

@@ -12,12 +12,6 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import SpeechController from '@/components/SpeechController'
 
-interface BrandColors {
-  primary_color: string
-  secondary_color: string
-  logo_url: string | null
-}
-
 interface AdminLayoutProps {
   children: ReactNode
 }
@@ -25,12 +19,6 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter()
   const { t } = useTranslation()
-  const [brandColors, setBrandColors] = useState<BrandColors>({
-    primary_color: '#003842',
-    secondary_color: '#42b8ac',
-    logo_url: null
-  })
-  const [loading, setLoading] = useState(true)
   const [userName, setUserName] = useState<string>('')
   const [userEmail, setUserEmail] = useState<string>('')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
@@ -56,18 +44,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       }
     }
     loadUser()
-
-    setBrandColors({
-      primary_color: '#003842',
-      secondary_color: '#42b8ac',
-      logo_url: null
-    })
-    
-    const timer = setTimeout(() => {
-      setLoading(false)
-    }, 100)
-    
-    return () => clearTimeout(timer)
   }, [])
 
   const handleLogout = async () => {
@@ -93,20 +69,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       // fallback
       window.location.href = '/auth/signin'
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative mx-auto mb-4">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400 font-medium">{t('admin.loading')}</p>
-        </div>
-      </div>
-    )
   }
 
   return (
