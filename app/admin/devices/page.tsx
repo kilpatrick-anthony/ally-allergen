@@ -139,7 +139,7 @@ export default function DeviceMonitoringPage() {
     <Container>
       <div className="py-8 space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-start">
+        <div className="flex flex-wrap justify-between items-start gap-3">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Device Monitoring</h1>
             <p className="text-gray-600 mt-2">
@@ -222,9 +222,9 @@ export default function DeviceMonitoringPage() {
 
         {/* Filters */}
         <Card>
-          <div className="p-4 flex items-center gap-4">
+          <div className="p-4 flex flex-wrap items-center gap-4">
             <span className="text-sm font-medium text-gray-700">Filter:</span>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant={filter === 'all' ? 'primary' : 'outline'}
                 size="sm"

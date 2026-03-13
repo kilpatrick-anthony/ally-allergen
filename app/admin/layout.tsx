@@ -138,21 +138,23 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {/* Sidebar */}
         <div className={`fixed inset-y-0 left-0 w-[224px] bg-gradient-to-br from-[#003842] to-[#42b8ac] border-r border-[#42b8ac]/20 shadow-lg z-50 flex flex-col transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
           {/* Logo */}
-          <div className="w-full px-4 flex items-center justify-center relative">
+          <div className="w-full px-4 flex items-center justify-center">
             <img
               src="/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg"
               alt="AllyJen Logo"
               className="h-32 w-auto object-contain"
             />
-            <button
-              type="button"
-              className="lg:hidden absolute top-3 right-0 text-white/70 hover:text-white p-1.5 rounded-md hover:bg-white/10 transition-colors"
-              onClick={() => setIsSidebarOpen(false)}
-              aria-label="Close navigation menu"
-            >
-              <X className="h-5 w-5" />
-            </button>
           </div>
+
+          {/* Close button — floats just outside the right edge of the sidebar, mobile only */}
+          <button
+            type="button"
+            className="lg:hidden absolute top-4 -right-10 text-white bg-[#003842]/80 hover:bg-[#003842] p-2 rounded-r-lg transition-colors shadow-md"
+            onClick={() => setIsSidebarOpen(false)}
+            aria-label="Close navigation menu"
+          >
+            <X className="h-5 w-5" />
+          </button>
 
           {/* Navigation - scrollable with discreet thin scrollbar */}
           <div className="flex-1 overflow-y-auto px-4 pb-4 -mt-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-track]:border-none [&::-webkit-scrollbar-thumb]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/25">

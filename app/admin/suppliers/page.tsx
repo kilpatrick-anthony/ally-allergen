@@ -112,7 +112,7 @@ export default function SuppliersPage() {
     <Container>
       {/* Header */}
       <div className="mb-8">
-        <div className="flex justify-between items-start">
+        <div className="flex flex-wrap justify-between items-start gap-3">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-gradient-to-br from-teal-400 to-teal-600 dark:from-teal-500 dark:to-gray-700 rounded-lg">
@@ -126,7 +126,7 @@ export default function SuppliersPage() {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge variant="primary" icon={ShoppingBag}>
               {stats.total} suppliers
             </Badge>

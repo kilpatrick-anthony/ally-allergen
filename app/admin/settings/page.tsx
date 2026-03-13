@@ -994,7 +994,7 @@ export default function SettingsPage() {
                   {/* Font Size */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Font Size</label>
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {['normal', 'large', 'x-large', 'xx-large'].map((size) => (
                         <button
                           key={size}
@@ -1056,8 +1056,7 @@ export default function SettingsPage() {
                   {/* Color Contrast */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Color Contrast</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {['normal', 'high', 'inverted'].map((mode) => (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <button
                           key={mode}
                           className={`py-2 rounded-lg font-medium ${settings.contrast === mode ? 'ring-2 ring-offset-2 ring-[#42b8ac]' : ''} ${mode === 'normal' ? 'bg-white text-gray-900 border' : mode === 'high' ? 'bg-black text-yellow-300' : 'bg-yellow-300 text-black'}`}
@@ -1698,7 +1697,7 @@ export default function SettingsPage() {
                               Manage Subscriptions
                             </Button>
                           </div>
-                          <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                             <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
                               <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                                 {settings.stripeConnected ? '12' : '0'}
