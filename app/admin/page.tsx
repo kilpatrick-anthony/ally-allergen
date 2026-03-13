@@ -195,7 +195,6 @@ export default function AdminDashboard() {
             aria-hidden="true"
             className="w-full object-cover"
           />
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-b from-transparent to-[#003842]" />
         </div>
       </div>
 
