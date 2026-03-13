@@ -209,8 +209,13 @@ export default function SiteAllergenGuide({ siteId }: { siteId: string }) {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#42b8ac]"></div>
-        <span className="ml-4 text-gray-600">Loading site data...</span>
+        <div className="text-center">
+          <div className="relative mx-auto mb-3">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+          </div>
+          <span className="text-gray-600">Loading site data...</span>
+        </div>
       </div>
     );
   }

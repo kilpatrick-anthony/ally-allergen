@@ -432,8 +432,17 @@ export default function OnboardingPage() {
           variant="primary"
           disabled={loading || !businessId || !locationData.name || !locationData.address || !locationData.city}
         >
-          {loading ? 'Creating...' : !businessId ? 'Loading...' : 'Continue'}
-          <ArrowRight className="h-5 w-5 ml-2" />
+          {loading ? (
+            <>
+              <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+              Creating...
+            </>
+          ) : !businessId ? 'Loading...' : (
+            <>
+              Continue
+              <ArrowRight className="h-5 w-5 ml-2" />
+            </>
+          )}
         </Button>
       </div>
     </div>

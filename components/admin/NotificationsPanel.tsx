@@ -114,7 +114,10 @@ export function NotificationsPanel({ settings }: NotificationsPanelProps) {
           <h3 className="text-lg font-semibold">Compliance Notifications</h3>
         </div>
         <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+          <div className="relative">
+            <div className="animate-spin rounded-full h-6 w-6 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+          </div>
         </div>
       </Card>
     )
@@ -165,7 +168,7 @@ export function NotificationsPanel({ settings }: NotificationsPanelProps) {
               >
                 {markingReviewed === `${notification.type}-${notification.id}` ? (
                   <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-3 w-3 border-b border-white"></div>
+                    <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
                     Marking...
                   </div>
                 ) : (

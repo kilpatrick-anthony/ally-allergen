@@ -5,10 +5,10 @@ export const dynamic = 'force-dynamic'
 
 import { ReactNode, useEffect, useState } from 'react'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
-import { Building2, User, LogOut } from 'lucide-react'
+import { Building2, User, LogOut, Menu, X } from 'lucide-react'
 import { Navigation } from '../components/layout/Navigation'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import SpeechController from '@/components/SpeechController'
 
@@ -33,6 +33,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [loading, setLoading] = useState(true)
   const [userName, setUserName] = useState<string>('')
   const [userEmail, setUserEmail] = useState<string>('')
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+  const pathname = usePathname()
+
+  useEffect(() => {
+    setIsSidebarOpen(false)
+  }, [pathname])
 
   useEffect(() => {
     // Load user info from session API
@@ -108,19 +114,48 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     <ProtectedRoute requireRole="owner">
       <SpeechController />
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+        {/* Mobile header */}
+        <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-[#003842] h-14 flex items-center px-4 shadow-md">
+          <button
+            type="button"
+            onClick={() => setIsSidebarOpen(true)}
+            aria-label="Open navigation menu"
+            className="text-white p-1.5 rounded-md hover:bg-white/10 transition-colors"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+        </div>
+
+        {/* Mobile overlay */}
+        {isSidebarOpen && (
+          <div
+            className="lg:hidden fixed inset-0 bg-black/50 z-40"
+            onClick={() => setIsSidebarOpen(false)}
+            aria-hidden="true"
+          />
+        )}
+
         {/* Sidebar */}
-        <div className="fixed inset-y-0 left-0 w-[224px] bg-gradient-to-br from-[#003842] to-[#42b8ac] border-r border-[#42b8ac]/20 shadow-lg z-50 flex flex-col">
+        <div className={`fixed inset-y-0 left-0 w-[224px] bg-gradient-to-br from-[#003842] to-[#42b8ac] border-r border-[#42b8ac]/20 shadow-lg z-50 flex flex-col transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
           {/* Logo */}
-          <div className="w-full px-4 flex items-center justify-center">
+          <div className="w-full px-4 flex items-center justify-center relative">
             <img
               src="/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg"
               alt="AllyJen Logo"
               className="h-32 w-auto object-contain"
             />
+            <button
+              type="button"
+              className="lg:hidden absolute top-3 right-0 text-white/70 hover:text-white p-1.5 rounded-md hover:bg-white/10 transition-colors"
+              onClick={() => setIsSidebarOpen(false)}
+              aria-label="Close navigation menu"
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
 
-          {/* Navigation - non-scrollable on lg (scrollable on small screens) */}
-          <div className="flex-1 overflow-y-auto lg:overflow-hidden px-4 pb-4 -mt-4">
+          {/* Navigation - scrollable with discreet thin scrollbar */}
+          <div className="flex-1 overflow-y-auto px-4 pb-4 -mt-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-track]:border-none [&::-webkit-scrollbar-thumb]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/25">
             <Navigation />
           </div>
 
@@ -149,7 +184,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
 
         {/* Main Content */}
-        <div className="lg:pl-[224px]">
+        <div className="lg:pl-[224px] pt-14 lg:pt-0">
           <main className="py-8 px-4 sm:px-6 lg:px-8 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-900 dark:to-gray-800/50">
             {children}
           </main>

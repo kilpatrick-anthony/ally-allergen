@@ -311,10 +311,9 @@ export default function SuperAdminDashboard() {
       <Container>
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
-            <div className="relative h-12 w-12 mx-auto mb-4">
-              <div className="absolute inset-0 rounded-full border-4 border-[#003842]/20"></div>
-              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#42b8ac] animate-spin"></div>
-              <div className="absolute inset-1 rounded-full border-4 border-transparent border-b-[#003842] animate-spin" style={{ animationDirection: 'reverse', animationDuration: '0.8s' }}></div>
+            <div className="relative mx-auto mb-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
             </div>
             <p className="text-gray-600">Loading super admin dashboard...</p>
           </div>

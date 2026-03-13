@@ -358,7 +358,10 @@ export default function SignupPage() {
                     disabled={loading}
                   >
                     {loading ? (
-                      'Creating your account...'
+                      <>
+                        <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                        Creating your account...
+                      </>
                     ) : (
                       <>
                         Create Account & Continue

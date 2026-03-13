@@ -104,10 +104,8 @@ export const translations = {
       sites: 'Sites',
       analytics: 'Analytics',
       help: 'Help',
-      downloads: 'Downloads',
+      downloads: 'Reporting',
       kiosks: 'Kiosks',
-
-      // Common
       save: 'Save',
       cancel: 'Cancel',
       delete: 'Delete',
@@ -380,7 +378,7 @@ export const translations = {
       analytics: 'Anailísíocht',
       // ...existing code...
       help: 'Cabhair',
-      downloads: 'Íoslódálacha',
+      downloads: 'Tuairisciú',
       kiosks: 'Kiosks',
 
       // Common
@@ -711,7 +709,7 @@ export const translations = {
       analytics: 'Análises',
       settings: 'Configurações',
       help: 'Ajuda',
-      downloads: 'Downloads',
+      downloads: 'Relatórios',
       kiosks: 'Quiosques',
 
       // Common
@@ -1043,7 +1041,7 @@ export const translations = {
       analytics: 'Analyses',
       settings: 'Paramètres',
       help: 'Aide',
-      downloads: 'Téléchargements',
+      downloads: 'Rapports',
       kiosks: 'Kiosques',
 
       // Common
@@ -1375,7 +1373,7 @@ export const translations = {
       analytics: 'Análisis',
       settings: 'Configuraciones',
       help: 'Ayuda',
-      downloads: 'Descargas',
+      downloads: 'Informes',
       kiosks: 'Quioscos',
 
       // Common
@@ -1707,7 +1705,7 @@ export const translations = {
       analytics: 'Analysen',
       settings: 'Einstellungen',
       help: 'Hilfe',
-      downloads: 'Downloads',
+      downloads: 'Berichte',
       kiosks: 'Kioske',
 
       // Common

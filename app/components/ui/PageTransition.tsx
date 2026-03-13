@@ -29,10 +29,11 @@ export function PageTransition({ children }: PageTransitionProps) {
       {/* Loading overlay */}
       {isLoading && (
         <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-sm flex items-center justify-center">
-          <div className="flex items-center space-x-2">
-            <div className="animate-spin rounded-full h-6 w-6 border-2 border-[#42b8ac] border-t-transparent"></div>
-            <span className="text-sm text-gray-600">Loading...</span>
+          <div className="relative">
+            <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#42b8ac]/20 border-t-[#42b8ac] mx-auto"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin mx-auto" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
           </div>
+          <span className="text-sm text-gray-600 mt-3">Loading...</span>
         </div>
       )}
       

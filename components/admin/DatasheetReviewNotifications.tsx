@@ -89,7 +89,10 @@ export default function DatasheetReviewNotifications({
     return (
       <Card>
         <div className="p-4 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto"></div>
+          <div className="relative mx-auto mb-2">
+            <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+          </div>
           <p className="text-sm text-gray-500 mt-2">Loading notifications...</p>
         </div>
       </Card>

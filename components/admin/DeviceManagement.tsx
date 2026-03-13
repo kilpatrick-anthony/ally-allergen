@@ -161,7 +161,10 @@ export default function DeviceManagement({
   if (loading) {
     return (
       <div className="text-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#42b8ac] mx-auto mb-4"></div>
+        <div className="relative mx-auto mb-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+          <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+        </div>
         <p className="text-gray-600">Loading devices...</p>
       </div>
     );
