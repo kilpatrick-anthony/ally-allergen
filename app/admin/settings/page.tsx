@@ -1057,6 +1057,7 @@ export default function SettingsPage() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Color Contrast</label>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {['normal', 'high', 'inverted'].map((mode) => (
                         <button
                           key={mode}
                           className={`py-2 rounded-lg font-medium ${settings.contrast === mode ? 'ring-2 ring-offset-2 ring-[#42b8ac]' : ''} ${mode === 'normal' ? 'bg-white text-gray-900 border' : mode === 'high' ? 'bg-black text-yellow-300' : 'bg-yellow-300 text-black'}`}
