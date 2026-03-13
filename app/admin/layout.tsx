@@ -98,13 +98,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#42b8ac]/20 border-t-[#42b8ac] mx-auto mb-6"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin mx-auto" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+        <div className="text-center">
+          <div className="relative mx-auto mb-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
           </div>
           <p className="text-gray-600 dark:text-gray-400 font-medium">{t('admin.loading')}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Setting up your dashboard...</p>
         </div>
       </div>
     )
