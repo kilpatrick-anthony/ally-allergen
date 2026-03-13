@@ -116,14 +116,25 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
         {/* Mobile header */}
         <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-[#003842] h-14 flex items-center px-4 shadow-md">
-          <button
-            type="button"
-            onClick={() => setIsSidebarOpen(true)}
-            aria-label="Open navigation menu"
-            className="text-white p-1.5 rounded-md hover:bg-white/10 transition-colors"
-          >
-            <Menu className="h-6 w-6" />
-          </button>
+          {isSidebarOpen ? (
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(false)}
+              aria-label="Close navigation menu"
+              className="text-white p-1.5 rounded-md hover:bg-white/10 transition-colors"
+            >
+              <X className="h-6 w-6" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsSidebarOpen(true)}
+              aria-label="Open navigation menu"
+              className="text-white p-1.5 rounded-md hover:bg-white/10 transition-colors"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+          )}
         </div>
 
         {/* Mobile overlay */}
@@ -145,16 +156,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               className="h-32 w-auto object-contain"
             />
           </div>
-
-          {/* Close button — floats just outside the right edge of the sidebar, mobile only */}
-          <button
-            type="button"
-            className="lg:hidden absolute top-4 -right-10 text-white bg-[#003842]/80 hover:bg-[#003842] p-2 rounded-r-lg transition-colors shadow-md"
-            onClick={() => setIsSidebarOpen(false)}
-            aria-label="Close navigation menu"
-          >
-            <X className="h-5 w-5" />
-          </button>
 
           {/* Navigation - scrollable with discreet thin scrollbar */}
           <div className="flex-1 overflow-y-auto px-4 pb-4 -mt-4 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-track]:border-none [&::-webkit-scrollbar-thumb]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/25">
