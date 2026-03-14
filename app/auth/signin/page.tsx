@@ -154,7 +154,7 @@ function SignInContent() {
                     required
                     autoComplete="email"
                     placeholder="you@example.com"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-lg"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-lg text-gray-900"
                   />
                 </div>
               </div>
@@ -173,7 +173,7 @@ function SignInContent() {
                     required
                     autoComplete="current-password"
                     placeholder="Enter your password"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-lg"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-lg text-gray-900"
                   />
                 </div>
               </div>
