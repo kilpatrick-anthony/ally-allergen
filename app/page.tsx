@@ -383,7 +383,7 @@ export default function LandingPage() {
       <footer className="bg-[#003842] border-t border-white/10 py-10">
         <Container>
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <img src="/Logo-AllyJen.svg" alt="AllyJen" className="h-10 w-auto" />
+            <img src="/Logo-AllyJen.svg" alt="AllyJen" className="h-24 w-auto" />
             <p className="text-sm text-white/40">© 2026 AllyJen Solutions LTD. All rights reserved.</p>
           </div>
         </Container>
