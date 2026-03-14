@@ -190,10 +190,16 @@ export default function AdminDashboard() {
       <div className="rounded-2xl bg-gradient-to-br from-[#003842] to-[#42b8ac] text-white mb-12 overflow-hidden">
         <div className="relative w-full">
           <img
+            src="/Home%20Image%202%20(1400%20x%20350%20px)%20(800%20x%20400%20px).svg"
+            alt=""
+            aria-hidden="true"
+            className="w-full object-cover block sm:hidden"
+          />
+          <img
             src="/Home%20Image%202%20(1400%20x%20350%20px)%20(1).svg"
             alt=""
             aria-hidden="true"
-            className="w-full object-cover"
+            className="w-full object-cover hidden sm:block"
           />
         </div>
       </div>
