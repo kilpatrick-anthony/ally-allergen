@@ -5,8 +5,8 @@ import { useState, useEffect } from 'react';
 import {
   Tablet, Wifi, WifiOff, Monitor, Smartphone,
   Plus, Trash2, RefreshCw, X,
-  AlertCircle,
-  Power
+  AlertCircle, Copy, Check,
+  Power, Clock
 } from 'lucide-react';
 import { Card } from '@/app/components/layout/Card';
 import { Button } from '@/app/components/ui/Button';
@@ -23,6 +23,8 @@ interface Device {
   created_at: string;
   ip_address?: string | null;
   user_agent?: string | null;
+  active_pairing_code?: string | null;
+  pairing_code_expires_at?: string | null;
 }
 
 interface DeviceManagementProps {
@@ -39,6 +41,12 @@ export default function DeviceManagement({
   const [showAddDevice, setShowAddDevice] = useState(false);
   const [newDeviceName, setNewDeviceName] = useState('');
   const [newDeviceType, setNewDeviceType] = useState<Device['device_type']>('tablet');
+  const [generatingCode, setGeneratingCode] = useState(false);
+  const [pairingCode, setPairingCode] = useState<string | null>(null);
+  const [pairingExpiry, setPairingExpiry] = useState<string | null>(null);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const [regeneratingFor, setRegeneratingFor] = useState<string | null>(null);
+  const [cardCopied, setCardCopied] = useState<string | null>(null);
 
   useEffect(() => {
     loadDevices();
@@ -65,16 +73,16 @@ export default function DeviceManagement({
 
   const addDevice = async () => {
     if (!newDeviceName.trim()) return;
+    setGeneratingCode(true);
 
     try {
-      const response = await fetch('/api/devices', {
+      const response = await fetch('/api/devices/pair', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           site_id: siteId,
           device_name: newDeviceName,
           device_type: newDeviceType,
-          status: 'offline'
         })
       })
 
@@ -85,12 +93,55 @@ export default function DeviceManagement({
       }
 
       setDevices([data.device, ...devices])
+      setPairingCode(data.pairing_code)
+      setPairingExpiry(data.expires_at)
       setShowAddDevice(false)
       setNewDeviceName('')
     } catch (error: any) {
       console.error('Error adding device:', error)
+    } finally {
+      setGeneratingCode(false)
     }
   };
+
+  const copyCode = async () => {
+    if (!pairingCode) return
+    await navigator.clipboard.writeText(pairingCode)
+    setCodeCopied(true)
+    setTimeout(() => setCodeCopied(false), 2000)
+  }
+
+  const dismissPairingCode = () => {
+    setPairingCode(null)
+    setPairingExpiry(null)
+    setCodeCopied(false)
+  }
+
+  const regenerateCode = async (deviceId: string) => {
+    setRegeneratingFor(deviceId)
+    try {
+      const response = await fetch(`/api/devices/${deviceId}/pair`, {
+        method: 'POST',
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to regenerate code')
+      setDevices(devices.map(d =>
+        d.id === deviceId
+          ? { ...d, active_pairing_code: data.pairing_code, pairing_code_expires_at: data.expires_at }
+          : d
+      ))
+    } catch (error: any) {
+      console.error('Error regenerating code:', error)
+    } finally {
+      setRegeneratingFor(null)
+    }
+  }
+
+  const copyCardCode = async (deviceId: string, code: string) => {
+    await navigator.clipboard.writeText(code)
+    setCardCopied(deviceId)
+    setTimeout(() => setCardCopied(null), 2000)
+  }
 
   const removeDevice = async (deviceId: string) => {
     if (!confirm('Are you sure you want to remove this device?')) return;
@@ -300,11 +351,53 @@ export default function DeviceManagement({
               <Button
                 variant="primary"
                 onClick={addDevice}
-                disabled={!newDeviceName.trim()}
+                disabled={!newDeviceName.trim() || generatingCode}
               >
-                Generate Pairing Code
+                {generatingCode ? 'Generating…' : 'Generate Pairing Code'}
               </Button>
             </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Pairing Code Modal */}
+      {pairingCode && (
+        <Card className="border-2 border-[#42b8ac] bg-[#f0faf9]">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-[#003842]">Pairing Code Ready</h3>
+              <button onClick={dismissPairingCode} className="text-gray-400 hover:text-gray-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-600">
+              On the kiosk device, open <span className="font-semibold">allyjen.ie/kiosk/pair</span> and enter the code below.
+            </p>
+
+            <div className="flex items-center gap-3">
+              <div className="flex-1 bg-white border-2 border-[#42b8ac] rounded-xl px-6 py-4 text-center">
+                <p className="text-4xl font-mono font-bold tracking-[0.3em] text-[#003842]">
+                  {pairingCode}
+                </p>
+              </div>
+              <button
+                onClick={copyCode}
+                className="flex flex-col items-center gap-1 px-4 py-3 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+              >
+                {codeCopied
+                  ? <Check className="h-5 w-5 text-green-600" />
+                  : <Copy className="h-5 w-5 text-gray-500" />}
+                <span className="text-xs text-gray-500">{codeCopied ? 'Copied!' : 'Copy'}</span>
+              </button>
+            </div>
+
+            {pairingExpiry && (
+              <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+                <Clock className="h-4 w-4 flex-shrink-0" />
+                <span>Expires {new Date(pairingExpiry).toLocaleString()} — single use</span>
+              </div>
+            )}
           </div>
         </Card>
       )}
@@ -394,6 +487,53 @@ export default function DeviceManagement({
                     )}
                   </div>
 
+                  {/* Pairing Code Section */}
+                  <div className="border-t border-gray-100 pt-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                        Pairing Code
+                      </span>
+                      <button
+                        onClick={() => regenerateCode(device.id)}
+                        disabled={regeneratingFor === device.id}
+                        className="flex items-center gap-1 text-xs text-[#42b8ac] hover:text-[#37a398] disabled:opacity-50"
+                      >
+                        <RefreshCw className={`h-3 w-3 ${regeneratingFor === device.id ? 'animate-spin' : ''}`} />
+                        {regeneratingFor === device.id ? 'Generating…' : 'New Code'}
+                      </button>
+                    </div>
+
+                    {device.active_pairing_code ? (
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 bg-[#f0faf9] border border-[#42b8ac]/40 rounded-lg px-3 py-2 text-center">
+                          <span className="font-mono font-bold tracking-widest text-[#003842] text-lg">
+                            {device.active_pairing_code}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => copyCardCode(device.id, device.active_pairing_code!)}
+                          className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
+                          title="Copy code"
+                        >
+                          {cardCopied === device.id
+                            ? <Check className="h-4 w-4 text-green-600" />
+                            : <Copy className="h-4 w-4 text-gray-500" />}
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-gray-400 italic">
+                        No active code — click <span className="font-medium">New Code</span> to generate one
+                      </p>
+                    )}
+
+                    {device.active_pairing_code && device.pairing_code_expires_at && (
+                      <p className="text-xs text-amber-600 flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        Expires {new Date(device.pairing_code_expires_at).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+
                   <div className="flex items-center gap-2 pt-2">
                     <button
                       onClick={() => toggleDeviceStatus(device.id)}
@@ -431,10 +571,11 @@ export default function DeviceManagement({
               Device Management Tips
             </h4>
             <ul className="text-sm text-blue-800 space-y-1 ml-4 list-disc">
-              <li>Devices auto-sync menu data every 5 minutes when online</li>
+              <li>Click <strong>Add Device</strong>, give it a name, and click <strong>Generate Pairing Code</strong></li>
+              <li>On the kiosk, go to <strong>allyjen.ie/kiosk/pair</strong> and enter the code shown</li>
+              <li>The kiosk will automatically open the correct allergen menu for this site</li>
+              <li>Devices send a heartbeat every minute — status updates automatically</li>
               <li>Offline devices continue showing cached allergen data</li>
-              <li>Update device status to reflect connectivity</li>
-              <li>Remove devices that are no longer in use</li>
             </ul>
           </div>
         </div>

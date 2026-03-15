@@ -60,7 +60,35 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch devices' }, { status: 500 })
     }
 
-    return NextResponse.json({ devices: devices || [] })
+    // Attach the latest active (non-redeemed, non-expired) pairing code to each device
+    const now = new Date().toISOString()
+    const deviceIds = (devices || []).map((d: any) => d.id)
+    let pairingByDevice: Record<string, { code: string; expires_at: string }> = {}
+
+    if (deviceIds.length > 0) {
+      const { data: codes } = await supabase
+        .from('device_pairing_codes')
+        .select('device_id, code, expires_at')
+        .in('device_id', deviceIds)
+        .eq('redeemed', false)
+        .gt('expires_at', now)
+        .order('created_at', { ascending: false })
+
+      for (const row of codes ?? []) {
+        // Keep only the most recent code per device (already sorted desc)
+        if (!pairingByDevice[row.device_id]) {
+          pairingByDevice[row.device_id] = { code: row.code, expires_at: row.expires_at }
+        }
+      }
+    }
+
+    const devicesWithCodes = (devices || []).map((d: any) => ({
+      ...d,
+      active_pairing_code: pairingByDevice[d.id]?.code ?? null,
+      pairing_code_expires_at: pairingByDevice[d.id]?.expires_at ?? null,
+    }))
+
+    return NextResponse.json({ devices: devicesWithCodes })
   } catch (error: any) {
     console.error('Unexpected error:', error)
     return NextResponse.json(

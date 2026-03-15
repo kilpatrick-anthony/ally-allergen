@@ -6,7 +6,7 @@ import Link from 'next/link'
 import {
   Package, ChefHat, Building, Shield,
   Check, ArrowRight, ChevronRight,
-  BookOpen, Zap
+  BookOpen, Zap, Star
 } from 'lucide-react'
 
 import { Container } from '../components/layout/Container'
@@ -15,11 +15,14 @@ import { Button } from '../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { NotificationsPanel } from '@/components/admin/NotificationsPanel'
 import { useTranslation } from '@/lib/hooks/useTranslation'
+import { getFrequentPages, type AdminPage } from '@/lib/hooks/useFrequentPages'
 
 export default function AdminDashboard() {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [hasData, setHasData] = useState(false)
+  const [businessId, setBusinessId] = useState<string | null>(null)
+  const [frequentPages, setFrequentPages] = useState<AdminPage[]>([])
   const [settings, setSettings] = useState({
     notificationsEnabled: true,
     datasheetAuditEnabled: true,
@@ -54,6 +57,11 @@ export default function AdminDashboard() {
         const hasSuppliers = Array.isArray(suppliersData) && suppliersData.length > 0
 
         setHasData(hasIngredients || hasMenuItems || hasDatasheets || hasSuppliers)
+
+        // Load businessId from sessionStorage (written by the admin layout)
+        const biz = typeof window !== 'undefined' ? sessionStorage.getItem('ally_biz') : null
+        setBusinessId(biz)
+        setFrequentPages(getFrequentPages(biz))
 
         // Load notification settings from localStorage
         if (typeof window !== 'undefined') {
@@ -121,63 +129,41 @@ export default function AdminDashboard() {
           <NotificationsPanel settings={settings} />
         </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Link href="/admin/ingredients">
-            <Card className="hover:shadow-lg transition-all cursor-pointer">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-blue-100 rounded-lg dark:bg-blue-900/20">
-                  <Package className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('admin.ingredients')}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.manageIngredients')}</p>
-                </div>
-              </div>
-            </Card>
-          </Link>
-
-          <Link href="/admin/menu-builder">
-            <Card className="hover:shadow-lg transition-all cursor-pointer">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-green-100 rounded-lg dark:bg-green-900/20">
-                  <ChefHat className="h-6 w-6 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('admin.menuBuilder')}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.createMenuItems')}</p>
-                </div>
-              </div>
-            </Card>
-          </Link>
-
-          <Link href="/admin/sites">
-            <Card className="hover:shadow-lg transition-all cursor-pointer">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-purple-100 rounded-lg dark:bg-purple-900/20">
-                  <Building className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('admin.locations')}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.manageSites')}</p>
-                </div>
-              </div>
-            </Card>
-          </Link>
-
-          <Link href="/admin/settings">
-            <Card className="hover:shadow-lg transition-all cursor-pointer">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-orange-100 rounded-lg dark:bg-orange-900/20">
-                  <Shield className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-white">{t('admin.settings')}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.configureSystem')}</p>
-                </div>
-              </div>
-            </Card>
-          </Link>
+        {/* Frequently Used */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Star className="h-4 w-4 text-[#42b8ac]" />
+            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+              Frequently Used
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {frequentPages.map((page) => {
+              const Icon = page.icon
+              return (
+                <Link key={page.href} href={page.href}>
+                  <Card className="hover:shadow-lg transition-all cursor-pointer group h-full">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-3 rounded-lg flex-shrink-0 ${page.colorClass}`}>
+                        <Icon className={`h-6 w-6 ${page.iconClass}`} />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-[#42b8ac] transition-colors truncate">
+                          {page.label}
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                          {page.description}
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
+              )
+            })}
+          </div>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 ml-1">
+            These tiles update automatically based on the pages you visit most
+          </p>
         </div>
       </Container>
     )
@@ -208,7 +194,7 @@ export default function AdminDashboard() {
       <Card className="mb-8 bg-gradient-to-br from-[#42b8ac]/5 to-[#003842]/5">
         <div className="text-center mb-8">
           <h2 className="text-2xl font-bold text-[#003842] dark:text-[#42b8ac] mb-2">{t('admin.gettingStarted')}</h2>
-        <p className="text-gray-600 dark:text-gray-300">{t('admin.gettingStartedDesc')}</p>
+          <p className="text-gray-600 dark:text-gray-300">{t('admin.gettingStartedDesc')}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -286,112 +272,42 @@ export default function AdminDashboard() {
         </div>
       </Card>
 
-      {/* Additional Resources */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <Link href="/admin/help">
-          <Card className="hover:shadow-lg transition-all cursor-pointer">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-amber-100 rounded-lg dark:bg-amber-900/20">
-                <BookOpen className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                  {t('admin.helpDocumentation')}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                  {t('admin.helpDocumentationDesc')}
-                </p>
-                <div className="flex items-center text-[#42b8ac] text-sm font-medium">
-                  {t('admin.browseHelpTopics')}
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </div>
-              </div>
-            </div>
-          </Card>
-        </Link>
-
-        <Link href="/admin/settings">
-          <Card className="hover:shadow-lg transition-all cursor-pointer">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-purple-100 rounded-lg dark:bg-purple-900/20">
-                <Zap className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
-                  {t('admin.configureBusiness')}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                  {t('admin.configureBusinessDesc')}
-                </p>
-                <div className="flex items-center text-[#42b8ac] text-sm font-medium">
-                  {t('admin.goToSettings')}
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </div>
-              </div>
-            </div>
-          </Card>
-        </Link>
+      {/* Frequently Used */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Star className="h-4 w-4 text-[#42b8ac]" />
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+            Frequently Used
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {frequentPages.map((page) => {
+            const Icon = page.icon
+            return (
+              <Link key={page.href} href={page.href}>
+                <Card className="hover:shadow-lg transition-all cursor-pointer group h-full">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-3 rounded-lg flex-shrink-0 ${page.colorClass}`}>
+                      <Icon className={`h-6 w-6 ${page.iconClass}`} />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-[#42b8ac] transition-colors truncate">
+                        {page.label}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                        {page.description}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            )
+          })}
+        </div>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 ml-1">
+          These tiles update automatically based on the pages you visit most
+        </p>
       </div>
-
-      {/* Features Overview */}
-      <Card>
-        <div className="mb-6">
-          <h2 className="text-xl font-bold text-[#003842] dark:text-[#42b8ac] mb-2">{t('admin.whatYouCanDo')}</h2>
-          <p className="text-gray-600 dark:text-gray-300">{t('admin.whatYouCanDoDesc')}</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-green-100 rounded-lg flex-shrink-0 dark:bg-green-900/20">
-              <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{t('admin.ingredientManagement')}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.ingredientManagementDesc')}</p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-green-100 rounded-lg flex-shrink-0 dark:bg-green-900/20">
-              <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Customer Kiosks</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300">Interactive displays for customers to check allergens</p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-green-100 rounded-lg flex-shrink-0 dark:bg-green-900/20">
-              <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Compliance Documents</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300">Upload and manage product specification sheets</p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-green-100 rounded-lg flex-shrink-0 dark:bg-green-900/20">
-              <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Review Reminders</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300">Automatic notifications when datasheets need review</p>
-            </div>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-green-100 rounded-lg flex-shrink-0 dark:bg-green-900/20">
-              <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-1">Reports & Analytics</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300">Generate allergen guides and compliance reports</p>
-            </div>
-          </div>
-        </div>
-      </Card>
     </Container>
   )
 }

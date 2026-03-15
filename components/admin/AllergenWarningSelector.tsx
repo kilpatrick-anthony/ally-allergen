@@ -204,11 +204,11 @@ export default function AllergenWarningSelector({
                 '--allergen-color-dark': darkerColor
               } as React.CSSProperties}
             >
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 {/* Allergen Icon & Name */}
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                   <div 
-                    className="flex items-center justify-center w-10 h-10 rounded-lg transition-all group-hover:scale-110 group-hover:shadow-lg"
+                    className="flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0 transition-all group-hover:scale-110 group-hover:shadow-lg"
                     style={{ 
                       backgroundColor: allergen.color,
                     }}
@@ -223,13 +223,13 @@ export default function AllergenWarningSelector({
                       >
                         {allergen.number}
                       </span>
-                      <h4 className="font-semibold text-gray-900 group-hover:text-gray-700 transition-colors">{allergen.name}</h4>
+                      <h4 className="font-semibold text-gray-900 group-hover:text-gray-700 transition-colors truncate">{allergen.name}</h4>
                     </div>
                   </div>
                 </div>
 
                 {/* Warning Level Selector */}
-                <div className="flex-shrink-0 w-64">
+                <div className="w-full sm:w-56 sm:flex-shrink-0">
                   <select
                     value={currentLevel}
                     onChange={(e) => handleLevelChange(allergen.id, e.target.value as AllergenLevel)}
@@ -272,15 +272,15 @@ export default function AllergenWarningSelector({
                       const subtypeSeverity = getAllergenSeverity(subtypeLevel);
                       
                       return (
-                        <div key={glutenType.key} className="flex items-center gap-3">
-                          <span className="text-sm font-medium text-gray-700 w-24 flex-shrink-0">
+                        <div key={glutenType.key} className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-3">
+                          <span className="text-sm font-medium text-gray-700 xs:w-24 xs:flex-shrink-0">
                             {glutenType.name}
                           </span>
                           <select
                             value={subtypeLevel}
                             onChange={(e) => handleSubtypeLevelChange('cereals_gluten', glutenType.key, e.target.value as AllergenLevel)}
                             disabled={disabled}
-                            className={`flex-1 border-2 rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                            className={`w-full border-2 rounded-lg px-3 py-1.5 text-sm transition-colors ${
                               subtypeSeverity === 'high' ? 'border-red-300 bg-red-50 text-red-900' :
                               subtypeSeverity === 'medium' ? 'border-amber-300 bg-amber-50 text-amber-900' :
                               subtypeSeverity === 'low' ? 'border-blue-300 bg-blue-50 text-blue-900' :
@@ -302,15 +302,15 @@ export default function AllergenWarningSelector({
                       const subtypeSeverity = getAllergenSeverity(subtypeLevel);
                       
                       return (
-                        <div key={nutType.key} className="flex items-center gap-3">
-                          <span className="text-sm font-medium text-gray-700 w-24 flex-shrink-0">
+                        <div key={nutType.key} className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-3">
+                          <span className="text-sm font-medium text-gray-700 xs:w-24 xs:flex-shrink-0">
                             {nutType.name}
                           </span>
                           <select
                             value={subtypeLevel}
                             onChange={(e) => handleSubtypeLevelChange('nuts', nutType.key, e.target.value as AllergenLevel)}
                             disabled={disabled}
-                            className={`flex-1 border-2 rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                            className={`w-full border-2 rounded-lg px-3 py-1.5 text-sm transition-colors ${
                               subtypeSeverity === 'high' ? 'border-red-300 bg-red-50 text-red-900' :
                               subtypeSeverity === 'medium' ? 'border-amber-300 bg-amber-50 text-amber-900' :
                               subtypeSeverity === 'low' ? 'border-blue-300 bg-blue-50 text-blue-900' :

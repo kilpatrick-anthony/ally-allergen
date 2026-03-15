@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 import { 
-  HelpCircle, Book, Video, FileText, MessageCircle, 
+  HelpCircle, Book, FileText, MessageCircle, 
   Mail, ExternalLink, Search, ChevronRight, Package,
   ChefHat, Building, BarChart, Download, Settings,
   Shield, Users, Zap, CheckCircle
@@ -17,6 +17,7 @@ import { Badge } from '../../components/ui/Badge'
 export default function HelpPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [activeCategory, setActiveCategory] = useState('all')
+  const [expandedTopic, setExpandedTopic] = useState<number | null>(null)
 
   const categories = [
     { id: 'all', name: 'All Topics', icon: Book },
@@ -143,6 +144,120 @@ export default function HelpPage() {
     }
   ]
 
+  const topicDetails: Record<number, string[]> = {
+    1: [
+      'Create your account and verify your email address.',
+      'Set up your first site (location) under Sites & Locations → Add Site.',
+      'Add your first ingredients with allergen information in the Ingredients section.',
+      'Use Menu Builder to combine ingredients into menu items — allergens are calculated automatically.',
+      'Pair a kiosk device to a site using the pairing code found in Site Settings → Devices.',
+      'Review your allergen coverage overview in the Analytics section.',
+    ],
+    2: [
+      'Dashboard — At-a-glance view of recent activity and your most frequently used tools.',
+      'Ingredients — Your central library of ingredient records, each with allergen info, suppliers, and datasheets.',
+      'Menu Builder — Combine ingredients into menu items with automatic allergen profile calculation.',
+      'Sites & Locations — Manage physical locations, pair kiosk devices, and control per-site menu visibility.',
+      'Analytics — Allergen coverage summaries, compliance stats, and usage insights.',
+      'Reports & Downloads — Generate and export printable allergen guides and compliance documents.',
+      'Settings — Account details, branding, notification preferences, and subscription management.',
+    ],
+    3: [
+      'Navigate to Ingredients → New Ingredient.',
+      'Enter the ingredient name and select a category.',
+      'Set allergen warning levels for each of the 14 EU-mandated allergens.',
+      'For Cereals/Gluten and Tree Nuts, specify sub-types where applicable.',
+      'Add relevant dietary certifications (Vegan, Halal, Gluten-Free, etc.).',
+      'Optionally upload a product datasheet or supplier spec sheet.',
+      'Link one or more suppliers and save — the ingredient is now available in Menu Builder.',
+    ],
+    4: [
+      'Datasheets are supplier-provided PDF spec sheets confirming allergen and ingredient information.',
+      'Upload a datasheet on any ingredient record under the Datasheets tab.',
+      'Set a review date when uploading — you will be reminded before it expires.',
+      'View and manage all datasheets centrally via Downloads → All Datasheets.',
+      'Datasheets approaching or past their review date are flagged in your Notifications panel.',
+      'Keeping datasheets current is essential for your allergen compliance audit trail.',
+    ],
+    5: [
+      'Each ingredient can have one or more linked suppliers.',
+      'Add a supplier on any ingredient record under the Suppliers tab.',
+      'Record the supplier name, contact email, phone number, and any reference codes.',
+      'Multiple suppliers allow you to track alternative sourcing options.',
+      'Supplier information is included in compliance exports and audit reports.',
+    ],
+    6: [
+      'Navigate to Menu Builder → New Item.',
+      'Name your menu item and choose its category.',
+      'Search for and add ingredients from your ingredient library.',
+      'AllyJen automatically calculates the combined allergen profile from all added ingredients.',
+      'Review the auto-calculated allergens — you can override any level if the finished dish differs.',
+      'Add dietary certifications that apply to the final prepared dish.',
+      'Save — the item is immediately live and displayed on paired kiosks.',
+    ],
+    7: [
+      'Contains — The allergen is a deliberate, listed ingredient in the recipe.',
+      'May Contain — Shared equipment or production lines create a cross-contamination risk.',
+      'Traces — Trace amounts may be present due to the manufacturing environment.',
+      'Not Suitable — The product is not considered safe for people with this allergy.',
+      'None — No risk of this allergen being present.',
+      'When a menu item is built from multiple ingredients, AllyJen applies the highest warning level found across all ingredients for each allergen.',
+    ],
+    8: [
+      'Vegan — Contains no animal products of any kind.',
+      'Vegetarian — No meat or fish; may contain dairy or eggs.',
+      'Gluten-Free — Confirmed free from gluten-containing cereals.',
+      'Dairy-Free — Contains no milk or milk-derived ingredients.',
+      'Halal — Prepared in accordance with Islamic dietary guidelines.',
+      'Kosher — Prepared in accordance with Jewish dietary guidelines.',
+      'Certifications can be applied at ingredient level and/or menu item level. Menu item certifications take precedence when displaying to customers.',
+    ],
+    9: [
+      'Navigate to Sites & Locations → Add Site.',
+      'Enter your site name, physical address, and contact details.',
+      'Each site gets its own unique kiosk display URL.',
+      'Enable or disable menu categories per site to control what customers see.',
+      'Manage devices (kiosks) for the site under the Devices tab — generate a pairing code to link a new device.',
+    ],
+    10: [
+      'In Sites & Locations, select a site and open Kiosk Settings.',
+      'Upload your logo for the kiosk header and branded display.',
+      'Choose a primary brand colour to match your venue.',
+      'Toggle which menu categories and items are visible at this location.',
+      'Changes are reflected on the live kiosk immediately upon saving.',
+      'Use the Preview button to see how your kiosk looks before going live.',
+    ],
+    11: [
+      'EU Regulation 1169/2011 requires the 14 major allergens to be declared on all food products.',
+      'For pre-packed food: allergens must be emphasised in the ingredients list (bold, underline, or different colour).',
+      'For non-prepacked/loose food: allergen information must be available on request or proactively displayed.',
+      'AllyJen helps you maintain accurate allergen records and generate compliant labelling and display materials.',
+      'Review allergen data regularly — update records whenever supplier formulations change.',
+      'Tip: Generate an allergen matrix from the Reports section to print and display in-venue for staff and customers.',
+    ],
+    12: [
+      'When uploading a datasheet, set a review date (typically annual or when a formulation change is expected).',
+      'AllyJen flags datasheets approaching their review date in your Notifications panel.',
+      'Click Review on a flagged datasheet to confirm it is still current, or upload a replacement document.',
+      'Reviewed datasheets reset their review countdown from the date of review.',
+      'Maintaining up-to-date datasheets provides a clear, dated audit trail for compliance inspections.',
+    ],
+    13: [
+      'Navigate to Downloads & Reports.',
+      'Choose from: Allergen Matrix (all menu items vs. all allergens), Full Ingredient Report, or Compliance Summary.',
+      'Apply filters by site, category, or date range to narrow the report scope.',
+      'Download reports as PDF for printing or as CSV for spreadsheet use.',
+      'Printed allergen matrices are a practical compliance tool to display for staff and customers in-venue.',
+    ],
+    14: [
+      'Go to Downloads → All Datasheets for a central view of every uploaded spec sheet across all ingredients.',
+      'Filter by status: Current, Due for Review, Overdue, or Missing.',
+      'Click any datasheet entry to open or download the original PDF.',
+      'Use the bulk export option to download all datasheets as a ZIP file — useful for audits or off-site review.',
+      'Missing datasheets (ingredients with no uploaded spec sheet) are highlighted so you can follow up with suppliers.',
+    ],
+  }
+
   const filteredTopics = helpTopics.filter(topic => {
     const matchesCategory = activeCategory === 'all' || topic.category === activeCategory
     const matchesSearch = topic.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -151,13 +266,6 @@ export default function HelpPage() {
   })
 
   const quickLinks = [
-    {
-      title: 'Video Tutorials',
-      description: 'Watch step-by-step video guides',
-      icon: Video,
-      href: '#help-topics',
-      color: 'red'
-    },
     {
       title: 'Documentation',
       description: 'Read detailed documentation',
@@ -169,14 +277,14 @@ export default function HelpPage() {
       title: 'Contact Support',
       description: 'Get help from our team',
       icon: MessageCircle,
-      href: 'mailto:support@allyjen.com',
+      href: 'mailto:info@allyjen.ie',
       color: 'green'
     },
     {
       title: 'Email Us',
-      description: 'support@allyjen.com',
+      description: 'info@allyjen.ie',
       icon: Mail,
-      href: 'mailto:support@allyjen.com',
+      href: 'mailto:info@allyjen.ie',
       color: 'purple'
     }
   ]
@@ -318,26 +426,53 @@ export default function HelpPage() {
               gray: 'from-gray-500 to-gray-600'
             }
 
+            const isExpanded = expandedTopic === topic.id
             return (
-              <Card key={topic.id} className="hover:shadow-lg transition-all cursor-pointer group">
-                <div className="flex items-start gap-4">
-                  <div className={`p-3 bg-gradient-to-br ${colorClasses[topic.color as keyof typeof colorClasses]} rounded-lg group-hover:scale-110 transition-transform`}>
-                    <topic.icon className="h-6 w-6 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-[#42b8ac] transition-colors">
-                      {topic.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                      {topic.description}
-                    </p>
-                    <div className="flex items-center text-[#42b8ac] text-sm font-medium">
-                      Learn more
-                      <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+              <div
+                key={topic.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => setExpandedTopic(isExpanded ? null : topic.id)}
+                onKeyDown={(e) => e.key === 'Enter' && setExpandedTopic(isExpanded ? null : topic.id)}
+                className="cursor-pointer group"
+              >
+                <Card className="hover:shadow-lg transition-all">
+                  <div className="flex items-start gap-4">
+                    <div className={`p-3 bg-gradient-to-br ${colorClasses[topic.color as keyof typeof colorClasses]} rounded-lg group-hover:scale-110 transition-transform flex-shrink-0`}>
+                      <topic.icon className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-[#42b8ac] transition-colors">
+                        {topic.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                        {topic.description}
+                      </p>
+                      <div className="flex items-center text-[#42b8ac] text-sm font-medium">
+                        {isExpanded ? 'Close' : 'Learn more'}
+                        <ChevronRight className={`h-4 w-4 ml-1 transition-transform ${isExpanded ? 'rotate-90' : 'group-hover:translate-x-1'}`} />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Card>
+                  {isExpanded && topicDetails[topic.id] && (
+                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                      <ol className="space-y-2">
+                        {topicDetails[topic.id].map((point: string, i: number) => (
+                          <li key={i} className="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-300">
+                            <span
+                              className="mt-0.5 flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white"
+                              style={{ backgroundColor: '#42b8ac' }}
+                            >
+                              {i + 1}
+                            </span>
+                            {point}
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+                </Card>
+              </div>
             )
           })}
         </div>
@@ -354,12 +489,16 @@ export default function HelpPage() {
             Can't find what you're looking for? Our support team is here to help.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="primary" size="lg" icon={MessageCircle}>
-              Contact Support
-            </Button>
-            <Button variant="secondary" size="lg" icon={Mail}>
-              Email Us
-            </Button>
+            <a href="mailto:info@allyjen.ie">
+              <Button variant="primary" size="lg" icon={MessageCircle}>
+                Contact Support
+              </Button>
+            </a>
+            <a href="mailto:info@allyjen.ie">
+              <Button variant="secondary" size="lg" icon={Mail}>
+                Email Us
+              </Button>
+            </a>
           </div>
         </div>
       </Card>

@@ -11,6 +11,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import SpeechController from '@/components/SpeechController'
+import { trackAdminPageVisit } from '@/lib/hooks/useFrequentPages'
 
 interface AdminLayoutProps {
   children: ReactNode
@@ -21,12 +22,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const { t } = useTranslation()
   const [userName, setUserName] = useState<string>('')
   const [userEmail, setUserEmail] = useState<string>('')
+  const [businessId, setBusinessId] = useState<string | null>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const pathname = usePathname()
 
   useEffect(() => {
     setIsSidebarOpen(false)
-  }, [pathname])
+    // Track page visits — businessId may not be loaded yet; fall back to sessionStorage
+    const biz = businessId ?? (typeof window !== 'undefined' ? sessionStorage.getItem('ally_biz') : null)
+    trackAdminPageVisit(pathname, biz)
+  }, [pathname, businessId])
 
   useEffect(() => {
     // Load user info from session API
@@ -38,6 +43,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         if (data.authenticated && data.user) {
           setUserEmail(data.user.email || '')
           setUserName(data.user.name || data.user.email?.split('@')[0] || 'Admin User')
+          const biz = data.user.businessId || null
+          setBusinessId(biz)
+          if (biz && typeof window !== 'undefined') {
+            sessionStorage.setItem('ally_biz', biz)
+          }
         }
       } catch (error) {
         console.error('Failed to load user info:', error)
