@@ -125,14 +125,14 @@ export default function AllKiosksPage() {
             Back to Sites
           </Link>
           
-          <div className="flex justify-between items-start">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-gradient-to-br from-teal-400 to-teal-600 dark:from-teal-500 dark:to-gray-700 rounded-lg">
+                <div className="p-2 bg-gradient-to-br from-teal-400 to-teal-600 dark:from-teal-500 dark:to-gray-700 rounded-lg flex-shrink-0">
                   <Tablet className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">All Kiosks & Devices</h1>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">All Kiosks & Devices</h1>
                   <p className="text-gray-600">
                     Manage all devices across all locations
                   </p>
@@ -143,6 +143,7 @@ export default function AllKiosksPage() {
               variant="outline"
               icon={RefreshCw}
               onClick={loadAllDevices}
+              className="self-start flex-shrink-0"
             >
               Refresh
             </Button>
@@ -276,7 +277,7 @@ export default function AllKiosksPage() {
                         </Badge>
                       </div>
                       
-                      <div className="flex items-center gap-6 text-sm text-gray-600 mb-3">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-600 mb-3">
                         <div className="flex items-center gap-2">
                           <Building className="h-4 w-4" />
                           {device.site ? (

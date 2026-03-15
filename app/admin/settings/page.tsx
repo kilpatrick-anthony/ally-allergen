@@ -1182,9 +1182,9 @@ export default function SettingsPage() {
                 </div>
                 <div className="p-6">
                   <div className="space-y-4">
-                    <div className="flex justify-between items-center p-4 border dark:border-gray-700 rounded-lg">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border dark:border-gray-700 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg">
+                        <div className="p-2 bg-green-100 dark:bg-green-900/20 rounded-lg flex-shrink-0">
                           <Shield className="h-5 w-5 text-green-600" />
                         </div>
                         <div>
@@ -1192,7 +1192,7 @@ export default function SettingsPage() {
                           <p className="text-sm text-gray-500 dark:text-gray-400">Add an extra layer of security to your account</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-shrink-0">
                         <Badge variant={settings.twoFactorAuth ? 'success' : 'default'}>
                           {settings.twoFactorAuth ? 'Enabled' : 'Disabled'}
                         </Badge>
@@ -1201,10 +1201,8 @@ export default function SettingsPage() {
                           size="sm"
                           onClick={() => {
                             if (settings.twoFactorAuth) {
-                              // Disable 2FA
                               disableTwoFactor()
                             } else {
-                              // Enable 2FA
                               setShowTwoFactor(true)
                             }
                           }}
@@ -1214,9 +1212,9 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    <div className="flex justify-between items-center p-4 border dark:border-gray-700 rounded-lg">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border dark:border-gray-700 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
+                        <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg flex-shrink-0">
                           <Lock className="h-5 w-5 text-blue-600" />
                         </div>
                         <div>
@@ -1230,7 +1228,7 @@ export default function SettingsPage() {
                           setSettings({...settings, sessionTimeout: e.target.value})
                           setHasUnsavedChanges(true)
                         }}
-                        className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full sm:w-auto border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       >
                         <option>5 minutes</option>
                         <option>15 minutes</option>
@@ -1239,9 +1237,9 @@ export default function SettingsPage() {
                       </select>
                     </div>
 
-                    <div className="flex justify-between items-center p-4 border dark:border-gray-700 rounded-lg">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 border dark:border-gray-700 rounded-lg">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
+                        <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg flex-shrink-0">
                           <Key className="h-5 w-5 text-purple-600" />
                         </div>
                         <div>
@@ -1249,7 +1247,7 @@ export default function SettingsPage() {
                           <p className="text-sm text-gray-500 dark:text-gray-400">Update your account password</p>
                         </div>
                       </div>
-                      <Button onClick={() => setShowChangePassword(true)}>
+                      <Button onClick={() => setShowChangePassword(true)} className="w-full sm:w-auto">
                         Change Password
                       </Button>
                     </div>

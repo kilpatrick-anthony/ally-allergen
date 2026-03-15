@@ -771,7 +771,7 @@ export default function DownloadsPage() {
             </div>
 
             <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="space-y-1">
                   <h3 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
                     <BarChart3 className="h-5 w-5 text-teal-500" />
@@ -779,7 +779,7 @@ export default function DownloadsPage() {
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-300">Real-time usage statistics and customer interaction data</p>
                 </div>
-                <Link href="/admin/analytics">
+                <Link href="/admin/analytics" className="flex-shrink-0">
                   <Button
                     variant="outline"
                     icon={BarChart3}

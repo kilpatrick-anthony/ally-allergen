@@ -254,17 +254,17 @@ export default function EditIngredientPage() {
         </Link>
       </div>
 
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-gradient-to-br from-[#42b8ac] to-[#003842] rounded-xl">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="p-3 bg-gradient-to-br from-[#42b8ac] to-[#003842] rounded-xl flex-shrink-0">
             <Package className="h-8 w-8 text-white" />
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-[#003842]">Edit Ingredient</h1>
+          <div className="min-w-0">
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#003842]">Edit Ingredient</h1>
             <p className="text-gray-600">Update ingredient details and allergen information</p>
           </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-shrink-0">
           <Button 
             variant="outline" 
             onClick={() => router.push('/admin/ingredients')}

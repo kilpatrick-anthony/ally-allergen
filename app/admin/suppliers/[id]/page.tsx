@@ -126,13 +126,13 @@ export default function SupplierDetailPage() {
   return (
     <Container>
       <div className="py-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <Link href="/admin/suppliers">
             <Button variant="ghost" icon={ArrowLeft}>
               Back to Suppliers
             </Button>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button variant="outline" icon={Save} onClick={async () => {
               if (!supplier) return
               if (!form.name.trim()) {

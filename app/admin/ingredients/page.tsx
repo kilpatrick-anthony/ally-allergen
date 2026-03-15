@@ -470,9 +470,9 @@ export default function IngredientsPage() {
       {/* Bulk Actions */}
       {selectedIngredients.length > 0 && (
         <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
+              <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
                 <Package className="h-5 w-5 text-blue-600" />
               </div>
               <div>
@@ -484,7 +484,7 @@ export default function IngredientsPage() {
                 </p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 size="sm"

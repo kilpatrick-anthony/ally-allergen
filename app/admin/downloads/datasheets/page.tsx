@@ -252,21 +252,21 @@ export default function DatasheetsPage() {
           </Link>
         </div>
         
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-gradient-to-br from-[#42b8ac] to-[#003842] rounded-lg">
+              <div className="p-2 bg-gradient-to-br from-[#42b8ac] to-[#003842] rounded-lg flex-shrink-0">
                 <FileText className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-[#003842]">Product Datasheets</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-[#003842]">Product Datasheets</h1>
                 <p className="text-gray-600">
                   View and manage all product specification sheets and compliance documents
                 </p>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Badge variant="primary" icon={FileText}>
               {stats.total} datasheets
             </Badge>
@@ -441,7 +441,7 @@ export default function DatasheetsPage() {
         <div className="space-y-4">
           {filteredDatasheets.map((datasheet) => (
             <Card key={datasheet.id}>
-              <div className="flex items-start justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div className="flex items-start space-x-4 flex-1">
                   <div className="text-3xl mt-1">
                     {datasheet.file_type.includes('pdf') ? '📄' : 
@@ -463,7 +463,7 @@ export default function DatasheetsPage() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                       <div>
                         <p className="text-xs text-gray-500">Associated With</p>
                         <div className="flex items-center space-x-2 mt-1">
@@ -508,7 +508,7 @@ export default function DatasheetsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2 ml-4">
+                <div className="flex flex-wrap items-center gap-2">
                   <Button
                     variant="secondary"
                     size="sm"
