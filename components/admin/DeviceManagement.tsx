@@ -268,7 +268,7 @@ export default function DeviceManagement({
 
       {/* Actions */}
       <Card>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h3 className="text-lg font-semibold text-[#003842]">
               Devices for {siteName}
@@ -277,7 +277,7 @@ export default function DeviceManagement({
               Manage kiosks, tablets, and displays connected to this location
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Button
               variant="outline"
               icon={RefreshCw}
