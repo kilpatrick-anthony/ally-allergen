@@ -152,25 +152,22 @@ export default function SiteKioskPage() {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Site Header */}
-        <div className="mb-10 text-center">
-          <div className="flex items-center justify-between max-w-4xl mx-auto mb-6">
-            <div className="inline-flex items-center gap-3 px-6 py-3 bg-white rounded-2xl shadow-sm border border-gray-200">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Building className="h-6 w-6 text-[#42b8ac]" />
+        <div className="mb-10">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 max-w-4xl mx-auto mb-6">
+            <div className="flex items-center gap-3 px-4 py-3 sm:px-6 bg-white rounded-2xl shadow-sm border border-gray-200 min-w-0">
+              <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
+                <Building className="h-5 w-5 sm:h-6 sm:w-6 text-[#42b8ac]" />
               </div>
-              <div className="text-left">
-                <h1 className="text-3xl font-bold text-gray-900">
+              <div className="text-left min-w-0">
+                <h1 className="text-xl sm:text-3xl font-bold text-gray-900 truncate">
                   {site.business?.name || 'Allergen Guide'}
                 </h1>
-                <h2 className="text-xl text-gray-700 font-medium">{site.name}</h2>
+                <h2 className="text-base sm:text-xl text-gray-700 font-medium truncate">{site.name}</h2>
               </div>
             </div>
             
-            <Link href={`/admin/sites/${slug}/edit`}>
-              <Button
-                variant="primary"
-                icon={Edit}
-              >
+            <Link href={`/admin/sites/${slug}/edit`} className="self-start sm:self-auto flex-shrink-0">
+              <Button variant="primary" icon={Edit}>
                 Edit Site
               </Button>
             </Link>
@@ -178,7 +175,7 @@ export default function SiteKioskPage() {
 
           {/* Location + Map Preview */}
           {(site.address || site.city || site.country || site.eircode) && (
-            <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm p-6 border border-gray-200 mb-6">
+            <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200 mb-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Location</h3>
               <p className="text-sm text-gray-600 mb-4">
                 {site.address || 'Address not set'}
@@ -199,10 +196,10 @@ export default function SiteKioskPage() {
           )}
 
           {/* Contact Info Tiles */}
-          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6">
             {/* Address Tile */}
             {site.address && (
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+              <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200">
                 <div className="flex items-start gap-3">
                   <div className="p-2 bg-blue-100 rounded-lg">
                     <MapPin className="h-5 w-5 text-blue-600" />
@@ -220,7 +217,7 @@ export default function SiteKioskPage() {
             
             {/* Phone Tile */}
             {site.phone && (
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+              <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200">
                 <div className="flex items-start gap-3">
                   <div className="p-2 bg-green-100 rounded-lg">
                     <Phone className="h-5 w-5 text-[#42b8ac]" />
@@ -234,7 +231,7 @@ export default function SiteKioskPage() {
             
             {/* Email Tile */}
             {site.email && (
-              <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
+              <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200">
                 <div className="flex items-start gap-3">
                   <div className="p-2 bg-purple-100 rounded-lg">
                     <Mail className="h-5 w-5 text-purple-600" />
