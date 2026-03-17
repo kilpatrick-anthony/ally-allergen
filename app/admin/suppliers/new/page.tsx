@@ -35,7 +35,8 @@ export default function NewSupplierPage() {
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Failed to create supplier')
-      router.push(`/admin/suppliers/${data.supplier?.id || data.id}`)
+      const newId = data.supplier?.id || data.id || data.suppliers?.[0]?.id
+      router.push(`/admin/suppliers/${newId}`)
     } catch (err: any) {
       setError(err.message || 'Failed to create supplier')
       setLoading(false)

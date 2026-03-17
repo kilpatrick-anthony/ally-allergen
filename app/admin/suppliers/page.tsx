@@ -171,8 +171,8 @@ export default function SuppliersPage() {
       {/* Suppliers Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {filteredSuppliers.map((supplier) => (
-          <Card key={supplier.id} className="hover:shadow-lg transition-shadow group">
-            <div className="p-6">
+          <Card key={supplier.id} className="hover:shadow-lg transition-shadow group flex flex-col">
+            <div className="p-6 flex flex-col flex-1">
               {/* Supplier Header */}
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
@@ -188,7 +188,7 @@ export default function SuppliersPage() {
               </div>
 
               {/* Supplier Details */}
-              <div className="space-y-3 mb-6">
+              <div className="space-y-3 mb-6 flex-1">
                 <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                   <ShoppingBag className="h-4 w-4 mr-2 text-gray-400" />
                   {supplier.contact}
