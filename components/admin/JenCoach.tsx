@@ -381,8 +381,6 @@ export function JenCoach() {
           style={{
             background: open
               ? 'linear-gradient(135deg, #003842 0%, #005a6e 100%)'
-              : coachMode === 'ally'
-              ? 'linear-gradient(135deg, #0e7066 0%, #1a9e94 60%, #42b8ac 100%)'
               : 'linear-gradient(135deg, #003842 0%, #00616e 60%, #42b8ac 100%)',
             paddingRight: open ? '0' : '18px',
           }}
