@@ -1,29 +1,44 @@
 // app/api/pdf/track-download/route.ts
-import { createClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { jwtVerify } from 'jose'
+import { cookies } from 'next/headers'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient()
+    const cookieStore = await cookies()
+    const authToken = cookieStore.get('auth-token')?.value
 
-    const body = await request.json().catch(() => ({}))
-    const downloadType = typeof body?.downloadType === 'string' ? body.downloadType : null
-    const requestedSiteId = typeof body?.siteId === 'string' ? body.siteId : null
-    
-    // Get current user
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-    if (authError || !user) {
+    if (!authToken) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
+    // Verify JWT token
+    const secret = new TextEncoder().encode(process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret')
+    const { payload } = await jwtVerify(authToken, secret)
+
+    const userId = payload.userId as string
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json().catch(() => ({}))
+    const downloadType = typeof body?.downloadType === 'string' ? body.downloadType : null
+    const requestedSiteId = typeof body?.siteId === 'string' ? body.siteId : null
+
+    const supabase = createServiceClient()
+
     // Get user's business
     const { data: userBusiness, error: ubError } = await supabase
       .from('user_businesses')
       .select('business_id')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .single()
 
     if (ubError || !userBusiness) {
@@ -33,7 +48,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Get business info (no longer checking trial limits)
+    // Get business info
     const { data: business, error: businessError } = await supabase
       .from('businesses')
       .select('id')
@@ -47,7 +62,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // PDF downloads are now always allowed - no trial restrictions
+    // PDF downloads are always allowed - no trial restrictions
 
     let siteId: string | null = null
     if (requestedSiteId) {
@@ -66,7 +81,7 @@ export async function POST(request: NextRequest) {
       .insert({
         business_id: business.id,
         site_id: siteId,
-        user_id: user.id,
+        user_id: userId,
         download_type: downloadType
       })
 
