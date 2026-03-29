@@ -2,11 +2,13 @@
 
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { hexToRgb, fetchLogoAsDataUrl, ALLYJEN_PRIMARY } from './pdfBranding'
 
 interface SiteOverviewReportOptions {
   business: {
     id: string
     name: string
+    settings?: { primaryColor?: string | null; logoUrl?: string | null } | null
   }
   sites: any[]
   menuItems: any[]
@@ -16,142 +18,115 @@ interface SiteOverviewReportOptions {
 export async function generateSiteOverviewReportPDF(options: SiteOverviewReportOptions) {
   const { business, sites, menuItems, ingredients } = options
 
+  const primaryRgb = hexToRgb(business.settings?.primaryColor)
+  const logoDataUrl = business.settings?.logoUrl
+    ? await fetchLogoAsDataUrl(business.settings.logoUrl)
+    : null
+
   const doc = new jsPDF()
+  const pageWidth = doc.internal.pageSize.getWidth()
+  let y = 25
 
-  // Header
-  doc.setFontSize(20)
-  doc.setTextColor(0, 56, 66) // #003842
-  doc.text(`${business.name} - Site Overview Report`, 20, 30)
+  if (logoDataUrl) {
+    try { doc.addImage(logoDataUrl, 'auto', 10, y - 10, 30, 14) } catch { /* ignore */ }
+    y = 42
+  }
 
-  doc.setFontSize(12)
+  doc.setFontSize(18)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...primaryRgb)
+  doc.text(business.name, pageWidth / 2, y, { align: 'center' })
+  y += 8
+
+  doc.setFontSize(13)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(80, 80, 80)
+  doc.text('Site Overview Report', pageWidth / 2, y, { align: 'center' })
+  y += 8
+
+  doc.setFontSize(10)
   doc.setTextColor(100, 100, 100)
-  doc.text(`Generated on ${new Date().toLocaleDateString()}`, 20, 40)
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, y); y += 6
+  doc.text(`Sites: ${sites.length}   Menu Items: ${menuItems.length}   Ingredients: ${ingredients.length}`, 20, y)
+  y += 10
 
-  // Summary stats
-  doc.text(`Total Sites: ${sites.length}`, 20, 50)
-  doc.text(`Total Menu Items: ${menuItems.length}`, 20, 60)
-  doc.text(`Total Ingredients: ${ingredients.length}`, 20, 70)
-
-  let yPosition = 80
-
-  // Sites table
-  doc.setFontSize(14)
-  doc.setTextColor(0, 56, 66)
-  doc.text('Sites Summary', 20, yPosition)
-  yPosition += 10
+  doc.setFontSize(13)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...primaryRgb)
+  doc.text('Sites Summary', 20, y)
+  y += 8
 
   const sitesData = sites.map(site => [
     site.name || 'N/A',
     menuItems.filter(item => item.site_id === site.id || item.site_id === null).length,
-    ingredients.length // All ingredients are shared across sites
+    ingredients.length
   ])
 
   autoTable(doc, {
     head: [['Site Name', 'Menu Items', 'Ingredients']],
     body: sitesData,
-    startY: yPosition,
-    styles: {
-      fontSize: 9,
-      cellPadding: 3,
-    },
-    headStyles: {
-      fillColor: [0, 56, 66], // #003842
-      textColor: 255,
-      fontSize: 10,
-      fontStyle: 'bold',
-    },
-    alternateRowStyles: {
-      fillColor: [248, 250, 252], // Light gray
-    },
+    startY: y,
+    styles: { fontSize: 9, cellPadding: 3 },
+    headStyles: { fillColor: primaryRgb, textColor: 255, fontSize: 10, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
   })
 
-  yPosition = (doc as any).lastAutoTable.finalY + 20
+  y = (doc as any).lastAutoTable.finalY + 14
 
-  // Menu items by category
   const categoryStats = menuItems.reduce((acc, item) => {
-    const category = item.category || 'Uncategorized'
+    const category = item.category || 'Uncategorised'
     acc[category] = (acc[category] || 0) + 1
     return acc
   }, {} as Record<string, number>)
 
-  doc.setFontSize(14)
-  doc.setTextColor(0, 56, 66)
-  doc.text('Menu Items by Category', 20, yPosition)
-  yPosition += 10
-
-  const categoryData: string[][] = Object.entries(categoryStats).map(([category, count]) => [
-    category,
-    (count as number).toString()
-  ])
+  doc.setFontSize(13)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...primaryRgb)
+  doc.text('Menu Items by Category', 20, y)
+  y += 8
 
   autoTable(doc, {
     head: [['Category', 'Count']],
-    body: categoryData,
-    startY: yPosition,
-    styles: {
-      fontSize: 9,
-      cellPadding: 3,
-    },
-    headStyles: {
-      fillColor: [66, 184, 172], // #42b8ac
-      textColor: 255,
-      fontSize: 10,
-      fontStyle: 'bold',
-    },
-    alternateRowStyles: {
-      fillColor: [248, 250, 252], // Light gray
-    },
+    body: Object.entries(categoryStats).map(([cat, cnt]) => [cat, (cnt as number).toString()]),
+    startY: y,
+    styles: { fontSize: 9, cellPadding: 3 },
+    headStyles: { fillColor: primaryRgb, textColor: 255, fontSize: 10, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
   })
 
-  yPosition = (doc as any).lastAutoTable.finalY + 20
+  y = (doc as any).lastAutoTable.finalY + 14
 
-  // Ingredients by status
   const statusStats = ingredients.reduce((acc, item) => {
     const status = item.status || 'Unknown'
     acc[status] = (acc[status] || 0) + 1
     return acc
   }, {} as Record<string, number>)
 
-  doc.setFontSize(14)
-  doc.setTextColor(0, 56, 66)
-  doc.text('Ingredients by Status', 20, yPosition)
-  yPosition += 10
-
-  const statusData: string[][] = Object.entries(statusStats).map(([status, count]) => [
-    status,
-    (count as number).toString()
-  ])
+  doc.setFontSize(13)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...primaryRgb)
+  doc.text('Ingredients by Status', 20, y)
+  y += 8
 
   autoTable(doc, {
     head: [['Status', 'Count']],
-    body: statusData,
-    startY: yPosition,
-    styles: {
-      fontSize: 9,
-      cellPadding: 3,
-    },
-    headStyles: {
-      fillColor: [239, 68, 68], // #ef4444
-      textColor: 255,
-      fontSize: 10,
-      fontStyle: 'bold',
-    },
-    alternateRowStyles: {
-      fillColor: [248, 250, 252], // Light gray
-    },
+    body: Object.entries(statusStats).map(([st, cnt]) => [st, (cnt as number).toString()]),
+    startY: y,
+    styles: { fontSize: 9, cellPadding: 3 },
+    headStyles: { fillColor: primaryRgb, textColor: 255, fontSize: 10, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [248, 250, 252] },
   })
 
-  // Footer
   const pageCount = doc.getNumberOfPages()
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i)
     doc.setFontSize(8)
     doc.setTextColor(150, 150, 150)
     doc.text(`Page ${i} of ${pageCount}`, 20, doc.internal.pageSize.height - 10)
-    doc.text('Generated by Ally Allergen Management System', doc.internal.pageSize.width - 100, doc.internal.pageSize.height - 10)
+    doc.text('Generated by AllyJen', doc.internal.pageSize.width - 20, doc.internal.pageSize.height - 10, { align: 'right' })
   }
 
-  // Save the PDF
   const fileName = `${business.name.replace(/[^a-zA-Z0-9]/g, '_')}_Site_Overview_Report_${new Date().toISOString().split('T')[0]}.pdf`
   doc.save(fileName)
+}
 }

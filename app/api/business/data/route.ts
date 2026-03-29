@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       ingredientsResult,
       suppliersResult
     ] = await Promise.all([
-      supabase.from('businesses').select('id, name').eq('id', businessId).single(),
+      supabase.from('businesses').select('id, name, settings').eq('id', businessId).single(),
       supabase.from('sites').select('id, name').eq('business_id', businessId).order('name'),
       supabase.from('menu_items').select('*').eq('business_id', businessId).eq('is_active', true),
       supabase.from('ingredients').select('*').eq('business_id', businessId),

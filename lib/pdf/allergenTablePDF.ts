@@ -16,9 +16,16 @@ import {
   type AllergenLevel,
 } from '@/types/allergen'
 import type { Business, MenuItem } from '@/lib/hooks/useOfflineKioskData'
+import { hexToRgb, fetchLogoAsDataUrl } from './pdfBranding'
 
 interface PDFOptions {
-  business: Business
+  business: Business & {
+    settings?: {
+      primaryColor?: string | null
+      logoUrl?: string | null
+      address?: { street?: string; city?: string; postalCode?: string; country?: string; phone?: string } | null
+    } | null
+  }
   items: MenuItem[]
   title?: string
   includeDescription?: boolean
@@ -38,18 +45,33 @@ function getLevel(item: MenuItem, allergenId: string): AllergenLevel {
 }
 
 /**
- * Builds an array of subtype name strings for a gluten or nut allergen,
- * e.g. ["Wheat", "Oats"] or ["Almonds", "Walnuts"].
+ * Builds an array of subtype name strings for a gluten or nut allergen.
+ * Supports the current format (cereals_gluten_levels / nuts_levels objects)
+ * as well as the legacy format (cereals_gluten_types / nuts_types arrays).
  */
 function getSubtypeNames(item: MenuItem, allergenId: string): string[] {
   if (!item.allergen_warnings) return []
-  const w = item.allergen_warnings
+  const w = item.allergen_warnings as any
 
   if (allergenId === 'cereals_gluten') {
+    // Current format: { wheat: 'contains', oats: 'traces', ... }
+    if (w.cereals_gluten_levels && typeof w.cereals_gluten_levels === 'object') {
+      return Object.entries(w.cereals_gluten_levels as Record<string, string>)
+        .filter(([, lvl]) => lvl && lvl !== 'none')
+        .map(([key]) => GLUTEN_TYPES.find(g => g.key === key)?.name || key)
+    }
+    // Legacy format: array of type keys
     const types: GlutenType[] = w.cereals_gluten_types || []
     return types.map(k => GLUTEN_TYPES.find(g => g.key === k)?.name || k)
   }
   if (allergenId === 'nuts') {
+    // Current format: { almonds: 'contains', cashews: 'may_contain', ... }
+    if (w.nuts_levels && typeof w.nuts_levels === 'object') {
+      return Object.entries(w.nuts_levels as Record<string, string>)
+        .filter(([, lvl]) => lvl && lvl !== 'none')
+        .map(([key]) => TREE_NUT_TYPES.find(n => n.key === key)?.name || key)
+    }
+    // Legacy format: array of type keys
     const types: TreeNutType[] = w.nuts_types || []
     return types.map(k => TREE_NUT_TYPES.find(n => n.key === k)?.name || k)
   }
@@ -89,18 +111,7 @@ function buildWarningLines(item: MenuItem): string[] {
 }
 
 /**
- * Returns the tick symbol for the allergen cell:
- *   ✓   — contains / not_suitable (high severity)
- *   (✓) — may_contain / traces / cross_contamination
- *   ""  — not present
- */
-function tickMark(level: AllergenLevel): string {
-  if (level === 'none') return ''
-  return getAllergenSeverity(level) === 'high' ? '\u2713' : '(\u2713)'
-}
-
-/**
- * Light cell fill colour — tinted so the tick remains readable.
+ * Light cell fill colour for allergen indicator cells.
  */
 function cellFill(level: AllergenLevel): [number, number, number] | null {
   switch (level) {
@@ -116,21 +127,69 @@ function cellFill(level: AllergenLevel): [number, number, number] | null {
   }
 }
 
+/**
+ * Draw a vector checkmark inside an allergen indicator cell.
+ * @param high – true for solid red (contains), false for amber (may contain)
+ */
+function drawCheckmark(
+  doc: jsPDF,
+  cellX: number, cellY: number, cellW: number, cellH: number,
+  high: boolean
+): void {
+  const cx = cellX + cellW / 2
+  const cy = cellY + cellH / 2
+  const s  = Math.min(cellW, cellH) * 0.28
+  const color: [number, number, number] = high ? [153, 27, 27] : [133, 77, 14]
+  doc.setDrawColor(...color)
+  doc.setLineWidth(0.7)
+  // Short left stroke (downward)
+  doc.line(cx - s, cy + s * 0.05, cx - s * 0.1, cy + s * 0.9)
+  // Long right stroke (upward)
+  doc.line(cx - s * 0.1, cy + s * 0.9, cx + s, cy - s * 0.5)
+}
+
+/** Draw parentheses around a checkmark to indicate a "may contain" level. */
+function drawParentheses(
+  doc: jsPDF,
+  cellX: number, cellY: number, cellW: number, cellH: number
+): void {
+  const cx = cellX + cellW / 2
+  const cy = cellY + cellH / 2
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(133, 77, 14)
+  doc.text('(', cx - 2.6, cy + 0.6)
+  doc.text(')', cx + 1.6, cy + 0.6)
+}
+
 // ---------- main export ------------------------------------------------------
 
 export async function generateAllergenTablePDF(options: PDFOptions): Promise<void> {
   const { business, items, title, showLegend = true } = options
 
   try {
+    // ── Branding ────────────────────────────────────────────────────────────
+    const primaryRgb = hexToRgb(business.settings?.primaryColor ?? business.primary_color)
+    const rawLogoUrl = business.settings?.logoUrl ?? business.logo_url
+    const logoDataUrl = rawLogoUrl ? await fetchLogoAsDataUrl(rawLogoUrl) : null
+
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
     const pageWidth  = doc.internal.pageSize.getWidth()
     const pageHeight = doc.internal.pageSize.getHeight()
     let currentY = 15
 
+    // ── Logo ─────────────────────────────────────────────────────────────────
+    if (logoDataUrl) {
+      try {
+        doc.addImage(logoDataUrl, 'auto', 10, currentY - 5, 35, 14)
+      } catch { /* ignore bad image */ }
+      currentY = 28
+    }
+
     // ── Header ──────────────────────────────────────────────────────────────
     doc.setFontSize(18)
     doc.setFont('helvetica', 'bold')
-    doc.setTextColor(0, 56, 66)
+    doc.setTextColor(...primaryRgb)
     doc.text(business.name, pageWidth / 2, currentY, { align: 'center' })
     currentY += 8
 
@@ -140,16 +199,16 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
     doc.text(title || 'Allergen Information', pageWidth / 2, currentY, { align: 'center' })
     currentY += 6
 
-    if (business.address || business.phone) {
+    const addr = business.settings?.address
+    const contactInfo = [
+      addr?.street || business.address,
+      addr?.city,
+      (addr?.phone || business.phone) ? `Tel: ${addr?.phone || business.phone}` : null,
+      business.website,
+    ].filter(Boolean).join(' \u2022 ')
+    if (contactInfo) {
       doc.setFontSize(8)
-      const info = [
-        business.address,
-        business.phone && `Tel: ${business.phone}`,
-        business.website,
-      ]
-        .filter(Boolean)
-        .join(' \u2022 ')
-      doc.text(info, pageWidth / 2, currentY, { align: 'center' })
+      doc.text(contactInfo, pageWidth / 2, currentY, { align: 'center' })
       currentY += 8
     }
 
@@ -169,8 +228,10 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
     // ── Table headers ─────────────────────────────────────────────────────────
     const headers = ['Menu Item / Ingredient', ...ALLERGENS.map(a => a.shortName || a.name)]
 
-    // ── Table body ────────────────────────────────────────────────────────────
-    const tableData = items.map(item => {
+    // ── Build tick map and table body ─────────────────────────────────────────
+    // Allergen cells contain no text — ticks are drawn as vector graphics in didDrawCell.
+    const tickMap = new Map<string, AllergenLevel>()
+    const tableData = items.map((item, rowIndex) => {
       const warningLines = buildWarningLines(item)
       const nameCell =
         warningLines.length > 0
@@ -178,8 +239,10 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
           : item.name
 
       const row: string[] = [nameCell]
-      ALLERGENS.forEach(allergen => {
-        row.push(tickMark(getLevel(item, allergen.id)))
+      ALLERGENS.forEach((allergen, colOffset) => {
+        const level = getLevel(item, allergen.id)
+        if (level !== 'none') tickMap.set(`${rowIndex}-${colOffset + 1}`, level)
+        row.push('') // content rendered as vector tick in didDrawCell
       })
       return row
     })
@@ -207,7 +270,7 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
         lineColor: [180, 180, 180],
       },
       headStyles: {
-        fillColor: [0, 56, 66],
+        fillColor: primaryRgb,
         textColor: [255, 255, 255],
         fontStyle: 'bold',
         halign: 'center',
@@ -226,17 +289,17 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
         ...Object.fromEntries(
           ALLERGENS.map((_, i) => [
             i + 1,
-            { cellWidth: allergenColWidth, fontSize: 9, fontStyle: 'bold' },
+            { cellWidth: allergenColWidth },
           ])
         ),
       },
-      // Rotate header text vertically — FSAI column-header style
+      // Rotate header text vertically; draw vector checkmarks in body allergen cells
       didDrawCell: data => {
         if (data.section === 'head' && data.column.index > 0) {
           const cell = data.cell
           const text  = headers[data.column.index]
 
-          doc.setFillColor(0, 56, 66)
+          doc.setFillColor(...primaryRgb)
           doc.rect(cell.x, cell.y, cell.width, cell.height, 'F')
 
           doc.setTextColor(255, 255, 255)
@@ -250,6 +313,18 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
           })
           doc.restoreGraphicsState()
         }
+
+        // Draw vector checkmarks for body allergen cells
+        if (data.section === 'body' && data.column.index > 0) {
+          const key = `${data.row.index}-${data.column.index}`
+          const level = tickMap.get(key)
+          if (level) {
+            const { x, y, width, height } = data.cell
+            const high = getAllergenSeverity(level) === 'high'
+            drawCheckmark(doc, x, y, width, height, high)
+            if (!high) drawParentheses(doc, x, y, width, height)
+          }
+        }
       },
       // Colour-code allergen cells; zebra-stripe name column
       didParseCell: data => {
@@ -257,9 +332,7 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
           const level = getLevel(items[data.row.index], ALLERGENS[data.column.index - 1].id)
           const fill  = cellFill(level)
           if (fill) {
-            data.cell.styles.fillColor  = fill
-            data.cell.styles.textColor =
-              getAllergenSeverity(level) === 'high' ? [153, 27, 27] : [133, 77, 14]
+            data.cell.styles.fillColor = fill
           }
         }
         if (data.section === 'body' && data.column.index === 0) {
@@ -277,14 +350,14 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
 
         doc.setFontSize(8)
         doc.setFont('helvetica', 'bold')
-        doc.setTextColor(0, 56, 66)
+        doc.setTextColor(...primaryRgb)
         doc.text('Legend', 7, ly)
         ly += 5
 
-        const legendItems: { fill: [number,number,number]; symbol: string; text: string }[] = [
-          { fill: [254, 202, 202], symbol: '\u2713',     text: 'Contains (high severity)' },
-          { fill: [254, 240, 138], symbol: '(\u2713)',   text: 'May contain / Traces / Cross-contamination' },
-          { fill: [255, 255, 255], symbol: '',           text: 'Not present' },
+        const legendItems: { fill: [number, number, number]; high: boolean | null; text: string }[] = [
+          { fill: [254, 202, 202], high: true,  text: 'Contains (high severity)' },
+          { fill: [254, 240, 138], high: false, text: 'May contain / Traces / Cross-contamination' },
+          { fill: [255, 255, 255], high: null,  text: 'Not present' },
         ]
 
         doc.setFont('helvetica', 'normal')
@@ -296,11 +369,9 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
           doc.setFillColor(...item.fill)
           doc.setDrawColor(180, 180, 180)
           doc.rect(x, ly - 3.5, 6, 5, 'FD')
-          if (item.symbol) {
-            doc.setTextColor(item.fill[0] < 200 ? 153 : 133, 27, 14)
-            doc.setFontSize(7)
-            doc.setFont('helvetica', 'bold')
-            doc.text(item.symbol, x + 1.5, ly)
+          if (item.high !== null) {
+            drawCheckmark(doc, x, ly - 3.5, 6, 5, item.high)
+            if (!item.high) drawParentheses(doc, x, ly - 3.5, 6, 5)
           }
           doc.setTextColor(60, 60, 60)
           doc.setFont('helvetica', 'normal')
