@@ -198,7 +198,7 @@ export function JenCoach() {
                   <div className="flex gap-2">
                     <JenAvatar size={28} className="mt-0.5 shrink-0" />
                     <div className="bg-white rounded-2xl rounded-tl-sm px-3 py-2 text-sm text-gray-700 shadow-sm border border-gray-100">
-                      Hi, I&apos;m Jen � I&apos;m here to help you get the most out of the platform. Ask me anything about managing your menu, ingredients, allergens, or settings.
+                      Hi, I&apos;m Jen &#x1F44B; I&apos;m here to help you get the most out of the platform. Ask me anything about managing your menu, ingredients, allergens, or settings.
                     </div>
                   </div>
                 )}
