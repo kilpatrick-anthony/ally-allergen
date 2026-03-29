@@ -177,6 +177,23 @@ export default function SitesPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Link href="/admin/sites/new" className="block">
+          <Card className="hover:shadow-lg transition-all hover:border-amber-500 hover:bg-gradient-to-br hover:from-amber-500 hover:to-amber-600 group cursor-pointer">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Add New Site</p>
+                <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">+</p>
+              </div>
+              <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-amber-600 transition-all">
+                <Plus className="h-6 w-6 text-white transition-colors" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">Create new location →</div>
+            </div>
+          </Card>
+        </Link>
+
         <Card className="hover:shadow-lg transition-all hover:border-[#42b8ac] hover:bg-gradient-to-br hover:from-[#42b8ac] hover:to-[#36948a] group cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
@@ -220,23 +237,6 @@ export default function SitesPage() {
             </div>
             <div className="mt-4">
               <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">Click to view all devices →</div>
-            </div>
-          </Card>
-        </Link>
-
-        <Link href="/admin/sites/new" className="block">
-          <Card className="hover:shadow-lg transition-all hover:border-amber-500 hover:bg-gradient-to-br hover:from-amber-500 hover:to-amber-600 group cursor-pointer">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Add New Site</p>
-                <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">+</p>
-              </div>
-              <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-amber-600 transition-all">
-                <Plus className="h-6 w-6 text-white transition-colors" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">Create new location →</div>
             </div>
           </Card>
         </Link>
