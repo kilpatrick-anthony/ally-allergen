@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
   Package, ArrowLeft, Save, X, AlertCircle, Plus, Trash2,
-  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Dna, MapPin
+  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Dna, MapPin, ScanLine
 } from 'lucide-react'
 
 import { Container } from '../../../components/layout/Container'
@@ -15,12 +15,14 @@ import { Button } from '../../../components/ui/Button'
 import { Badge } from '../../../components/ui/Badge'
 import AllergenWarningSelector from '@/components/admin/AllergenWarningSelector'
 import DatasheetUploader from '@/components/admin/DatasheetUploader'
+import { LabelScanModal } from '@/components/admin/LabelScanModal'
 import type { AllergenWarnings } from '@/types/allergen'
 
 export default function NewIngredientPage() {
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [datasheets, setDatasheets] = useState<any[]>([])
+  const [showScan, setShowScan] = useState(false)
   
   const [ingredient, setIngredient] = useState({
     name: '',
@@ -290,9 +292,19 @@ export default function NewIngredientPage() {
     return !certificationOptions.some(opt => opt.name === cert)
   }
 
+  const handleScanAccept = (data: { name: string; description: string; allergen_warnings: AllergenWarnings }) => {
+    setIngredient(prev => ({
+      ...prev,
+      name: data.name || prev.name,
+      ...(data.description ? { description: data.description } : {}),
+      allergen_warnings: data.allergen_warnings,
+    }))
+  }
+
   return (
-    <Container>
-      <div className="py-8">
+    <>
+      <Container>
+        <div className="py-8">
         {/* Header */}
         <div className="mb-8">
           <Link 
@@ -317,6 +329,14 @@ export default function NewIngredientPage() {
                 </div>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setShowScan(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#42b8ac] to-[#003842] text-sm font-semibold text-white hover:opacity-90 transition-opacity shadow-md"
+            >
+              <ScanLine className="h-4 w-4" />
+              Scan Label
+            </button>
           </div>
         </div>
 
@@ -637,5 +657,12 @@ export default function NewIngredientPage() {
         </div>
       </div>
     </Container>
+
+    <LabelScanModal
+      open={showScan}
+      onClose={() => setShowScan(false)}
+      onAccept={handleScanAccept}
+    />
+    </>
   )
 }

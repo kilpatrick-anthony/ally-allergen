@@ -12,7 +12,7 @@ import {
   Upload, Copy, Eye, EyeOff, Plus, Sparkles,
   Moon, Sun, ChefHat, Truck
 } from 'lucide-react'
-import { ToastIcon, DeliverooIcon } from '@/components/icons'
+
 
 // Import design system components
 import { Container } from '../../components/layout/Container'
@@ -344,38 +344,35 @@ export default function SettingsPage() {
 
   // Session timeout functionality
   useEffect(() => {
-    const timeoutMinutes = parseInt(settings.sessionTimeout.split(' ')[0]);
     const timeoutMs = settings.sessionTimeout.includes('hour')
-      ? timeoutMinutes * 60 * 60 * 1000
-      : timeoutMinutes * 60 * 1000;
+      ? parseInt(settings.sessionTimeout) * 60 * 60 * 1000
+      : parseInt(settings.sessionTimeout) * 60 * 1000;
 
-    // Store timeout setting
     localStorage.setItem('sessionTimeout', settings.sessionTimeout);
 
-    // Set up activity tracking
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    // Track last user activity via timestamp — avoids flooding clearTimeout/setTimeout
+    // on high-frequency events like mousemove.
+    let lastActivity = Date.now();
+    const onActivity = () => { lastActivity = Date.now(); };
 
-    const resetTimeout = () => {
-      if (timeoutId !== undefined) clearTimeout(timeoutId as any);
-      timeoutId = setTimeout(() => {
+    // Poll every 30 s; redirect if inactive longer than the chosen timeout.
+    const CHECK_INTERVAL = 30_000;
+    const intervalId = setInterval(() => {
+      if (Date.now() - lastActivity >= timeoutMs) {
         window.location.href = '/auth/signin';
-      }, timeoutMs);
-    };
+      }
+    }, CHECK_INTERVAL);
 
-    // Track user activity
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
-    events.forEach(event => {
-      document.addEventListener(event, resetTimeout, true);
-    });
-
-    // Initial timeout
-    resetTimeout();
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
+    events.forEach(event =>
+      document.addEventListener(event, onActivity, { passive: true, capture: true })
+    );
 
     return () => {
-      clearTimeout(timeoutId);
-      events.forEach(event => {
-        document.removeEventListener(event, resetTimeout, true);
-      });
+      clearInterval(intervalId);
+      events.forEach(event =>
+        document.removeEventListener(event, onActivity, { capture: true })
+      );
     };
   }, [settings.sessionTimeout]);
 
@@ -450,7 +447,7 @@ export default function SettingsPage() {
     fetchDefaults();
     // Set active tab from URL parameter if present
     const tab = searchParams.get('tab')
-    if (tab && ['general', 'branding', 'security', 'notifications', 'integrations', 'billing'].includes(tab)) {
+    if (tab && ['general', 'branding', 'security', 'notifications', 'billing'].includes(tab)) {
       setActiveTab(tab)
     }
 
@@ -598,7 +595,6 @@ export default function SettingsPage() {
     { id: 'security', label: t('admin.security'), icon: Shield },
     { id: 'accessibility', label: 'Accessibility', icon: Eye },
     { id: 'notifications', label: 'Notifications', icon: Bell },
-    { id: 'integrations', label: 'Integrations', icon: Database },
     { id: 'billing', label: 'Billing', icon: CreditCard }
   ]
 
@@ -1498,51 +1494,6 @@ export default function SettingsPage() {
                       </div>
                     )}
 
-                  </div>
-                </div>
-              </Card>
-            </div>
-          )}
-
-          {/* Integrations Settings */}
-          {activeTab === 'integrations' && (
-            <div className="space-y-6">
-              <Card>
-                <div className="p-6 border-b dark:border-gray-700">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Integrations</h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Connect with other services and tools</p>
-                </div>
-                <div className="p-6">
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center p-4 border rounded-lg dark:border-gray-700">
-                      <div className="flex items-center gap-3">
-                        <ToastIcon className="h-8 w-8" />
-                        <div>
-                          <h4 className="font-medium text-gray-900 dark:text-white">Toast POS API</h4>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Connect your Toast POS system</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="default">
-                          Coming Soon
-                        </Badge>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-between items-center p-4 border rounded-lg dark:border-gray-700">
-                      <div className="flex items-center gap-3">
-                        <DeliverooIcon className="h-8 w-8" />
-                        <div>
-                          <h4 className="font-medium text-gray-900 dark:text-white">Deliveroo API</h4>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Connect your Deliveroo delivery system</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="default">
-                          Coming Soon
-                        </Badge>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </Card>

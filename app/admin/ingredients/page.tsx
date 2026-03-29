@@ -820,6 +820,16 @@ export default function IngredientsPage() {
                     </div>
                   </div>
 
+                  {/* Suppliers */}
+                  <div className="mb-4 flex items-start gap-2">
+                    <Truck className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      {ingredient.suppliers.length > 0
+                        ? ingredient.suppliers.join(', ')
+                        : <span className="italic text-gray-400 dark:text-gray-500">No suppliers listed</span>}
+                    </div>
+                  </div>
+
                   {/* Allergens */}
                   <div className="mb-4">
                     <label className="text-xs font-medium text-gray-500 mb-2 block">{t('admin.allergens')}</label>

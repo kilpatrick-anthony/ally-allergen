@@ -143,3 +143,60 @@ export type AllergenWarnings = Record<AllergenId, AllergenLevel> & {
   cereals_gluten_levels?: Partial<Record<GlutenType, AllergenLevel>>;
   nuts_levels?: Partial<Record<TreeNutType, AllergenLevel>>;
 };
+
+// Severity order for worst-case comparison (higher index = more severe)
+const LEVEL_SEVERITY: AllergenLevel[] = [
+  'none',
+  'cross_contamination',
+  'traces',
+  'may_contain',
+  'not_suitable',
+  'contains',
+];
+
+/**
+ * Returns the more severe of two AllergenLevel values.
+ * Per EU Regulation No. 1169/2011, when multiple supplier profiles exist for an
+ * ingredient, the most conservative (highest severity) declaration must be shown.
+ */
+export function worstCaseLevel(a: AllergenLevel, b: AllergenLevel): AllergenLevel {
+  const aIdx = LEVEL_SEVERITY.indexOf(a);
+  const bIdx = LEVEL_SEVERITY.indexOf(b);
+  return aIdx >= bIdx ? a : b;
+}
+
+/**
+ * Computes the worst-case AllergenWarnings across all provided profiles.
+ * Use this when a menu item is composed of multiple ingredients — each potentially
+ * with different supplier allergen data — to produce the legally compliant
+ * declaration per EU Regulation No. 1169/2011 (FIC Regulation).
+ */
+export function computeWorstCaseAllergens(profiles: AllergenWarnings[]): AllergenWarnings {
+  if (profiles.length === 0) {
+    return {} as AllergenWarnings;
+  }
+
+  const result: Partial<AllergenWarnings> = {};
+
+  for (const allergen of ALLERGEN_LIST) {
+    const id = allergen.id as AllergenId;
+    let worst: AllergenLevel = 'none';
+    for (const profile of profiles) {
+      const level = (profile[id] as AllergenLevel | undefined) ?? 'none';
+      worst = worstCaseLevel(worst, level);
+    }
+    (result as Record<string, AllergenLevel>)[id] = worst;
+  }
+
+  // Merge subtype arrays (union across all profiles)
+  const allGlutenTypes = profiles.flatMap(p => p.cereals_gluten_types ?? []);
+  const allNutTypes = profiles.flatMap(p => p.nuts_types ?? []);
+  if (allGlutenTypes.length > 0) {
+    result.cereals_gluten_types = Array.from(new Set(allGlutenTypes));
+  }
+  if (allNutTypes.length > 0) {
+    result.nuts_types = Array.from(new Set(allNutTypes));
+  }
+
+  return result as AllergenWarnings;
+}

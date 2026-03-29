@@ -12,6 +12,8 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import SpeechController from '@/components/SpeechController'
 import { trackAdminPageVisit } from '@/lib/hooks/useFrequentPages'
+import { FsaiNewsTicker } from '@/components/admin/FsaiNewsTicker'
+import { JenCoach } from '@/components/admin/JenCoach'
 
 interface AdminLayoutProps {
   children: ReactNode
@@ -158,10 +160,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
 
         {/* Main Content */}
-        <div className="lg:pl-[224px] pt-14 lg:pt-0">
-          <main className="py-8 px-4 sm:px-6 lg:px-8 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-900 dark:to-gray-800/50">
+        <div className="lg:pl-[224px] pt-14 lg:pt-0 flex flex-col min-h-screen">
+          <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-900 dark:to-gray-800/50">
             {children}
           </main>
+          {/* Food safety news ticker — pinned to the bottom of every admin page */}
+          <FsaiNewsTicker />
+          {/* Jen — compliance coach floating widget */}
+          <JenCoach />
         </div>
       </div>
     </ProtectedRoute>

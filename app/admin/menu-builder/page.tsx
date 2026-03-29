@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Plus, Search, Filter, Trash2, Edit, Save, X, ChefHat, AlertCircle, Leaf, Heart, CheckCircle, Apple, WheatOff, Moon, Star, Sprout, Globe, Dna, MapPin, FileText } from 'lucide-react'
+import { Plus, Search, Filter, Trash2, Edit, Save, X, ChefHat, AlertCircle, Leaf, Heart, CheckCircle, Apple, WheatOff, Moon, Star, Sprout, Globe, Dna, MapPin, FileText, Shield, ScanLine } from 'lucide-react'
 
 // Import design system components - NOTE: using ../../ because we're in app/admin/menu-builder/
 import { Container } from '../../components/layout/Container'
@@ -15,6 +15,8 @@ import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay'
 import DatasheetUploader from '@/components/admin/DatasheetUploader'
 import DatasheetViewer from '@/components/admin/DatasheetViewer'
 import type { AllergenWarnings } from '@/types/allergen'
+import { computeWorstCaseAllergens } from '@/types/allergen'
+import { LabelScanModal } from '@/components/admin/LabelScanModal'
 
 // Types
 interface MenuItem {
@@ -57,6 +59,7 @@ export default function MenuBuilderPage() {
   const [showCustomDietaryInput, setShowCustomDietaryInput] = useState(false)
   const [datasheets, setDatasheets] = useState<any[]>([])
   const [ingredientDatasheets, setIngredientDatasheets] = useState<any[]>([])
+  const [showScan, setShowScan] = useState(false)
   const [loadingIngredientDatasheets, setLoadingIngredientDatasheets] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
   const [saveMessage, setSaveMessage] = useState('')
@@ -397,18 +400,36 @@ export default function MenuBuilderPage() {
 
   const handleIngredientSelect = (ingredientId: string) => {
     if (editingItem) {
+      const updatedIngredients = editingItem.ingredients.includes(ingredientId)
+        ? editingItem.ingredients.filter(id => id !== ingredientId)
+        : [...editingItem.ingredients, ingredientId]
+
+      const profiles = updatedIngredients
+        .map(id => ingredients.find(i => i.id === id)?.allergen_warnings)
+        .filter((w): w is AllergenWarnings => !!w)
+
       setEditingItem({
         ...editingItem,
-        ingredients: editingItem.ingredients.includes(ingredientId)
-          ? editingItem.ingredients.filter(id => id !== ingredientId)
-          : [...editingItem.ingredients, ingredientId]
+        ingredients: updatedIngredients,
+        allergen_warnings: profiles.length > 0
+          ? computeWorstCaseAllergens(profiles)
+          : editingItem.allergen_warnings,
       })
     } else {
+      const updatedIngredients = newMenuItem.ingredients.includes(ingredientId)
+        ? newMenuItem.ingredients.filter(id => id !== ingredientId)
+        : [...newMenuItem.ingredients, ingredientId]
+
+      const profiles = updatedIngredients
+        .map(id => ingredients.find(i => i.id === id)?.allergen_warnings)
+        .filter((w): w is AllergenWarnings => !!w)
+
       setNewMenuItem({
         ...newMenuItem,
-        ingredients: newMenuItem.ingredients.includes(ingredientId)
-          ? newMenuItem.ingredients.filter(id => id !== ingredientId)
-          : [...newMenuItem.ingredients, ingredientId]
+        ingredients: updatedIngredients,
+        allergen_warnings: profiles.length > 0
+          ? computeWorstCaseAllergens(profiles)
+          : newMenuItem.allergen_warnings,
       })
     }
   }
@@ -460,6 +481,7 @@ export default function MenuBuilderPage() {
   }
 
   return (
+    <>
     <Container>
       {/* Header */}
       <div className="mb-8">
@@ -501,6 +523,14 @@ export default function MenuBuilderPage() {
                 Cancel Edit
               </Button>
             )}
+            <button
+              type="button"
+              onClick={() => setShowScan(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#42b8ac] to-[#003842] text-sm font-semibold text-white hover:opacity-90 transition-opacity shadow-md"
+            >
+              <ScanLine className="h-4 w-4" />
+              Scan Label
+            </button>
           </div>
         </div>
 
@@ -906,6 +936,22 @@ export default function MenuBuilderPage() {
         </div>
 
         <div className="p-6">
+          {/* EU Regulation compliance notice */}
+          <div className="mb-6 flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+            <div className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
+              <p className="font-semibold">EU Regulation No. 1169/2011 — Worst-Case Allergen Declaration</p>
+              <p>
+                When you attach ingredients to a menu item, allergen warnings are automatically set to the
+                <strong> most severe level</strong> declared across all linked ingredients and their suppliers.
+                For example, if one supplier marks an ingredient as &ldquo;may contain nuts&rdquo; while another
+                marks it as &ldquo;contains nuts&rdquo;, this menu item will display <strong>Contains nuts</strong>.
+              </p>
+              <p className="text-blue-600 dark:text-blue-400">
+                You may still manually override individual warnings below for preparation-specific risks (e.g. shared fryers, cross-contamination in your kitchen).
+              </p>
+            </div>
+          </div>
           <AllergenWarningSelector
             value={editingItem ? editingItem.allergen_warnings : newMenuItem.allergen_warnings}
             onChange={(warnings) => {
@@ -1173,42 +1219,33 @@ export default function MenuBuilderPage() {
             {filteredMenuItems.map((item) => (
               <div
                 key={item.id}
-                className="border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:shadow-lg transition-shadow bg-white dark:bg-gray-800"
+                className="border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg transition-shadow bg-white dark:bg-gray-800 flex flex-col"
               >
-                <div className="flex flex-col gap-3 h-full">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-2">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">{item.name}</h3>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant={item.site_id ? 'primary' : 'default'}>
-                          {item.site_id
-                            ? (sites.find((site) => site.id === item.site_id)?.name || 'Site-specific')
-                            : 'Global'}
-                        </Badge>
-                        <Badge variant={item.status === 'active' ? 'success' : 'warning'}>
-                          {item.status}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={Edit}
-                        onClick={() => setEditingItem(item)}
-                        title="Edit"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={Trash2}
-                        onClick={() => handleDeleteMenuItem(item.id)}
-                        title="Delete"
-                      />
+                {/* Tile Header */}
+                <div className="p-5 flex items-start gap-3">
+                  <div className="p-2 bg-gradient-to-br from-[#42b8ac] to-[#003842] rounded-lg shrink-0">
+                    <ChefHat className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-semibold text-gray-900 dark:text-white truncate" title={item.name}>
+                      {item.name}
+                    </h3>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                      <Badge variant={item.site_id ? 'primary' : 'default'}>
+                        {item.site_id
+                          ? (sites.find((site) => site.id === item.site_id)?.name || 'Site-specific')
+                          : 'Global'}
+                      </Badge>
+                      <Badge variant={item.status === 'active' ? 'success' : 'warning'}>
+                        {item.status}
+                      </Badge>
                     </div>
                   </div>
+                </div>
 
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                {/* Tile Body */}
+                <div className="px-5 flex-1 flex flex-col gap-3">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 min-h-[2.5rem]">
                     {item.description || 'No description provided.'}
                   </p>
 
@@ -1219,9 +1256,28 @@ export default function MenuBuilderPage() {
                       showNone={true}
                     />
                   </div>
+                </div>
 
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                {/* Tile Footer */}
+                <div className="px-5 py-3 mt-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
                     {item.ingredients.length} ingredient{item.ingredients.length !== 1 ? 's' : ''}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={Edit}
+                      onClick={() => setEditingItem(item)}
+                      title="Edit"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={Trash2}
+                      onClick={() => handleDeleteMenuItem(item.id)}
+                      title="Delete"
+                    />
                   </div>
                 </div>
               </div>
@@ -1363,5 +1419,26 @@ export default function MenuBuilderPage() {
         </div>
       )}
     </Container>
+
+    <LabelScanModal
+      open={showScan}
+      onClose={() => setShowScan(false)}
+      onAccept={(data) => {
+        if (editingItem) {
+          setEditingItem(prev => prev ? {
+            ...prev,
+            name: data.name || prev.name,
+            allergen_warnings: data.allergen_warnings,
+          } : prev)
+        } else {
+          setNewMenuItem(prev => ({
+            ...prev,
+            name: data.name || prev.name,
+            allergen_warnings: data.allergen_warnings,
+          }))
+        }
+      }}
+    />
+    </>
   )
 }

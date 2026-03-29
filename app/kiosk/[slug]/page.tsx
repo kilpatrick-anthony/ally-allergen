@@ -29,6 +29,7 @@ import { Badge } from '@/app/components/ui/Badge'
 // Import offline functionality
 import { useOfflineKioskData, type Business, type MenuItem } from '@/lib/hooks/useOfflineKioskData'
 import OfflineIndicator from '@/components/kiosk/OfflineIndicator'
+import { AllyChat } from '@/components/kiosk/AllyChat'
 import { useDeviceHeartbeat } from '@/lib/hooks/useDeviceHeartbeat'
 
 // ===== TRACKING FUNCTIONS =====
@@ -1681,6 +1682,22 @@ export default function KioskPage() {
         </div>
       )}
       </Container>
+
+      {/* Ally — AI chat assistant for allergy queries */}
+      <AllyChat menuItems={menuItems ?? []} businessName={business?.name ?? ''} />
+
+      {/* EU Compliance Footer */}
+      <div className="mt-8 border-t border-gray-200 bg-gray-50 py-5 px-4">
+        <div className="max-w-4xl mx-auto flex items-start gap-3 text-xs text-gray-500">
+          <Shield className="h-4 w-4 text-gray-400 shrink-0 mt-0.5" />
+          <div>
+            <span className="font-semibold text-gray-600">Allergen information compliant with EU Regulation No. 1169/2011 (FIC Regulation). </span>
+            Where an ingredient is sourced from multiple suppliers, the allergen declaration shown reflects the
+            <strong> most severe risk level</strong> across all supplier profiles, as required by law.
+            Always inform staff of any allergy before ordering. For severe allergies, ask to speak with a manager.
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

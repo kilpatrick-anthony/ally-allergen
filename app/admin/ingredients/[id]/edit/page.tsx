@@ -6,7 +6,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { 
   Package, ArrowLeft, Save, X, AlertCircle, Plus, Trash2,
-  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Dna, MapPin
+  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Dna, MapPin, ScanLine
 } from 'lucide-react'
 
 import { Container } from '../../../../components/layout/Container'
@@ -15,6 +15,7 @@ import { Button } from '../../../../components/ui/Button'
 import { Badge } from '../../../../components/ui/Badge'
 import AllergenWarningSelector from '@/components/admin/AllergenWarningSelector'
 import DatasheetUploader from '@/components/admin/DatasheetUploader'
+import { LabelScanModal } from '@/components/admin/LabelScanModal'
 import type { AllergenWarnings } from '@/types/allergen'
 
 export default function EditIngredientPage() {
@@ -26,6 +27,7 @@ export default function EditIngredientPage() {
   const [saving, setSaving] = useState(false)
   const [datasheets, setDatasheets] = useState<any[]>([])
   const [existingDatasheets, setExistingDatasheets] = useState<any[]>([])
+  const [showScan, setShowScan] = useState(false)
   
   const [ingredient, setIngredient] = useState({
     name: '',
@@ -245,8 +247,9 @@ export default function EditIngredientPage() {
   }
 
   return (
-    <Container>
-      <div className="mb-6">
+    <>
+      <Container>
+        <div className="mb-6">
         <Link href="/admin/ingredients">
           <Button variant="ghost" icon={ArrowLeft}>
             Back to Ingredients
@@ -265,6 +268,14 @@ export default function EditIngredientPage() {
           </div>
         </div>
         <div className="flex gap-3 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => setShowScan(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#42b8ac] text-[#42b8ac] text-sm font-semibold hover:bg-[#42b8ac]/10 transition-colors"
+          >
+            <ScanLine className="h-4 w-4" />
+            Scan Label
+          </button>
           <Button 
             variant="outline" 
             onClick={() => router.push('/admin/ingredients')}
@@ -469,5 +480,19 @@ export default function EditIngredientPage() {
         </div>
       </div>
     </Container>
+
+    <LabelScanModal
+      open={showScan}
+      onClose={() => setShowScan(false)}
+      onAccept={(data) => {
+        setIngredient(prev => ({
+          ...prev,
+          name: data.name || prev.name,
+          ...(data.description ? { description: data.description } : {}),
+          allergen_warnings: data.allergen_warnings,
+        }))
+      }}
+    />
+    </>
   )
 }
