@@ -89,4 +89,3 @@ export async function generateSuppliersReportPDF(options: SuppliersReportOptions
   const fileName = `${business.name.replace(/[^a-zA-Z0-9]/g, '_')}_Suppliers_Directory_${new Date().toISOString().split('T')[0]}.pdf`
   doc.save(fileName)
 }
-}

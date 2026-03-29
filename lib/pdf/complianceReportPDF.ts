@@ -90,4 +90,3 @@ export async function generateComplianceReportPDF(options: ComplianceReportOptio
   const fileName = `${business.name.replace(/[^a-zA-Z0-9]/g, '_')}_Compliance_Report_${new Date().toISOString().split('T')[0]}.pdf`
   doc.save(fileName)
 }
-}
