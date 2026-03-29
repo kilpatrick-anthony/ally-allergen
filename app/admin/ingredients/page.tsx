@@ -332,22 +332,6 @@ export default function IngredientsPage() {
           </Card>
         </Link>
 
-        <Link href="/admin/ingredients/bulk" className="block">
-          <Card className="hover:shadow-lg transition-all hover:border-teal-500 hover:bg-gradient-to-br hover:from-teal-500 hover:to-teal-600 group cursor-pointer">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">Bulk Import</p>
-                <p className="text-2xl font-bold text-[#003842] dark:text-[#42b8ac] mt-1 group-hover:text-white transition-colors">AI</p>
-              </div>
-              <div className="p-3 bg-gradient-to-br from-teal-500 to-teal-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-teal-600 transition-all">
-                <Sparkles className="h-6 w-6 text-white transition-colors" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">Upload label images, AI fills allergens</div>
-            </div>
-          </Card>
-        </Link>
       </div>
 
       {/* Actions Bar */}
