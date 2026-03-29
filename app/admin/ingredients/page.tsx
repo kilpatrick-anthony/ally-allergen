@@ -270,6 +270,23 @@ export default function IngredientsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <Link href="/admin/ingredients/new" className="block">
+          <Card className="hover:shadow-lg transition-all hover:border-emerald-500 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-emerald-600 group cursor-pointer">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">{t('admin.addNew')}</p>
+                <p className="text-2xl font-bold text-[#003842] dark:text-[#42b8ac] mt-1 group-hover:text-white transition-colors">+</p>
+              </div>
+              <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-emerald-600 transition-all">
+                <Plus className="h-6 w-6 text-white transition-colors" />
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.createNewIngredient')}</div>
+            </div>
+          </Card>
+        </Link>
+
         <Card className="hover:shadow-lg transition-all hover:border-[#42b8ac] hover:bg-gradient-to-br hover:from-[#42b8ac] hover:to-[#36948a] group cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
@@ -314,23 +331,6 @@ export default function IngredientsPage() {
             <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.activeSuppliers')}</div>
           </div>
         </Card>
-
-        <Link href="/admin/ingredients/new" className="block">
-          <Card className="hover:shadow-lg transition-all hover:border-emerald-500 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-emerald-600 group cursor-pointer">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">{t('admin.addNew')}</p>
-                <p className="text-2xl font-bold text-[#003842] dark:text-[#42b8ac] mt-1 group-hover:text-white transition-colors">+</p>
-              </div>
-              <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-emerald-600 transition-all">
-                <Plus className="h-6 w-6 text-white transition-colors" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.createNewIngredient')}</div>
-            </div>
-          </Card>
-        </Link>
 
       </div>
 
