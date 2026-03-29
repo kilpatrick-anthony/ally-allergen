@@ -18,13 +18,6 @@ interface MenuItem {
   site_id?: string
 }
 
-const ALLY_STARTERS = [
-  "I'm allergic to nuts — what can I eat?",
-  'What gluten-free options are available?',
-  'Are there any dairy-free dishes?',
-  'Which dishes are suitable for a vegan?',
-]
-
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function JenCoach() {
@@ -205,8 +198,7 @@ export function JenCoach() {
                   <div className="flex gap-2">
                     <JenAvatar size={28} className="mt-0.5 shrink-0" />
                     <div className="bg-white rounded-2xl rounded-tl-sm px-3 py-2 text-sm text-gray-700 shadow-sm border border-gray-100">
-                      Hi, I&apos;m Jen 👓 I can answer questions about EU food labelling law,
-                      allergen declaration requirements, and FSAI compliance. What would you like to know?
+                      Hi, I&apos;m Jen � I&apos;m here to help you get the most out of the platform. Ask me anything about managing your menu, ingredients, allergens, or settings.
                     </div>
                   </div>
                 )}
@@ -254,7 +246,7 @@ export function JenCoach() {
                 <input
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Ask about EU labelling law…"
+                  placeholder="Ask me anything…"
                   className="flex-1 text-sm bg-gray-50 rounded-full px-3 py-1.5 outline-none focus:ring-2 focus:ring-teal-300 border border-gray-200"
                   disabled={chatLoading}
                 />
@@ -268,7 +260,7 @@ export function JenCoach() {
                 </button>
               </form>
               <p className="text-[10px] text-gray-400 text-center px-3 pb-2 leading-tight">
-                Jen uses AI. Always verify critical compliance decisions with a qualified advisor.
+                Jen uses AI. Responses may not always be accurate — please verify important decisions.
               </p>
             </>
           )}
@@ -284,21 +276,8 @@ export function JenCoach() {
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src="/Ally_1.svg" alt="" width={28} height={28} className="rounded-full mt-0.5 shrink-0" />
                       <div className="bg-white rounded-2xl rounded-tl-sm px-3 py-2 text-sm text-gray-700 shadow-sm border border-gray-100">
-                        Hi! I&apos;m Ally 👋 I can help you find dishes that are safe for your dietary
-                        needs. What can I help you with?
+                        Hi! I&apos;m Ally 👋 I&apos;m here to help you get the most out of the platform. Ask me anything about managing your menu, ingredients, allergens, or settings.
                       </div>
-                    </div>
-                    <p className="text-xs text-gray-400 text-center mt-2">Try a customer question:</p>
-                    <div className="space-y-1.5">
-                      {ALLY_STARTERS.map((starter) => (
-                        <button
-                          key={starter}
-                          onClick={() => askAlly(starter)}
-                          className="w-full text-left text-xs px-3 py-2 rounded-xl border border-teal-200 bg-teal-50 hover:bg-teal-100 text-teal-800 transition-colors"
-                        >
-                          {starter}
-                        </button>
-                      ))}
                     </div>
                   </div>
                 )}
@@ -352,7 +331,7 @@ export function JenCoach() {
                 <input
                   value={previewInput}
                   onChange={(e) => setPreviewInput(e.target.value)}
-                  placeholder="Ask as a customer…"
+                  placeholder="Ask me anything…"
                   className="flex-1 text-sm bg-gray-50 rounded-full px-3 py-1.5 outline-none focus:ring-2 focus:ring-teal-300 border border-gray-200"
                   disabled={previewLoading}
                 />
@@ -366,7 +345,7 @@ export function JenCoach() {
                 </button>
               </form>
               <p className="text-[10px] text-gray-400 text-center px-3 pb-2 leading-tight">
-                This is how Ally responds to customers on your kiosk, using your current menu.
+                Ally uses AI. Responses may not always be accurate — please verify important decisions.
               </p>
             </>
           )}
@@ -384,8 +363,7 @@ export function JenCoach() {
               : 'linear-gradient(135deg, #003842 0%, #00616e 60%, #42b8ac 100%)',
             paddingRight: open ? '0' : '18px',
           }}
-          aria-label={open ? 'Close' : coachMode === 'ally' ? 'Open Ally food assistant' : 'Open Jen compliance coach'}
-          title={coachMode === 'ally' ? 'Ally — Food Assistant' : 'Jen — Compliance Coach'}
+          aria-label={open ? 'Close' : coachMode === 'ally' ? 'Open Ally' : 'Open Jen'}
         >
             {/* Avatar — overflows pill vertically to appear larger */}
             <span className="relative shrink-0 -ml-1 -my-3">
