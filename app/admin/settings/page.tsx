@@ -329,6 +329,7 @@ export default function SettingsPage() {
   const [logoUploading, setLogoUploading] = useState(false)
   const [logoUploadSuccess, setLogoUploadSuccess] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const skipDirtyCheck = useRef(true)
   const [showChangePassword, setShowChangePassword] = useState(false)
   const [showTwoFactor, setShowTwoFactor] = useState(false)
   // Show migration notice for updated accessibility defaults
@@ -443,6 +444,8 @@ export default function SettingsPage() {
         }
       }
       setLoading(false);
+      // Allow React to flush the initial state updates before tracking changes as "dirty"
+      setTimeout(() => { skipDirtyCheck.current = false }, 0);
     };
     fetchDefaults();
     // Set active tab from URL parameter if present
@@ -485,11 +488,9 @@ export default function SettingsPage() {
     }
   }, [settings.darkMode, settings.dateFormat, settings.defaultLanguage])
 
-  // Track unsaved changes
+  // Track unsaved changes — skip the initial data load by using skipDirtyCheck ref
   useEffect(() => {
-    // This will run when settings change, marking as unsaved
-    // We skip the initial load by checking if businessId exists
-    if (businessId) {
+    if (businessId && !skipDirtyCheck.current) {
       setHasUnsavedChanges(true)
     }
   }, [settings, businessId])
@@ -541,18 +542,60 @@ export default function SettingsPage() {
   }
 
   const handleReset = () => {
+    // Clear localStorage for notification/audit/accessibility settings
+    if (typeof window !== 'undefined') {
+      [
+        'datasheetAuditFrequency', 'ingredientsAuditFrequency',
+        'menuAuditFrequency', 'supplierAuditFrequency',
+        'datasheetAuditEnabled', 'ingredientsAuditEnabled',
+        'menuAuditEnabled', 'supplierAuditEnabled',
+        'notificationsEnabled', 'adminAccessibilitySettings'
+      ].forEach(key => localStorage.removeItem(key))
+    }
     setSettings({
       ...settings,
+      // General / business
       businessName: '',
       contactEmail: '',
+      businessAddress: '',
+      businessCity: '',
+      businessPostalCode: '',
+      businessCountry: '',
+      businessPhone: '',
       defaultLanguage: 'en',
       darkMode: false,
       dateFormat: 'DD/MM/YYYY',
+      // Branding
       primaryColor: '#003842',
       secondaryColor: '#42b8ac',
-      sessionTimeout: '15 minutes'
+      // Security
+      sessionTimeout: '15 minutes',
+      // Notifications
+      notificationsEnabled: true,
+      emailAlerts: true,
+      slackAlerts: false,
+      reportGeneration: true,
+      complianceAlerts: true,
+      datasheetAuditFrequency: '1 month',
+      ingredientsAuditFrequency: '1 month',
+      menuAuditFrequency: '1 month',
+      supplierAuditFrequency: '1 month',
+      datasheetAuditEnabled: true,
+      ingredientsAuditEnabled: true,
+      menuAuditEnabled: true,
+      supplierAuditEnabled: true,
+      // Accessibility
+      fontSize: 'normal',
+      fontFamily: 'default',
+      contrast: 'normal',
+      speech: false,
+      speechRate: 1,
+      reducedMotion: false,
+      highlightLinks: false,
+      letterSpacing: 'normal',
+      lineHeight: 'normal'
     })
-    setHasUnsavedChanges(false)
+    // hasUnsavedChanges will be set to true by the settings useEffect (correct — user needs to save)
   }
 
   const disableTwoFactor = async () => {

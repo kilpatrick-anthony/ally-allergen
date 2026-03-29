@@ -8,9 +8,19 @@ interface AllyAvatarProps {
   className?: string
   /** Show a small animated "thinking" pulse ring */
   thinking?: boolean
+  /** Visual variant 0–2 — changes background colour for random-appearance effect */
+  variant?: 0 | 1 | 2
 }
 
-export function AllyAvatar({ size = 48, className = '', thinking = false }: AllyAvatarProps) {
+// Background palettes per variant: [outer, inner]
+const VARIANT_COLORS: [string, string][] = [
+  ['#42b8ac', '#5cc8bc'],  // 0 — teal (default)
+  ['#f4845f', '#f79a7a'],  // 1 — coral
+  ['#7c5cbf', '#9a7dd4'],  // 2 — purple
+]
+
+export function AllyAvatar({ size = 48, className = '', thinking = false, variant = 0 }: AllyAvatarProps) {
+  const [outerBg, innerBg] = VARIANT_COLORS[variant] ?? VARIANT_COLORS[0]
   return (
     <span
       className={`relative inline-flex shrink-0 ${className}`}
@@ -37,8 +47,8 @@ export function AllyAvatar({ size = 48, className = '', thinking = false }: Ally
         style={{ display: 'block' }}
       >
         {/* Background circle */}
-        <circle cx="200" cy="200" r="200" fill="#42b8ac" />
-        <circle cx="200" cy="200" r="185" fill="#5cc8bc" />
+        <circle cx="200" cy="200" r="200" fill={outerBg} />
+        <circle cx="200" cy="200" r="185" fill={innerBg} />
 
         {/* Body / shoulders */}
         <ellipse cx="200" cy="340" rx="110" ry="80" fill="#003842" />

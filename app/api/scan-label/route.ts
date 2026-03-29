@@ -1,87 +1,30 @@
 // app/api/scan-label/route.ts
-// Accepts a base64-encoded image of a food product label and uses GPT-4o vision
-// to extract allergen information. Returns structured JSON that matches AllergenWarnings.
+// Accepts a base64-encoded image of a food product label and uses Google Gemini
+// (free tier) to extract allergen information.
 //
-// Required env var: OPENAI_API_KEY
+// Required env var: GEMINI_API_KEY
+// Get a free key at: https://aistudio.google.com/app/apikey
 
 import { NextResponse } from 'next/server'
 import type { AllergenWarnings } from '@/types/allergen'
+import { ALLERGEN_JSON_SCHEMA, sanitiseWarnings } from '@/lib/allergen-ai'
 
 export const dynamic = 'force-dynamic'
 
-// ── Prompt ────────────────────────────────────────────────────────────────────
+const PROMPT = `You are a food safety compliance expert specialising in EU food labelling law (Regulation 1169/2011).
+Analyse this food product label image and extract all relevant information.
 
-const SYSTEM_PROMPT = `You are a food safety compliance expert specialising in EU food labelling law (Regulation 1169/2011).
-When shown an image of a food product label, extract allergen information and return it as structured JSON.
-Be conservative: if you are uncertain whether an allergen is present, err on the side of caution and note it.
-Only return valid JSON — no markdown, no explanation text.`
+${ALLERGEN_JSON_SCHEMA}
 
-const USER_PROMPT = `Analyse this food product label image and extract all relevant information.
-
-Return a JSON object with EXACTLY these fields:
-
-{
-  "name": "Product or ingredient name from the label",
-  "description": "One-sentence description of the product (leave empty string if unclear)",
-  "allergen_warnings": {
-    "cereals_gluten": "none|contains|may_contain|traces|cross_contamination",
-    "crustaceans": "none|contains|may_contain|traces|cross_contamination",
-    "eggs": "none|contains|may_contain|traces|cross_contamination",
-    "fish": "none|contains|may_contain|traces|cross_contamination",
-    "peanuts": "none|contains|may_contain|traces|cross_contamination",
-    "soybeans": "none|contains|may_contain|traces|cross_contamination",
-    "milk": "none|contains|may_contain|traces|cross_contamination",
-    "nuts": "none|contains|may_contain|traces|cross_contamination",
-    "celery": "none|contains|may_contain|traces|cross_contamination",
-    "mustard": "none|contains|may_contain|traces|cross_contamination",
-    "sesame": "none|contains|may_contain|traces|cross_contamination",
-    "sulphites": "none|contains|may_contain|traces|cross_contamination",
-    "lupin": "none|contains|may_contain|traces|cross_contamination",
-    "molluscs": "none|contains|may_contain|traces|cross_contamination"
-  },
-  "notes": ["Any caveats, e.g. 'label text partially obscured', 'multiple products visible'"]
-}
-
-Rules for allergen levels:
-- "contains"            → listed under "Contains:" or identifiable as a core ingredient
-- "may_contain"         → listed under "May contain:" 
-- "traces"              → listed as "may contain traces of"
-- "cross_contamination" → produced in/on shared equipment or facility that handles the allergen
-- "none"                → allergen not mentioned anywhere
-
-All 14 keys in allergen_warnings must always be present.`
-
-// ── Validation ────────────────────────────────────────────────────────────────
-
-const VALID_ALLERGEN_IDS = [
-  'cereals_gluten', 'crustaceans', 'eggs', 'fish', 'peanuts', 'soybeans',
-  'milk', 'nuts', 'celery', 'mustard', 'sesame', 'sulphites', 'lupin', 'molluscs',
-] as const
-
-const VALID_LEVELS = ['none', 'contains', 'may_contain', 'traces', 'not_suitable', 'cross_contamination']
-
-function buildDefaultWarnings(): AllergenWarnings {
-  return Object.fromEntries(VALID_ALLERGEN_IDS.map(id => [id, 'none'])) as unknown as AllergenWarnings
-}
-
-function sanitiseWarnings(raw: Record<string, string>): AllergenWarnings {
-  const result = buildDefaultWarnings()
-  for (const id of VALID_ALLERGEN_IDS) {
-    const val = raw[id]
-    if (val && VALID_LEVELS.includes(val)) {
-      result[id] = val as any
-    }
-  }
-  return result
-}
+Only return valid JSON — no markdown fences, no explanation text.`
 
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
-  const apiKey = process.env.OPENAI_API_KEY
+  const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
     return NextResponse.json(
-      { error: 'Label scanning is not configured. Please add OPENAI_API_KEY to your environment.' },
+      { error: 'Label scanning is not configured. Please add GEMINI_API_KEY to your environment. Get a free key at https://aistudio.google.com/app/apikey' },
       { status: 503 },
     )
   }
@@ -99,48 +42,43 @@ export async function POST(req: Request) {
   }
 
   // Accept both bare base64 and data-URL formats
-  const isDataUrl = image.startsWith('data:image/')
-  if (!isDataUrl && !/^[A-Za-z0-9+/=]+$/.test(image.slice(0, 100))) {
-    return NextResponse.json({ error: 'Image must be base64 encoded.' }, { status: 400 })
+  let mimeType = 'image/jpeg'
+  let base64Data = image
+  if (image.startsWith('data:')) {
+    const [header, data] = image.split(',')
+    mimeType = header.replace('data:', '').replace(';base64', '')
+    base64Data = data
   }
 
-  const imageUrl = isDataUrl ? image : `data:image/jpeg;base64,${image}`
-
   try {
-    const openAiRes = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o',
-        max_tokens: 800,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: USER_PROMPT },
-              { type: 'image_url', image_url: { url: imageUrl, detail: 'high' } },
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: PROMPT },
+              { inline_data: { mime_type: mimeType, data: base64Data } },
             ],
-          },
-        ],
-        response_format: { type: 'json_object' },
-      }),
-    })
+          }],
+          generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 800 },
+        }),
+      }
+    )
 
-    if (!openAiRes.ok) {
-      const errText = await openAiRes.text()
-      console.error('[scan-label] OpenAI error:', openAiRes.status, errText)
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text()
+      console.error('[scan-label] Gemini error:', geminiRes.status, errText)
       return NextResponse.json(
         { error: 'Failed to analyse image. Please try again or enter details manually.' },
         { status: 502 },
       )
     }
 
-    const openAiData = await openAiRes.json()
-    const content = openAiData.choices?.[0]?.message?.content
+    const geminiData = await geminiRes.json()
+    const content = geminiData.candidates?.[0]?.content?.parts?.[0]?.text
     if (!content) {
       return NextResponse.json({ error: 'Empty response from AI.' }, { status: 502 })
     }

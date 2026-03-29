@@ -386,7 +386,7 @@ export default function LandingPage() {
             <img src="/Logo-AllyJen.svg" alt="AllyJen" className="h-24 w-auto" />
             <div className="text-center md:text-right space-y-1">
               <p className="text-sm text-white/40">© 2026 AllyJen Solutions Limited. All rights reserved.</p>
-              <p className="text-xs text-white/30">Registered in Ireland &mdash; CRO No. 811542 &mdash; Headquarters: Limerick, Ireland</p>
+              <p className="text-xs text-white/30">CRO No. 811542 | Limerick, Republic of Ireland</p>
             </div>
           </div>
         </Container>

@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // These packages must not be bundled — they rely on Node.js internals or
+  // have side-effects at import time (e.g. pdf-parse loads test files).
+  serverExternalPackages: ['pdf-parse', 'mammoth'],
   // Ensure service worker and manifest are accessible
   async headers() {
     return [

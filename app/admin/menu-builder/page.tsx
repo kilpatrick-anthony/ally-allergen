@@ -515,22 +515,24 @@ export default function MenuBuilderPage() {
                 {editingItem ? 'Update the details for this item' : 'Add a new item to your menu'}
               </p>
             </div>
-            {editingItem && (
-              <Button
-                variant="ghost"
-                onClick={() => setEditingItem(null)}
+            <div className="flex items-center gap-2">
+              {editingItem && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setEditingItem(null)}
+                >
+                  Cancel Edit
+                </Button>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowScan(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#42b8ac] to-[#003842] text-sm font-semibold text-white hover:opacity-90 transition-opacity shadow-md"
               >
-                Cancel Edit
-              </Button>
-            )}
-            <button
-              type="button"
-              onClick={() => setShowScan(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#42b8ac] to-[#003842] text-sm font-semibold text-white hover:opacity-90 transition-opacity shadow-md"
-            >
-              <ScanLine className="h-4 w-4" />
-              Scan Label
-            </button>
+                <ScanLine className="h-4 w-4" />
+                Scan Label
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1268,7 +1270,10 @@ export default function MenuBuilderPage() {
                       variant="ghost"
                       size="sm"
                       icon={Edit}
-                      onClick={() => setEditingItem(item)}
+                      onClick={() => {
+                        setEditingItem(item)
+                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                      }}
                       title="Edit"
                     />
                     <Button

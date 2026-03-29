@@ -74,6 +74,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       console.error('Sign out error (non-blocking):', err)
     })
 
+    // Clear per-session UI state so it resets on next login
+    sessionStorage.removeItem('jencoach_dismissed')
+
     // Immediate redirect to sign-in
     try {
       window.location.replace('/auth/signin')
