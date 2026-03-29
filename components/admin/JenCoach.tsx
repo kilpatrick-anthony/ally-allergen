@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { JenAvatar } from '../ally/JenAvatar'
-import { AllyAvatar } from '../ally/AllyAvatar'
 import { X, ChevronDown, Send } from 'lucide-react'
 
 // Pages where Ally (food/menu context) is the primary coach
@@ -46,8 +45,6 @@ export function JenCoach() {
   const [previewLoading, setPreviewLoading] = useState(false)
   const previewBottomRef = useRef<HTMLDivElement>(null)
 
-  // Random avatar variant (0–2) — re-picked each time the pill re-appears
-  const [avatarVariant, setAvatarVariant] = useState<0 | 1 | 2>(() => Math.floor(Math.random() * 3) as 0 | 1 | 2)
   // Persist dismiss in sessionStorage — survives page reloads but clears when the browser/tab closes (i.e. next login)
   const [dismissed, setDismissed] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
@@ -85,13 +82,7 @@ export function JenCoach() {
   // When navigating to a different page type, close the panel
   useEffect(() => {
     setOpen(false)
-    setAvatarVariant(Math.floor(Math.random() * 3) as 0 | 1 | 2)
   }, [coachMode])
-
-  // Re-randomise avatar each time the panel closes (pill re-appears)
-  useEffect(() => {
-    if (!open) setAvatarVariant(Math.floor(Math.random() * 3) as 0 | 1 | 2)
-  }, [open])
 
   useEffect(() => {
     previewBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -181,7 +172,12 @@ export function JenCoach() {
           <div className="flex items-center gap-2 px-4 py-3 text-white transition-colors"
             style={{ background: coachMode === 'ally' ? '#0e7066' : '#003842' }}
           >
-            {coachMode === 'ally' ? <AllyAvatar size={36} /> : <JenAvatar size={36} />}
+            {coachMode === 'ally' ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src="/Ally_1.svg" alt="" width={36} height={36} className="rounded-full" />
+            ) : (
+              <JenAvatar size={36} />
+            )}
             <p className="text-sm font-semibold leading-tight flex-1 min-w-0">
               {coachMode === 'ally' ? 'Ally' : 'Jen'}
             </p>
@@ -285,7 +281,8 @@ export function JenCoach() {
                 {previewMessages.length === 0 && (
                   <div className="space-y-3">
                     <div className="flex gap-2">
-                      <AllyAvatar size={28} className="mt-0.5 shrink-0" />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src="/Ally_1.svg" alt="" width={28} height={28} className="rounded-full mt-0.5 shrink-0" />
                       <div className="bg-white rounded-2xl rounded-tl-sm px-3 py-2 text-sm text-gray-700 shadow-sm border border-gray-100">
                         Hi! I&apos;m Ally 👋 I can help you find dishes that are safe for your dietary
                         needs. What can I help you with?
@@ -310,7 +307,10 @@ export function JenCoach() {
                     key={i}
                     className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
                   >
-                    {msg.role === 'ally' && <AllyAvatar size={28} className="mt-0.5 shrink-0" />}
+                    {msg.role === 'ally' && (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src="/Ally_1.svg" alt="" width={28} height={28} className="rounded-full mt-0.5 shrink-0" />
+                    )}
                     <div
                       className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-sm ${
                         msg.role === 'user'
@@ -324,7 +324,8 @@ export function JenCoach() {
                 ))}
                 {previewLoading && (
                   <div className="flex gap-2">
-                    <AllyAvatar size={28} thinking className="mt-0.5 shrink-0" />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/Ally_1.svg" alt="" width={28} height={28} className="rounded-full mt-0.5 shrink-0" />
                     <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-gray-100">
                       <span className="flex gap-1">
                         {[0, 1, 2].map((i) => (
@@ -390,20 +391,15 @@ export function JenCoach() {
         >
             {/* Avatar — overflows pill vertically to appear larger */}
             <span className="relative shrink-0 -ml-1 -my-3">
-              {coachMode === 'ally' ? (
-                <AllyAvatar size={78} variant={avatarVariant} className="ring-2 ring-white/40 rounded-full" />
-              ) : (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={['/Jen.svg', '/Jen_1.svg', '/Jen_2.svg'][avatarVariant]}
-                  alt=""
-                  width={78}
-                  height={78}
-                  className="rounded-full block ring-2 ring-white/40"
-                  style={{ display: 'block' }}
-                />
-              )}
-
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={coachMode === 'ally' ? '/Ally_1.svg' : '/Jen_2.svg'}
+                alt=""
+                width={78}
+                height={78}
+                className="rounded-full block ring-2 ring-white/40"
+                style={{ display: 'block' }}
+              />
             </span>
 
             {open ? (
