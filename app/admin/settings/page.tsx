@@ -940,7 +940,11 @@ export default function SettingsPage() {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Company Logo
                     </label>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Appears on kiosk screens and generated PDFs/reports. PNG, JPG or SVG, max 5 MB.</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Appears on kiosk screens and generated PDFs/reports. PNG, JPG or SVG, max 5 MB.</p>
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mb-4 flex items-center gap-1">
+                      <span className="inline-block w-3.5 h-3.5 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 text-[10px] font-bold text-center leading-[14px] shrink-0">i</span>
+                      Recommended size: <strong>400 × 140 px</strong> (wider logos also work — the PDF scales them automatically).
+                    </p>
                     <div className="flex items-center gap-4">
                       {settings.logoUrl ? (
                         <div className="w-24 h-16 border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden bg-gray-50 dark:bg-gray-700 flex items-center justify-center">
