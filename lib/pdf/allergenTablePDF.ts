@@ -16,7 +16,7 @@ import {
   type AllergenLevel,
 } from '@/types/allergen'
 import type { Business, MenuItem } from '@/lib/hooks/useOfflineKioskData'
-import { hexToRgb, fetchLogoAsDataUrl } from './pdfBranding'
+import { hexToRgb, fetchLogoAsDataUrl, fetchAllyJenLogoDataUrl, getImageDimensions, fitDimensions, drawPageFooters } from './pdfBranding'
 
 interface PDFOptions {
   business: Business & {
@@ -79,10 +79,19 @@ function getSubtypeNames(item: MenuItem, allergenId: string): string[] {
 }
 
 /**
- * Builds the allergen detail lines that appear beneath the item name:
- *   Contains: Gluten (Wheat, Oats), Milk
- *   May contain: Nuts (Almonds), Sesame
+ * Builds the allergen detail lines that appear beneath the item name.
+ * Allergen names are wrapped in ** to signal bold rendering via didParseCell.
+ *   Contains: **Gluten (Wheat, Oats)**, **Milk**
+ *   May contain: **Nuts (Almonds)**, **Sesame**
+ * (The ** markers are stripped when the cell is rendered; bold is applied via fontStyle)
+ *
+ * Actually — jsPDF/autoTable doesn't support inline bold. Instead we store the
+ * plain text lines and apply bold to the entire warning sub-line via willDrawCell.
+ * We prefix warning lines with a special invisible marker so didParseCell can
+ * detect them and set fontStyle = 'bold'.
  */
+const WARN_PREFIX = '\u200B' // zero-width space used as a marker
+
 function buildWarningLines(item: MenuItem): string[] {
   const contains: string[] = []
   const mayContain: string[] = []
@@ -105,8 +114,8 @@ function buildWarningLines(item: MenuItem): string[] {
   })
 
   const lines: string[] = []
-  if (contains.length > 0)    lines.push(`Contains: ${contains.join(', ')}`)
-  if (mayContain.length > 0)  lines.push(`May contain: ${mayContain.join(', ')}`)
+  if (contains.length > 0)   lines.push(`${WARN_PREFIX}Contains: ${contains.join(', ')}`)
+  if (mayContain.length > 0) lines.push(`${WARN_PREFIX}May contain: ${mayContain.join(', ')}`)
   return lines
 }
 
@@ -129,6 +138,7 @@ function cellFill(level: AllergenLevel): [number, number, number] | null {
 
 /**
  * Draw a vector checkmark inside an allergen indicator cell.
+ * The tick is always the same fixed size (2.2 mm) regardless of cell size.
  * @param high – true for solid red (contains), false for amber (may contain)
  */
 function drawCheckmark(
@@ -138,10 +148,10 @@ function drawCheckmark(
 ): void {
   const cx = cellX + cellW / 2
   const cy = cellY + cellH / 2
-  const s  = Math.min(cellW, cellH) * 0.28
+  const s  = 1.1  // fixed half-size in mm — always the same
   const color: [number, number, number] = high ? [153, 27, 27] : [133, 77, 14]
   doc.setDrawColor(...color)
-  doc.setLineWidth(0.7)
+  doc.setLineWidth(0.55)
   // Short left stroke (downward)
   doc.line(cx - s, cy + s * 0.05, cx - s * 0.1, cy + s * 0.9)
   // Long right stroke (upward)
@@ -171,19 +181,33 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
     // ── Branding ────────────────────────────────────────────────────────────
     const primaryRgb = hexToRgb(business.settings?.primaryColor ?? business.primary_color)
     const rawLogoUrl = business.settings?.logoUrl ?? business.logo_url
-    const logoDataUrl = rawLogoUrl ? await fetchLogoAsDataUrl(rawLogoUrl) : null
+    const [logoDataUrl, allyjenLogoDataUrl] = await Promise.all([
+      rawLogoUrl ? fetchLogoAsDataUrl(rawLogoUrl) : Promise.resolve(null),
+      fetchAllyJenLogoDataUrl(),
+    ])
 
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
     const pageWidth  = doc.internal.pageSize.getWidth()
     const pageHeight = doc.internal.pageSize.getHeight()
     let currentY = 15
 
-    // ── Logo ─────────────────────────────────────────────────────────────────
+    // ── Business logo — top left, aspect-ratio preserved ─────────────────────
     if (logoDataUrl) {
       try {
-        doc.addImage(logoDataUrl, 'auto', 10, currentY - 5, 35, 14)
+        const { w: nw, h: nh } = await getImageDimensions(logoDataUrl)
+        const { w, h } = fitDimensions(nw, nh, 40, 14)
+        doc.addImage(logoDataUrl, 'auto', 10, currentY - 5, w, h)
       } catch { /* ignore bad image */ }
       currentY = 28
+    }
+
+    // ── AllyJen logo — top right, aspect-ratio preserved ─────────────────────
+    if (allyjenLogoDataUrl) {
+      try {
+        const { w: nw, h: nh } = await getImageDimensions(allyjenLogoDataUrl)
+        const { w, h } = fitDimensions(nw, nh, 30, 10)
+        doc.addImage(allyjenLogoDataUrl, 'PNG', pageWidth - w - 10, (logoDataUrl ? 23 : 10) - h / 2, w, h)
+      } catch { /* ignore */ }
     }
 
     // ── Header ──────────────────────────────────────────────────────────────
@@ -325,6 +349,40 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
             if (!high) drawParentheses(doc, x, y, width, height)
           }
         }
+
+        // Bold the warning sub-lines in the name column
+        if (data.section === 'body' && data.column.index === 0) {
+          const rawLines = (tableData[data.row.index]?.[0] as string || '').split('\n')
+          const markLines = rawLines.filter(l => l.startsWith(WARN_PREFIX))
+          if (markLines.length === 0) return
+
+          // Re-draw only the warning lines in bold over the autoTable-rendered text
+          const cell = data.cell
+          const padding = 1
+          // Work out where autoTable placed the first warning line
+          // autoTable renders multi-line text separated by \n; we need to match the y offsets.
+          // We'll re-render just the warning lines over a white-ish fill to preserve zebra.
+          const lineH = 3.5 // approximate line height at fontSize 7
+          const nameLineCount = rawLines.filter(l => !l.startsWith(WARN_PREFIX)).length
+          let lineY = cell.y + (typeof (cell as any).padding === 'object' ? (cell as any).padding.top ?? 2 : 2) + (nameLineCount * lineH) + 1.5
+
+          doc.setFont('helvetica', 'bold')
+          doc.setFontSize(6.5)
+          doc.setTextColor(60, 60, 60)
+
+          for (const line of markLines) {
+            const text = line.replace(WARN_PREFIX, '')
+            // Wrap text to fit name column
+            const wrapped = doc.splitTextToSize(text, nameColWidth - padding * 2 - 1)
+            for (const wl of wrapped) {
+              doc.text(wl, cell.x + padding, lineY)
+              lineY += lineH
+            }
+          }
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(7)
+          doc.setTextColor(0, 0, 0)
+        }
       },
       // Colour-code allergen cells; zebra-stripe name column
       didParseCell: data => {
@@ -392,15 +450,9 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
       }
     }
 
-    // ── Footer ────────────────────────────────────────────────────────────────
-    doc.setFontSize(7)
-    doc.setTextColor(160, 160, 160)
-    doc.text(
-      `Generated: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`,
-      pageWidth / 2,
-      pageHeight - 6,
-      { align: 'center' }
-    )
+    // ── Footer on every page (page numbers, AllyJen logo, timestamp) ─────────
+    const generatedDate = `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`
+    await drawPageFooters(doc, allyjenLogoDataUrl, generatedDate)
 
     const fileName = `${business.name.replace(/[^a-z0-9]/gi, '_')}_allergen_guide.pdf`
     doc.save(fileName)

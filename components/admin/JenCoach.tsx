@@ -167,7 +167,7 @@ export function JenCoach() {
           >
             {coachMode === 'ally' ? (
               /* eslint-disable-next-line @next/next/no-img-element */
-              <img src="/Ally_1.svg" alt="" width={36} height={36} className="rounded-full" />
+              <img src="/Ally_9.svg" alt="" width={36} height={36} className="rounded-full" />
             ) : (
               <JenAvatar size={36} />
             )}
@@ -274,7 +274,7 @@ export function JenCoach() {
                   <div className="space-y-3">
                     <div className="flex gap-2">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/Ally_1.svg" alt="" width={28} height={28} className="rounded-full mt-0.5 shrink-0" />
+                      <img src="/Ally_9.svg" alt="" width={28} height={28} className="rounded-full mt-0.5 shrink-0" />
                       <div className="bg-white rounded-2xl rounded-tl-sm px-3 py-2 text-sm text-gray-700 shadow-sm border border-gray-100">
                         Hi! I&apos;m Ally 👋 I&apos;m here to help you get the most out of the platform. Ask me anything about managing your menu, ingredients, allergens, or settings.
                       </div>
@@ -288,7 +288,7 @@ export function JenCoach() {
                   >
                     {msg.role === 'ally' && (
                       /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src="/Ally_1.svg" alt="" width={28} height={28} className="rounded-full mt-0.5 shrink-0" />
+                      <img src="/Ally_9.svg" alt="" width={28} height={28} className="rounded-full mt-0.5 shrink-0" />
                     )}
                     <div
                       className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-sm ${
@@ -304,7 +304,7 @@ export function JenCoach() {
                 {previewLoading && (
                   <div className="flex gap-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/Ally_1.svg" alt="" width={28} height={28} className="rounded-full mt-0.5 shrink-0" />
+                    <img src="/Ally_9.svg" alt="" width={28} height={28} className="rounded-full mt-0.5 shrink-0" />
                     <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-gray-100">
                       <span className="flex gap-1">
                         {[0, 1, 2].map((i) => (
@@ -369,7 +369,7 @@ export function JenCoach() {
             <span className="relative shrink-0 -ml-1 -my-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={coachMode === 'ally' ? '/Ally_1.svg' : '/Jen_2.svg'}
+                src={coachMode === 'ally' ? '/Ally_9.svg' : '/Jen_2.svg'}
                 alt=""
                 width={78}
                 height={78}
