@@ -506,8 +506,8 @@ export default function MenuBuilderPage() {
       {/* TOP SECTION: Create/Edit Menu Item */}
       <Card className="mb-8">
         <div className="p-6 border-b dark:border-gray-700">
-          <div className="flex justify-between items-center">
-            <div>
+          <div className="flex justify-between items-center gap-4">
+            <div className="min-w-0">
               <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">
                 {editingItem ? 'Edit Menu Item' : 'Create New Menu Item'}
               </h2>
@@ -515,7 +515,7 @@ export default function MenuBuilderPage() {
                 {editingItem ? 'Update the details for this item' : 'Add a new item to your menu'}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               {editingItem && (
                 <Button
                   variant="ghost"
