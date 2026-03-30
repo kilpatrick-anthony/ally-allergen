@@ -189,16 +189,15 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
     const pageWidth  = doc.internal.pageSize.getWidth()
     const pageHeight = doc.internal.pageSize.getHeight()
-    let currentY = 15
+    let currentY = 12
 
     // ── Business logo — top left, aspect-ratio preserved ─────────────────────
     if (logoDataUrl) {
       try {
         const { w: nw, h: nh } = await getImageDimensions(logoDataUrl)
-        const { w, h } = fitDimensions(nw, nh, 40, 14)
-        doc.addImage(logoDataUrl, 'auto', 10, currentY - 5, w, h)
+        const { w, h } = fitDimensions(nw, nh, 80, 28)
+        doc.addImage(logoDataUrl, 'auto', 10, 8, w, h)
       } catch { /* ignore bad image */ }
-      currentY = 28
     }
 
     // ── AllyJen logo — top right, aspect-ratio preserved ─────────────────────
@@ -206,7 +205,7 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
       try {
         const { w: nw, h: nh } = await getImageDimensions(allyjenLogoDataUrl)
         const { w, h } = fitDimensions(nw, nh, 30, 10)
-        doc.addImage(allyjenLogoDataUrl, 'PNG', pageWidth - w - 10, (logoDataUrl ? 23 : 10) - h / 2, w, h)
+        doc.addImage(allyjenLogoDataUrl, 'PNG', pageWidth - w - 10, currentY - h / 2, w, h)
       } catch { /* ignore */ }
     }
 
@@ -350,35 +349,51 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
           }
         }
 
-        // Bold the warning sub-lines in the name column
+        // Redraw name column cells that contain warning lines — prevents double-draw jumble
         if (data.section === 'body' && data.column.index === 0) {
           const rawLines = (tableData[data.row.index]?.[0] as string || '').split('\n')
           const markLines = rawLines.filter(l => l.startsWith(WARN_PREFIX))
           if (markLines.length === 0) return
 
-          // Re-draw only the warning lines in bold over the autoTable-rendered text
           const cell = data.cell
-          const padding = 1
-          // Work out where autoTable placed the first warning line
-          // autoTable renders multi-line text separated by \n; we need to match the y offsets.
-          // We'll re-render just the warning lines over a white-ish fill to preserve zebra.
-          const lineH = 3.5 // approximate line height at fontSize 7
-          const nameLineCount = rawLines.filter(l => !l.startsWith(WARN_PREFIX)).length
-          let lineY = cell.y + (typeof (cell as any).padding === 'object' ? (cell as any).padding.top ?? 2 : 2) + (nameLineCount * lineH) + 1.5
+          const padTop = 2
+          const padLeft = 1
+          const textWidth = cell.width - padLeft - 1
+          const lineH = 3.5
 
+          // Erase autoTable's rendered text by filling cell interior (preserve border)
+          const bgColor: [number, number, number] = data.row.index % 2 === 0 ? [249, 250, 251] : [255, 255, 255]
+          doc.setFillColor(...bgColor)
+          doc.rect(cell.x + 0.16, cell.y + 0.16, cell.width - 0.32, cell.height - 0.32, 'F')
+
+          let drawY = cell.y + padTop + lineH * 0.85
+
+          // Draw item name in normal font
+          const nameLines = rawLines.filter(l => !l.startsWith(WARN_PREFIX))
+          doc.setFont('helvetica', 'normal')
+          doc.setFontSize(7)
+          doc.setTextColor(0, 0, 0)
+          for (const line of nameLines) {
+            const wrapped = doc.splitTextToSize(line, textWidth)
+            for (const wl of wrapped) {
+              doc.text(wl, cell.x + padLeft, drawY)
+              drawY += lineH
+            }
+          }
+
+          // Draw warning lines in bold
           doc.setFont('helvetica', 'bold')
           doc.setFontSize(6.5)
           doc.setTextColor(60, 60, 60)
-
           for (const line of markLines) {
             const text = line.replace(WARN_PREFIX, '')
-            // Wrap text to fit name column
-            const wrapped = doc.splitTextToSize(text, nameColWidth - padding * 2 - 1)
+            const wrapped = doc.splitTextToSize(text, textWidth)
             for (const wl of wrapped) {
-              doc.text(wl, cell.x + padding, lineY)
-              lineY += lineH
+              doc.text(wl, cell.x + padLeft, drawY)
+              drawY += lineH
             }
           }
+
           doc.setFont('helvetica', 'normal')
           doc.setFontSize(7)
           doc.setTextColor(0, 0, 0)
