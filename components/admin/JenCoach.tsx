@@ -154,7 +154,7 @@ export function JenCoach() {
   }
 
   return (
-    <div className="fixed bottom-28 sm:bottom-20 right-6 z-40 flex flex-col items-end gap-2">
+    <div className="fixed bottom-14 sm:bottom-20 right-6 z-40 flex flex-col items-end gap-2">
       {/* Jen panel */}
       {open && (
         <div
