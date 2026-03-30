@@ -273,7 +273,7 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
     // ── Column widths ─────────────────────────────────────────────────────────
     const margins          = 14
     const availableWidth   = pageWidth - margins
-    const nameColWidth     = 55
+    const nameColWidth     = 65
     const allergenColWidth = (availableWidth - nameColWidth) / ALLERGENS.length
 
     // ── Render table ──────────────────────────────────────────────────────────
@@ -308,6 +308,7 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
           cellWidth: nameColWidth,
           fontStyle: 'normal',
           fontSize: 7,
+          cellPadding: { top: 2.5, right: 3, bottom: 2.5, left: 3 },
         },
         ...Object.fromEntries(
           ALLERGENS.map((_, i) => [
@@ -345,7 +346,6 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
             const { x, y, width, height } = data.cell
             const high = getAllergenSeverity(level) === 'high'
             drawCheckmark(doc, x, y, width, height, high)
-            if (!high) drawParentheses(doc, x, y, width, height)
           }
         }
 
@@ -356,17 +356,18 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
           if (markLines.length === 0) return
 
           const cell = data.cell
-          const padTop = 2
-          const padLeft = 1
-          const textWidth = cell.width - padLeft - 1
-          const lineH = 3.5
+          const padTop  = 2.5
+          const padLeft = 3
+          const padRight = 3
+          const textWidth = cell.width - padLeft - padRight
+          const lineH = 3.8
 
           // Erase autoTable's rendered text by filling cell interior (preserve border)
           const bgColor: [number, number, number] = data.row.index % 2 === 0 ? [249, 250, 251] : [255, 255, 255]
           doc.setFillColor(...bgColor)
           doc.rect(cell.x + 0.16, cell.y + 0.16, cell.width - 0.32, cell.height - 0.32, 'F')
 
-          let drawY = cell.y + padTop + lineH * 0.85
+          let drawY = cell.y + padTop + lineH * 0.75
 
           // Draw item name in normal font
           const nameLines = rawLines.filter(l => !l.startsWith(WARN_PREFIX))
@@ -381,9 +382,9 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
             }
           }
 
-          // Draw warning lines in bold
+          // Draw warning lines in bold, same size as name
           doc.setFont('helvetica', 'bold')
-          doc.setFontSize(6.5)
+          doc.setFontSize(7)
           doc.setTextColor(60, 60, 60)
           for (const line of markLines) {
             const text = line.replace(WARN_PREFIX, '')
@@ -444,7 +445,6 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
           doc.rect(x, ly - 3.5, 6, 5, 'FD')
           if (item.high !== null) {
             drawCheckmark(doc, x, ly - 3.5, 6, 5, item.high)
-            if (!item.high) drawParentheses(doc, x, ly - 3.5, 6, 5)
           }
           doc.setTextColor(60, 60, 60)
           doc.setFont('helvetica', 'normal')
