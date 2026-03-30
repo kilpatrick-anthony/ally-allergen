@@ -262,13 +262,14 @@ export default function NewSitePage() {
             </div>
 
             {/* Form Actions */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
-              <Link href="/admin/sites">
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-end gap-3">
+              <Link href="/admin/sites" className="flex">
                 <Button
                   type="button"
                   variant="secondary"
                   icon={X}
                   disabled={loading}
+                  className="flex-1"
                 >
                   Cancel
                 </Button>
