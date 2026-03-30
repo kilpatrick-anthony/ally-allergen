@@ -298,8 +298,8 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
         fontStyle: 'bold',
         halign: 'center',
         valign: 'bottom',
-        fontSize: 6.5,
-        minCellHeight: 28,
+        fontSize: 8,
+        minCellHeight: 30,
         cellPadding: 1,
       },
       columnStyles: {
@@ -319,6 +319,24 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
       },
       // Rotate header text vertically; draw vector checkmarks in body allergen cells
       didDrawCell: data => {
+        if (data.section === 'head' && data.column.index === 0) {
+          // Re-draw col 0 header centred both horizontally and vertically
+          const cell = data.cell
+          doc.setFillColor(...primaryRgb)
+          doc.rect(cell.x, cell.y, cell.width, cell.height, 'F')
+          doc.setTextColor(255, 255, 255)
+          doc.setFontSize(9)
+          doc.setFont('helvetica', 'bold')
+          const headerText = headers[0]
+          const wrapped = doc.splitTextToSize(headerText, cell.width - 4)
+          const totalTextH = wrapped.length * 4.5
+          let ty = cell.y + (cell.height - totalTextH) / 2 + 3.5
+          for (const line of wrapped) {
+            doc.text(line, cell.x + cell.width / 2, ty, { align: 'center' })
+            ty += 4.5
+          }
+        }
+
         if (data.section === 'head' && data.column.index > 0) {
           const cell = data.cell
           const text  = headers[data.column.index]
@@ -327,7 +345,7 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
           doc.rect(cell.x, cell.y, cell.width, cell.height, 'F')
 
           doc.setTextColor(255, 255, 255)
-          doc.setFontSize(6.5)
+          doc.setFontSize(8)
           doc.setFont('helvetica', 'bold')
 
           doc.saveGraphicsState()
