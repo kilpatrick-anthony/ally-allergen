@@ -400,7 +400,7 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
           doc.setTextColor(0, 0, 0)
         }
       },
-      // Colour-code allergen cells; zebra-stripe name column
+      // Colour-code allergen cells; zebra-stripe name column; pre-size col 0 rows
       didParseCell: data => {
         if (data.section === 'body' && data.column.index > 0) {
           const level = getLevel(items[data.row.index], ALLERGENS[data.column.index - 1].id)
@@ -412,6 +412,25 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
         if (data.section === 'body' && data.column.index === 0) {
           data.cell.styles.fillColor =
             data.row.index % 2 === 0 ? [249, 250, 251] : [255, 255, 255]
+
+          // Pre-calculate the exact cell height our custom didDrawCell will need.
+          // This ensures autoTable (a) allocates sufficient row height so no lines
+          // are clipped, and (b) starts a new page if the row won't fit — preventing
+          // text from overflowing outside the cell onto the page footer.
+          const rawLines = (tableData[data.row.index]?.[0] as string || '').split('\n')
+          const textWidth = nameColWidth - 6 // padLeft(3) + padRight(3)
+          const lineH     = 3.8
+          const padTop    = 2.5
+          const padBottom = 3.5 // extra bottom breathing room
+
+          let totalLines = 0
+          for (const line of rawLines) {
+            const cleaned = line.replace(WARN_PREFIX, '')
+            const wrapped = (data.doc as jsPDF).splitTextToSize(cleaned, textWidth)
+            totalLines += Math.max(1, wrapped.length)
+          }
+
+          data.cell.styles.minCellHeight = padTop + padBottom + totalLines * lineH
         }
       },
     })
