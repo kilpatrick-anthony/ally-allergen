@@ -55,11 +55,9 @@ export async function generateSuppliersReportPDF(options: SuppliersReportOptions
   doc.text('Suppliers Directory', pageWidth / 2, y, { align: 'center' })
   y += 8
 
-  doc.setFontSize(10)
+  doc.setFontSize(9)
   doc.setTextColor(100, 100, 100)
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, y)
-  y += 6
-  doc.text(`Total Suppliers: ${suppliers.length}`, 20, y)
+  doc.text(`Generated: ${new Date().toLocaleDateString()}  •  Total Suppliers: ${suppliers.length}`, pageWidth / 2, y, { align: 'center' })
   y += 10
 
   const tableData = suppliers.map(supplier => [
@@ -76,17 +74,18 @@ export async function generateSuppliersReportPDF(options: SuppliersReportOptions
     head: [['Name', 'Contact', 'Phone', 'Email', 'Website', 'Ingredients', 'Notes']],
     body: tableData,
     startY: y,
+    margin: { left: 10, right: 10 },
     styles: { fontSize: 7, cellPadding: 2 },
     headStyles: { fillColor: primaryRgb, textColor: 255, fontSize: 8, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
-      0: { cellWidth: 35 },
-      1: { cellWidth: 25 },
-      2: { cellWidth: 25 },
+      0: { cellWidth: 32 },
+      1: { cellWidth: 22 },
+      2: { cellWidth: 22 },
       3: { cellWidth: 35 },
-      4: { cellWidth: 30 },
-      5: { cellWidth: 20 },
-      6: { cellWidth: 30 },
+      4: { cellWidth: 28 },
+      5: { cellWidth: 18 },
+      6: { cellWidth: 23 },
     },
   })
 
