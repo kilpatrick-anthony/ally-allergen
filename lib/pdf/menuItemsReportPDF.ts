@@ -24,15 +24,14 @@ export async function generateMenuItemsReportPDF(options: MenuItemsReportOptions
 
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
-  let y = 25
+  let y = 12
 
   if (logoDataUrl) {
     try {
       const { w: nw, h: nh } = await getImageDimensions(logoDataUrl)
-      const { w, h } = fitDimensions(nw, nh, 40, 14)
-      doc.addImage(logoDataUrl, 'auto', 10, y - 10, w, h)
+      const { w, h } = fitDimensions(nw, nh, 80, 28)
+      doc.addImage(logoDataUrl, 'auto', 10, 8, w, h)
     } catch { /* ignore */ }
-    y = 42
   }
 
   // AllyJen logo — top right
@@ -40,7 +39,7 @@ export async function generateMenuItemsReportPDF(options: MenuItemsReportOptions
     try {
       const { w: nw, h: nh } = await getImageDimensions(allyjenLogoDataUrl)
       const { w, h } = fitDimensions(nw, nh, 28, 10)
-      doc.addImage(allyjenLogoDataUrl, 'PNG', pageWidth - w - 10, 12, w, h)
+      doc.addImage(allyjenLogoDataUrl, 'PNG', pageWidth - w - 10, y - h / 2, w, h)
     } catch { /* ignore */ }
   }
 

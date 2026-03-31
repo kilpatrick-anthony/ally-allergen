@@ -24,15 +24,14 @@ export async function generateIngredientsReportPDF(options: IngredientsReportOpt
 
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
-  let y = 25
+  let y = 12
 
   if (logoDataUrl) {
     try {
       const { w: nw, h: nh } = await getImageDimensions(logoDataUrl)
-      const { w, h } = fitDimensions(nw, nh, 40, 14)
-      doc.addImage(logoDataUrl, 'auto', 10, y - 10, w, h)
+      const { w, h } = fitDimensions(nw, nh, 80, 28)
+      doc.addImage(logoDataUrl, 'auto', 10, 8, w, h)
     } catch { /* ignore */ }
-    y = 42
   }
 
   // AllyJen logo — top right
@@ -40,7 +39,7 @@ export async function generateIngredientsReportPDF(options: IngredientsReportOpt
     try {
       const { w: nw, h: nh } = await getImageDimensions(allyjenLogoDataUrl)
       const { w, h } = fitDimensions(nw, nh, 28, 10)
-      doc.addImage(allyjenLogoDataUrl, 'PNG', pageWidth - w - 10, 12, w, h)
+      doc.addImage(allyjenLogoDataUrl, 'PNG', pageWidth - w - 10, y - h / 2, w, h)
     } catch { /* ignore */ }
   }
 
@@ -66,26 +65,24 @@ export async function generateIngredientsReportPDF(options: IngredientsReportOpt
   const tableData = ingredients.map(ingredient => [
     ingredient.name || 'N/A',
     ingredient.description || 'N/A',
-    ingredient.category || 'N/A',
     ingredient.status || 'N/A',
     ingredient.compliance || 'N/A',
     ingredient.suppliers?.length || 0
   ])
 
   autoTable(doc, {
-    head: [['Name', 'Description', 'Category', 'Status', 'Compliance', 'Suppliers']],
+    head: [['Name', 'Description', 'Status', 'Compliance', 'Suppliers']],
     body: tableData,
     startY: y,
     styles: { fontSize: 8, cellPadding: 3 },
     headStyles: { fillColor: primaryRgb, textColor: 255, fontSize: 9, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
-      0: { cellWidth: 40 },
-      1: { cellWidth: 60 },
-      2: { cellWidth: 30 },
+      0: { cellWidth: 45 },
+      1: { cellWidth: 75 },
+      2: { cellWidth: 25 },
       3: { cellWidth: 25 },
-      4: { cellWidth: 25 },
-      5: { cellWidth: 20 },
+      4: { cellWidth: 20 },
     },
   })
 
