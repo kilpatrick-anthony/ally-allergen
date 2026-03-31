@@ -82,10 +82,10 @@ export async function generateSuppliersReportPDF(options: SuppliersReportOptions
       0: { cellWidth: 32 },
       1: { cellWidth: 22 },
       2: { cellWidth: 22 },
-      3: { cellWidth: 35 },
-      4: { cellWidth: 28 },
-      5: { cellWidth: 18 },
-      6: { cellWidth: 23 },
+      3: { cellWidth: 33 },
+      4: { cellWidth: 26 },
+      5: { cellWidth: 23 },
+      6: { cellWidth: 22 },
     },
   })
 
