@@ -55,36 +55,28 @@ export async function generateMenuItemsReportPDF(options: MenuItemsReportOptions
   doc.text('Menu Items Report', pageWidth / 2, y, { align: 'center' })
   y += 8
 
-  doc.setFontSize(10)
+  doc.setFontSize(9)
   doc.setTextColor(100, 100, 100)
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, y)
-  y += 6
-  doc.text(`Total Menu Items: ${menuItems.length}`, 20, y)
+  doc.text(`Generated: ${new Date().toLocaleDateString()}  •  Total Menu Items: ${menuItems.length}`, pageWidth / 2, y, { align: 'center' })
   y += 10
 
   const tableData = menuItems.map(item => [
     item.name || 'N/A',
     item.description || 'N/A',
-    item.category || 'N/A',
-    item.price ? `€${item.price.toFixed(2)}` : 'N/A',
     item.is_active ? 'Active' : 'Inactive',
-    item.display_order || 'N/A'
   ])
 
   autoTable(doc, {
-    head: [['Name', 'Description', 'Category', 'Price', 'Status', 'Display Order']],
+    head: [['Name', 'Description', 'Status']],
     body: tableData,
     startY: y,
     styles: { fontSize: 8, cellPadding: 3 },
     headStyles: { fillColor: primaryRgb, textColor: 255, fontSize: 9, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
-      0: { cellWidth: 35 },
-      1: { cellWidth: 55 },
-      2: { cellWidth: 25 },
-      3: { cellWidth: 20 },
-      4: { cellWidth: 20 },
-      5: { cellWidth: 25 },
+      0: { cellWidth: 50 },
+      1: { cellWidth: 110 },
+      2: { cellWidth: 30 },
     },
   })
 
