@@ -55,11 +55,9 @@ export async function generateIngredientsReportPDF(options: IngredientsReportOpt
   doc.text('Ingredients Report', pageWidth / 2, y, { align: 'center' })
   y += 8
 
-  doc.setFontSize(10)
+  doc.setFontSize(9)
   doc.setTextColor(100, 100, 100)
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, y)
-  y += 6
-  doc.text(`Total Ingredients: ${ingredients.length}`, 20, y)
+  doc.text(`Generated: ${new Date().toLocaleDateString()}  •  Total Ingredients: ${ingredients.length}`, pageWidth / 2, y, { align: 'center' })
   y += 10
 
   const tableData = ingredients.map(ingredient => [
