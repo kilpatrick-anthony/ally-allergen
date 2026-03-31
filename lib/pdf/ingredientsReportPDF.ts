@@ -77,10 +77,10 @@ export async function generateIngredientsReportPDF(options: IngredientsReportOpt
     alternateRowStyles: { fillColor: [248, 250, 252] },
     columnStyles: {
       0: { cellWidth: 45 },
-      1: { cellWidth: 75 },
+      1: { cellWidth: 70 },
       2: { cellWidth: 25 },
       3: { cellWidth: 25 },
-      4: { cellWidth: 20 },
+      4: { cellWidth: 25 },
     },
   })
 
