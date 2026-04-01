@@ -244,17 +244,20 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
     const nameColWidth     = 65
     const allergenColWidth = (availableWidth - nameColWidth) / ALLERGENS.length
 
-    // ── Table headers ─────────────────────────────────────────────────────────
-    const headers = ['Item / Ingredient', ...ALLERGENS.map(a => a.shortName || a.name)]
+    // ── Table headers (col 0 label set per section) ─────────────────────────
+    const allergenHeaders = ALLERGENS.map(a => a.shortName || a.name)
 
     // ── Helper: render one section table ─────────────────────────────────────
     const renderSection = (
       sectionItems: MenuItem[],
       sectionTitle: string,
       startY: number,
-      subNote?: string
+      subNote?: string,
+      col0Label = 'Item / Ingredient'
     ): number => {
       if (sectionItems.length === 0) return startY
+
+      const headers = [col0Label, ...allergenHeaders]
 
       // Section heading
       doc.setFontSize(10)
@@ -473,14 +476,15 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
         menuSectionItems,
         'Menu Items',
         currentY,
-        'Allergen information declared in accordance with EU Regulation No. 1169/2011 (FIC Regulation). Where multiple suppliers exist, the most conservative (worst-case) declaration is shown.'
+        'Allergen information declared in accordance with EU Regulation No. 1169/2011 (FIC Regulation). Where multiple suppliers exist, the most conservative (worst-case) declaration is shown.',
+        'Item'
       )
       finalY += 10
     }
 
     // ── Render Ingredients section ────────────────────────────────────────────
     if (ingredientItems.length > 0) {
-      finalY = renderSection(expandedIngredientItems, 'Ingredients', finalY)
+      finalY = renderSection(expandedIngredientItems, 'Ingredients', finalY, undefined, 'Ingredient')
     }
 
     // ── If no split (legacy call without itemType), render everything together ─
