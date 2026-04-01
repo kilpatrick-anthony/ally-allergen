@@ -235,19 +235,6 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
       currentY += 8
     }
 
-    // ── EU Regulation notice ─────────────────────────────────────────────────
-    doc.setFontSize(7)
-    doc.setTextColor(100, 100, 100)
-    doc.text(
-      'Allergen information declared in accordance with EU Regulation No. 1169/2011 (FIC Regulation). ' +
-        'Where multiple suppliers exist, the most conservative (worst-case) declaration is shown.',
-      pageWidth / 2,
-      currentY,
-      { align: 'center', maxWidth: pageWidth - 20 }
-    )
-    currentY += 8
-    doc.setTextColor(0, 0, 0)
-
     // ── Column widths ─────────────────────────────────────────────────────────
     const margins          = 14
     const availableWidth   = pageWidth - margins
@@ -261,7 +248,8 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
     const renderSection = (
       sectionItems: MenuItem[],
       sectionTitle: string,
-      startY: number
+      startY: number,
+      subNote?: string
     ): number => {
       if (sectionItems.length === 0) return startY
 
@@ -271,6 +259,16 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
       doc.setTextColor(...primaryRgb)
       doc.text(sectionTitle, 7, startY)
       startY += 6
+
+      if (subNote) {
+        doc.setFontSize(6.5)
+        doc.setFont('helvetica', 'italic')
+        doc.setTextColor(100, 100, 100)
+        doc.text(subNote, 7, startY, { maxWidth: pageWidth - 14 })
+        startY += 5
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(0, 0, 0)
+      }
 
       const tickMap = new Map<string, AllergenLevel>()
       const tableData = sectionItems.map((item, rowIndex) => {
@@ -455,16 +453,31 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
     const menuSectionItems  = items.filter(i => (i as any).itemType !== 'ingredient')
     const ingredientItems   = items.filter(i => (i as any).itemType === 'ingredient')
 
+    // ── Expand ingredients per supplier (one row per supplier) ─────────────────
+    const expandedIngredientItems: MenuItem[] = ingredientItems.flatMap(item => {
+      const supplierList: string[] = (item as any).suppliers ?? []
+      if (supplierList.length === 0) return [item]
+      return supplierList.map(supplier => ({
+        ...item,
+        name: `${item.name}\nSupplier: ${supplier}`,
+      }))
+    })
+
     // ── Render Menu Items section ─────────────────────────────────────────────
     let finalY = currentY
     if (menuSectionItems.length > 0) {
-      finalY = renderSection(menuSectionItems, 'Menu Items', currentY)
+      finalY = renderSection(
+        menuSectionItems,
+        'Menu Items',
+        currentY,
+        'Allergen information declared in accordance with EU Regulation No. 1169/2011 (FIC Regulation). Where multiple suppliers exist, the most conservative (worst-case) declaration is shown.'
+      )
       finalY += 10
     }
 
     // ── Render Ingredients section ────────────────────────────────────────────
     if (ingredientItems.length > 0) {
-      finalY = renderSection(ingredientItems, 'Ingredients', finalY)
+      finalY = renderSection(expandedIngredientItems, 'Ingredients', finalY)
     }
 
     // ── If no split (legacy call without itemType), render everything together ─
