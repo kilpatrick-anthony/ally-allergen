@@ -248,214 +248,234 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
     currentY += 8
     doc.setTextColor(0, 0, 0)
 
-    // ── Table headers ─────────────────────────────────────────────────────────
-    const headers = ['Menu Item / Ingredient', ...ALLERGENS.map(a => a.shortName || a.name)]
-
-    // ── Build tick map and table body ─────────────────────────────────────────
-    // Allergen cells contain no text — ticks are drawn as vector graphics in didDrawCell.
-    const tickMap = new Map<string, AllergenLevel>()
-    const tableData = items.map((item, rowIndex) => {
-      const warningLines = buildWarningLines(item)
-      const nameCell =
-        warningLines.length > 0
-          ? `${item.name}\n${warningLines.join('\n')}`
-          : item.name
-
-      const row: string[] = [nameCell]
-      ALLERGENS.forEach((allergen, colOffset) => {
-        const level = getLevel(item, allergen.id)
-        if (level !== 'none') tickMap.set(`${rowIndex}-${colOffset + 1}`, level)
-        row.push('') // content rendered as vector tick in didDrawCell
-      })
-      return row
-    })
-
     // ── Column widths ─────────────────────────────────────────────────────────
     const margins          = 14
     const availableWidth   = pageWidth - margins
     const nameColWidth     = 65
     const allergenColWidth = (availableWidth - nameColWidth) / ALLERGENS.length
 
-    // ── Render table ──────────────────────────────────────────────────────────
-    autoTable(doc, {
-      head: [headers],
-      body: tableData,
-      startY: currentY,
-      theme: 'grid',
-      margin: { left: 7, right: 7 },
-      styles: {
-        fontSize: 7,
-        cellPadding: { top: 2, right: 1, bottom: 2, left: 1 },
-        overflow: 'linebreak',
-        halign: 'center',
-        valign: 'middle',
-        lineWidth: 0.3,
-        lineColor: [180, 180, 180],
-      },
-      headStyles: {
-        fillColor: primaryRgb,
-        textColor: [255, 255, 255],
-        fontStyle: 'bold',
-        halign: 'center',
-        valign: 'bottom',
-        fontSize: 8,
-        minCellHeight: 30,
-        cellPadding: 1,
-      },
-      columnStyles: {
-        0: {
-          halign: 'left',
-          cellWidth: nameColWidth,
-          fontStyle: 'normal',
+    // ── Table headers ─────────────────────────────────────────────────────────
+    const headers = ['Item / Ingredient', ...ALLERGENS.map(a => a.shortName || a.name)]
+
+    // ── Helper: render one section table ─────────────────────────────────────
+    const renderSection = (
+      sectionItems: MenuItem[],
+      sectionTitle: string,
+      startY: number
+    ): number => {
+      if (sectionItems.length === 0) return startY
+
+      // Section heading
+      doc.setFontSize(10)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(...primaryRgb)
+      doc.text(sectionTitle, 7, startY)
+      startY += 6
+
+      const tickMap = new Map<string, AllergenLevel>()
+      const tableData = sectionItems.map((item, rowIndex) => {
+        const warningLines = buildWarningLines(item)
+        const nameCell =
+          warningLines.length > 0
+            ? `${item.name}\n${warningLines.join('\n')}`
+            : item.name
+
+        const row: string[] = [nameCell]
+        ALLERGENS.forEach((allergen, colOffset) => {
+          const level = getLevel(item, allergen.id)
+          if (level !== 'none') tickMap.set(`${rowIndex}-${colOffset + 1}`, level)
+          row.push('')
+        })
+        return row
+      })
+
+      autoTable(doc, {
+        head: [headers],
+        body: tableData,
+        startY,
+        theme: 'grid',
+        margin: { left: 7, right: 7 },
+        styles: {
           fontSize: 7,
-          cellPadding: { top: 2.5, right: 3, bottom: 2.5, left: 3 },
+          cellPadding: { top: 2, right: 1, bottom: 2, left: 1 },
+          overflow: 'linebreak',
+          halign: 'center',
+          valign: 'middle',
+          lineWidth: 0.3,
+          lineColor: [180, 180, 180],
         },
-        ...Object.fromEntries(
-          ALLERGENS.map((_, i) => [
-            i + 1,
-            { cellWidth: allergenColWidth },
-          ])
-        ),
-      },
-      // Rotate header text vertically; draw vector checkmarks in body allergen cells
-      didDrawCell: data => {
-        if (data.section === 'head' && data.column.index === 0) {
-          // Re-draw col 0 header centred both horizontally and vertically
-          const cell = data.cell
-          doc.setFillColor(...primaryRgb)
-          doc.rect(cell.x, cell.y, cell.width, cell.height, 'F')
-          doc.setTextColor(255, 255, 255)
-          doc.setFontSize(9)
-          doc.setFont('helvetica', 'bold')
-          const headerText = headers[0]
-          const wrapped = doc.splitTextToSize(headerText, cell.width - 4)
-          const totalTextH = wrapped.length * 4.5
-          let ty = cell.y + (cell.height - totalTextH) / 2 + 3.5
-          for (const line of wrapped) {
-            doc.text(line, cell.x + cell.width / 2, ty, { align: 'center' })
-            ty += 4.5
-          }
-        }
-
-        if (data.section === 'head' && data.column.index > 0) {
-          const cell = data.cell
-          const text  = headers[data.column.index]
-
-          doc.setFillColor(...primaryRgb)
-          doc.rect(cell.x, cell.y, cell.width, cell.height, 'F')
-
-          doc.setTextColor(255, 255, 255)
-          doc.setFontSize(8)
-          doc.setFont('helvetica', 'bold')
-
-          doc.saveGraphicsState()
-          doc.text(text, cell.x + cell.width / 2 + 1, cell.y + cell.height - 2, {
-            angle: 90,
-            align: 'left',
-          })
-          doc.restoreGraphicsState()
-        }
-
-        // Draw vector checkmarks for body allergen cells
-        if (data.section === 'body' && data.column.index > 0) {
-          const key = `${data.row.index}-${data.column.index}`
-          const level = tickMap.get(key)
-          if (level) {
-            const { x, y, width, height } = data.cell
-            const high = getAllergenSeverity(level) === 'high'
-            drawCheckmark(doc, x, y, width, height, high)
-          }
-        }
-
-        // Redraw name column cells that contain warning lines — prevents double-draw jumble
-        if (data.section === 'body' && data.column.index === 0) {
-          const rawLines = (tableData[data.row.index]?.[0] as string || '').split('\n')
-          const markLines = rawLines.filter(l => l.startsWith(WARN_PREFIX))
-          if (markLines.length === 0) return
-
-          const cell = data.cell
-          const padTop  = 2.5
-          const padLeft = 3
-          const padRight = 3
-          const textWidth = cell.width - padLeft - padRight
-          const lineH = 3.8
-
-          // Erase autoTable's rendered text by filling cell interior (preserve border)
-          const bgColor: [number, number, number] = data.row.index % 2 === 0 ? [249, 250, 251] : [255, 255, 255]
-          doc.setFillColor(...bgColor)
-          doc.rect(cell.x + 0.16, cell.y + 0.16, cell.width - 0.32, cell.height - 0.32, 'F')
-
-          let drawY = cell.y + padTop + lineH * 0.75
-
-          // Draw item name in normal font
-          const nameLines = rawLines.filter(l => !l.startsWith(WARN_PREFIX))
-          doc.setFont('helvetica', 'normal')
-          doc.setFontSize(7)
-          doc.setTextColor(0, 0, 0)
-          for (const line of nameLines) {
-            const wrapped = doc.splitTextToSize(line, textWidth)
-            for (const wl of wrapped) {
-              doc.text(wl, cell.x + padLeft, drawY)
-              drawY += lineH
+        headStyles: {
+          fillColor: primaryRgb,
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          halign: 'center',
+          valign: 'bottom',
+          fontSize: 8,
+          minCellHeight: 30,
+          cellPadding: 1,
+        },
+        columnStyles: {
+          0: {
+            halign: 'left',
+            cellWidth: nameColWidth,
+            fontStyle: 'normal',
+            fontSize: 7,
+            cellPadding: { top: 2.5, right: 3, bottom: 2.5, left: 3 },
+          },
+          ...Object.fromEntries(
+            ALLERGENS.map((_, i) => [
+              i + 1,
+              { cellWidth: allergenColWidth },
+            ])
+          ),
+        },
+        didDrawCell: data => {
+          if (data.section === 'head' && data.column.index === 0) {
+            const cell = data.cell
+            doc.setFillColor(...primaryRgb)
+            doc.rect(cell.x, cell.y, cell.width, cell.height, 'F')
+            doc.setTextColor(255, 255, 255)
+            doc.setFontSize(9)
+            doc.setFont('helvetica', 'bold')
+            const headerText = headers[0]
+            const wrapped = doc.splitTextToSize(headerText, cell.width - 4)
+            const totalTextH = wrapped.length * 4.5
+            let ty = cell.y + (cell.height - totalTextH) / 2 + 3.5
+            for (const line of wrapped) {
+              doc.text(line, cell.x + cell.width / 2, ty, { align: 'center' })
+              ty += 4.5
             }
           }
 
-          // Draw warning lines in bold, same size as name
-          doc.setFont('helvetica', 'bold')
-          doc.setFontSize(7)
-          doc.setTextColor(60, 60, 60)
-          for (const line of markLines) {
-            const text = line.replace(WARN_PREFIX, '')
-            const wrapped = doc.splitTextToSize(text, textWidth)
-            for (const wl of wrapped) {
-              doc.text(wl, cell.x + padLeft, drawY)
-              drawY += lineH
+          if (data.section === 'head' && data.column.index > 0) {
+            const cell = data.cell
+            const text  = headers[data.column.index]
+            doc.setFillColor(...primaryRgb)
+            doc.rect(cell.x, cell.y, cell.width, cell.height, 'F')
+            doc.setTextColor(255, 255, 255)
+            doc.setFontSize(8)
+            doc.setFont('helvetica', 'bold')
+            doc.saveGraphicsState()
+            doc.text(text, cell.x + cell.width / 2 + 1, cell.y + cell.height - 2, {
+              angle: 90,
+              align: 'left',
+            })
+            doc.restoreGraphicsState()
+          }
+
+          if (data.section === 'body' && data.column.index > 0) {
+            const key = `${data.row.index}-${data.column.index}`
+            const level = tickMap.get(key)
+            if (level) {
+              const { x, y, width, height } = data.cell
+              const high = getAllergenSeverity(level) === 'high'
+              drawCheckmark(doc, x, y, width, height, high)
             }
           }
 
-          doc.setFont('helvetica', 'normal')
-          doc.setFontSize(7)
-          doc.setTextColor(0, 0, 0)
-        }
-      },
-      // Colour-code allergen cells; zebra-stripe name column; pre-size col 0 rows
-      didParseCell: data => {
-        if (data.section === 'body' && data.column.index > 0) {
-          const level = getLevel(items[data.row.index], ALLERGENS[data.column.index - 1].id)
-          const fill  = cellFill(level)
-          if (fill) {
-            data.cell.styles.fillColor = fill
+          if (data.section === 'body' && data.column.index === 0) {
+            const rawLines = (tableData[data.row.index]?.[0] as string || '').split('\n')
+            const markLines = rawLines.filter(l => l.startsWith(WARN_PREFIX))
+            if (markLines.length === 0) return
+
+            const cell = data.cell
+            const padTop   = 2.5
+            const padLeft  = 3
+            const padRight = 3
+            const textWidth = cell.width - padLeft - padRight
+            const lineH = 3.8
+
+            const bgColor: [number, number, number] = data.row.index % 2 === 0 ? [249, 250, 251] : [255, 255, 255]
+            doc.setFillColor(...bgColor)
+            doc.rect(cell.x + 0.16, cell.y + 0.16, cell.width - 0.32, cell.height - 0.32, 'F')
+
+            let drawY = cell.y + padTop + lineH * 0.75
+
+            const nameLines = rawLines.filter(l => !l.startsWith(WARN_PREFIX))
+            doc.setFont('helvetica', 'normal')
+            doc.setFontSize(7)
+            doc.setTextColor(0, 0, 0)
+            for (const line of nameLines) {
+              const wrapped = doc.splitTextToSize(line, textWidth)
+              for (const wl of wrapped) {
+                doc.text(wl, cell.x + padLeft, drawY)
+                drawY += lineH
+              }
+            }
+
+            doc.setFont('helvetica', 'bold')
+            doc.setFontSize(7)
+            doc.setTextColor(60, 60, 60)
+            for (const line of markLines) {
+              const text = line.replace(WARN_PREFIX, '')
+              const wrapped = doc.splitTextToSize(text, textWidth)
+              for (const wl of wrapped) {
+                doc.text(wl, cell.x + padLeft, drawY)
+                drawY += lineH
+              }
+            }
+
+            doc.setFont('helvetica', 'normal')
+            doc.setFontSize(7)
+            doc.setTextColor(0, 0, 0)
           }
-        }
-        if (data.section === 'body' && data.column.index === 0) {
-          data.cell.styles.fillColor =
-            data.row.index % 2 === 0 ? [249, 250, 251] : [255, 255, 255]
-
-          // Pre-calculate the exact cell height our custom didDrawCell will need.
-          // This ensures autoTable (a) allocates sufficient row height so no lines
-          // are clipped, and (b) starts a new page if the row won't fit — preventing
-          // text from overflowing outside the cell onto the page footer.
-          const rawLines = (tableData[data.row.index]?.[0] as string || '').split('\n')
-          const textWidth = nameColWidth - 6 // padLeft(3) + padRight(3)
-          const lineH     = 3.8
-          const padTop    = 2.5
-          const padBottom = 3.5 // extra bottom breathing room
-
-          let totalLines = 0
-          for (const line of rawLines) {
-            const cleaned = line.replace(WARN_PREFIX, '')
-            const wrapped = (data.doc as jsPDF).splitTextToSize(cleaned, textWidth)
-            totalLines += Math.max(1, wrapped.length)
+        },
+        didParseCell: data => {
+          if (data.section === 'body' && data.column.index > 0) {
+            const level = getLevel(sectionItems[data.row.index], ALLERGENS[data.column.index - 1].id)
+            const fill  = cellFill(level)
+            if (fill) data.cell.styles.fillColor = fill
           }
+          if (data.section === 'body' && data.column.index === 0) {
+            data.cell.styles.fillColor =
+              data.row.index % 2 === 0 ? [249, 250, 251] : [255, 255, 255]
 
-          data.cell.styles.minCellHeight = padTop + padBottom + totalLines * lineH
-        }
-      },
-    })
+            const rawLines = (tableData[data.row.index]?.[0] as string || '').split('\n')
+            const textWidth = nameColWidth - 6
+            const lineH     = 3.8
+            const padTop    = 2.5
+            const padBottom = 3.5
+
+            let totalLines = 0
+            for (const line of rawLines) {
+              const cleaned = line.replace(WARN_PREFIX, '')
+              const wrapped = (data.doc as jsPDF).splitTextToSize(cleaned, textWidth)
+              totalLines += Math.max(1, wrapped.length)
+            }
+
+            data.cell.styles.minCellHeight = padTop + padBottom + totalLines * lineH
+          }
+        },
+      })
+
+      return (doc as any).lastAutoTable?.finalY ?? startY
+    }
+
+    // ── Split items into sections ─────────────────────────────────────────────
+    const menuSectionItems  = items.filter(i => (i as any).itemType !== 'ingredient')
+    const ingredientItems   = items.filter(i => (i as any).itemType === 'ingredient')
+
+    // ── Render Menu Items section ─────────────────────────────────────────────
+    let finalY = currentY
+    if (menuSectionItems.length > 0) {
+      finalY = renderSection(menuSectionItems, 'Menu Items', currentY)
+      finalY += 10
+    }
+
+    // ── Render Ingredients section ────────────────────────────────────────────
+    if (ingredientItems.length > 0) {
+      finalY = renderSection(ingredientItems, 'Ingredients', finalY)
+    }
+
+    // ── If no split (legacy call without itemType), render everything together ─
+    if (menuSectionItems.length === items.length) {
+      // Already rendered above — nothing extra to do
+    } else if (menuSectionItems.length === 0 && ingredientItems.length === 0) {
+      finalY = renderSection(items, 'Items', currentY)
+    }
 
     // ── Legend ────────────────────────────────────────────────────────────────
     if (showLegend) {
-      const finalY = (doc as any).lastAutoTable?.finalY || currentY + 50
       if (finalY + 28 < pageHeight) {
         let ly = finalY + 8
 
