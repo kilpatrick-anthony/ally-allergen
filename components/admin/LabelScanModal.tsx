@@ -13,7 +13,7 @@
 import { useRef, useState, useCallback } from 'react'
 import {
   Camera, Upload, X, ScanLine, CheckCircle, AlertTriangle,
-  RefreshCw, ChevronRight, Info
+  RefreshCw, ChevronRight, Info, FileText
 } from 'lucide-react'
 import type { AllergenWarnings } from '@/types/allergen'
 import { ALLERGEN_LIST } from '@/types/allergen'
@@ -79,14 +79,19 @@ async function compressImage(file: File, maxDim = 1280, quality = 0.82): Promise
 export function LabelScanModal({ open, onClose, onAccept }: Props) {
   const [stage, setStage]         = useState<Stage>('idle')
   const [preview, setPreview]     = useState<string | null>(null)
+  const [isDocument, setIsDocument] = useState(false)
+  const [docName, setDocName]     = useState('')
   const [result, setResult]       = useState<ScanResult | null>(null)
   const [errorMsg, setErrorMsg]   = useState('')
   const fileInputRef              = useRef<HTMLInputElement>(null)
   const cameraInputRef            = useRef<HTMLInputElement>(null)
+  const docInputRef               = useRef<HTMLInputElement>(null)
 
   const reset = useCallback(() => {
     setStage('idle')
     setPreview(null)
+    setIsDocument(false)
+    setDocName('')
     setResult(null)
     setErrorMsg('')
   }, [])
@@ -105,6 +110,7 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
     }
     try {
       const dataUrl = await compressImage(file)
+      setIsDocument(false)
       setPreview(dataUrl)
       setStage('preview')
     } catch {
@@ -113,14 +119,47 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
     }
   }, [])
 
+  const handleDocSelected = useCallback(async (file: File | null | undefined) => {
+    if (!file) return
+    const validTypes = [
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/msword',
+    ]
+    if (!validTypes.includes(file.type)) {
+      setErrorMsg('Please select a PDF or Word document (.pdf, .docx, .doc).')
+      setStage('error')
+      return
+    }
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = (e) => resolve(e.target?.result as string)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+      setIsDocument(true)
+      setDocName(file.name)
+      setPreview(dataUrl)
+      setStage('preview')
+    } catch {
+      setErrorMsg('Could not read the document. Please try again.')
+      setStage('error')
+    }
+  }, [])
+
   const handleScan = useCallback(async () => {
     if (!preview) return
     setStage('scanning')
     try {
+      const body = isDocument
+        ? { document: preview }
+        : { image: preview }
+
       const res = await fetch('/api/scan-label', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: preview }),
+        body: JSON.stringify(body),
       })
 
       const data = await res.json()
@@ -193,11 +232,11 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
           {stage === 'idle' && (
             <div className="p-6">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 text-center">
-                Take a photo or upload an image of the product label. The AI will read the
-                allergen information — you can review and correct it before saving.
+                Take a photo or upload an image of the product label, or upload a product datasheet (PDF or Word).
+                The AI will read the allergen information — you can review and correct it before saving.
               </p>
 
-              <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="grid grid-cols-2 gap-3 mb-3">
                 {/* Camera button (mobile: opens rear camera) */}
                 <button
                   type="button"
@@ -211,7 +250,7 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
                   <span className="text-xs text-gray-400">Use your camera</span>
                 </button>
 
-                {/* File upload */}
+                {/* Image file upload */}
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
@@ -225,11 +264,27 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
                 </button>
               </div>
 
+              {/* Document upload — full width */}
+              <button
+                type="button"
+                onClick={() => docInputRef.current?.click()}
+                className="w-full flex items-center gap-4 p-4 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl hover:border-[#42b8ac] hover:bg-[#42b8ac]/5 transition-all group mb-4"
+              >
+                <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-full group-hover:bg-[#42b8ac]/20 transition-colors shrink-0">
+                  <FileText className="h-6 w-6 text-gray-500 group-hover:text-[#42b8ac]" />
+                </div>
+                <div className="text-left">
+                  <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Upload Datasheet</span>
+                  <span className="text-xs text-gray-400">PDF or Word document (.pdf, .docx)</span>
+                </div>
+              </button>
+
               <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
                 <Info className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
                 <p className="text-xs text-blue-700 dark:text-blue-300">
                   For best results, ensure the <strong>ingredients list</strong> and{' '}
-                  <strong>allergen warnings</strong> sections are clearly visible and well-lit.
+                  <strong>allergen warnings</strong> sections are clearly visible and well-lit (images),
+                  or use a supplier datasheet in PDF/Word format.
                 </p>
               </div>
 
@@ -249,22 +304,42 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
                 className="hidden"
                 onChange={e => handleFileSelected(e.target.files?.[0])}
               />
+              <input
+                ref={docInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                className="hidden"
+                onChange={e => handleDocSelected(e.target.files?.[0])}
+              />
             </div>
           )}
 
           {/* ── PREVIEW ───────────────────────────────────────────────────── */}
           {stage === 'preview' && preview && (
             <div className="p-5">
-              <div className="relative rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-4">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={preview}
-                  alt="Label to scan"
-                  className="w-full max-h-72 object-contain"
-                />
-              </div>
+              {isDocument ? (
+                <div className="flex flex-col items-center justify-center gap-3 py-8 bg-gray-50 dark:bg-gray-800/50 rounded-xl mb-4 border border-gray-200 dark:border-gray-700">
+                  <div className="p-4 bg-[#42b8ac]/10 rounded-full">
+                    <FileText className="h-10 w-10 text-[#42b8ac]" />
+                  </div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 text-center max-w-xs break-all">{docName}</p>
+                  <p className="text-xs text-gray-400">Ready to scan</p>
+                </div>
+              ) : (
+                <div className="relative rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-4">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={preview}
+                    alt="Label to scan"
+                    className="w-full max-h-72 object-contain"
+                  />
+                </div>
+              )}
               <p className="text-sm text-center text-gray-600 dark:text-gray-400 mb-5">
-                Is the label clearly readable? Then tap <strong>Scan Label</strong> to extract allergen info.
+                {isDocument
+                  ? <>Document loaded. Tap <strong>Scan Document</strong> to extract allergen info.</>
+                  : <>Is the label clearly readable? Then tap <strong>Scan Label</strong> to extract allergen info.</>
+                }
               </p>
               <div className="flex gap-3">
                 <button
@@ -272,7 +347,7 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
                   onClick={reset}
                   className="flex-1 py-2.5 px-4 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
-                  Retake
+                  {isDocument ? 'Choose Different' : 'Retake'}
                 </button>
                 <button
                   type="button"
@@ -280,7 +355,7 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
                   className="flex-[2] py-2.5 px-4 rounded-lg bg-gradient-to-r from-[#42b8ac] to-[#003842] text-sm font-semibold text-white hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
                 >
                   <ScanLine className="h-4 w-4" />
-                  Scan Label
+                  {isDocument ? 'Scan Document' : 'Scan Label'}
                 </button>
               </div>
             </div>

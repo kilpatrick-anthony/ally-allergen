@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
   Package, ArrowLeft, Save, X, AlertCircle, Plus, Trash2,
-  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Dna, MapPin, ScanLine
+  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck, ScanLine
 } from 'lucide-react'
 
 import { Container } from '../../../components/layout/Container'
@@ -158,8 +158,8 @@ export default function NewIngredientPage() {
     { name: 'Kosher', color: '#3b82f6', icon: Star },
     { name: 'Organic', color: '#22c55e', icon: Sprout },
     { name: 'Fair Trade', color: '#8b5cf6', icon: Globe },
-    { name: 'Non-GMO', color: '#06b6d4', icon: Dna },
-    { name: 'Locally Sourced', color: '#ec4899', icon: MapPin }
+    { name: 'Lactose-Free', color: '#06b6d4', icon: Droplets },
+    { name: 'Coeliac-Friendly', color: '#ec4899', icon: ShieldCheck }
   ]
 
   const handleSave = async () => {
@@ -521,11 +521,17 @@ export default function NewIngredientPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Supplier
                 </label>
-                <div className="flex flex-col md:flex-row gap-2 mb-3">
+                <div className="mb-3">
                   <select
                     value={selectedSupplier}
-                    onChange={(e) => setSelectedSupplier(e.target.value)}
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
+                    onChange={(e) => {
+                      const val = e.target.value
+                      if (val) {
+                        addSupplierByName(val)
+                        setSelectedSupplier('')
+                      }
+                    }}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                   >
                     <option value="">
                       {loadingSuppliers ? 'Loading suppliers...' : 'Select existing supplier'}
@@ -536,34 +542,17 @@ export default function NewIngredientPage() {
                       </option>
                     ))}
                   </select>
-                  <Button
-                    onClick={() => {
-                      if (selectedSupplier) {
-                        addSupplierByName(selectedSupplier)
-                        setSelectedSupplier('')
-                      }
-                    }}
-                    variant="outline"
-                    disabled={!selectedSupplier}
-                  >
-                    Add selected
-                  </Button>
                 </div>
+                <p className="text-xs text-gray-500 mb-1">Or create a new supplier:</p>
                 <div className="flex gap-2 mb-3">
                   <input
                     type="text"
                     value={newSupplier}
                     onChange={(e) => setNewSupplier(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && addSupplier()}
-                    list="supplier-suggestions"
                     className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                    placeholder="Enter supplier name"
+                    placeholder="Type new supplier name..."
                   />
-                  <datalist id="supplier-suggestions">
-                    {availableSuppliers.map((supplier) => (
-                      <option key={supplier} value={supplier} />
-                    ))}
-                  </datalist>
                   <Button
                     onClick={addSupplier}
                     variant="outline"

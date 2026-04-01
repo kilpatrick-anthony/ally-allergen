@@ -87,6 +87,8 @@ export default function IngredientsPage() {
   const [selectedCertification, setSelectedCertification] = useState('all')
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [sortBy, setSortBy] = useState<'name' | 'date' | 'status' | 'compliance'>('date')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
   const [showDatasheetModal, setShowDatasheetModal] = useState(false)
@@ -185,6 +187,21 @@ export default function IngredientsPage() {
     const matchesStatus = selectedStatus === 'all' || ingredient.status === selectedStatus
     
     return matchesSearch && matchesAllergen && matchesCertification && matchesStatus
+  })
+
+  const sortedIngredients = [...filteredIngredients].sort((a, b) => {
+    let cmp = 0
+    if (sortBy === 'name') {
+      cmp = a.name.localeCompare(b.name)
+    } else if (sortBy === 'date') {
+      cmp = new Date(a.lastUpdated).getTime() - new Date(b.lastUpdated).getTime()
+    } else if (sortBy === 'status') {
+      cmp = a.status.localeCompare(b.status)
+    } else if (sortBy === 'compliance') {
+      const order = { compliant: 0, warning: 1, error: 2 }
+      cmp = (order[a.compliance] ?? 0) - (order[b.compliance] ?? 0)
+    }
+    return sortDir === 'asc' ? cmp : -cmp
   })
 
   // Stats
@@ -373,6 +390,26 @@ export default function IngredientsPage() {
                 <List className="h-4 w-4" />
               </button>
             </div>
+
+            <div className="flex items-center gap-1 border-l pl-4">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
+              >
+                <option value="date">Date Updated</option>
+                <option value="name">Name</option>
+                <option value="status">Status</option>
+                <option value="compliance">Compliance</option>
+              </select>
+              <button
+                onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+                className="p-1.5 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
+                title={sortDir === 'asc' ? 'Ascending' : 'Descending'}
+              >
+                {sortDir === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-3 flex-shrink-0">{selectedIngredients.length > 0 && (
@@ -537,10 +574,10 @@ export default function IngredientsPage() {
                 <th className="w-12 text-left py-3 px-4">
                   <input
                     type="checkbox"
-                    checked={selectedIngredients.length === filteredIngredients.length}
+                    checked={selectedIngredients.length === sortedIngredients.length}
                     onChange={(e) => {
                       if (e.target.checked) {
-                        setSelectedIngredients(filteredIngredients.map(i => i.id))
+                        setSelectedIngredients(sortedIngredients.map(i => i.id))
                       } else {
                         setSelectedIngredients([])
                       }
@@ -557,7 +594,7 @@ export default function IngredientsPage() {
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-gray-700">
-              {filteredIngredients.map((ingredient) => (
+              {sortedIngredients.map((ingredient) => (
                 <tr
                   key={ingredient.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
@@ -803,7 +840,7 @@ export default function IngredientsPage() {
         ) : (
           /* Grid View */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-            {filteredIngredients.map((ingredient) => (
+            {sortedIngredients.map((ingredient) => (
               <div
                 key={ingredient.id}
                 className="border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:shadow-lg transition-shadow bg-white dark:bg-gray-800 flex flex-col h-full"
@@ -992,7 +1029,7 @@ export default function IngredientsPage() {
         )}
 
         {/* Empty State */}
-        {filteredIngredients.length === 0 && (
+        {sortedIngredients.length === 0 && (
           <div className="text-center py-12">
             <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
               <Package className="h-8 w-8 text-gray-400" />
@@ -1012,13 +1049,13 @@ export default function IngredientsPage() {
         )}
 
         {/* Pagination */}
-        {filteredIngredients.length > 10 && (
+        {sortedIngredients.length > 10 && (
           <div className="border-t dark:border-gray-700 px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-600 dark:text-gray-400">
                 {t('admin.showing')} <span className="font-medium">1</span> {t('admin.to')}{' '}
-                <span className="font-medium">{Math.min(10, filteredIngredients.length)}</span> {t('admin.of')}{' '}
-                <span className="font-medium">{filteredIngredients.length}</span> {t('admin.results')}
+                <span className="font-medium">{Math.min(10, sortedIngredients.length)}</span> {t('admin.of')}{' '}
+                <span className="font-medium">{sortedIngredients.length}</span> {t('admin.results')}
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" disabled>

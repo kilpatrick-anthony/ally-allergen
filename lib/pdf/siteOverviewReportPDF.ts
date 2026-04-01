@@ -59,8 +59,8 @@ export async function generateSiteOverviewReportPDF(options: SiteOverviewReportO
 
   doc.setFontSize(10)
   doc.setTextColor(100, 100, 100)
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, y); y += 6
-  doc.text(`Sites: ${sites.length}   Menu Items: ${menuItems.length}   Ingredients: ${ingredients.length}`, 20, y)
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, y, { align: 'center' }); y += 6
+  doc.text(`Sites: ${sites.length}   Menu Items: ${menuItems.length}   Ingredients: ${ingredients.length}`, pageWidth / 2, y, { align: 'center' })
   y += 10
 
   doc.setFontSize(13)
@@ -85,50 +85,6 @@ export async function generateSiteOverviewReportPDF(options: SiteOverviewReportO
   })
 
   y = (doc as any).lastAutoTable.finalY + 14
-
-  const categoryStats = menuItems.reduce((acc, item) => {
-    const category = item.category || 'Uncategorised'
-    acc[category] = (acc[category] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
-
-  doc.setFontSize(13)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(...primaryRgb)
-  doc.text('Menu Items by Category', 20, y)
-  y += 8
-
-  autoTable(doc, {
-    head: [['Category', 'Count']],
-    body: Object.entries(categoryStats).map(([cat, cnt]) => [cat, (cnt as number).toString()]),
-    startY: y,
-    styles: { fontSize: 9, cellPadding: 3 },
-    headStyles: { fillColor: primaryRgb, textColor: 255, fontSize: 10, fontStyle: 'bold' },
-    alternateRowStyles: { fillColor: [248, 250, 252] },
-  })
-
-  y = (doc as any).lastAutoTable.finalY + 14
-
-  const statusStats = ingredients.reduce((acc, item) => {
-    const status = item.status || 'Unknown'
-    acc[status] = (acc[status] || 0) + 1
-    return acc
-  }, {} as Record<string, number>)
-
-  doc.setFontSize(13)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(...primaryRgb)
-  doc.text('Ingredients by Status', 20, y)
-  y += 8
-
-  autoTable(doc, {
-    head: [['Status', 'Count']],
-    body: Object.entries(statusStats).map(([st, cnt]) => [st, (cnt as number).toString()]),
-    startY: y,
-    styles: { fontSize: 9, cellPadding: 3 },
-    headStyles: { fillColor: primaryRgb, textColor: 255, fontSize: 10, fontStyle: 'bold' },
-    alternateRowStyles: { fillColor: [248, 250, 252] },
-  })
 
   const generatedDate = `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`
   await drawPageFooters(doc, allyjenLogoDataUrl, generatedDate)

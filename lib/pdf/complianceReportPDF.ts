@@ -61,8 +61,8 @@ export async function generateComplianceReportPDF(options: ComplianceReportOptio
 
   doc.setFontSize(10)
   doc.setTextColor(100, 100, 100)
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, y); y += 6
-  doc.text(`Total: ${ingredients.length}  |  Compliant: ${compliant}  |  Warnings: ${warning}  |  Errors: ${error}`, 20, y)
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, pageWidth / 2, y, { align: 'center' }); y += 6
+  doc.text(`Total: ${ingredients.length}  |  Compliant: ${compliant}  |  Warnings: ${warning}  |  Errors: ${error}`, pageWidth / 2, y, { align: 'center' })
   y += 10
 
   const tableData = ingredients.map(ingredient => [
@@ -85,8 +85,8 @@ export async function generateComplianceReportPDF(options: ComplianceReportOptio
       0: { cellWidth: 40 },
       1: { cellWidth: 25 },
       2: { cellWidth: 20 },
-      3: { cellWidth: 35 },
-      4: { cellWidth: 20 },
+      3: { cellWidth: 30 },
+      4: { cellWidth: 25 },
       5: { cellWidth: 25 },
     },
   })

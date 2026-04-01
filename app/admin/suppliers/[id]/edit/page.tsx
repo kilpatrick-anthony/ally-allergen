@@ -270,9 +270,16 @@ export default function SupplierEditPage() {
               Back to Supplier
             </Button>
           </Link>
-          <Button variant="primary" icon={Save} onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
+          <div className="flex items-center gap-3">
+            <Link href="/admin/suppliers">
+              <Button variant="ghost">
+                Cancel
+              </Button>
+            </Link>
+            <Button variant="primary" icon={Save} onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
         </div>
 
         <Card className="mt-6">
