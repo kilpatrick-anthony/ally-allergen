@@ -6,7 +6,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { 
   Package, ArrowLeft, Save, X, AlertCircle, Plus, Trash2,
-  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck, ScanLine
+  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck
 } from 'lucide-react'
 
 import { Container } from '../../../../components/layout/Container'
@@ -15,7 +15,6 @@ import { Button } from '../../../../components/ui/Button'
 import { Badge } from '../../../../components/ui/Badge'
 import AllergenWarningSelector from '@/components/admin/AllergenWarningSelector'
 import DatasheetUploader from '@/components/admin/DatasheetUploader'
-import { LabelScanModal } from '@/components/admin/LabelScanModal'
 import type { AllergenWarnings } from '@/types/allergen'
 
 export default function EditIngredientPage() {
@@ -25,9 +24,9 @@ export default function EditIngredientPage() {
   
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [datasheets, setDatasheets] = useState<any[]>([])
   const [existingDatasheets, setExistingDatasheets] = useState<any[]>([])
-  const [showScan, setShowScan] = useState(false)
   
   const [ingredient, setIngredient] = useState({
     name: '',
@@ -133,6 +132,24 @@ export default function EditIngredientPage() {
     
     fetchIngredient()
   }, [ingredientId])
+
+  const handleDelete = async () => {
+    if (!confirm(`Are you sure you want to delete "${ingredient.name}"? This cannot be undone.`)) return
+    setDeleting(true)
+    try {
+      const response = await fetch(`/api/ingredients/${ingredientId}`, { method: 'DELETE' })
+      if (!response.ok) {
+        const data = await parseJsonSafely(response)
+        throw new Error(data.error || 'Failed to delete ingredient')
+      }
+      router.push('/admin/ingredients')
+    } catch (error: any) {
+      console.error('Error deleting ingredient:', error)
+      alert(error.message || 'Failed to delete ingredient')
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const handleSave = async () => {
     if (!ingredient.name) {
@@ -270,11 +287,12 @@ export default function EditIngredientPage() {
         <div className="flex gap-3 flex-shrink-0">
           <button
             type="button"
-            onClick={() => setShowScan(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-[#42b8ac] text-[#42b8ac] text-sm font-semibold hover:bg-[#42b8ac]/10 transition-colors"
+            onClick={handleDelete}
+            disabled={deleting}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-300 text-red-600 text-sm font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors"
           >
-            <ScanLine className="h-4 w-4" />
-            Scan Label
+            <Trash2 className="h-4 w-4" />
+            {deleting ? 'Deleting...' : 'Delete Ingredient'}
           </button>
           <Button 
             variant="outline" 
@@ -481,18 +499,6 @@ export default function EditIngredientPage() {
       </div>
     </Container>
 
-    <LabelScanModal
-      open={showScan}
-      onClose={() => setShowScan(false)}
-      onAccept={(data) => {
-        setIngredient(prev => ({
-          ...prev,
-          name: data.name || prev.name,
-          ...(data.description ? { description: data.description } : {}),
-          allergen_warnings: data.allergen_warnings,
-        }))
-      }}
-    />
     </>
   )
 }
