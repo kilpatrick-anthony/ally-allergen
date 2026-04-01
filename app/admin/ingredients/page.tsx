@@ -635,7 +635,13 @@ export default function IngredientsPage() {
                   </td>
                   <td className="w-1/4 py-3 px-4">
                     <div className="flex flex-wrap gap-1.5 max-w-full overflow-hidden">
-                      {ingredient.allergens.map((allergen: any, index: number) => {
+                      {ingredient.allergens.length === 0 ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                          <Check className="h-3 w-3" />
+                          {t('admin.none')}
+                        </span>
+                      ) : (
+                      ingredient.allergens.map((allergen: any, index: number) => {
                         // Helper to get color based on allergen level - each level has distinct color (lighter shades)
                         const getSeverityColor = (level: string) => {
                           switch(level) {
@@ -761,12 +767,16 @@ export default function IngredientsPage() {
                             {typeof allergen === 'string' ? allergen : allergen.name}
                           </Badge>
                         );
-                      })}
+                      })
+                      )}
                     </div>
                   </td>
                   <td className="w-1/4 py-3 px-4">
                     <div className="flex flex-wrap gap-1.5 max-w-full overflow-hidden">
-                      {ingredient.certifications.map((cert, index) => {
+                      {ingredient.certifications.length === 0 ? (
+                        <span className="text-xs text-gray-400 italic">None listed</span>
+                      ) : (
+                      ingredient.certifications.map((cert, index) => {
                         const attr = dietaryAttributes.find(a => 
                           a.name === cert ||
                           a.name.toLowerCase().replace('-', ' ') === cert.toLowerCase().replace('-', ' ')
@@ -798,7 +808,8 @@ export default function IngredientsPage() {
                             {cert}
                           </span>
                         );
-                      })}
+                      })
+                      )}
                     </div>
                   </td>
                   <td className="w-1/6 py-3 px-4">
@@ -975,36 +986,40 @@ export default function IngredientsPage() {
                 <div className="mb-4">
                   <label className="text-xs font-medium text-gray-500 mb-2 block">{t('admin.dietaryAttributes')}</label>
                   <div className="flex flex-wrap gap-1.5">
-                    {ingredient.certifications.map((cert, index) => {
-                      const attr = dietaryAttributes.find(a => 
-                        a.name === cert ||
-                        a.name.toLowerCase().replace('-', ' ') === cert.toLowerCase().replace('-', ' ')
-                      );
-                      
-                      if (attr) {
-                        const IconComponent = attr.icon;
-                        return (
-                          <span
-                            key={index}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border"
-                            style={{
-                              borderColor: attr.color,
-                              backgroundColor: `${attr.color}15`,
-                              color: attr.color
-                            }}
-                          >
-                            <IconComponent className="h-3 w-3" />
-                            {cert}
-                          </span>
+                    {ingredient.certifications.length === 0 ? (
+                      <span className="text-xs text-gray-400 italic">None listed</span>
+                    ) : (
+                      ingredient.certifications.map((cert, index) => {
+                        const attr = dietaryAttributes.find(a => 
+                          a.name === cert ||
+                          a.name.toLowerCase().replace('-', ' ') === cert.toLowerCase().replace('-', ' ')
                         );
-                      }
-                      
-                      return (
-                        <Badge key={index} variant="default" size="sm">
-                          {cert}
-                        </Badge>
-                      );
-                    })}
+                        
+                        if (attr) {
+                          const IconComponent = attr.icon;
+                          return (
+                            <span
+                              key={index}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border"
+                              style={{
+                                borderColor: attr.color,
+                                backgroundColor: `${attr.color}15`,
+                                color: attr.color
+                              }}
+                            >
+                              <IconComponent className="h-3 w-3" />
+                              {cert}
+                            </span>
+                          );
+                        }
+                        
+                        return (
+                          <Badge key={index} variant="default" size="sm">
+                            {cert}
+                          </Badge>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
                 </div>
