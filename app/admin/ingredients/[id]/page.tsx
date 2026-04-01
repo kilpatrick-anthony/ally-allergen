@@ -6,7 +6,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { 
   Package, ArrowLeft, Edit, Trash2, AlertCircle, Check,
-  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Dna, MapPin, Truck, FileText, Download, ExternalLink, X, CircleDot
+  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck, Truck, FileText, Download, ExternalLink, X, CircleDot
 } from 'lucide-react'
 
 import { Container } from '../../../components/layout/Container'
@@ -33,8 +33,8 @@ export default function ViewIngredientPage() {
     { name: 'Kosher', color: '#3b82f6', icon: Star },
     { name: 'Organic', color: '#22c55e', icon: Sprout },
     { name: 'Fair Trade', color: '#8b5cf6', icon: Globe },
-    { name: 'Non-GMO', color: '#06b6d4', icon: Dna },
-    { name: 'Locally Sourced', color: '#ec4899', icon: MapPin }
+    { name: 'Lactose-Free', color: '#06b6d4', icon: Droplets },
+    { name: 'Coeliac-Friendly', color: '#ec4899', icon: ShieldCheck }
   ]
 
   useEffect(() => {
@@ -99,7 +99,7 @@ export default function ViewIngredientPage() {
 
   const getIconComponent = (iconName: string) => {
     const icons: Record<string, any> = {
-      Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Dna, MapPin, CircleDot
+      Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck, CircleDot
     }
     return icons[iconName] || AlertCircle
   }
