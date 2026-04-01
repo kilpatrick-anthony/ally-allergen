@@ -235,6 +235,9 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
       currentY += 8
     }
 
+    // ── Ensure content clears the business logo (max 28 mm tall at y=8) ──────
+    currentY = Math.max(currentY, 8 + 28 + 6) // 6 mm breathing room below logo
+
     // ── Column widths ─────────────────────────────────────────────────────────
     const margins          = 14
     const availableWidth   = pageWidth - margins
