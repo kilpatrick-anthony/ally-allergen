@@ -10,9 +10,9 @@ import {
   SortAsc, SortDesc, MoreVertical, Upload, FileText,
   ChevronDown, Filter as FilterIcon, Leaf, Heart, 
   Flame, Droplet, Utensils, Zap, Apple, WheatOff, 
-  Moon, Star, Sprout, Globe, Dna, MapPin, Wheat, 
+  Moon, Star, Sprout, Globe, Wheat, 
   Shell, Egg, Fish, TreeDeciduous, Carrot, Sparkles, Flower2, Nut, Milk, Truck, CircleDot,
-  Bean, Salad, Sun, Circle, Beaker, Snail
+  Bean, Salad, Sun, Circle, Beaker, Snail, Droplets, ShieldCheck
 } from 'lucide-react'
 
 // Import design system components
@@ -63,8 +63,8 @@ const dietaryAttributes = [
   { id: 'kosher', name: 'Kosher', icon: Star, color: '#3b82f6' },
   { id: 'organic', name: 'Organic', icon: Sprout, color: '#22c55e' },
   { id: 'fair-trade', name: 'Fair Trade', icon: Globe, color: '#8b5cf6' },
-  { id: 'non-gmo', name: 'Non-GMO', icon: Dna, color: '#06b6d4' },
-  { id: 'locally-sourced', name: 'Locally Sourced', icon: MapPin, color: '#ec4899' },
+  { id: 'lactose-free', name: 'Lactose-Free', icon: Droplets, color: '#06b6d4' },
+  { id: 'coeliac-friendly', name: 'Coeliac-Friendly', icon: ShieldCheck, color: '#ec4899' },
 ]
 
 // Helper to get icon component from name
@@ -72,7 +72,7 @@ const getIconComponent = (iconName: string) => {
   const icons: Record<string, any> = {
     Wheat, Shell, Egg, Fish, Nut, Sprout, Milk, TreeDeciduous,
     Carrot, Droplet, Sparkles, Flame, Flower2, Leaf, Apple, WheatOff,
-    Moon, Star, Globe, Dna, MapPin, CircleDot,
+    Moon, Star, Globe, Droplets, ShieldCheck, CircleDot,
     Bean, Salad, Sun, Circle, Beaker, Snail
   };
   return icons[iconName] || AlertCircle;
@@ -400,7 +400,6 @@ export default function IngredientsPage() {
                 <option value="date">Date Updated</option>
                 <option value="name">Name</option>
                 <option value="status">Status</option>
-                <option value="compliance">Compliance</option>
               </select>
               <button
                 onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
