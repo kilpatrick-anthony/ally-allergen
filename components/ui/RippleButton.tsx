@@ -1,6 +1,7 @@
 // components/ui/RippleButton.tsx
 'use client'
 
+import React from 'react'
 import { ReactNode, useState, MouseEvent } from 'react'
 import { LucideIcon } from 'lucide-react'
 
@@ -115,9 +116,17 @@ export function RippleButton({
         </>
       ) : (
         <>
-          {Icon && iconPosition === 'left' && <Icon className={iconSizes[size]} />}
+          {Icon && iconPosition === 'left' && (
+            typeof Icon === 'function'
+              ? React.createElement(Icon as React.ComponentType<{className: string}>, { className: iconSizes[size] })
+              : Icon
+          )}
           {children}
-          {Icon && iconPosition === 'right' && <Icon className={iconSizes[size]} />}
+          {Icon && iconPosition === 'right' && (
+            typeof Icon === 'function'
+              ? React.createElement(Icon as React.ComponentType<{className: string}>, { className: iconSizes[size] })
+              : Icon
+          )}
         </>
       )}
 

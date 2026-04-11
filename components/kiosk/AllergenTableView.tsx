@@ -156,7 +156,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                       title={allergen.name}
                     >
                       <div className="flex flex-col items-center gap-0.5">
-                        <Icon className="h-3 w-3" />
+                        {typeof Icon === 'function' ? React.createElement(Icon, { className: 'h-3 w-3' }) : Icon}
                         {!compact && <span className="text-[9px] leading-tight">{allergen.shortName || allergen.name}</span>}
                       </div>
                     </th>
@@ -168,7 +168,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                         title={glutenType.name}
                       >
                         <div className="flex flex-col items-center gap-0.5">
-                          <Icon className="h-2.5 w-2.5" />
+                          {typeof Icon === 'function' ? React.createElement(Icon, { className: 'h-2.5 w-2.5' }) : Icon}
                           <span className="text-[8px] leading-tight">{glutenType.name}</span>
                         </div>
                       </th>
@@ -186,7 +186,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                       title={allergen.name}
                     >
                       <div className="flex flex-col items-center gap-0.5">
-                        <Icon className="h-3 w-3" />
+                        {typeof Icon === 'function' ? React.createElement(Icon, { className: 'h-3 w-3' }) : Icon}
                         {!compact && <span className="text-[9px] leading-tight">{allergen.shortName || allergen.name}</span>}
                       </div>
                     </th>
@@ -198,7 +198,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                         title={nutType.name}
                       >
                         <div className="flex flex-col items-center gap-0.5">
-                          <Icon className="h-2.5 w-2.5" />
+                          {typeof Icon === 'function' ? React.createElement(Icon, { className: 'h-2.5 w-2.5' }) : Icon}
                           <span className="text-[8px] leading-tight">{nutType.name}</span>
                         </div>
                       </th>
@@ -215,7 +215,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                   title={allergen.name}
                 >
                   <div className="flex flex-col items-center gap-0.5">
-                    <Icon className="h-3 w-3" />
+                    {typeof Icon === 'function' ? React.createElement(Icon, { className: 'h-3 w-3' }) : Icon}
                     {!compact && <span className="text-[9px] leading-tight">{allergen.shortName || allergen.name}</span>}
                   </div>
                 </th>
