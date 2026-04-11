@@ -711,16 +711,15 @@ export default function NewMenuItemPage() {
       )}
 
       {/* Label Scan Modal */}
-      {showScan && (
-        <LabelScanModal
-          onClose={() => setShowScan(false)}
-          onScan={(scanData) => {
-            if (scanData.name) setMenuItem({ ...menuItem, name: scanData.name })
-            if (scanData.description) setMenuItem({ ...menuItem, description: scanData.description })
-            setShowScan(false)
-          }}
-        />
-      )}
+      <LabelScanModal
+        open={showScan}
+        onClose={() => setShowScan(false)}
+        onAccept={(scanData) => {
+          if (scanData.name) setMenuItem({ ...menuItem, name: scanData.name })
+          if (scanData.description) setMenuItem({ ...menuItem, description: scanData.description })
+          setShowScan(false)
+        }}
+      />
     </>
   )
 }
