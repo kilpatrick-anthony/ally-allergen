@@ -307,7 +307,7 @@ export default function HelpPage() {
               </div>
             </div>
           </div>
-          <Badge variant="primary" icon={<Book className="h-4 w-4" />}>
+          <Badge variant="primary" icon={Book}>
             Knowledge Base
           </Badge>
         </div>

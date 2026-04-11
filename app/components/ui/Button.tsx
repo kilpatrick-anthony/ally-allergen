@@ -12,7 +12,7 @@ interface Ripple {
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost' | 'success'
   size?: 'sm' | 'md' | 'lg'
-  icon?: LucideIcon
+  icon?: any
   iconPosition?: 'left' | 'right'
   loading?: boolean
   fullWidth?: boolean

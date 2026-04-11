@@ -141,8 +141,8 @@ export function checkMenuItemCompliance(menuItem: {
 
     // Check ingredient review dates - use the earliest one
     if (ingredientReviewDatesMap && ingredients.length > 0) {
-      let earliestDaysUntilDue = null;
-      let earliestDaysOverdue = null;
+      let earliestDaysUntilDue: number | null = null;
+      let earliestDaysOverdue: number | null = null;
       let hasWarning = false;
 
       ingredients.forEach((ing: any) => {

@@ -3,10 +3,10 @@ interface BadgeProps {
   children: React.ReactNode
   variant?: 'default' | 'success' | 'warning' | 'error' | 'info' | 'primary'
   size?: 'sm' | 'md'
-  icon?: React.ReactNode
+  icon?: any
 }
 
-export function Badge({ children, variant = 'default', size = 'md', icon }: BadgeProps) {
+export function Badge({ children, variant = 'default', size = 'md', icon: IconOrElement }: BadgeProps) {
   const variants = {
     default: 'bg-gray-100 text-gray-800',
     success: 'bg-green-100 text-green-800',
@@ -23,7 +23,11 @@ export function Badge({ children, variant = 'default', size = 'md', icon }: Badg
 
   return (
     <span className={`inline-flex items-center font-medium ${variants[variant]} ${sizes[size]}`}>
-      {icon && <span className="flex-shrink-0">{icon}</span>}
+      {IconOrElement && (
+        <span className="flex-shrink-0">
+          {typeof IconOrElement === 'function' ? <IconOrElement className="h-3 w-3" /> : IconOrElement}
+        </span>
+      )}
       {children}
     </span>
   )

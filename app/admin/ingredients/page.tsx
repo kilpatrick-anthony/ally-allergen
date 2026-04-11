@@ -327,10 +327,10 @@ export default function IngredientsPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="primary" icon={<Package className="h-4 w-4" />}>
+            <Badge variant="primary" icon={Package}>
               {stats.total} {t('admin.totalIngredients')}
             </Badge>
-            <Badge variant={stats.withAllergens > 0 ? 'warning' : 'success'} icon={<Shield className="h-4 w-4" />}>
+            <Badge variant={stats.withAllergens > 0 ? 'warning' : 'success'} icon={Shield}>
               {stats.withAllergens} {t('admin.withAllergens')}
             </Badge>
           </div>

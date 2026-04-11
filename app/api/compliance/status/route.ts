@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
           {
             id: menuItem.id,
             name: menuItem.name,
-            status: menuItem.status || (menuItem.is_active ? 'active' : 'draft'),
+            status: menuItem.is_active ? 'active' : 'draft',
             last_reviewed_at: menuItem.last_reviewed_at,
             preferred_review_months: menuItem.preferred_review_months || 3,
             ingredients: ingredients

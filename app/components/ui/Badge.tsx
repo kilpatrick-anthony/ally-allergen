@@ -1,12 +1,10 @@
 'use client'
 
-import { LucideIcon } from 'lucide-react'
-
 interface BadgeProps {
   children: React.ReactNode
   variant?: 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info'
   size?: 'sm' | 'md' | 'lg'
-  icon?: LucideIcon
+  icon?: any
   rounded?: 'full' | 'lg' | 'md'
 }
 
@@ -14,7 +12,7 @@ export function Badge({
   children, 
   variant = 'default', 
   size = 'md',
-  icon: Icon,
+  icon,
   rounded = 'full'
 }: BadgeProps) {
   const variants = {
@@ -27,9 +25,9 @@ export function Badge({
   }
 
   const sizes = {
-    sm: 'px-2 py-0.5 text-xs',
-    md: 'px-2.5 py-1 text-sm',
-    lg: 'px-3 py-1.5 text-sm',
+    sm: 'px-2 py-0.5 text-xs gap-1.5',
+    md: 'px-2.5 py-1 text-sm gap-2',
+    lg: 'px-3 py-1.5 text-sm gap-2',
   }
 
   const roundedClass = {
@@ -45,7 +43,7 @@ export function Badge({
       ${sizes[size]}
       ${roundedClass[rounded]}
     `}>
-      {Icon && <Icon className="h-3 w-3 mr-1.5" />}
+      {icon && <span className="flex-shrink-0">{icon}</span>}
       {children}
     </span>
   )

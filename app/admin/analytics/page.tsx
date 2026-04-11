@@ -182,7 +182,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="primary" icon={<Target className="h-4 w-4" />}>
+            <Badge variant="primary" icon={Target}>
               Real-time
             </Badge>
             <Badge variant="default">

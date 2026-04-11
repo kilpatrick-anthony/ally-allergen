@@ -267,7 +267,7 @@ export default function DatasheetsPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <Badge variant="primary" icon={<FileText className="h-4 w-4" />}>
+            <Badge variant="primary" icon={FileText}>
               {stats.total} datasheets
             </Badge>
           </div>

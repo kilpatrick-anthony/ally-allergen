@@ -127,7 +127,7 @@ export default function SuppliersPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="primary" icon={<ShoppingBag className="h-4 w-4" />}>
+            <Badge variant="primary" icon={ShoppingBag}>
               {stats.total} suppliers
             </Badge>
           </div>
