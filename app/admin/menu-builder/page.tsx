@@ -1112,7 +1112,6 @@ export default function MenuBuilderPage() {
                   
                   return combined
                 })()
-              }
               compact={false}
             />
             <div className="mt-4 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
@@ -1123,6 +1122,7 @@ export default function MenuBuilderPage() {
           </div>
         </div>
       </Card>
+            </div>
           </div>
         </div>
       )}
