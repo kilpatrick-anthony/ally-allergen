@@ -47,7 +47,7 @@ export default function NewSupplierPage() {
     <Container>
       <div className="mb-6">
         <Link href="/admin/suppliers">
-          <Button variant="ghost" icon={ArrowLeft}>
+          <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />}>
             Back to Suppliers
           </Button>
         </Link>
@@ -121,7 +121,7 @@ export default function NewSupplierPage() {
             />
           </div>
           <div className="flex gap-3 pt-2">
-            <Button type="submit" variant="primary" icon={Plus} disabled={loading}>
+            <Button type="submit" variant="primary" icon={<Plus className="h-4 w-4" />} disabled={loading}>
               {loading ? 'Creating...' : 'Create Supplier'}
             </Button>
             <Link href="/admin/suppliers">

@@ -251,7 +251,7 @@ export default function SupplierEditPage() {
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <p className="text-gray-600">Supplier not found</p>
             <Link href="/admin/suppliers">
-              <Button variant="ghost" icon={ArrowLeft} className="mt-4">
+              <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} className="mt-4">
                 Back to Suppliers
               </Button>
             </Link>
@@ -266,7 +266,7 @@ export default function SupplierEditPage() {
       <div className="py-8">
         <div className="flex items-center justify-between">
           <Link href={`/admin/suppliers/${supplierId}`}>
-            <Button variant="ghost" icon={ArrowLeft}>
+            <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />}>
               Back to Supplier
             </Button>
           </Link>
@@ -276,7 +276,7 @@ export default function SupplierEditPage() {
                 Cancel
               </Button>
             </Link>
-            <Button variant="primary" icon={Save} onClick={handleSave} disabled={saving}>
+            <Button variant="primary" icon={<Save className="h-4 w-4" />} onClick={handleSave} disabled={saving}>
               {saving ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
@@ -431,7 +431,7 @@ export default function SupplierEditPage() {
                             <Button variant="outline" size="sm" onClick={() => handleStartEditNote(note)}>
                               Edit
                             </Button>
-                            <Button variant="ghost" size="sm" icon={Trash2} onClick={() => handleDeleteNote(note.id)}>
+                            <Button variant="ghost" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => handleDeleteNote(note.id)}>
                               Delete
                             </Button>
                           </>

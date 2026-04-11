@@ -338,7 +338,7 @@ export default function EditIngredientPage() {
       <Container>
         <div className="mb-6">
         <Link href="/admin/ingredients">
-          <Button variant="ghost" icon={ArrowLeft}>
+          <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />}>
             Back to Ingredients
           </Button>
         </Link>
@@ -512,7 +512,7 @@ export default function EditIngredientPage() {
                   placeholder="Add supplier name"
                   className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                 />
-                <Button onClick={addSupplier} icon={Plus}>
+                <Button onClick={addSupplier} icon={<Plus className="h-4 w-4" />}>
                   Add
                 </Button>
               </div>
@@ -556,7 +556,7 @@ export default function EditIngredientPage() {
             <Button
               onClick={handleSave}
               variant="primary"
-              icon={Save}
+              icon={<Save className="h-4 w-4" />}
               fullWidth
               size="lg"
               disabled={saving || !ingredient.name}

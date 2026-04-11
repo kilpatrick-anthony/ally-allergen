@@ -361,7 +361,7 @@ export default function EditSitePage() {
               <Button
                 type="button"
                 variant="ghost"
-                icon={Trash2}
+                icon={<Trash2 className="h-4 w-4" />}
                 onClick={handleDelete}
                 disabled={saving}
                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -374,7 +374,7 @@ export default function EditSitePage() {
                   <Button
                     type="button"
                     variant="secondary"
-                    icon={X}
+                    icon={<X className="h-4 w-4" />}
                     disabled={saving}
                   >
                     Cancel
@@ -384,7 +384,7 @@ export default function EditSitePage() {
                 <Button
                   type="submit"
                   variant="primary"
-                  icon={Save}
+                  icon={<Save className="h-4 w-4" />}
                   disabled={saving}
                 >
                   {saving ? 'Saving...' : 'Save Changes'}

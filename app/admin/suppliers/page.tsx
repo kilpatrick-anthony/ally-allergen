@@ -127,7 +127,7 @@ export default function SuppliersPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="primary" icon={ShoppingBag}>
+            <Badge variant="primary" icon={<ShoppingBag className="h-4 w-4" />}>
               {stats.total} suppliers
             </Badge>
           </div>
@@ -146,7 +146,7 @@ export default function SuppliersPage() {
           </div>
         </div>
         <Link href="/admin/suppliers/new">
-          <Button variant="primary" icon={Plus}>
+          <Button variant="primary" icon={<Plus className="h-4 w-4" />}>
             Add Supplier
           </Button>
         </Link>
@@ -222,7 +222,7 @@ export default function SuppliersPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      icon={Eye}
+                      icon={<Eye className="h-4 w-4" />}
                     >
                       View
                     </Button>
@@ -231,7 +231,7 @@ export default function SuppliersPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      icon={Edit}
+                      icon={<Edit className="h-4 w-4" />}
                     >
                       Edit
                     </Button>
@@ -240,7 +240,7 @@ export default function SuppliersPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      icon={FileText}
+                      icon={<FileText className="h-4 w-4" />}
                     >
                       Docs
                     </Button>
@@ -265,7 +265,7 @@ export default function SuppliersPage() {
               : 'Get started by adding your first supplier'}
           </p>
           <Link href="/admin/suppliers/new">
-            <Button variant="primary" icon={Plus}>
+            <Button variant="primary" icon={<Plus className="h-4 w-4" />}>
               Add First Supplier
             </Button>
           </Link>

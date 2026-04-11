@@ -113,7 +113,7 @@ export default function SupplierDetailPage() {
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <p className="text-gray-600">Supplier not found</p>
             <Link href="/admin/suppliers">
-              <Button variant="ghost" icon={ArrowLeft} className="mt-4">
+              <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} className="mt-4">
                 Back to Suppliers
               </Button>
             </Link>
@@ -128,12 +128,12 @@ export default function SupplierDetailPage() {
       <div className="py-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <Link href="/admin/suppliers">
-            <Button variant="ghost" icon={ArrowLeft}>
+            <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />}>
               Back to Suppliers
             </Button>
           </Link>
           <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" icon={Save} onClick={async () => {
+            <Button variant="outline" icon={<Save className="h-4 w-4" />} onClick={async () => {
               if (!supplier) return
               if (!form.name.trim()) {
                 alert('Supplier name is required')
@@ -168,7 +168,7 @@ export default function SupplierDetailPage() {
               {saving ? 'Saving...' : 'Save'}
             </Button>
             <Link href={`/admin/suppliers/${supplierId}/docs`}>
-              <Button variant="primary" icon={FileText}>
+              <Button variant="primary" icon={<FileText className="h-4 w-4" />}>
                 Documents
               </Button>
             </Link>

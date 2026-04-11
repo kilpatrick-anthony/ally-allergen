@@ -558,7 +558,7 @@ export default function NewIngredientPage() {
                   <Button
                     onClick={addSupplier}
                     variant="outline"
-                    icon={Plus}
+                    icon={<Plus className="h-4 w-4" />}
                   >
                     Add
                   </Button>
@@ -639,7 +639,7 @@ export default function NewIngredientPage() {
           </Link>
           <Button
             variant="primary"
-            icon={Save}
+            icon={<Save className="h-4 w-4" />}
             onClick={handleSave}
             disabled={saving || !ingredient.name}
           >

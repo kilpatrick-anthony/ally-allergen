@@ -327,10 +327,10 @@ export default function IngredientsPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="primary" icon={Package}>
+            <Badge variant="primary" icon={<Package className="h-4 w-4" />}>
               {stats.total} {t('admin.totalIngredients')}
             </Badge>
-            <Badge variant={stats.withAllergens > 0 ? 'warning' : 'success'} icon={Shield}>
+            <Badge variant={stats.withAllergens > 0 ? 'warning' : 'success'} icon={<Shield className="h-4 w-4" />}>
               {stats.withAllergens} {t('admin.withAllergens')}
             </Badge>
           </div>
@@ -421,7 +421,7 @@ export default function IngredientsPage() {
             <Button
               variant="ghost"
               size="sm"
-              icon={FilterIcon}
+              icon={<FilterIcon className="h-4 w-4" />}
               onClick={() => setShowFilters(!showFilters)}
             >
               {t('admin.filters')}
@@ -576,7 +576,7 @@ export default function IngredientsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                icon={Eye}
+                icon={<Eye className="h-4 w-4" />}
                 onClick={() => {
                   // Handle bulk view
                 }}
@@ -586,7 +586,7 @@ export default function IngredientsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                icon={Copy}
+                icon={<Copy className="h-4 w-4" />}
                 onClick={() => {
                   // Handle bulk duplicate
                 }}
@@ -596,7 +596,7 @@ export default function IngredientsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                icon={FileText}
+                icon={<FileText className="h-4 w-4" />}
                 onClick={handleBulkArchive}
               >
                 {t('admin.archive')}
@@ -604,7 +604,7 @@ export default function IngredientsPage() {
               <Button
                 variant="danger"
                 size="sm"
-                icon={Trash2}
+                icon={<Trash2 className="h-4 w-4" />}
                 onClick={handleBulkDelete}
               >
                 {t('admin.delete')}
@@ -889,7 +889,7 @@ export default function IngredientsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          icon={Eye}
+                          icon={<Eye className="h-4 w-4" />}
                           title={t('admin.viewIngredient')}
                         />
                       </Link>
@@ -897,14 +897,14 @@ export default function IngredientsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          icon={Edit}
+                          icon={<Edit className="h-4 w-4" />}
                           title={t('admin.editIngredient')}
                         />
                       </Link>
                       <Button
                         variant="ghost"
                         size="sm"
-                        icon={Trash2}
+                        icon={<Trash2 className="h-4 w-4" />}
                         onClick={() => handleDelete(ingredient.id)}
                         title={t('admin.deleteIngredient')}
                       />
@@ -960,15 +960,15 @@ export default function IngredientsPage() {
 
               <div className="flex items-center justify-end gap-1 pt-4 border-t dark:border-gray-700 mt-4">
                 <Link href={`/admin/ingredients/${ingredient.id}`}>
-                  <Button variant="ghost" size="sm" icon={Eye} title={t('admin.view')} />
+                  <Button variant="ghost" size="sm" icon={<Eye className="h-4 w-4" />} title={t('admin.view')} />
                 </Link>
                 <Link href={`/admin/ingredients/${ingredient.id}/edit`}>
-                  <Button variant="ghost" size="sm" icon={Edit} title={t('admin.edit')} />
+                  <Button variant="ghost" size="sm" icon={<Edit className="h-4 w-4" />} title={t('admin.edit')} />
                 </Link>
                 <Button
                   variant="ghost"
                   size="sm"
-                  icon={Trash2}
+                  icon={<Trash2 className="h-4 w-4" />}
                   onClick={() => handleDelete(ingredient.id)}
                   title={t('admin.delete')}
                 />
@@ -991,7 +991,7 @@ export default function IngredientsPage() {
               : t('admin.getStartedFirstIngredient')}
           </p>
           <Link href="/admin/ingredients/new">
-            <Button variant="primary" icon={Plus}>
+            <Button variant="primary" icon={<Plus className="h-4 w-4" />}>
               {t('admin.addFirstIngredient')}
             </Button>
           </Link>

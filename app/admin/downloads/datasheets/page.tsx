@@ -246,7 +246,7 @@ export default function DatasheetsPage() {
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-4">
           <Link href="/admin/downloads">
-            <Button variant="ghost" size="sm" icon={ArrowLeft}>
+            <Button variant="ghost" size="sm" icon={<ArrowLeft className="h-4 w-4" />}>
               Back to Downloads
             </Button>
           </Link>
@@ -267,7 +267,7 @@ export default function DatasheetsPage() {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <Badge variant="primary" icon={FileText}>
+            <Badge variant="primary" icon={<FileText className="h-4 w-4" />}>
               {stats.total} datasheets
             </Badge>
           </div>
@@ -351,14 +351,14 @@ export default function DatasheetsPage() {
             <Button
               variant="ghost"
               size="sm"
-              icon={Filter}
+              icon={<Filter className="h-4 w-4" />}
               onClick={() => setShowFilters(!showFilters)}
             >
               Filters
             </Button>
           </div>
 
-          <Button variant="secondary" size="md" icon={RefreshCw}>
+          <Button variant="secondary" size="md" icon={<RefreshCw className="h-4 w-4" />}>
             Refresh
           </Button>
         </div>
@@ -512,7 +512,7 @@ export default function DatasheetsPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    icon={Eye}
+                    icon={<Eye className="h-4 w-4" />}
                     onClick={() => handlePreview(datasheet)}
                   >
                     Preview
@@ -520,7 +520,7 @@ export default function DatasheetsPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    icon={Download}
+                    icon={<Download className="h-4 w-4" />}
                     onClick={() => handleDownload(datasheet)}
                   >
                     Download
@@ -529,7 +529,7 @@ export default function DatasheetsPage() {
                     <Button
                       variant="primary"
                       size="sm"
-                      icon={CheckCircle}
+                      icon={<CheckCircle className="h-4 w-4" />}
                       onClick={() => handleMarkReviewed(datasheet)}
                     >
                       Mark Reviewed

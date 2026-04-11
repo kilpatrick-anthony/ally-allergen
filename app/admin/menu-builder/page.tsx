@@ -268,7 +268,7 @@ export default function MenuBuilderPage() {
             <Button
               variant="ghost"
               size="sm"
-              icon={FilterIcon}
+              icon={<FilterIcon className="h-4 w-4" />}
               onClick={() => setShowFilters(!showFilters)}
             >
               Filters
@@ -349,7 +349,7 @@ export default function MenuBuilderPage() {
               {searchTerm || scopeFilter !== 'all' ? 'Try adjusting your filters' : 'Create your first menu item to get started'}
             </p>
             <Link href="/admin/menu-builder/new">
-              <Button variant="primary" icon={Plus}>
+              <Button variant="primary" icon={<Plus className="h-4 w-4" />}>
                 Create First Menu Item
               </Button>
             </Link>
@@ -405,15 +405,15 @@ export default function MenuBuilderPage() {
                   </span>
                   <div className="flex items-center gap-1">
                     <Link href={`/admin/menu-builder/${item.id}`}>
-                      <Button variant="ghost" size="sm" icon={Eye} title="View" />
+                      <Button variant="ghost" size="sm" icon={<Eye className="h-4 w-4" />} title="View" />
                     </Link>
                     <Link href={`/admin/menu-builder/${item.id}/edit`}>
-                      <Button variant="ghost" size="sm" icon={Edit} title="Edit" />
+                      <Button variant="ghost" size="sm" icon={<Edit className="h-4 w-4" />} title="Edit" />
                     </Link>
                     <Button
                       variant="ghost"
                       size="sm"
-                      icon={Trash2}
+                      icon={<Trash2 className="h-4 w-4" />}
                       onClick={() => handleDelete(item.id)}
                       title="Delete"
                     />
@@ -462,15 +462,15 @@ export default function MenuBuilderPage() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Link href={`/admin/menu-builder/${item.id}`}>
-                          <Button variant="ghost" size="sm" icon={Eye} title="View" />
+                          <Button variant="ghost" size="sm" icon={<Eye className="h-4 w-4" />} title="View" />
                         </Link>
                         <Link href={`/admin/menu-builder/${item.id}/edit`}>
-                          <Button variant="ghost" size="sm" icon={Edit} title="Edit" />
+                          <Button variant="ghost" size="sm" icon={<Edit className="h-4 w-4" />} title="Edit" />
                         </Link>
                         <Button
                           variant="ghost"
                           size="sm"
-                          icon={Trash2}
+                          icon={<Trash2 className="h-4 w-4" />}
                           onClick={() => handleDelete(item.id)}
                           title="Delete"
                         />

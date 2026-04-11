@@ -332,7 +332,7 @@ export default function SupplierDocsPage() {
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <p className="text-gray-600">Supplier not found</p>
             <Link href="/admin/suppliers">
-              <Button variant="ghost" icon={ArrowLeft} className="mt-4">
+              <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} className="mt-4">
                 Back to Suppliers
               </Button>
             </Link>
@@ -346,7 +346,7 @@ export default function SupplierDocsPage() {
     <Container>
       <div className="py-8">
         <Link href={`/admin/suppliers/${supplierId}`}>
-          <Button variant="ghost" icon={ArrowLeft}>
+          <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />}>
             Back to Supplier
           </Button>
         </Link>
@@ -458,13 +458,13 @@ export default function SupplierDocsPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          icon={Download}
+                          icon={<Download className="h-4 w-4" />}
                           onClick={() => handleDownload(sheet.file_path, sheet.file_name)}
                         >
                           Download
                         </Button>
                         <a href={sheet.file_path} target="_blank" rel="noreferrer">
-                          <Button variant="ghost" size="sm" icon={Eye}>
+                          <Button variant="ghost" size="sm" icon={<Eye className="h-4 w-4" />}>
                             View
                           </Button>
                         </a>

@@ -267,7 +267,7 @@ export default function NewSitePage() {
                 <Button
                   type="button"
                   variant="secondary"
-                  icon={X}
+                  icon={<X className="h-4 w-4" />}
                   disabled={loading}
                   className="flex-1"
                 >
@@ -278,7 +278,7 @@ export default function NewSitePage() {
               <Button
                 type="submit"
                 variant="primary"
-                icon={Save}
+                icon={<Save className="h-4 w-4" />}
                 disabled={loading}
               >
                 {loading ? 'Creating...' : 'Create Site'}

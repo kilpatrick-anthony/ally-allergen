@@ -142,7 +142,7 @@ export default function ViewMenuItemPage() {
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <p className="text-gray-600">Menu item not found</p>
             <Link href="/admin/menu-builder">
-              <Button variant="ghost" icon={ArrowLeft} className="mt-4">
+              <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} className="mt-4">
                 Back to Menu Builder
               </Button>
             </Link>

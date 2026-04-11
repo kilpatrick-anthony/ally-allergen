@@ -182,7 +182,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="primary" icon={Target}>
+            <Badge variant="primary" icon={<Target className="h-4 w-4" />}>
               Real-time
             </Badge>
             <Badge variant="default">
@@ -317,20 +317,20 @@ export default function AnalyticsPage() {
             <Button
               variant="ghost"
               size="sm"
-              icon={Filter}
+              icon={<Filter className="h-4 w-4" />}
             >
               Filters
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              icon={RefreshCw}
+              icon={<RefreshCw className="h-4 w-4" />}
             >
               Refresh
             </Button>
             <Button
               variant="primary"
-              icon={Download}
+              icon={<Download className="h-4 w-4" />}
             >
               Export Report
             </Button>

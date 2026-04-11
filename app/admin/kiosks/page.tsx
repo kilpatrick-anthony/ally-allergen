@@ -141,7 +141,7 @@ export default function AllKiosksPage() {
             </div>
             <Button
               variant="outline"
-              icon={RefreshCw}
+              icon={<RefreshCw className="h-4 w-4" />}
               onClick={loadAllDevices}
               className="self-start flex-shrink-0"
             >
@@ -311,7 +311,7 @@ export default function AllKiosksPage() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        icon={Settings}
+                        icon={<Settings className="h-4 w-4" />}
                       >
                         Manage
                       </Button>

@@ -745,7 +745,7 @@ export default function EditMenuItemPage() {
               <Button
                 onClick={() => setShowIngredientSelector(true)}
                 variant="outline"
-                icon={Plus}
+                icon={<Plus className="h-4 w-4" />}
                 fullWidth
               >
                 {menuItem.ingredients.length === 0 ? 'Add Ingredients' : 'Add More Ingredients'}
@@ -798,7 +798,7 @@ export default function EditMenuItemPage() {
               <Button
                 onClick={handleSave}
                 variant="primary"
-                icon={Save}
+                icon={<Save className="h-4 w-4" />}
                 fullWidth
                 size="lg"
                 disabled={saving || !menuItem.name || !menuItem.description}

@@ -356,7 +356,7 @@ export default function SuperAdminDashboard() {
           </div>
           <Button
             variant="primary"
-            icon={Plus}
+            icon={<Plus className="h-4 w-4" />}
             onClick={() => setShowCreateModal(true)}
           >
             Add New Business
@@ -448,7 +448,7 @@ export default function SuperAdminDashboard() {
           <div className="flex gap-2">
             <Button
               variant="outline"
-              icon={RefreshCw}
+              icon={<RefreshCw className="h-4 w-4" />}
               onClick={() => {
                 setSearchTerm('')
                 setStatusFilter('all')
@@ -459,7 +459,7 @@ export default function SuperAdminDashboard() {
             </Button>
             <Button
               variant="outline"
-              icon={Download}
+              icon={<Download className="h-4 w-4" />}
               onClick={handleExportData}
             >
               Export Data
@@ -639,21 +639,21 @@ export default function SuperAdminDashboard() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        icon={Eye}
+                        icon={<Eye className="h-4 w-4" />}
                         onClick={() => handleViewBusinessDetails(business)}
                         title="View Details"
                       />
                       <Button
                         variant="ghost"
                         size="sm"
-                        icon={Edit}
+                        icon={<Edit className="h-4 w-4" />}
                         onClick={() => handleEditBusiness(business)}
                         title="Edit Business"
                       />
                       <Button
                         variant="ghost"
                         size="sm"
-                        icon={Lock}
+                        icon={<Lock className="h-4 w-4" />}
                         onClick={() => handleSetPassword(business)}
                         title="Set Password"
                         className="text-blue-600 hover:text-blue-700"
@@ -661,7 +661,7 @@ export default function SuperAdminDashboard() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        icon={Key}
+                        icon={<Key className="h-4 w-4" />}
                         onClick={() => handleResetPassword(business)}
                         title="Send Reset Email"
                       />
@@ -669,7 +669,7 @@ export default function SuperAdminDashboard() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          icon={UserX}
+                          icon={<UserX className="h-4 w-4" />}
                           onClick={() => handleSuspendBusiness(business)}
                           title="Suspend Business"
                           className="text-red-600 hover:text-red-700"
@@ -678,7 +678,7 @@ export default function SuperAdminDashboard() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          icon={UserCheck}
+                          icon={<UserCheck className="h-4 w-4" />}
                           onClick={() => handleActivateBusiness(business)}
                           title="Activate Business"
                           className="text-green-600 hover:text-green-700"

@@ -307,7 +307,7 @@ export default function HelpPage() {
               </div>
             </div>
           </div>
-          <Badge variant="primary" icon={Book}>
+          <Badge variant="primary" icon={<Book className="h-4 w-4" />}>
             Knowledge Base
           </Badge>
         </div>
@@ -490,12 +490,12 @@ export default function HelpPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a href="mailto:info@allyjen.ie">
-              <Button variant="primary" size="lg" icon={MessageCircle}>
+              <Button variant="primary" size="lg" icon={<MessageCircle className="h-4 w-4" />}>
                 Contact Support
               </Button>
             </a>
             <a href="mailto:info@allyjen.ie">
-              <Button variant="secondary" size="lg" icon={Mail}>
+              <Button variant="secondary" size="lg" icon={<Mail className="h-4 w-4" />}>
                 Email Us
               </Button>
             </a>

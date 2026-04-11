@@ -979,7 +979,7 @@ export default function SettingsPage() {
                         />
                         <Button
                           variant="outline"
-                          icon={Upload}
+                          icon={<Upload className="h-4 w-4" />}
                           onClick={() => document.getElementById('logo-upload-input')?.click()}
                           disabled={logoUploading}
                         >
@@ -1402,7 +1402,7 @@ export default function SettingsPage() {
                                 </div>
                                 <div className="flex items-center gap-2">
                                   {method.isDefault && <Badge variant="success">Default</Badge>}
-                                  <Button variant="ghost" size="sm" icon={Trash2}>
+                                  <Button variant="ghost" size="sm" icon={<Trash2 className="h-4 w-4" />}>
                                     Remove
                                   </Button>
                                 </div>
@@ -1414,7 +1414,7 @@ export default function SettingsPage() {
                               <p>No payment methods added yet</p>
                             </div>
                           )}
-                          <Button variant="outline" icon={Plus} fullWidth>
+                          <Button variant="outline" icon={<Plus className="h-4 w-4" />} fullWidth>
                             Add Payment Method
                           </Button>
                         </div>

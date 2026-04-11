@@ -130,7 +130,7 @@ export default function ViewIngredientPage() {
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <p className="text-gray-600">Ingredient not found</p>
             <Link href="/admin/ingredients">
-              <Button variant="ghost" icon={ArrowLeft} className="mt-4">
+              <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} className="mt-4">
                 Back to Ingredients
               </Button>
             </Link>
@@ -169,7 +169,7 @@ export default function ViewIngredientPage() {
     <Container>
       <div className="mb-6">
         <Link href="/admin/ingredients">
-          <Button variant="ghost" icon={ArrowLeft}>
+          <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />}>
             Back to Ingredients
           </Button>
         </Link>
@@ -189,14 +189,14 @@ export default function ViewIngredientPage() {
         </div>
         <div className="flex gap-3 flex-shrink-0">
           <Link href={`/admin/ingredients/${ingredientId}/edit`}>
-            <Button icon={Edit}>
+            <Button icon={<Edit className="h-4 w-4" />}>
               Edit
             </Button>
           </Link>
           <Button 
             variant="outline"
             onClick={handleDelete}
-            icon={Trash2}
+            icon={<Trash2 className="h-4 w-4" />}
             className="text-red-600 hover:text-red-700 hover:border-red-300"
           >
             Delete

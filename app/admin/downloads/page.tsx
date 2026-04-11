@@ -591,7 +591,7 @@ export default function DownloadsPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-300">Complete allergen guide for all menu items and ingredients across your entire business</p>
                 <Button
                   variant="primary"
-                  icon={FileText}
+                  icon={<FileText className="h-4 w-4" />}
                   size="lg"
                   fullWidth
                   onClick={handleGenerateBusinessGuide}
@@ -623,7 +623,7 @@ export default function DownloadsPage() {
                   </select>
                   <Button
                     variant="primary"
-                    icon={FileText}
+                    icon={<FileText className="h-4 w-4" />}
                     size="lg"
                     onClick={handleGenerateSiteGuide}
                     disabled={siteGuideLoading || !selectedSiteId}
@@ -661,7 +661,7 @@ export default function DownloadsPage() {
                 </div>
                 <Button
                   variant="secondary"
-                  icon={Package}
+                  icon={<Package className="h-4 w-4" />}
                   size="md"
                   fullWidth
                   onClick={handleGenerateIngredientsReport}
@@ -681,7 +681,7 @@ export default function DownloadsPage() {
                 </div>
                 <Button
                   variant="secondary"
-                  icon={ChefHat}
+                  icon={<ChefHat className="h-4 w-4" />}
                   size="md"
                   fullWidth
                   onClick={handleGenerateMenuItemsReport}
@@ -701,7 +701,7 @@ export default function DownloadsPage() {
                 </div>
                 <Button
                   variant="secondary"
-                  icon={Users}
+                  icon={<Users className="h-4 w-4" />}
                   size="md"
                   fullWidth
                   onClick={handleGenerateSuppliersReport}
@@ -739,7 +739,7 @@ export default function DownloadsPage() {
                 </div>
                 <Button
                   variant="secondary"
-                  icon={Shield}
+                  icon={<Shield className="h-4 w-4" />}
                   size="md"
                   fullWidth
                   onClick={handleGenerateComplianceReport}
@@ -759,7 +759,7 @@ export default function DownloadsPage() {
                 </div>
                 <Button
                   variant="secondary"
-                  icon={Building}
+                  icon={<Building className="h-4 w-4" />}
                   size="md"
                   fullWidth
                   onClick={handleGenerateSiteOverviewReport}
@@ -782,7 +782,7 @@ export default function DownloadsPage() {
                 <Link href="/admin/analytics" className="flex-shrink-0">
                   <Button
                     variant="outline"
-                    icon={BarChart3}
+                    icon={<BarChart3 className="h-4 w-4" />}
                     size="md"
                   >
                     View Analytics

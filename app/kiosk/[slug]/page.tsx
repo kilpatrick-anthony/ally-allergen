@@ -870,10 +870,10 @@ export default function KioskPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" icon={FileText} onClick={() => setShowPDFOptions(true)}>
+                  <Button variant="outline" size="sm" icon={<FileText className="h-4 w-4" />} onClick={() => setShowPDFOptions(true)}>
                     {t.emailMenu}
                   </Button>
-                  <Button variant="outline" size="sm" icon={QrCode} onClick={() => setShowQRCode(true)}>
+                  <Button variant="outline" size="sm" icon={<QrCode className="h-4 w-4" />} onClick={() => setShowQRCode(true)}>
                     {t.qrCodeButton}
                   </Button>
                   
@@ -913,7 +913,7 @@ export default function KioskPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    icon={Home}
+                    icon={<Home className="h-4 w-4" />}
                     onClick={() => {
                       setActiveView('landing')
                       setShowInactivityWarning(false)
@@ -1597,7 +1597,7 @@ export default function KioskPage() {
               </div>
               <p className="text-sm text-gray-600 text-center mt-4">Scan with your phone camera to save this allergen menu</p>
               <div className="mt-6 flex gap-3 justify-center">
-                <Button variant="primary" icon={Download} onClick={downloadQRCode}>
+                <Button variant="primary" icon={<Download className="h-4 w-4" />} onClick={downloadQRCode}>
                   Download QR
                 </Button>
                 <Button variant="ghost" onClick={() => setShowQRCode(false)}>

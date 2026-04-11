@@ -167,7 +167,7 @@ export default function SiteKioskPage() {
             </div>
             
             <Link href={`/admin/sites/${slug}/edit`} className="self-start sm:self-auto flex-shrink-0">
-              <Button variant="primary" icon={Edit}>
+              <Button variant="primary" icon={<Edit className="h-4 w-4" />}>
                 Edit Site
               </Button>
             </Link>
@@ -311,7 +311,7 @@ export default function SiteKioskPage() {
                     <option value="site">{site.name} only</option>
                   </select>
                   <Link href={`/admin/menu-builder?site_id=${site.id}`}>
-                    <Button variant="primary" icon={Edit}>
+                    <Button variant="primary" icon={<Edit className="h-4 w-4" />}>
                       Open Menu Builder
                     </Button>
                   </Link>
@@ -359,12 +359,12 @@ export default function SiteKioskPage() {
                         </div>
                         <div className="flex items-center gap-1">
                           <Link href={`/admin/menu-builder?site_id=${site.id}&item_id=${item.id}`}>
-                            <Button variant="ghost" size="sm" icon={Edit} />
+                            <Button variant="ghost" size="sm" icon={<Edit className="h-4 w-4" />} />
                           </Link>
                           <Button
                             variant="ghost"
                             size="sm"
-                            icon={Trash2}
+                            icon={<Trash2 className="h-4 w-4" />}
                             onClick={() => handleDeleteMenuItem(item.id)}
                           />
                         </div>
