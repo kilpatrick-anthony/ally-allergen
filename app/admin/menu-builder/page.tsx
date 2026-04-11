@@ -1124,6 +1124,11 @@ export default function MenuBuilderPage() {
         </div>
       </Card>
 
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Menu Items Grid */}
       <Card className="mb-8">
         <div className="p-6 border-b dark:border-gray-700">
