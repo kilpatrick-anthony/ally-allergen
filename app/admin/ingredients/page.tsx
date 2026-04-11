@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import React from 'react'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { 
   Package, Plus, Search, Filter, Edit, Trash2, 
@@ -87,7 +88,7 @@ const SafeIcon = ({ Component, className }: { Component: any; className: string 
     return <AlertCircle className={className} />;
   }
   try {
-    return <Component className={className} />;
+    return React.createElement(Component as React.ComponentType<{className: string}>, { className });
   } catch (error) {
     console.error('Error rendering icon:', error);
     return <AlertCircle className={className} />;
