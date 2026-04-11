@@ -1122,9 +1122,9 @@ export default function MenuBuilderPage() {
           </div>
         </div>
       </Card>
-            </div>
           </div>
         </div>
+      </div>
       )}
 
       {/* Menu Items Grid */}
