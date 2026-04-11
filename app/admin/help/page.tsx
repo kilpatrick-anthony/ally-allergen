@@ -2,6 +2,7 @@
 'use client'
 
 import { useState } from 'react'
+import React from 'react'
 import { 
   HelpCircle, Book, FileText, MessageCircle, 
   Mail, ExternalLink, Search, ChevronRight, Package,
@@ -333,16 +334,16 @@ export default function HelpPage() {
                       '#f3e8ff'
                   }}
                 >
-                  <link.icon 
-                    className="h-6 w-6"
-                    style={{
+                  {typeof link.icon === 'function' && React.createElement(link.icon as React.ComponentType<{className: string; style: React.CSSProperties}>, {
+                    className: "h-6 w-6",
+                    style: {
                       color: 
                         link.color === 'red' ? '#dc2626' :
                         link.color === 'blue' ? '#2563eb' :
                         link.color === 'green' ? '#16a34a' :
                         '#9333ea'
-                    }}
-                  />
+                    }
+                  })}
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-1">{link.title}</h3>
@@ -385,7 +386,9 @@ export default function HelpPage() {
                     }
                   `}
                 >
-                  <category.icon className={`h-4 w-4 ${isActive ? 'text-[#42b8ac]' : 'text-gray-500 dark:text-gray-400'}`} />
+                  {typeof category.icon === 'function' && React.createElement(category.icon as React.ComponentType<{className: string}>, {
+                    className: `h-4 w-4 ${isActive ? 'text-[#42b8ac]' : 'text-gray-500 dark:text-gray-400'}`
+                  })}
                   {category.name}
                 </button>
               )
@@ -439,7 +442,9 @@ export default function HelpPage() {
                 <Card className="hover:shadow-lg transition-all">
                   <div className="flex items-start gap-4">
                     <div className={`p-3 bg-gradient-to-br ${colorClasses[topic.color as keyof typeof colorClasses]} rounded-lg group-hover:scale-110 transition-transform flex-shrink-0`}>
-                      <topic.icon className="h-6 w-6 text-white" />
+                      {typeof topic.icon === 'function' && React.createElement(topic.icon as React.ComponentType<{className: string}>, {
+                        className: "h-6 w-6 text-white"
+                      })}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-[#42b8ac] transition-colors">
