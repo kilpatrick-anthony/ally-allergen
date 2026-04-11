@@ -1123,8 +1123,6 @@ export default function MenuBuilderPage() {
           </div>
         </div>
       </Card>
-
-            </div>
           </div>
         </div>
       )}
