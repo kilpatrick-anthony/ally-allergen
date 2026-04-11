@@ -1053,10 +1053,8 @@ export default function MenuBuilderPage() {
           </div>
           <div className="bg-white rounded-lg p-4">
             <AllergenWarningDisplay 
-              warnings={{}}
-              compact={false}
-            />
-                    .reduce((acc, ingredientId) => {
+              warnings={(() => {
+                const ingredientAllergens = (newMenuItem.ingredients || []).reduce((acc, ingredientId) => {
                       const ingredient = ingredients.find(i => i.id === ingredientId)
                       if (ingredient) {
                         Object.keys(ingredient.allergen_warnings).forEach((key) => {
