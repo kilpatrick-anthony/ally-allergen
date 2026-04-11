@@ -170,6 +170,11 @@ export function worstCaseLevel(a: AllergenLevel, b: AllergenLevel): AllergenLeve
  * Use this when a menu item is composed of multiple ingredients — each potentially
  * with different supplier allergen data — to produce the legally compliant
  * declaration per EU Regulation No. 1169/2011 (FIC Regulation).
+ *
+ * Computes worst-case levels for:
+ * - Main allergens (e.g., cereals_gluten, nuts)
+ * - Per-subtype severity levels (e.g., cereals_gluten_levels: {wheat: 'contains', oats: 'traces'})
+ * - Legacy subtype arrays (e.g., cereals_gluten_types: ['wheat', 'oats']) for backwards compatibility
  */
 export function computeWorstCaseAllergens(profiles: AllergenWarnings[]): AllergenWarnings {
   if (profiles.length === 0) {
@@ -178,6 +183,7 @@ export function computeWorstCaseAllergens(profiles: AllergenWarnings[]): Allerge
 
   const result: Partial<AllergenWarnings> = {};
 
+  // 1. Compute worst-case for main allergens
   for (const allergen of ALLERGEN_LIST) {
     const id = allergen.id as AllergenId;
     let worst: AllergenLevel = 'none';
@@ -188,7 +194,42 @@ export function computeWorstCaseAllergens(profiles: AllergenWarnings[]): Allerge
     (result as Record<string, AllergenLevel>)[id] = worst;
   }
 
-  // Merge subtype arrays (union across all profiles)
+  // 2. Compute per-subtype worst-case levels (current format)
+  // For cereals_gluten: compute worst-case level for each gluten type (wheat, oats, barley, rye)
+  const glutenSubtypeLevels: Record<GlutenType, AllergenLevel> = {} as Record<GlutenType, AllergenLevel>;
+  for (const glutenType of GLUTEN_TYPES) {
+    let worstLevel: AllergenLevel = 'none';
+    for (const profile of profiles) {
+      const levelsObj = profile.cereals_gluten_levels as Record<string, AllergenLevel> | undefined;
+      const level = (levelsObj?.[glutenType.key] as AllergenLevel | undefined) ?? 'none';
+      worstLevel = worstCaseLevel(worstLevel, level);
+    }
+    if (worstLevel !== 'none') {
+      glutenSubtypeLevels[glutenType.key as GlutenType] = worstLevel;
+    }
+  }
+  if (Object.keys(glutenSubtypeLevels).length > 0) {
+    (result as Record<string, any>).cereals_gluten_levels = glutenSubtypeLevels;
+  }
+
+  // For nuts: compute worst-case level for each nut type (almonds, cashews, hazelnuts, etc.)
+  const nutSubtypeLevels: Record<TreeNutType, AllergenLevel> = {} as Record<TreeNutType, AllergenLevel>;
+  for (const nutType of TREE_NUT_TYPES) {
+    let worstLevel: AllergenLevel = 'none';
+    for (const profile of profiles) {
+      const levelsObj = profile.nuts_levels as Record<string, AllergenLevel> | undefined;
+      const level = (levelsObj?.[nutType.key] as AllergenLevel | undefined) ?? 'none';
+      worstLevel = worstCaseLevel(worstLevel, level);
+    }
+    if (worstLevel !== 'none') {
+      nutSubtypeLevels[nutType.key as TreeNutType] = worstLevel;
+    }
+  }
+  if (Object.keys(nutSubtypeLevels).length > 0) {
+    (result as Record<string, any>).nuts_levels = nutSubtypeLevels;
+  }
+
+  // 3. Merge legacy subtype arrays (for backwards compatibility)
   const allGlutenTypes = profiles.flatMap(p => p.cereals_gluten_types ?? []);
   const allNutTypes = profiles.flatMap(p => p.nuts_types ?? []);
   if (allGlutenTypes.length > 0) {

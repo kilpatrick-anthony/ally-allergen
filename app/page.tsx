@@ -93,33 +93,55 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white" style={{ fontFamily: "var(--font-atkinson), sans-serif" }}>
 
       {/* Header */}
-      <header className="relative z-20 bg-white border-b border-gray-200">
+      <header className="relative z-20 bg-[#003842] border-b border-[#003842]">
         <Container>
-          <div className="flex items-center justify-between py-4">
-            {/* Mobile menu icon - left */}
-            <div className="lg:hidden">
+          <div className="flex items-center justify-between py-4 gap-4">
+            {/* Logo - left */}
+            <div className="flex-shrink-0">
+              <img
+                src="/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg"
+                alt="AllyJen Logo"
+                className="h-10 w-auto object-contain"
+              />
+            </div>
+            
+            {/* Navigation - center (hidden on mobile) */}
+            <nav className="hidden lg:flex items-center gap-8 flex-1 justify-center">
+              <button
+                onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+                className="text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
+              >
+                Features
+              </button>
+              <button
+                onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
+                className="text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
+              >
+                How It Works
+              </button>
+              <button
+                onClick={() => document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })}
+                className="text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
+              >
+                Contact
+              </button>
+            </nav>
+            
+            {/* Mobile menu icon - center (for mobile) */}
+            <div className="lg:hidden flex-1 flex justify-center">
               <button
                 type="button"
                 aria-label="Open menu"
-                className="p-2 text-gray-600 hover:text-[#42b8ac] transition-colors"
+                className="p-2 text-white hover:text-[#42b8ac] transition-colors"
               >
                 <Menu className="h-6 w-6" />
               </button>
             </div>
             
-            {/* Logo - center */}
-            <div className="flex-1 flex justify-center lg:flex-none lg:mx-auto">
-              <img
-                src="/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg"
-                alt="AllyJen Logo"
-                className="h-12 w-auto object-contain"
-              />
-            </div>
-            
             {/* Sign In - right */}
-            <div>
+            <div className="flex-shrink-0">
               <Link href="/auth/signin">
-                <span className="inline-flex items-center gap-2 px-3 lg:px-5 py-2 rounded-full bg-[#42b8ac] text-[#003842] font-semibold text-sm hover:bg-[#003842] hover:text-white transition-colors">
+                <span className="inline-flex items-center gap-2 px-3 lg:px-5 py-2 rounded-full bg-white text-[#003842] font-semibold text-sm hover:bg-[#42b8ac] hover:text-white transition-colors">
                   Sign In <ArrowRight className="h-4 w-4" />
                 </span>
               </Link>
@@ -135,7 +157,7 @@ export default function LandingPage() {
         <div className="absolute -bottom-24 -left-24 w-[400px] h-[400px] rounded-full bg-[#42b8ac]/10 blur-3xl pointer-events-none" />
 
         <Container>
-          <div className="relative flex flex-col lg:flex-row items-center gap-12 py-20 lg:py-28">
+          <div className="relative flex flex-col lg:flex-row items-center gap-12 py-12 lg:py-16">
             {/* Left – photo */}
             <div className="flex-1 w-full lg:max-w-none">
               <div className="rounded-2xl overflow-hidden shadow-2xl ring-4 ring-[#42b8ac]/30">
@@ -149,27 +171,13 @@ export default function LandingPage() {
 
             {/* Right – text */}
             <div className="flex-1 text-center lg:text-left">
-              <h1 className="text-3xl md:text-4xl xl:text-5xl font-extrabold text-white leading-none mb-6">
+              <h1 className="text-3xl md:text-4xl xl:text-5xl font-extrabold text-white leading-none mb-6 tracking-tight">
                 Serve every customer with <span className="text-[#42b8ac]">complete</span><br />
                 <span className="text-[#42b8ac]">peace of mind.</span>
               </h1>
               <p className="text-lg text-white/70 mb-8 max-w-xl mx-auto lg:mx-0">
                 The all-in-one platform for Irish &amp; EU food businesses to track allergens, inform customers, and stay compliant.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <button
-                  onClick={() => document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#42b8ac] text-[#003842] font-bold rounded-full hover:bg-white transition-colors text-base"
-                >
-                  Start Serving with Confidence <ArrowRight className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-                  className="inline-flex items-center justify-center gap-2 px-8 py-3.5 border-2 border-white/30 text-white font-semibold rounded-full hover:border-[#42b8ac] hover:text-[#42b8ac] transition-colors text-base"
-                >
-                  See Features <ChevronDown className="h-5 w-5" />
-                </button>
-              </div>
             </div>
           </div>
         </Container>

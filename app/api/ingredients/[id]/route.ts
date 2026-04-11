@@ -130,7 +130,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { name, description, category, allergen_warnings, suppliers, certifications } = body
+    const { name, description, category, allergen_warnings, suppliers, certifications, preferred_review_months } = body
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
@@ -161,6 +161,7 @@ export async function PUT(
         allergen_warnings: allergen_warnings || {},
         suppliers: suppliers || [],
         certifications: certifications || [],
+        preferred_review_months: preferred_review_months || 3,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)

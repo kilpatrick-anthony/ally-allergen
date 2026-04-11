@@ -4,8 +4,9 @@ import { useRef, useState, useEffect } from 'react';
 // app/admin/settings/page.tsx
 import { useSearchParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
+import { useNotification } from '@/lib/hooks/useNotification'
 import { 
-  Settings, Save, Shield, Users, Bell, Globe,
+  Settings, Save, Shield, Users, Globe,
   Palette, Database, Key, CreditCard, Mail,
   Building, Download, Lock, ChevronRight,
   CheckCircle, AlertCircle, Trash2,
@@ -26,6 +27,7 @@ const ChangePasswordModal = dynamic(() => import('./ChangePasswordModal'), { ssr
 const TwoFactorModal = dynamic(() => import('./TwoFactorModal'), { ssr: false })
 
 export default function SettingsPage() {
+  const { showNotification } = useNotification()
   const settingsRootRef = useRef<HTMLDivElement | null>(null)
 
   // Accessibility settings state (must be first!)
@@ -162,7 +164,7 @@ export default function SettingsPage() {
       // Text-to-speech
       const startSpeech = (rate = 1) => {
         if (!('speechSynthesis' in window)) {
-          alert('Text-to-speech is not supported in your browser');
+          showNotification('Text-to-speech is not supported in your browser', 'warning');
           return;
         }
         synthRef.current = window.speechSynthesis;
@@ -274,7 +276,7 @@ export default function SettingsPage() {
       const sessionCheck = await fetch('/api/auth/session')
       const sessionData = await sessionCheck.json()
       if (!sessionData.authenticated || !sessionData.user) {
-        alert('Your session has expired. Please sign in again.')
+        showNotification('Your session has expired. Please sign in again.', 'error')
         if (typeof window !== 'undefined') {
           window.location.href = '/auth/signin';
         }
@@ -282,12 +284,12 @@ export default function SettingsPage() {
       }
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('File size must be less than 5MB')
+        showNotification('File size must be less than 5MB', 'error')
         return
       }
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('Please select an image file')
+        showNotification('Please select an image file', 'error')
         return
       }
       // Create FormData for upload
@@ -319,7 +321,7 @@ export default function SettingsPage() {
         ...prev,
         logoUrl: result.logoUrl
       }))
-      alert('Logo uploaded successfully!')
+      showNotification('Logo uploaded successfully!', 'success')
     }
   const searchParams = useSearchParams()
   const { t } = useTranslation()
@@ -458,7 +460,7 @@ export default function SettingsPage() {
     const success = searchParams.get('success')
     const error = searchParams.get('error')
     if (success === 'stripe_connected') {
-      alert('Stripe account connected successfully!')
+      showNotification('Stripe account connected successfully!', 'success')
       // Refresh the page to update the connection status
       window.location.href = '/admin/settings?tab=billing'
     } else if (error) {
@@ -468,7 +470,7 @@ export default function SettingsPage() {
         settings_update_failed: 'Failed to update settings after connecting Stripe.',
         unexpected_error: 'An unexpected error occurred during Stripe connection.'
       }
-      alert(errorMessages[error] || 'An error occurred during Stripe connection.')
+      showNotification(errorMessages[error] || 'An error occurred during Stripe connection.', 'error')
     }
     // Remove old timer loading logic
     // eslint-disable-next-line
@@ -497,7 +499,7 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     if (!businessId) {
-      alert('No business ID found')
+      showNotification('No business ID found', 'error')
       return
     }
     try {
@@ -519,7 +521,7 @@ export default function SettingsPage() {
       })
       if (!res.ok) {
         const err = await res.json()
-        alert('Failed to save: ' + (err.error || 'Unknown error'))
+        showNotification('Failed to save: ' + (err.error || 'Unknown error'), 'error')
         return
       }
       // Re-fetch the latest business info after save
@@ -535,9 +537,9 @@ export default function SettingsPage() {
         }))
       }
       setHasUnsavedChanges(false)
-      alert('Settings saved!');
+      showNotification('Settings saved!', 'success');
     } catch (err: any) {
-      alert('Failed to save: ' + (err?.message || 'Unknown error'))
+      showNotification('Failed to save: ' + (err?.message || 'Unknown error'), 'error')
     }
   }
 
@@ -607,14 +609,14 @@ export default function SettingsPage() {
 
       const data = await response.json()
       if (!response.ok) {
-        alert('Failed to disable 2FA: ' + (data.error || 'Unknown error'))
+        showNotification('Failed to disable 2FA: ' + (data.error || 'Unknown error'), 'error')
         return
       }
 
       setSettings({...settings, twoFactorAuth: false})
-      alert('Two-factor authentication disabled')
+      showNotification('Two-factor authentication disabled', 'success')
     } catch (err: any) {
-      alert('Failed to disable 2FA: ' + (err?.message || 'Unknown error'))
+      showNotification('Failed to disable 2FA: ' + (err?.message || 'Unknown error'), 'error')
     }
   }
 
@@ -637,7 +639,6 @@ export default function SettingsPage() {
     { id: 'branding', label: t('admin.branding'), icon: Palette },
     { id: 'security', label: t('admin.security'), icon: Shield },
     { id: 'accessibility', label: 'Accessibility', icon: Eye },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'billing', label: 'Billing', icon: CreditCard }
   ]
 
@@ -969,7 +970,7 @@ export default function SettingsPage() {
                             try {
                               await checkSessionAndUploadLogo(file)
                             } catch (err: any) {
-                              alert('Upload failed: ' + (err?.message || 'Unknown error'))
+                              showNotification('Upload failed: ' + (err?.message || 'Unknown error'), 'error')
                             } finally {
                               setLogoUploading(false)
                               e.target.value = ''
@@ -1300,253 +1301,6 @@ export default function SettingsPage() {
             </div>
           )}
 
-          {/* Notifications Settings */}
-          {activeTab === 'notifications' && (
-            <div className="space-y-6">
-              <Card>
-                <div className="p-6 border-b dark:border-gray-700">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Notification Settings</h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Configure how and when you receive alerts</p>
-                </div>
-                <div className="p-6">
-                  <div className="space-y-6">
-                    {/* Main Notifications Toggle */}
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-0.5">
-                        <h3 className="text-base font-medium text-gray-900 dark:text-white">Enable Notifications</h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Receive automated audit notifications for new additions to your database
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => {
-                          const newValue = !settings.notificationsEnabled;
-                          setSettings({...settings, notificationsEnabled: newValue});
-                          if (typeof window !== 'undefined') {
-                            localStorage.setItem('notificationsEnabled', newValue.toString());
-                          }
-                        }}
-                        className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#42b8ac] focus:ring-offset-2 ${
-                          settings.notificationsEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                            settings.notificationsEnabled ? 'translate-x-7' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
-
-                    {/* Audit Notification Options - Only show when notifications are enabled */}
-                    {settings.notificationsEnabled && (
-                      <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-4">Audit Notification Frequency</h4>
-                        
-                        {/* Datasheet Audit */}
-                        <div className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-green-100 rounded-lg dark:bg-green-900/20">
-                              <Database className="h-5 w-5 text-green-600 dark:text-green-400" />
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-gray-900 dark:text-white">Datasheet Audit</h4>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">Reminder to compliance check datasheets</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => {
-                                const newValue = !settings.datasheetAuditEnabled;
-                                setSettings({...settings, datasheetAuditEnabled: newValue});
-                                if (typeof window !== 'undefined') {
-                                  localStorage.setItem('datasheetAuditEnabled', newValue.toString());
-                                }
-                              }}
-                              className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#42b8ac] focus:ring-offset-2 ${
-                                settings.datasheetAuditEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-                              }`}
-                            >
-                              <span
-                                className={`inline-block h-2.5 w-2.5 transform rounded-full bg-white transition-transform ${
-                                  settings.datasheetAuditEnabled ? 'translate-x-4' : 'translate-x-0.5'
-                                }`}
-                              />
-                            </button>
-                            <Select
-                              value={settings.datasheetAuditFrequency}
-                              onChange={(value) => {
-                                setSettings({...settings, datasheetAuditFrequency: value});
-                                if (typeof window !== 'undefined') {
-                                  localStorage.setItem('datasheetAuditFrequency', value);
-                                }
-                              }}
-                              options={[
-                                { value: '2 weeks', label: 'Every 2 weeks' },
-                                { value: '1 month', label: 'Monthly' },
-                                { value: '3 months', label: 'Every 3 months' },
-                                { value: '1 year', label: 'Yearly' }
-                              ]}
-                              className="w-40"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Ingredients Audit */}
-                        <div className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-orange-100 rounded-lg dark:bg-orange-900/20">
-                              <ChefHat className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-gray-900 dark:text-white">Ingredients Audit</h4>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">Reminder to compliance check ingredients</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => {
-                                const newValue = !settings.ingredientsAuditEnabled;
-                                setSettings({...settings, ingredientsAuditEnabled: newValue});
-                                if (typeof window !== 'undefined') {
-                                  localStorage.setItem('ingredientsAuditEnabled', newValue.toString());
-                                }
-                              }}
-                              className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#42b8ac] focus:ring-offset-2 ${
-                                settings.ingredientsAuditEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-                              }`}
-                            >
-                              <span
-                                className={`inline-block h-2.5 w-2.5 transform rounded-full bg-white transition-transform ${
-                                  settings.ingredientsAuditEnabled ? 'translate-x-4' : 'translate-x-0.5'
-                                }`}
-                              />
-                            </button>
-                            <Select
-                              value={settings.ingredientsAuditFrequency}
-                              onChange={(value) => {
-                                setSettings({...settings, ingredientsAuditFrequency: value});
-                                if (typeof window !== 'undefined') {
-                                  localStorage.setItem('ingredientsAuditFrequency', value);
-                                }
-                              }}
-                              options={[
-                                { value: '2 weeks', label: 'Every 2 weeks' },
-                                { value: '1 month', label: 'Monthly' },
-                                { value: '3 months', label: 'Every 3 months' },
-                                { value: '1 year', label: 'Yearly' }
-                              ]}
-                              className="w-40"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Menu Audit */}
-                        <div className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-blue-100 rounded-lg dark:bg-blue-900/20">
-                              <Building className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-gray-900 dark:text-white">Menu Audit</h4>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">Reminder to compliance check menu items</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => {
-                                const newValue = !settings.menuAuditEnabled;
-                                setSettings({...settings, menuAuditEnabled: newValue});
-                                if (typeof window !== 'undefined') {
-                                  localStorage.setItem('menuAuditEnabled', newValue.toString());
-                                }
-                              }}
-                              className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#42b8ac] focus:ring-offset-2 ${
-                                settings.menuAuditEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-                              }`}
-                            >
-                              <span
-                                className={`inline-block h-2.5 w-2.5 transform rounded-full bg-white transition-transform ${
-                                  settings.menuAuditEnabled ? 'translate-x-4' : 'translate-x-0.5'
-                                }`}
-                              />
-                            </button>
-                            <Select
-                              value={settings.menuAuditFrequency}
-                              onChange={(value) => {
-                                setSettings({...settings, menuAuditFrequency: value});
-                                if (typeof window !== 'undefined') {
-                                  localStorage.setItem('menuAuditFrequency', value);
-                                }
-                              }}
-                              options={[
-                                { value: '2 weeks', label: 'Every 2 weeks' },
-                                { value: '1 month', label: 'Monthly' },
-                                { value: '3 months', label: 'Every 3 months' },
-                                { value: '1 year', label: 'Yearly' }
-                              ]}
-                              className="w-40"
-                            />
-                          </div>
-                        </div>
-
-                        {/* Supplier Audit */}
-                        <div className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-purple-100 rounded-lg dark:bg-purple-900/20">
-                              <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-gray-900 dark:text-white">Supplier Audit</h4>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">Reminder to compliance check suppliers</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => {
-                                const newValue = !settings.supplierAuditEnabled;
-                                setSettings({...settings, supplierAuditEnabled: newValue});
-                                if (typeof window !== 'undefined') {
-                                  localStorage.setItem('supplierAuditEnabled', newValue.toString());
-                                }
-                              }}
-                              className={`relative inline-flex h-4 w-8 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-[#42b8ac] focus:ring-offset-2 ${
-                                settings.supplierAuditEnabled ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'
-                              }`}
-                            >
-                              <span
-                                className={`inline-block h-2.5 w-2.5 transform rounded-full bg-white transition-transform ${
-                                  settings.supplierAuditEnabled ? 'translate-x-4' : 'translate-x-0.5'
-                                }`}
-                              />
-                            </button>
-                            <Select
-                              value={settings.supplierAuditFrequency}
-                              onChange={(value) => {
-                                setSettings({...settings, supplierAuditFrequency: value});
-                                if (typeof window !== 'undefined') {
-                                  localStorage.setItem('supplierAuditFrequency', value);
-                                }
-                              }}
-                              options={[
-                                { value: '2 weeks', label: 'Every 2 weeks' },
-                                { value: '1 month', label: 'Monthly' },
-                                { value: '3 months', label: 'Every 3 months' },
-                                { value: '1 year', label: 'Yearly' }
-                              ]}
-                              className="w-40"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                  </div>
-                </div>
-              </Card>
-            </div>
-          )}
-
           {/* Billing Settings - UPDATED WITH STRIPE INTEGRATION */}
           {activeTab === 'billing' && (
             <div className="space-y-6">
@@ -1688,7 +1442,7 @@ export default function SettingsPage() {
                               disabled={!settings.stripeConnected}
                               onClick={() => {
                                 // In a real implementation, this would open a subscription management dashboard
-                                alert('Subscription management dashboard would open here')
+                                showNotification('Subscription management dashboard would open here', 'info')
                               }}
                             >
                               Manage Subscriptions

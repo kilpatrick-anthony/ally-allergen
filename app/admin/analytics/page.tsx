@@ -2,7 +2,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import * as Dialog from '@radix-ui/react-dialog'
 import { 
@@ -341,63 +340,63 @@ export default function AnalyticsPage() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="hover:shadow-lg transition-all hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-500 hover:to-blue-600 group cursor-pointer">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Report Downloads</p>
-              <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">
-                {analyticsData.overview.reportDownloads.toLocaleString()}
-              </p>
+        <Card className="hover:shadow-lg transition-all hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-500 hover:to-blue-600 group h-full flex flex-col">
+            <div className="flex items-center justify-between flex-1">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Report Downloads</p>
+                <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">
+                  {analyticsData.overview.reportDownloads.toLocaleString()}
+                </p>
+              </div>
+              <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-blue-600 transition-all">
+                <Download className="h-6 w-6 text-white transition-colors" />
+              </div>
             </div>
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-blue-600 transition-all">
-              <Download className="h-6 w-6 text-white transition-colors" />
+            <div className="mt-4 flex items-center">
+              <div
+                className={`flex items-center text-sm font-medium transition-colors ${formatDelta(analyticsData.deltas.reportDownloads).className}`}
+              >
+                <TrendingUp className="h-4 w-4 mr-1" />
+                <span>{formatDelta(analyticsData.deltas.reportDownloads).label}</span>
+              </div>
             </div>
-          </div>
-          <div className="mt-4 flex items-center">
-            <div
-              className={`flex items-center text-sm font-medium transition-colors ${formatDelta(analyticsData.deltas.reportDownloads).className}`}
-            >
-              <TrendingUp className="h-4 w-4 mr-1" />
-              <span>{formatDelta(analyticsData.deltas.reportDownloads).label}</span>
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card className="hover:shadow-lg transition-all hover:border-purple-500 hover:bg-gradient-to-br hover:from-purple-500 hover:to-purple-600 group cursor-pointer">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Kiosk Interactions</p>
-              <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">
-                {analyticsData.overview.kioskUsage.toLocaleString()}
-              </p>
+        <Card className="hover:shadow-lg transition-all hover:border-purple-500 hover:bg-gradient-to-br hover:from-purple-500 hover:to-purple-600 group h-full flex flex-col">
+            <div className="flex items-center justify-between flex-1">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Kiosk Devices</p>
+                <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">
+                  {analyticsData.overview.kioskUsage.toLocaleString()}
+                </p>
+              </div>
+              <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-purple-600 transition-all">
+                <Building className="h-6 w-6 text-white transition-colors" />
+              </div>
             </div>
-            <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-purple-600 transition-all">
-              <Building className="h-6 w-6 text-white transition-colors" />
+            <div className="mt-4 flex items-center">
+              <div
+                className={`flex items-center text-sm font-medium transition-colors ${formatDelta(analyticsData.deltas.kioskUsage).className}`}
+              >
+                <TrendingUp className="h-4 w-4 mr-1" />
+                <span>{formatDelta(analyticsData.deltas.kioskUsage).label}</span>
+              </div>
             </div>
-          </div>
-          <div className="mt-4 flex items-center">
-            <div
-              className={`flex items-center text-sm font-medium transition-colors ${formatDelta(analyticsData.deltas.kioskUsage).className}`}
-            >
-              <TrendingUp className="h-4 w-4 mr-1" />
-              <span>{formatDelta(analyticsData.deltas.kioskUsage).label}</span>
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card className="hover:shadow-lg transition-all hover:border-amber-500 hover:bg-gradient-to-br hover:from-amber-500 hover:to-amber-600 group cursor-pointer">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Active Menu Ingredients</p>
-              <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">
-                {analyticsData.overview.activeMenuIngredients.toLocaleString()}
-              </p>
+        <Card className="hover:shadow-lg transition-all hover:border-amber-500 hover:bg-gradient-to-br hover:from-amber-500 hover:to-amber-600 group h-full flex flex-col">
+            <div className="flex items-center justify-between flex-1">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Active Ingredients</p>
+                <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">
+                  {analyticsData.overview.activeMenuIngredients.toLocaleString()}
+                </p>
+              </div>
+              <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-amber-600 transition-all">
+                <Package className="h-6 w-6 text-white transition-colors" />
+              </div>
             </div>
-            <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-amber-600 transition-all">
-              <Package className="h-6 w-6 text-white transition-colors" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center">
+            <div className="mt-4 flex items-center">
             <div
               className={`flex items-center text-sm font-medium transition-colors ${formatDelta(analyticsData.deltas.activeMenuIngredients).className}`}
             >
@@ -407,27 +406,27 @@ export default function AnalyticsPage() {
           </div>
         </Card>
 
-        <Card className="hover:shadow-lg transition-all hover:border-emerald-500 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-emerald-600 group cursor-pointer">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Active Menu Items</p>
-              <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">
-                {analyticsData.overview.activeMenuItems.toLocaleString()}
-              </p>
+        <Card className="hover:shadow-lg transition-all hover:border-emerald-500 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-emerald-600 group h-full flex flex-col">
+            <div className="flex items-center justify-between flex-1">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Active Menu Items</p>
+                <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">
+                  {analyticsData.overview.activeMenuItems.toLocaleString()}
+                </p>
+              </div>
+              <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-emerald-600 transition-all">
+                <LineChart className="h-6 w-6 text-white transition-colors" />
+              </div>
             </div>
-            <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-emerald-600 transition-all">
-              <LineChart className="h-6 w-6 text-white transition-colors" />
+            <div className="mt-4 flex items-center">
+              <div
+                className={`flex items-center text-sm font-medium transition-colors ${formatDelta(analyticsData.deltas.activeMenuItems).className}`}
+              >
+                <TrendingUp className="h-4 w-4 mr-1" />
+                <span>{formatDelta(analyticsData.deltas.activeMenuItems).label}</span>
+              </div>
             </div>
-          </div>
-          <div className="mt-4 flex items-center">
-            <div
-              className={`flex items-center text-sm font-medium transition-colors ${formatDelta(analyticsData.deltas.activeMenuItems).className}`}
-            >
-              <TrendingUp className="h-4 w-4 mr-1" />
-              <span>{formatDelta(analyticsData.deltas.activeMenuItems).label}</span>
-            </div>
-          </div>
-        </Card>
+          </Card>
       </div>
 
       {/* Charts Section */}

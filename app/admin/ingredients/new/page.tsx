@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useNotification } from '@/lib/hooks/useNotification'
 import { 
   Package, ArrowLeft, Save, X, AlertCircle, Plus, Trash2,
   Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck, ScanLine
@@ -19,6 +20,7 @@ import { LabelScanModal } from '@/components/admin/LabelScanModal'
 import type { AllergenWarnings } from '@/types/allergen'
 
 export default function NewIngredientPage() {
+  const { showNotification } = useNotification()
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [datasheets, setDatasheets] = useState<any[]>([])
@@ -164,7 +166,7 @@ export default function NewIngredientPage() {
 
   const handleSave = async () => {
     if (!ingredient.name) {
-      alert('Please fill in required field (Name)')
+      showNotification('Please fill in required field (Name)', 'error')
       return
     }
 
@@ -221,11 +223,11 @@ export default function NewIngredientPage() {
         console.log('✅ All datasheets uploaded')
       }
 
-      alert('Ingredient saved successfully!')
+      showNotification('Ingredient saved successfully!', 'success')
       router.push('/admin/ingredients')
     } catch (error: any) {
       console.error('Error saving ingredient:', error)
-      alert(error.message || 'Failed to save ingredient')
+      showNotification(error.message || 'Failed to save ingredient', 'error')
     } finally {
       setSaving(false)
     }
@@ -629,7 +631,7 @@ export default function NewIngredientPage() {
         </Card>
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-4">
+        <div className="flex justify-start gap-4">
           <Link href="/admin/ingredients">
             <Button variant="outline">
               Cancel

@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useNotification } from '@/lib/hooks/useNotification'
 import { 
   Package, Plus, Search, Filter, Edit, Trash2, 
   AlertCircle, Check, X, ChevronRight, Download,
@@ -23,6 +24,7 @@ import { Badge } from '../../components/ui/Badge'
 import { ALLERGEN_LIST } from '@/types/allergen'
 import DatasheetViewer from '@/components/admin/DatasheetViewer'
 import { useTranslation } from '@/lib/hooks/useTranslation'
+import { checkIngredientCompliance } from '@/lib/compliance'
 
 // No mock data - production ready
 
@@ -79,6 +81,7 @@ const getIconComponent = (iconName: string) => {
 };
 
 export default function IngredientsPage() {
+  const { showNotification } = useNotification()
   const { t } = useTranslation()
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [loading, setLoading] = useState(true)
@@ -87,8 +90,8 @@ export default function IngredientsPage() {
   const [selectedCertification, setSelectedCertification] = useState('all')
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [sortBy, setSortBy] = useState<'name' | 'date' | 'status' | 'compliance'>('date')
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
+  const [sortBy, setSortBy] = useState<'name' | 'date' | 'status' | 'compliance'>('name')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
   const [showDatasheetModal, setShowDatasheetModal] = useState(false)
@@ -112,59 +115,79 @@ export default function IngredientsPage() {
         console.log('✅ Ingredients loaded:', data.ingredients?.length || 0)
         
         // Map the data to match the component's expected format
-        const mappedIngredients = (data.ingredients || []).map((ing: any) => ({
-          id: ing.id,
-          name: ing.name,
-          suppliers: ing.suppliers || [],
-          allergens: ing.allergen_warnings ? 
-            (() => {
-              const warnings = ing.allergen_warnings
-              const allergenList: any[] = []
-              
-              // Handle regular allergens
-              Object.entries(warnings).forEach(([key, value]) => {
-                if (value !== 'none' && !key.endsWith('_levels') && !key.endsWith('_types')) {
-                  // Check if this allergen has sub-levels
-                  const levelsKey = `${key}_levels`
-                  const hasSubLevels = warnings[levelsKey]
-                  
-                  if (hasSubLevels && typeof hasSubLevels === 'object') {
-                    // Extract sub-allergens that are not 'none'
-                    const subAllergens: any[] = []
-                    Object.entries(hasSubLevels).forEach(([subKey, subValue]: [string, any]) => {
-                      if (subValue !== 'none') {
-                        subAllergens.push({
-                          name: subKey.replace(/_/g, ' '),
-                          level: subValue,
-                          parent: key
+        const mappedIngredients = (data.ingredients || []).map((ing: any) => {
+          // Calculate compliance dynamically
+          const datasheetCount = (ing.datasheets && ing.datasheets[0]?.count) || 0
+          
+          const complianceResult = checkIngredientCompliance(
+            {
+              id: ing.id,
+              name: ing.name,
+              status: ing.status || 'active',
+              last_reviewed_at: ing.last_reviewed_at,
+              preferred_review_months: ing.preferred_review_months || 3,
+              suppliers: ing.suppliers || [],
+              has_datasheets: datasheetCount > 0
+            },
+            {
+              compliance_review_days: 90 // Default, will be updated from business settings
+            }
+          )
+          
+          return {
+            id: ing.id,
+            name: ing.name,
+            suppliers: ing.suppliers || [],
+            allergens: ing.allergen_warnings ? 
+              (() => {
+                const warnings = ing.allergen_warnings
+                const allergenList: any[] = []
+                
+                // Handle regular allergens
+                Object.entries(warnings).forEach(([key, value]) => {
+                  if (value !== 'none' && !key.endsWith('_levels') && !key.endsWith('_types')) {
+                    // Check if this allergen has sub-levels
+                    const levelsKey = `${key}_levels`
+                    const hasSubLevels = warnings[levelsKey]
+                    
+                    if (hasSubLevels && typeof hasSubLevels === 'object') {
+                      // Extract sub-allergens that are not 'none'
+                      const subAllergens: any[] = []
+                      Object.entries(hasSubLevels).forEach(([subKey, subValue]: [string, any]) => {
+                        if (subValue !== 'none') {
+                          subAllergens.push({
+                            name: subKey.replace(/_/g, ' '),
+                            level: subValue,
+                            parent: key
+                          })
+                        }
+                      })
+                      if (subAllergens.length > 0) {
+                        allergenList.push({
+                          name: key.replace(/_/g, ' '),
+                          level: value,
+                          subAllergens
                         })
                       }
-                    })
-                    if (subAllergens.length > 0) {
+                    } else {
+                      // Regular allergen without sub-levels
                       allergenList.push({
                         name: key.replace(/_/g, ' '),
-                        level: value,
-                        subAllergens
+                        level: value
                       })
                     }
-                  } else {
-                    // Regular allergen without sub-levels
-                    allergenList.push({
-                      name: key.replace(/_/g, ' '),
-                      level: value
-                    })
                   }
-                }
-              })
-              
-              return allergenList
-            })() : [],
-          certifications: ing.certifications || [],
-          status: ing.status || 'active',
-          lastUpdated: new Date(ing.updated_at || ing.created_at).toLocaleDateString(),
-          createdBy: ing.created_by || 'system',
-          compliance: ing.compliance || 'compliant'
-        }))
+                })
+                
+                return allergenList
+              })() : [],
+            certifications: ing.certifications || [],
+            status: ing.status || 'active',
+            lastUpdated: new Date(ing.updated_at || ing.created_at).toLocaleDateString(),
+            createdBy: ing.created_by || 'system',
+            compliance: complianceResult.status
+          }
+        })
         
         setIngredients(mappedIngredients)
       } catch (error: any) {
@@ -223,6 +246,23 @@ export default function IngredientsPage() {
     })(),
     inReview: ingredients.filter(i => i.status === 'review').length,
     compliant: ingredients.filter(i => i.compliance === 'compliant').length,
+  }
+
+  // Handle delete
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this ingredient?')) return
+    
+    try {
+      const response = await fetch(`/api/ingredients/${id}`, { method: 'DELETE' })
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to delete ingredient')
+      }
+      setIngredients(ingredients.filter(ing => ing.id !== id))
+    } catch (error: any) {
+      console.error('Error deleting ingredient:', error)
+      showNotification('Failed to delete ingredient: ' + error?.message, 'error')
+    }
   }
 
   // Handle bulk actions
@@ -397,9 +437,8 @@ export default function IngredientsPage() {
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                 className="text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
               >
-                <option value="date">Date Updated</option>
                 <option value="name">Name</option>
-                <option value="status">Status</option>
+                <option value="date">Date Added</option>
               </select>
               <button
                 onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
@@ -566,8 +605,8 @@ export default function IngredientsPage() {
       {/* Ingredients Table - Updated */}
       <Card>
         {viewMode === 'list' ? (
-          <div>
-          <table className="w-full table-fixed">
+          <div className="overflow-x-auto">
+            <table className="w-full table-fixed">
             <thead>
               <tr className="border-b dark:border-gray-700">
                 <th className="w-12 text-left py-3 px-4">
@@ -833,262 +872,120 @@ export default function IngredientsPage() {
                     </Badge>
                   </td>
                   <td className="w-24 py-3 px-4">
-                    <Link href={`/admin/ingredients/${ingredient.id}/edit`}>
+                    <div className="flex items-center gap-1">
+                      <Link href={`/admin/ingredients/${ingredient.id}`}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={Eye}
+                          title={t('admin.viewIngredient')}
+                        />
+                      </Link>
+                      <Link href={`/admin/ingredients/${ingredient.id}/edit`}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={Edit}
+                          title={t('admin.editIngredient')}
+                        />
+                      </Link>
                       <Button
                         variant="ghost"
                         size="sm"
-                        icon={Edit}
-                        title={t('admin.editIngredient')}
+                        icon={Trash2}
+                        onClick={() => handleDelete(ingredient.id)}
+                        title={t('admin.deleteIngredient')}
                       />
-                    </Link>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-        ) : (
-          /* Grid View */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-            {sortedIngredients.map((ingredient) => (
-              <div
-                key={ingredient.id}
-                className="border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:shadow-lg transition-shadow bg-white dark:bg-gray-800 flex flex-col h-full"
-              >
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-gradient-to-br from-[#42b8ac] to-[#003842] rounded-lg">
-                        <Package className="h-5 w-5 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">{ingredient.name}</h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{ingredient.lastUpdated}</p>
-                      </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+          {sortedIngredients.map((ingredient) => (
+            <div
+              key={ingredient.id}
+              className="border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:shadow-lg transition-shadow bg-white dark:bg-gray-800 flex flex-col h-full"
+            >
+              <div className="flex-1">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gradient-to-br from-[#42b8ac] to-[#003842] rounded-lg">
+                      <Package className="h-5 w-5 text-white" />
                     </div>
-                  </div>
-
-                  {/* Suppliers */}
-                  <div className="mb-4 flex items-start gap-2">
-                    <Truck className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      {ingredient.suppliers.length > 0
-                        ? ingredient.suppliers.join(', ')
-                        : <span className="italic text-gray-400 dark:text-gray-500">No suppliers listed</span>}
+                    <div>
+                      <h3 className="font-semibold text-gray-900 dark:text-white">{ingredient.name}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{ingredient.lastUpdated}</p>
                     </div>
-                  </div>
-
-                  {/* Allergens */}
-                  <div className="mb-4">
-                    <label className="text-xs font-medium text-gray-500 mb-2 block">{t('admin.allergens')}</label>
-                    <div className="flex flex-wrap gap-1.5">
-                      {ingredient.allergens.length === 0 ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                          <Check className="h-3 w-3" />
-                          {t('admin.none')}
-                        </span>
-                      ) : (
-                        ingredient.allergens.map((allergen: any, index: number) => {
-                          const getSeverityColor = (level: string) => {
-                            switch(level) {
-                              case 'contains': return '#fca5a5'; // red-300
-                              case 'may_contain': return '#fdba74'; // orange-300
-                              case 'not_suitable': return '#c4b5fd'; // violet-300
-                              case 'traces': return '#67e8f9'; // cyan-300
-                              case 'cross_contamination': return '#f59e0b'; // amber-500
-                              default: return '#6b7280';
-                            }
-                          };
-
-                          if (typeof allergen === 'string') {
-                            return (
-                              <Badge key={index} variant="warning" size="sm">
-                                {allergen}
-                              </Badge>
-                            );
-                          }
-
-                          if (allergen.subAllergens) {
-                            // Find the allergen data for the parent
-                            const allergenData = ALLERGEN_LIST.find(a => 
-                              a.id === allergen.name.replace(/ /g, '_') ||
-                              a.name.toLowerCase() === allergen.name.toLowerCase()
-                            );
-                            const IconComponent = allergenData ? getIconComponent(allergenData.icon) : Package;
-                            const baseColor = allergenData?.color || '#6b7280';
-                            
-                            return (
-                              <div key={index} className="flex flex-col gap-1.5 w-full">
-                                {/* Parent allergen */}
-                                <span
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border-2"
-                                  style={{
-                                    borderColor: baseColor,
-                                    backgroundColor: `${baseColor}15`,
-                                    color: baseColor
-                                  }}
-                                >
-                                  <IconComponent className="h-3.5 w-3.5" />
-                                  {allergenData?.name || allergen.name}
-                                </span>
-                                {/* Sub-allergens */}
-                              <div className="flex flex-wrap gap-1 ml-4">
-                                {allergen.subAllergens.map((sub: any, subIndex: number) => {
-                                  const severityColor = getSeverityColor(sub.level);
-                                  return (
-                                    <span
-                                      key={subIndex}
-                                      className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border"
-                                      style={{
-                                        borderColor: severityColor,
-                                        backgroundColor: `${severityColor}15`,
-                                        color: severityColor
-                                      }}
-                                      title={sub.level.replace('_', ' ')}
-                                    >
-                                      ↳ {sub.name}
-                                    </span>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          );
-                        }
-
-                        const allergenData = ALLERGEN_LIST.find(a => 
-                          a.id === allergen.name.replace(/ /g, '_') ||
-                          a.name.toLowerCase() === allergen.name.toLowerCase()
-                        );
-                        const IconComponent = allergenData ? getIconComponent(allergenData.icon) : Package;
-                        const baseColor = allergenData?.color || '#6b7280';
-                        
-                        return (
-                          <span
-                            key={index}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border-2"
-                            style={{
-                              borderColor: baseColor,
-                              backgroundColor: `${baseColor}15`,
-                              color: baseColor
-                            }}
-                            title={allergen.level.replace('_', ' ')}
-                          >
-                            {allergenData && <IconComponent className="h-3.5 w-3.5" />}
-                            {allergenData?.name || allergen.name}
-                          </span>
-                        );
-                      })
-                    )}
                   </div>
                 </div>
 
-                {/* Certifications */}
-                <div className="mb-4">
-                  <label className="text-xs font-medium text-gray-500 mb-2 block">{t('admin.dietaryAttributes')}</label>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
+                  {ingredient.suppliers.length > 0 ? ingredient.suppliers.join(', ') : 'No suppliers'}
+                </p>
+
+                <div>
+                  <label className="text-xs font-medium text-gray-500 mb-2 block">Allergens</label>
                   <div className="flex flex-wrap gap-1.5">
-                    {ingredient.certifications.length === 0 ? (
-                      <span className="text-xs text-gray-400 italic">None listed</span>
+                    {ingredient.allergens.length === 0 ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                        <Check className="h-3 w-3" />
+                        None
+                      </span>
                     ) : (
-                      ingredient.certifications.map((cert, index) => {
-                        const attr = dietaryAttributes.find(a => 
-                          a.name === cert ||
-                          a.name.toLowerCase().replace('-', ' ') === cert.toLowerCase().replace('-', ' ')
-                        );
-                        
-                        if (attr) {
-                          const IconComponent = attr.icon;
-                          return (
-                            <span
-                              key={index}
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border"
-                              style={{
-                                borderColor: attr.color,
-                                backgroundColor: `${attr.color}15`,
-                                color: attr.color
-                              }}
-                            >
-                              <IconComponent className="h-3 w-3" />
-                              {cert}
-                            </span>
-                          );
-                        }
-                        
-                        return (
-                          <Badge key={index} variant="default" size="sm">
-                            {cert}
-                          </Badge>
-                        );
-                      })
+                      ingredient.allergens.slice(0, 3).map((allergen, idx) => (
+                        <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300">
+                          {typeof allergen === 'string' ? allergen : allergen.name}
+                        </span>
+                      ))
                     )}
                   </div>
                 </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2 pt-4 border-t dark:border-gray-700 mt-auto">
-                  <Link href={`/admin/ingredients/${ingredient.id}`} className="flex-1">
-                    <Button variant="outline" size="sm" icon={Eye} className="w-full">
-                      {t('admin.view')}
-                    </Button>
-                  </Link>
-                  <Link href={`/admin/ingredients/${ingredient.id}/edit`} className="flex-1">
-                    <Button variant="outline" size="sm" icon={Edit} className="w-full">
-                      {t('admin.edit')}
-                    </Button>
-                  </Link>
-                </div>
               </div>
-            ))}
-          </div>
-        )}
 
-        {/* Empty State */}
-        {sortedIngredients.length === 0 && (
-          <div className="text-center py-12">
-            <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <Package className="h-8 w-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('admin.noIngredientsFound')}</h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">
-              {searchTerm || selectedAllergen !== 'all' 
-                ? t('admin.tryAdjustingSearch')
-                : t('admin.getStartedFirstIngredient')}
-            </p>
-            <Link href="/admin/ingredients/new">
-              <Button variant="primary" icon={Plus}>
-                {t('admin.addFirstIngredient')}
-              </Button>
-            </Link>
-          </div>
-        )}
-
-        {/* Pagination */}
-        {sortedIngredients.length > 10 && (
-          <div className="border-t dark:border-gray-700 px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-600 dark:text-gray-400">
-                {t('admin.showing')} <span className="font-medium">1</span> {t('admin.to')}{' '}
-                <span className="font-medium">{Math.min(10, sortedIngredients.length)}</span> {t('admin.of')}{' '}
-                <span className="font-medium">{sortedIngredients.length}</span> {t('admin.results')}
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" disabled>
-                  {t('admin.previous')}
-                </Button>
-                <Button variant="ghost" size="sm" className="bg-gray-100 dark:bg-gray-700">
-                  1
-                </Button>
-                <Button variant="ghost" size="sm">
-                  2
-                </Button>
-                <Button variant="ghost" size="sm">
-                  {t('admin.next')}
-                </Button>
+              <div className="flex items-center justify-end gap-1 pt-4 border-t dark:border-gray-700 mt-4">
+                <Link href={`/admin/ingredients/${ingredient.id}`}>
+                  <Button variant="ghost" size="sm" icon={Eye} title={t('admin.view')} />
+                </Link>
+                <Link href={`/admin/ingredients/${ingredient.id}/edit`}>
+                  <Button variant="ghost" size="sm" icon={Edit} title={t('admin.edit')} />
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={Trash2}
+                  onClick={() => handleDelete(ingredient.id)}
+                  title={t('admin.delete')}
+                />
               </div>
             </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {sortedIngredients.length === 0 && (
+        <div className="text-center py-12">
+          <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <Package className="h-8 w-8 text-gray-400" />
           </div>
-        )}
-      </Card>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('admin.noIngredientsFound')}</h3>
+          <p className="text-gray-500 dark:text-gray-400 mb-6">
+            {searchTerm || selectedAllergen !== 'all' 
+              ? t('admin.tryAdjustingSearch')
+              : t('admin.getStartedFirstIngredient')}
+          </p>
+          <Link href="/admin/ingredients/new">
+            <Button variant="primary" icon={Plus}>
+              {t('admin.addFirstIngredient')}
+            </Button>
+          </Link>
+        </div>
+      )}
+    </Card>
 
       {/* Datasheet Modal */}
       {showDatasheetModal && selectedIngredientForDatasheets && (
@@ -1147,7 +1044,7 @@ export default function IngredientsPage() {
                         window.URL.revokeObjectURL(url)
                       } catch (error) {
                         console.error('Download failed:', error)
-                        alert(t('admin.failedToDownload'))
+                        showNotification(t('admin.failedToDownload'), 'error')
                       }
                     }
                   }}

@@ -17,7 +17,8 @@ import {
   ChefHat,
   HelpCircle,
   Monitor,
-  Shield
+  Shield,
+  CheckCircle2
 } from 'lucide-react'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { useState, useEffect } from 'react'
@@ -47,6 +48,7 @@ export function Navigation() {
     { name: t('admin.analytics'), href: '/admin/analytics', icon: BarChart },
     { name: t('admin.downloads'), href: '/admin/downloads', icon: Download },
     { name: t('admin.devices'), href: '/admin/devices', icon: Monitor },
+    { name: 'Compliance', href: '/admin/compliance', icon: CheckCircle2 },
     { name: t('admin.settings'), href: '/admin/settings', icon: Settings },
     { name: t('admin.help'), href: '/admin/help', icon: HelpCircle },
     ...(isSuperAdmin ? [{ name: 'Super Admin', href: '/super-admin', icon: Shield }] : [])

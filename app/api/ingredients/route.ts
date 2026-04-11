@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
     // Fetch ingredients for the business
     let query = supabase
       .from('ingredients')
-      .select('*')
+      .select(`*,datasheets:datasheets(count)`)
       .eq('business_id', userBusiness.business_id)
       .order('created_at', { ascending: false })
 
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, category, allergen_warnings, suppliers, certifications } = body
+    const { name, description, category, allergen_warnings, suppliers, certifications, preferred_review_months } = body
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
@@ -160,6 +160,7 @@ export async function POST(request: NextRequest) {
         allergen_warnings: allergen_warnings || {},
         suppliers: suppliers || [],
         certifications: certifications || [],
+        preferred_review_months: preferred_review_months || 3,
         status: 'active',
         compliance: 'compliant',
         created_by: userId

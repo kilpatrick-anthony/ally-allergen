@@ -97,6 +97,8 @@ export async function GET(request: NextRequest) {
 
     const mappedItems = (menuItems || []).map((item) => ({
       ...item,
+      // Transform is_active to status for consistent UI display
+      status: item.is_active ? 'active' : 'draft',
       ingredients: ingredientsByMenuItem.get(item.id) || []
     }))
 
@@ -151,7 +153,8 @@ export async function POST(request: NextRequest) {
       allergen_warnings: body.allergen_warnings || {},
       is_active: body.status ? body.status === 'active' : body.is_active ?? true,
       price: typeof body.price === 'number' ? body.price : 0,
-      display_order: typeof body.display_order === 'number' ? body.display_order : 0
+      display_order: typeof body.display_order === 'number' ? body.display_order : 0,
+      preferred_review_months: typeof body.preferred_review_months === 'number' ? body.preferred_review_months : 3
     }
 
     let { data: menuItem, error } = await supabase

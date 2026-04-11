@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import { useNotification } from '@/lib/hooks/useNotification'
 import { 
   Package, ArrowLeft, Save, X, AlertCircle, Plus, Trash2,
   Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck
@@ -15,9 +16,11 @@ import { Button } from '../../../../components/ui/Button'
 import { Badge } from '../../../../components/ui/Badge'
 import AllergenWarningSelector from '@/components/admin/AllergenWarningSelector'
 import DatasheetUploader from '@/components/admin/DatasheetUploader'
+import { ReviewFrequencySelector } from '@/components/admin/ReviewFrequencySelector'
 import type { AllergenWarnings } from '@/types/allergen'
 
 export default function EditIngredientPage() {
+  const { showNotification } = useNotification()
   const router = useRouter()
   const params = useParams()
   const ingredientId = params.id as string
@@ -25,13 +28,18 @@ export default function EditIngredientPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [marking, setMarking] = useState(false)
   const [datasheets, setDatasheets] = useState<any[]>([])
   const [existingDatasheets, setExistingDatasheets] = useState<any[]>([])
+  const [compliance, setCompliance] = useState<any>(null)
+  const [loadingCompliance, setLoadingCompliance] = useState(false)
   
   const [ingredient, setIngredient] = useState({
     name: '',
     description: '',
     category: '',
+    status: 'active' as 'active' | 'review' | 'archived',
+    preferred_review_months: 3,
     allergen_warnings: {
       cereals_gluten: 'none',
       crustaceans: 'none',
@@ -111,6 +119,8 @@ export default function EditIngredientPage() {
           name: data.ingredient.name,
           description: data.ingredient.description || '',
           category: data.ingredient.category || '',
+          status: data.ingredient.status || 'active',
+          preferred_review_months: data.ingredient.preferred_review_months || 3,
           allergen_warnings: data.ingredient.allergen_warnings || ingredient.allergen_warnings,
           suppliers: data.ingredient.suppliers || [],
           certifications: data.ingredient.certifications || []
@@ -124,7 +134,7 @@ export default function EditIngredientPage() {
         }
       } catch (error: any) {
         console.error('Error fetching ingredient:', error)
-        alert('Failed to load ingredient')
+        showNotification('Failed to load ingredient', 'error')
       } finally {
         setLoading(false)
       }
@@ -145,15 +155,65 @@ export default function EditIngredientPage() {
       router.push('/admin/ingredients')
     } catch (error: any) {
       console.error('Error deleting ingredient:', error)
-      alert(error.message || 'Failed to delete ingredient')
+      showNotification(error.message || 'Failed to delete ingredient', 'error')
     } finally {
       setDeleting(false)
     }
   }
 
+  const fetchCompliance = async () => {
+    try {
+      setLoadingCompliance(true)
+      const response = await fetch(`/api/compliance/status?itemId=${ingredientId}&itemType=ingredient`)
+      const data = await parseJsonSafely(response)
+      if (response.ok) {
+        setCompliance(data.compliance)
+      }
+    } catch (error: any) {
+      console.error('Error fetching compliance:', error)
+    } finally {
+      setLoadingCompliance(false)
+    }
+  }
+
+  const handleMarkReviewed = async () => {
+    try {
+      setMarking(true)
+      const response = await fetch('/api/compliance/mark-reviewed', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          itemId: ingredientId,
+          itemType: 'ingredient'
+        })
+      })
+
+      if (!response.ok) {
+        const data = await parseJsonSafely(response)
+        throw new Error(data.error || 'Failed to mark as reviewed')
+      }
+
+      // Refresh compliance status
+      await fetchCompliance()
+      showNotification('Ingredient marked as reviewed!', 'success')
+    } catch (error: any) {
+      console.error('Error marking as reviewed:', error)
+      showNotification(error.message || 'Failed to mark as reviewed', 'error')
+    } finally {
+      setMarking(false)
+    }
+  }
+
+  // Fetch compliance status on load
+  useEffect(() => {
+    if (ingredientId && !loading) {
+      fetchCompliance()
+    }
+  }, [ingredientId, loading])
+
   const handleSave = async () => {
     if (!ingredient.name) {
-      alert('Please fill in required field (Name)')
+      showNotification('Please fill in required field (Name)', 'error')
       return
     }
 
@@ -170,38 +230,43 @@ export default function EditIngredientPage() {
       }
 
       // Upload only new datasheets that include a File object
-      for (const datasheet of datasheets) {
-        if (!datasheet.file) continue
+      if (datasheets.length > 0) {
+        console.log('📤 Uploading', datasheets.length, 'datasheets...')
+        
+        const uploadPromises = datasheets.map(async (datasheet) => {
+          if (!datasheet.file) return
+          
+          const fileName = datasheet.file_name || datasheet.file?.name || 'datasheet'
+          const formData = new FormData()
+          formData.append('file', datasheet.file)
+          formData.append('ingredient_id', String(ingredientId))
+          if (datasheet.supplier_name) formData.append('supplier_name', datasheet.supplier_name)
+          if (datasheet.version) formData.append('version', datasheet.version)
+          if (datasheet.next_review_date) formData.append('next_review_date', datasheet.next_review_date)
+          if (datasheet.notes) formData.append('notes', datasheet.notes)
 
-        const fileName = datasheet.file_name || datasheet.file?.name || 'datasheet'
-        const formData = new FormData()
-        formData.append('file', datasheet.file)
-        formData.append('ingredient_id', ingredientId)
-        formData.append('supplier_name', datasheet.supplier_name || '')
-        formData.append('version', datasheet.version || '')
-        if (datasheet.next_review_date) {
-          formData.append('next_review_date', datasheet.next_review_date)
-        }
-        if (datasheet.notes) {
-          formData.append('notes', datasheet.notes)
-        }
+          const uploadResponse = await fetch('/api/upload/datasheet', {
+            method: 'POST',
+            body: formData
+          })
 
-        const uploadResponse = await fetch('/api/upload/datasheet', {
-          method: 'POST',
-          body: formData
+          if (!uploadResponse.ok) {
+            const errorData = await parseJsonSafely(uploadResponse)
+            console.error('Failed to upload:', fileName, errorData)
+            throw new Error(`Failed to upload ${fileName}: ${errorData.error || 'Unknown error'}`)
+          }
+
+          return parseJsonSafely(uploadResponse)
         })
 
-        if (!uploadResponse.ok) {
-          const error = await parseJsonSafely(uploadResponse)
-          console.error('Failed to upload datasheet:', error)
-          alert(`Failed to upload ${fileName}`)
-        }
+        await Promise.all(uploadPromises)
+        console.log('✅ All datasheets uploaded successfully')
       }
 
       router.push('/admin/ingredients')
     } catch (error: any) {
       console.error('Error updating ingredient:', error)
-      alert(error.message || 'Failed to update ingredient')
+      showNotification(error.message || 'Failed to update ingredient', 'error')
     } finally {
       setSaving(false)
     }
@@ -279,39 +344,15 @@ export default function EditIngredientPage() {
         </Link>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-        <div className="flex items-center gap-4 min-w-0">
+      <div className="mb-8">
+        <div className="flex items-center gap-4">
           <div className="p-3 bg-gradient-to-br from-[#42b8ac] to-[#003842] rounded-xl flex-shrink-0">
             <Package className="h-8 w-8 text-white" />
           </div>
-          <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#003842]">Edit Ingredient</h1>
-            <p className="text-gray-600">Update ingredient details and allergen information</p>
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Edit Ingredient</h1>
+            <p className="text-gray-600 dark:text-gray-300">Update ingredient details and allergen information</p>
           </div>
-        </div>
-        <div className="flex gap-3 flex-shrink-0">
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={deleting}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-red-300 text-red-600 text-sm font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors"
-          >
-            <Trash2 className="h-4 w-4" />
-            {deleting ? 'Deleting...' : 'Delete Ingredient'}
-          </button>
-          <Button 
-            variant="outline" 
-            onClick={() => router.push('/admin/ingredients')}
-          >
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSave}
-            disabled={saving}
-            icon={Save}
-          >
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
         </div>
       </div>
 
@@ -358,6 +399,103 @@ export default function EditIngredientPage() {
               value={ingredient.allergen_warnings}
               onChange={(warnings) => setIngredient({ ...ingredient, allergen_warnings: warnings })}
             />
+          </Card>
+
+          {/* Status Toggle */}
+          <Card>
+            <h2 className="text-xl font-semibold text-[#003842] mb-4">Visibility Status</h2>
+            <p className="text-sm text-gray-600 mb-3">
+              Active ingredients appear in reports and menu builder. Draft ingredients are hidden from view.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIngredient({ ...ingredient, status: 'active' })}
+                className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all ${
+                  ingredient.status === 'active'
+                    ? 'bg-emerald-500 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Active
+              </button>
+              <button
+                onClick={() => setIngredient({ ...ingredient, status: 'review' })}
+                className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all ${
+                  ingredient.status === 'review'
+                    ? 'bg-amber-500 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Draft
+              </button>
+              <button
+                onClick={() => setIngredient({ ...ingredient, status: 'archived' })}
+                className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all ${
+                  ingredient.status === 'archived'
+                    ? 'bg-red-500 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Archived
+              </button>
+            </div>
+          </Card>
+
+          {/* Compliance Status */}
+          <Card>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-[#003842]">Compliance Status</h2>
+              <Button
+                onClick={handleMarkReviewed}
+                disabled={marking || loadingCompliance}
+                className="bg-emerald-500 text-white hover:bg-emerald-600 text-sm"
+              >
+                {marking ? 'Marking...' : 'Mark as Reviewed'}
+              </Button>
+            </div>
+            
+            {loadingCompliance ? (
+              <div className="text-gray-500 text-sm">Loading compliance status...</div>
+            ) : compliance ? (
+              <div className="space-y-3">
+                <div
+                  className="p-3 rounded-lg border-2"
+                  style={{
+                    backgroundColor: compliance.status === 'compliant' ? '#dcfce7' : 
+                                    compliance.status === 'warning' ? '#fef3c7' : '#fee2e2',
+                    borderColor: compliance.status === 'compliant' ? '#16a34a' : 
+                                compliance.status === 'warning' ? '#f59e0b' : '#dc2626'
+                  }}
+                >
+                  <div className="font-semibold" style={{
+                    color: compliance.status === 'compliant' ? '#16a34a' : 
+                          compliance.status === 'warning' ? '#f59e0b' : '#dc2626'
+                  }}>
+                    {compliance.status === 'compliant' ? '✓ Compliant' : 
+                     compliance.status === 'warning' ? '⚠ Review Due Soon' : '✕ Not Compliant'}
+                  </div>
+                </div>
+                
+                {compliance.reasons.length > 0 && (
+                  <div className="space-y-1">
+                    {compliance.reasons.map((reason: string, idx: number) => (
+                      <div key={idx} className="text-sm text-gray-600 flex items-start gap-2">
+                        <span className="text-gray-400 mt-0.5">•</span>
+                        <span>{reason}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {compliance.lastReviewedAt && (
+                  <div className="text-xs text-gray-500 pt-2 border-t">
+                    Last reviewed: {new Date(compliance.lastReviewedAt).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-gray-500 text-sm">Unable to load compliance status</div>
+            )}
           </Card>
 
           {/* Suppliers */}
@@ -412,7 +550,46 @@ export default function EditIngredientPage() {
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-6 lg:col-span-1">
+          {/* Save Button */}
+          <Card className="p-6">
+            <Button
+              onClick={handleSave}
+              variant="primary"
+              icon={Save}
+              fullWidth
+              size="lg"
+              disabled={saving || !ingredient.name}
+            >
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+            <button
+              type="button"
+              onClick={() => router.push('/admin/ingredients')}
+              className="w-full mt-3 px-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={deleting}
+              className="w-full mt-3 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-red-300 text-red-600 text-sm font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+              {deleting ? 'Deleting...' : 'Delete Ingredient'}
+            </button>
+          </Card>
+
+          {/* Review Frequency */}
+          <Card>
+            <ReviewFrequencySelector 
+              value={ingredient.preferred_review_months || 3}
+              onChange={(months) => setIngredient(prev => ({ ...prev, preferred_review_months: months }))}
+              label="Review Frequency"
+            />
+          </Card>
+
           {/* Dietary Attributes */}
           <Card>
             <h2 className="text-xl font-semibold text-[#003842] mb-4">Dietary Attributes</h2>

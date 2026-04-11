@@ -68,7 +68,7 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2">
+    <div className="fixed bottom-6 right-4 sm:right-6 z-50 flex flex-col items-end gap-2">
       {/* Chat panel */}
       {open && (
         <div
@@ -190,7 +190,7 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
       {/* Floating button */}
       <button
         onClick={() => setOpen((o) => !o)}
-        className="relative rounded-full shadow-xl border-2 border-white hover:scale-105 active:scale-95 transition-transform focus:outline-none focus:ring-2 focus:ring-teal-400"
+        className="relative rounded-full shadow-xl border-2 border-white hover:scale-105 active:scale-95 transition-transform focus:outline-none focus:ring-2 focus:ring-teal-400 w-14 h-14 sm:w-14 sm:h-14"
         aria-label={open ? 'Close Ally chat' : 'Open Ally chat'}
       >
         {open ? (

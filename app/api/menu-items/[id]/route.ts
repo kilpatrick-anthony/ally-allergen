@@ -67,6 +67,8 @@ export async function GET(
     return NextResponse.json({
       menuItem: {
         ...menuItem,
+        // Transform is_active to status for consistent UI display
+        status: menuItem.is_active ? 'active' : 'draft',
         ingredients
       }
     })
@@ -125,6 +127,7 @@ export async function PUT(
       is_active: body.status ? body.status === 'active' : body.is_active ?? true,
       price: typeof body.price === 'number' ? body.price : 0,
       display_order: typeof body.display_order === 'number' ? body.display_order : 0,
+      preferred_review_months: typeof body.preferred_review_months === 'number' ? body.preferred_review_months : 3,
       updated_at: new Date().toISOString()
     }
 

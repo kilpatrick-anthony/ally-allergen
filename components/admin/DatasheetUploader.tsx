@@ -76,7 +76,7 @@ export default function DatasheetUploader({
 
     setFiles(incomingDatasheets)
     setEditingIndex(null)
-  }, [existingDatasheets, files, hasExistingDatasheetsProp])
+  }, [existingDatasheets, hasExistingDatasheetsProp])
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault()

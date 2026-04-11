@@ -1,3 +1,5 @@
+// Analytics API
+// Tracks business metrics including downloads, kiosk usage, and content counts
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
@@ -72,6 +74,7 @@ const countPdfDownloads = async (
   start: Date,
   end: Date
 ) => {
+  // Count PDF report downloads from the Downloads & Reports page
   let query = supabase
     .from('pdf_download_events')
     .select('id', { count: 'exact', head: true })
@@ -83,7 +86,13 @@ const countPdfDownloads = async (
     query = query.eq('site_id', siteId)
   }
 
-  const { count } = await query
+  const { count, error } = await query
+  
+  if (error) {
+    console.warn('PDF download events query error:', error.message)
+    return 0
+  }
+  
   return count || 0
 }
 
@@ -94,29 +103,22 @@ const countKioskInteractions = async (
   start: Date,
   end: Date
 ) => {
-  let devicesQuery = supabase
+  // Count active kiosk devices
+  let query = supabase
     .from('kiosk_devices')
-    .select('id')
+    .select('id', { count: 'exact', head: true })
     .eq('business_id', businessId)
 
   if (siteId) {
-    devicesQuery = devicesQuery.eq('site_id', siteId)
+    query = query.eq('site_id', siteId)
   }
 
-  const { data: devices, error: devicesError } = await devicesQuery
+  const { count, error } = await query
 
-  if (devicesError || !devices || devices.length === 0) {
+  if (error) {
+    console.warn('Kiosk devices query error:', error.message)
     return 0
   }
-
-  const deviceIds = devices.map((device) => device.id)
-
-  const { count } = await supabase
-    .from('device_heartbeats')
-    .select('id', { count: 'exact', head: true })
-    .in('device_id', deviceIds)
-    .gte('timestamp', start.toISOString())
-    .lt('timestamp', end.toISOString())
 
   return count || 0
 }
@@ -133,8 +135,6 @@ const countActiveMenuItems = async (
     .select('id', { count: 'exact', head: true })
     .eq('business_id', businessId)
     .eq('is_active', true)
-    .gte('created_at', start.toISOString())
-    .lt('created_at', end.toISOString())
 
   if (siteId) {
     query = query.eq('site_id', siteId)
@@ -151,42 +151,18 @@ const countActiveMenuIngredients = async (
   start: Date,
   end: Date
 ) => {
-  let menuItemsQuery = supabase
-    .from('menu_items')
-    .select('id')
+  let query = supabase
+    .from('ingredients')
+    .select('id', { count: 'exact', head: true })
     .eq('business_id', businessId)
-    .eq('is_active', true)
-    .gte('created_at', start.toISOString())
-    .lt('created_at', end.toISOString())
+    .eq('status', 'active')
 
   if (siteId) {
-    menuItemsQuery = menuItemsQuery.eq('site_id', siteId)
+    query = query.eq('site_id', siteId)
   }
 
-  const { data: menuItems, error: menuItemsError } = await menuItemsQuery
-
-  if (menuItemsError || !menuItems || menuItems.length === 0) {
-    return 0
-  }
-
-  const menuItemIds = menuItems.map((item) => item.id)
-
-  const { data: menuIngredients, error: ingredientsError } = await supabase
-    .from('menu_item_ingredients')
-    .select('ingredient_id')
-    .in('menu_item_id', menuItemIds)
-
-  if (ingredientsError || !menuIngredients) {
-    return 0
-  }
-
-  const uniqueIngredients = new Set(
-    menuIngredients
-      .map((row) => row.ingredient_id)
-      .filter((id) => typeof id === 'string')
-  )
-
-  return uniqueIngredients.size
+  const { count } = await query
+  return count || 0
 }
 
 export async function GET(request: NextRequest) {

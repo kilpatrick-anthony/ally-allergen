@@ -1,4 +1,4 @@
-// app/admin/ingredients/[id]/page.tsx
+// app/admin/menu-builder/[id]/page.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -10,20 +10,21 @@ import {
   Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck, Truck, FileText, Download, ExternalLink, X, CircleDot
 } from 'lucide-react'
 
-import { Container } from '../../../components/layout/Container'
-import { Card } from '../../../components/layout/Card'
-import { Button } from '../../../components/ui/Button'
-import { Badge } from '../../../components/ui/Badge'
+import { Container } from '../../../../components/layout/Container'
+import { Card } from '../../../../components/layout/Card'
+import { Button } from '../../../../components/ui/Button'
+import { Badge } from '../../../../components/ui/Badge'
 import { ALLERGEN_LIST } from '@/types/allergen'
 
-export default function ViewIngredientPage() {
+export default function ViewMenuItemPage() {
   const { showNotification } = useNotification()
   const router = useRouter()
   const params = useParams()
-  const ingredientId = params.id as string
+  const menuItemId = params.id as string
   
   const [loading, setLoading] = useState(true)
-  const [ingredient, setIngredient] = useState<any>(null)
+  const [menuItem, setMenuItem] = useState<any>(null)
+  const [ingredients, setIngredients] = useState<any[]>([])
   const [datasheets, setDatasheets] = useState<any[]>([])
   const [loadingDatasheets, setLoadingDatasheets] = useState(true)
 
@@ -44,21 +45,32 @@ export default function ViewIngredientPage() {
       try {
         setLoading(true)
         
-        // Fetch ingredient
-        const response = await fetch(`/api/ingredients/${ingredientId}`)
+        // Fetch menu item
+        const response = await fetch(`/api/menu-items/${menuItemId}`)
         const data = await response.json()
         
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to fetch ingredient')
+          throw new Error(data.error || 'Failed to fetch menu item')
         }
         
-        console.log('Ingredient data:', data.ingredient)
-        console.log('Allergen warnings:', data.ingredient.allergen_warnings)
-        setIngredient(data.ingredient)
+        console.log('Menu item data:', data.menuItem)
+        console.log('Allergen warnings:', data.menuItem.allergen_warnings)
+        setMenuItem(data.menuItem)
+        
+        // Fetch ingredients
+        const ingredientsResponse = await fetch('/api/ingredients')
+        const ingredientsData = await ingredientsResponse.json()
+        
+        if (ingredientsResponse.ok) {
+          const selectedIngredients = (ingredientsData.ingredients || []).filter((ing: any) =>
+            data.menuItem.ingredients?.includes(ing.id)
+          )
+          setIngredients(selectedIngredients)
+        }
         
         // Fetch datasheets
         setLoadingDatasheets(true)
-        const datasheetsResponse = await fetch(`/api/datasheets?ingredient_id=${ingredientId}`)
+        const datasheetsResponse = await fetch(`/api/datasheets?menu_item_id=${menuItemId}`)
         const datasheetsData = await datasheetsResponse.json()
         
         if (datasheetsResponse.ok) {
@@ -66,8 +78,8 @@ export default function ViewIngredientPage() {
         }
         
       } catch (error: any) {
-        console.error('Error fetching ingredient:', error)
-        showNotification('Failed to load ingredient', 'error')
+        console.error('Error fetching menu item:', error)
+        showNotification('Failed to load menu item', 'error')
       } finally {
         setLoading(false)
         setLoadingDatasheets(false)
@@ -75,27 +87,27 @@ export default function ViewIngredientPage() {
     }
     
     fetchData()
-  }, [ingredientId])
+  }, [menuItemId])
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this ingredient?')) {
+    if (!confirm('Are you sure you want to delete this menu item?')) {
       return
     }
 
     try {
-      const response = await fetch(`/api/ingredients/${ingredientId}`, {
+      const response = await fetch(`/api/menu-items/${menuItemId}`, {
         method: 'DELETE'
       })
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || 'Failed to delete ingredient')
+        throw new Error(data.error || 'Failed to delete menu item')
       }
 
-      router.push('/admin/ingredients')
+      router.push('/admin/menu-builder')
     } catch (error: any) {
-      console.error('Error deleting ingredient:', error)
-      showNotification(error.message || 'Failed to delete ingredient', 'error')
+      console.error('Error deleting menu item:', error)
+      showNotification(error.message || 'Failed to delete menu item', 'error')
     }
   }
 
@@ -115,23 +127,23 @@ export default function ViewIngredientPage() {
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
               <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
             </div>
-            <p className="text-gray-600 dark:text-gray-400">Loading ingredient...</p>
+            <p className="text-gray-600 dark:text-gray-400">Loading menu item...</p>
           </div>
         </div>
       </Container>
     )
   }
 
-  if (!ingredient) {
+  if (!menuItem) {
     return (
       <Container>
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <p className="text-gray-600">Ingredient not found</p>
-            <Link href="/admin/ingredients">
+            <p className="text-gray-600">Menu item not found</p>
+            <Link href="/admin/menu-builder">
               <Button variant="ghost" icon={ArrowLeft} className="mt-4">
-                Back to Ingredients
+                Back to Menu Builder
               </Button>
             </Link>
           </div>
@@ -140,7 +152,7 @@ export default function ViewIngredientPage() {
     )
   }
 
-  const allergenWarnings = ingredient.allergen_warnings || {}
+  const allergenWarnings = menuItem.allergen_warnings || {}
   const activeAllergens = Object.entries(allergenWarnings)
     .filter(([key, value]) => value !== 'none' && !key.endsWith('_levels') && !key.endsWith('_types'))
     .map(([key, value]) => {
@@ -168,9 +180,9 @@ export default function ViewIngredientPage() {
   return (
     <Container>
       <div className="mb-6">
-        <Link href="/admin/ingredients">
-          <Button variant="ghost" icon={ArrowLeft}>
-            Back to Ingredients
+        <Link href="/admin/menu-builder">
+          <Button variant="ghost" icon={<ArrowLeft />}>
+            Back to Menu Builder
           </Button>
         </Link>
       </div>
@@ -181,22 +193,22 @@ export default function ViewIngredientPage() {
             <Package className="h-8 w-8 text-white" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-2xl sm:text-3xl font-bold text-[#003842] truncate">{ingredient.name}</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-[#003842] truncate">{menuItem.name}</h1>
             <p className="text-gray-600">
-              Created {new Date(ingredient.created_at).toLocaleDateString()}
+              Created {new Date(menuItem.created_at).toLocaleDateString()}
             </p>
           </div>
         </div>
         <div className="flex gap-3 flex-shrink-0">
-          <Link href={`/admin/ingredients/${ingredientId}/edit`}>
-            <Button icon={Edit}>
+          <Link href={`/admin/menu-builder/${menuItemId}/edit`}>
+            <Button icon={<Edit />} className="bg-[#42b8ac] text-white hover:bg-[#3a9d95]">
               Edit
             </Button>
           </Link>
           <Button 
             variant="outline"
             onClick={handleDelete}
-            icon={Trash2}
+            icon={<Trash2 />}
             className="text-red-600 hover:text-red-700 hover:border-red-300"
           >
             Delete
@@ -214,28 +226,32 @@ export default function ViewIngredientPage() {
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-500">Name</label>
-                <p className="text-lg text-gray-900 mt-1">{ingredient.name}</p>
+                <p className="text-lg text-gray-900 mt-1">{menuItem.name}</p>
               </div>
 
-              {ingredient.description && (
+              {menuItem.description && (
                 <div>
                   <label className="text-sm font-medium text-gray-500">Description</label>
-                  <p className="text-gray-900 mt-1 whitespace-pre-wrap">{ingredient.description}</p>
+                  <p className="text-gray-900 mt-1 whitespace-pre-wrap">{menuItem.description}</p>
                 </div>
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                 <div>
+                  <label className="text-sm font-medium text-gray-500">Category</label>
+                  <p className="text-gray-900 mt-1">{menuItem.category || 'Not specified'}</p>
+                </div>
+                <div>
                   <label className="text-sm font-medium text-gray-500">Status</label>
                   <div className="mt-1">
                     <Badge
                       variant={
-                        ingredient.status === 'active' ? 'success' :
-                        ingredient.status === 'review' ? 'warning' :
+                        menuItem.status === 'active' ? 'success' :
+                        menuItem.status === 'draft' ? 'warning' :
                         'default'
                       }
                     >
-                      {ingredient.status || 'active'}
+                      {menuItem.status || 'draft'}
                     </Badge>
                   </div>
                 </div>
@@ -263,7 +279,7 @@ export default function ViewIngredientPage() {
 
                   const Icon = getIconComponent(allergenData.icon)
                   
-                  // Helper to get color based on allergen level - each level has distinct color (lighter shades)
+                  // Helper to get color based on allergen level
                   const getSeverityColor = (level: string) => {
                     switch(level) {
                       case 'contains': return '#fca5a5'; // red-300
@@ -348,19 +364,25 @@ export default function ViewIngredientPage() {
             )}
           </Card>
 
-          {/* Suppliers */}
-          {ingredient.suppliers && ingredient.suppliers.length > 0 && (
+          {/* Ingredients */}
+          {ingredients && ingredients.length > 0 && (
             <Card>
-              <h2 className="text-xl font-semibold text-[#003842] mb-4">Suppliers</h2>
+              <h2 className="text-xl font-semibold text-[#003842] mb-4">Ingredients</h2>
               
               <div className="space-y-2">
-                {ingredient.suppliers.map((supplier: string, index: number) => (
+                {ingredients.map((ingredient: any, index: number) => (
                   <div
                     key={index}
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
                   >
-                    <Truck className="h-5 w-5 text-gray-400" />
-                    <span className="text-gray-900">{supplier}</span>
+                    <div>
+                      <p className="font-medium text-gray-900">{ingredient.name}</p>
+                      {ingredient.suppliers && ingredient.suppliers.length > 0 && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {ingredient.suppliers.join(', ')}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -371,7 +393,7 @@ export default function ViewIngredientPage() {
           <Card>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-[#003842]">Product Datasheets</h2>
-              <Link href={`/admin/ingredients/${ingredientId}/edit`}>
+              <Link href={`/admin/menu-builder/${menuItemId}/edit`}>
                 <Button variant="ghost" size="sm">
                   Upload
                 </Button>
@@ -387,7 +409,7 @@ export default function ViewIngredientPage() {
                 <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                 <p className="text-gray-600 text-sm mb-2">No datasheets uploaded</p>
                 <p className="text-gray-500 text-xs">
-                  Edit this ingredient to add specification sheets
+                  Edit this menu item to add specification sheets
                 </p>
               </div>
             ) : (
@@ -443,13 +465,13 @@ export default function ViewIngredientPage() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Dietary Attributes */}
-          {ingredient.certifications && ingredient.certifications.length > 0 && (
+          {menuItem.dietary && menuItem.dietary.length > 0 && (
             <Card>
               <h2 className="text-xl font-semibold text-[#003842] mb-4">Dietary Attributes</h2>
               
               <div className="space-y-2">
-                {ingredient.certifications.map((cert: string, index: number) => {
-                  const certData = certificationOptions.find(c => c.name === cert)
+                {menuItem.dietary.map((dietary: string, index: number) => {
+                  const certData = certificationOptions.find(c => c.name === dietary)
                   
                   if (certData) {
                     const Icon = certData.icon
@@ -464,7 +486,7 @@ export default function ViewIngredientPage() {
                         }}
                       >
                         <Icon className="h-5 w-5" />
-                        <span className="font-medium">{cert}</span>
+                        <span className="font-medium">{dietary}</span>
                       </div>
                     )
                   }
@@ -474,7 +496,7 @@ export default function ViewIngredientPage() {
                       key={index}
                       className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 bg-gray-50"
                     >
-                      <span className="font-medium text-gray-700">{cert}</span>
+                      <span className="font-medium text-gray-700">{dietary}</span>
                     </div>
                   )
                 })}
@@ -490,13 +512,13 @@ export default function ViewIngredientPage() {
               <div>
                 <label className="text-gray-500">Created</label>
                 <p className="text-gray-900 mt-1">
-                  {new Date(ingredient.created_at).toLocaleString()}
+                  {new Date(menuItem.created_at).toLocaleString()}
                 </p>
               </div>
               <div>
                 <label className="text-gray-500">Last Updated</label>
                 <p className="text-gray-900 mt-1">
-                  {new Date(ingredient.updated_at).toLocaleString()}
+                  {new Date(menuItem.updated_at).toLocaleString()}
                 </p>
               </div>
             </div>

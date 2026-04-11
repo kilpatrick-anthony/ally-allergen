@@ -5,7 +5,10 @@ import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import AccessibilityPanel from "@/components/shared/AccessibilityPanel";
 import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
-import DarkModeInitializer from "@/components/DarkModeInitializer";import { Analytics } from '@vercel/analytics/next'
+import DarkModeInitializer from "@/components/DarkModeInitializer";
+import { NotificationProvider } from "@/lib/hooks/useNotification";
+import { NotificationContainer } from "@/components/shared/NotificationContainer";
+import { Analytics } from '@vercel/analytics/next'
 const atkinson = Atkinson_Hyperlegible({
   weight: ["400", "700"],
   style: ["normal", "italic"],
@@ -171,12 +174,15 @@ export default function RootLayout({
       </head>
       <body className="font-sans antialiased min-h-screen bg-background text-foreground">
         <DarkModeInitializer />
-        <AuthProvider>
-          {children}
-          {isKiosk && <AccessibilityPanel />}
-          <ServiceWorkerRegistrar />
-          <Analytics />
-        </AuthProvider>
+        <NotificationProvider>
+          <AuthProvider>
+            {children}
+            {isKiosk && <AccessibilityPanel />}
+            <ServiceWorkerRegistrar />
+            <Analytics />
+            <NotificationContainer />
+          </AuthProvider>
+        </NotificationProvider>
       </body>
     </html>
   );

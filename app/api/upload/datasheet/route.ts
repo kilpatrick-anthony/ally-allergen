@@ -38,8 +38,8 @@ export async function POST(request: NextRequest) {
     // Get form data
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const ingredientId = formData.get('ingredient_id') as string
-    const menuItemId = formData.get('menu_item_id') as string
+    const ingredientId = formData.get('ingredient_id') as string | null
+    const menuItemId = formData.get('menu_item_id') as string | null
     const supplierName = formData.get('supplier_name') as string
     const version = formData.get('version') as string
     const nextReviewDate = formData.get('next_review_date') as string
@@ -47,6 +47,10 @@ export async function POST(request: NextRequest) {
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+    }
+
+    if (!ingredientId && !menuItemId) {
+      return NextResponse.json({ error: 'Either ingredient_id or menu_item_id is required' }, { status: 400 })
     }
 
     // Generate unique file path
@@ -79,32 +83,83 @@ export async function POST(request: NextRequest) {
       .from('datasheets')
       .getPublicUrl(filePath)
 
-    // Save metadata to database
-    const { data: datasheet, error: dbError } = await supabase
+    // Save metadata to database - build insert object conditionally
+    const insertObject: any = {
+      business_id: userBusiness.business_id,
+      file_name: file.name,
+      file_path: publicUrl,
+      file_size: file.size,
+      file_type: file.type,
+      status: 'active',
+      created_by: userId
+    }
+
+    if (ingredientId) {
+      insertObject.ingredient_id = ingredientId
+    }
+    if (menuItemId) {
+      insertObject.menu_item_id = menuItemId
+    }
+    if (supplierName) {
+      insertObject.supplier_name = supplierName
+    }
+    if (version) {
+      insertObject.version = version
+    }
+    if (nextReviewDate) {
+      insertObject.next_review_date = nextReviewDate
+    }
+    if (notes) {
+      insertObject.notes = notes
+    }
+
+    let { data: datasheet, error: dbError } = await supabase
       .from('datasheets')
-      .insert({
-        business_id: userBusiness.business_id,
-        ingredient_id: ingredientId || null,
-        menu_item_id: menuItemId || null,
-        file_name: file.name,
-        file_path: publicUrl,
-        file_size: file.size,
-        file_type: file.type,
-        supplier_name: supplierName || null,
-        version: version || null,
-        next_review_date: nextReviewDate || null,
-        notes: notes || null,
-        status: 'active',
-        created_by: userId
-      })
+      .insert(insertObject)
       .select()
       .single()
+
+    // If error is about menu_item_id column not existing, retry without it and store menu_item_id in notes
+    if (dbError && dbError.message && (dbError.message.includes('menu_item_id') || dbError.code === '42703')) {
+      console.warn('menu_item_id column not found, retrying without it and storing reference in notes...')
+      const { menu_item_id, ...retryObject } = insertObject
+      
+      // Store the menu_item_id reference in notes for tracking
+      if (menu_item_id) {
+        retryObject.notes = `[MENU_ITEM_REF:${menu_item_id}]${retryObject.notes ? ' - ' + retryObject.notes : ''}`
+      }
+      
+      const retry = await supabase
+        .from('datasheets')
+        .insert(retryObject)
+        .select()
+        .single()
+      datasheet = retry.data
+      dbError = retry.error
+      
+      // If successful with fallback, include warning in response
+      if (!dbError && datasheet) {
+        return NextResponse.json({ 
+          success: true,
+          datasheet: {
+            ...datasheet,
+            uploaded_at: datasheet.created_at
+          },
+          warning: 'database_migration_needed',
+          warningMessage: 'menu_item_id column not found in database. To enable full datasheet association, run the migration: ALTER TABLE datasheets ADD COLUMN menu_item_id UUID REFERENCES menu_items(id) ON DELETE CASCADE;'
+        })
+      }
+    }
 
     if (dbError) {
       console.error('Database error:', dbError)
       // Try to delete the uploaded file if database insert fails
       await supabase.storage.from('datasheets').remove([filePath])
-      return NextResponse.json({ error: 'Failed to save datasheet metadata' }, { status: 500 })
+      return NextResponse.json({ 
+        error: 'Failed to save datasheet metadata',
+        details: dbError.message,
+        code: dbError.code
+      }, { status: 500 })
     }
 
     // Map created_at to uploaded_at for compatibility
@@ -119,9 +174,9 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error: any) {
-    console.error('Unexpected error:', error)
+    console.error('Unexpected error uploading datasheet:', error)
     return NextResponse.json(
-      { error: error.message || 'An unexpected error occurred' },
+      { error: error.message || 'An unexpected error occurred during upload' },
       { status: 500 }
     )
   }
