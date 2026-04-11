@@ -1,4 +1,5 @@
 // app/components/ui/Button.tsx
+import React from 'react'
 import { LucideIcon } from 'lucide-react'
 import { ReactNode } from 'react'
 
@@ -68,9 +69,17 @@ export function Button({
         </>
       ) : (
         <>
-          {Icon && iconPosition === 'left' && <Icon className={iconSize[size]} />}
+          {Icon && iconPosition === 'left' && (
+            typeof Icon === 'function'
+              ? React.createElement(Icon as React.ComponentType<{className: string}>, { className: iconSize[size] })
+              : Icon
+          )}
           {children}
-          {Icon && iconPosition === 'right' && <Icon className={iconSize[size]} />}
+          {Icon && iconPosition === 'right' && (
+            typeof Icon === 'function'
+              ? React.createElement(Icon as React.ComponentType<{className: string}>, { className: iconSize[size] })
+              : Icon
+          )}
         </>
       )}
     </button>
