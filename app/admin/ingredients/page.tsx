@@ -28,11 +28,23 @@ import { checkIngredientCompliance } from '@/lib/compliance'
 
 // No mock data - production ready
 
+interface SubAllergen {
+  name: string
+  level: string
+  parent: string
+}
+
+interface Allergen {
+  name: string
+  level: string
+  subAllergens?: SubAllergen[]
+}
+
 interface Ingredient {
   id: string
   name: string
   suppliers: string[]
-  allergens: string[]
+  allergens: Allergen[]
   certifications: string[]
   status: 'active' | 'review' | 'archived'
   lastUpdated: string
@@ -204,7 +216,7 @@ export default function IngredientsPage() {
   const filteredIngredients = ingredients.filter(ingredient => {
     const matchesSearch = ingredient.name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesAllergen = selectedAllergen === 'all' || 
-                           ingredient.allergens.includes(selectedAllergen)
+                           ingredient.allergens.some(a => a.name === selectedAllergen)
     const matchesCertification = selectedCertification === 'all' || 
                                 ingredient.certifications.includes(selectedCertification)
     const matchesStatus = selectedStatus === 'all' || ingredient.status === selectedStatus
@@ -938,7 +950,7 @@ export default function IngredientsPage() {
                     ) : (
                       ingredient.allergens.slice(0, 3).map((allergen, idx) => (
                         <span key={idx} className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-300">
-                          {typeof allergen === 'string' ? allergen : allergen.name}
+                          {allergen.name}
                         </span>
                       ))
                     )}
