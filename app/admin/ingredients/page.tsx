@@ -274,7 +274,13 @@ export default function IngredientsPage() {
   const stats = {
     total: ingredients.length,
     active: ingredients.filter(i => i.status === 'active').length,
-    withAllergens: ingredients.filter(i => i.allergens.length > 0 && i.allergens[0].name !== 'None').length,
+    withAllergens: ingredients.filter(i => {
+      if (!i.allergens || i.allergens.length === 0) return false;
+      const first = i.allergens[0];
+      if (typeof first === 'string') return first !== 'None';
+      if (first && typeof first === 'object' && first.name) return first.name !== 'None';
+      return false;
+    }).length,
     suppliers: (() => {
       const uniqueSuppliers: string[] = []
       ingredients.forEach(ingredient => {
