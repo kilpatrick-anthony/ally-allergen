@@ -1,4 +1,5 @@
 // app/components/ui/Badge.tsx
+import React from 'react'
 import { LucideIcon } from 'lucide-react'
 
 interface BadgeProps {
@@ -44,7 +45,14 @@ export function Badge({
       ${sizes[size]}
       ${roundedClass[rounded]}
     `}>
-      {icon && <span className="flex-shrink-0">{icon}</span>}
+      {icon && (
+        <span className="flex-shrink-0">
+          {typeof icon === 'function' 
+            ? React.createElement(icon as React.ComponentType<{className: string}>, { className: 'h-3 w-3' })
+            : icon
+          }
+        </span>
+      )}
       {children}
     </span>
   )

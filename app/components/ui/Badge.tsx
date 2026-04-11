@@ -1,5 +1,7 @@
 'use client'
 
+import React from 'react'
+
 interface BadgeProps {
   children: React.ReactNode
   variant?: 'default' | 'primary' | 'success' | 'warning' | 'error' | 'info'
@@ -43,7 +45,14 @@ export function Badge({
       ${sizes[size]}
       ${roundedClass[rounded]}
     `}>
-      {icon && <span className="flex-shrink-0">{icon}</span>}
+      {icon && (
+        <span className="flex-shrink-0">
+          {typeof icon === 'function' 
+            ? React.createElement(icon as React.ComponentType<{className: string}>, { className: 'h-3 w-3' })
+            : icon
+          }
+        </span>
+      )}
       {children}
     </span>
   )
