@@ -81,6 +81,19 @@ const dietaryAttributes = [
   { id: 'coeliac-friendly', name: 'Coeliac-Friendly', icon: ShieldCheck, color: '#ec4899' },
 ]
 
+// Helper to safely render an icon component
+const SafeIcon = ({ Component, className }: { Component: any; className: string }) => {
+  if (!Component || typeof Component !== 'function') {
+    return <AlertCircle className={className} />;
+  }
+  try {
+    return <Component className={className} />;
+  } catch (error) {
+    console.error('Error rendering icon:', error);
+    return <AlertCircle className={className} />;
+  }
+};
+
 // Helper to get icon component from name
 const getIconComponent = (iconName: string) => {
   const icons: Record<string, any> = {
@@ -89,7 +102,13 @@ const getIconComponent = (iconName: string) => {
     Moon, Star, Globe, Droplets, ShieldCheck, CircleDot,
     Bean, Salad, Sun, Circle, Beaker, Snail
   };
-  return icons[iconName] || AlertCircle;
+  const icon = icons[iconName] || AlertCircle;
+  // Verify it's a valid React component
+  if (typeof icon !== 'function') {
+    console.warn(`Invalid icon: ${iconName}, using AlertCircle instead`);
+    return AlertCircle;
+  }
+  return icon;
 };
 
 export default function IngredientsPage() {
@@ -753,7 +772,7 @@ export default function IngredientsPage() {
                                   color: allergenData.color
                                 }}
                               >
-                                <IconComponent className="h-3 w-3" />
+                                <SafeIcon Component={IconComponent} className="h-3 w-3" />
                                 {allergen}
                               </span>
                             );
@@ -782,7 +801,7 @@ export default function IngredientsPage() {
                                   color: baseColor
                                 }}
                               >
-                                <IconComponent className="h-3 w-3" />
+                                <SafeIcon Component={IconComponent} className="h-3 w-3" />
                                 {allergenData?.name || allergen.name}
                               </span>
                               <div className="flex flex-wrap gap-1 ml-3">
@@ -823,7 +842,7 @@ export default function IngredientsPage() {
                               }}
                               title={allergen.level ? allergen.level.replace('_', ' ') : ''}
                             >
-                              <IconComponent className="h-3 w-3" />
+                              <SafeIcon Component={IconComponent} className="h-3 w-3" />
                               {allergenData.name}
                             </span>
                           );
@@ -869,7 +888,7 @@ export default function IngredientsPage() {
                                 color: attr.color
                               }}
                             >
-                              <IconComponent className="h-3 w-3" />
+                              <SafeIcon Component={IconComponent} className="h-3 w-3" />
                               {cert}
                             </span>
                           );
