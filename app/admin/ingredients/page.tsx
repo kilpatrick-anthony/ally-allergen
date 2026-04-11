@@ -129,7 +129,10 @@ export default function IngredientsPage() {
         // Map the data to match the component's expected format
         const mappedIngredients = (data.ingredients || []).map((ing: any) => {
           // Calculate compliance dynamically
-          const datasheetCount = (ing.datasheets && ing.datasheets[0]?.count) || 0
+          // Handle datasheets - Supabase count returns an object or array
+          const datasheetCount = ((ing.datasheets && typeof ing.datasheets === 'object')
+            ? (Array.isArray(ing.datasheets) ? ing.datasheets[0]?.count : ing.datasheets?.count)
+            : 0) || 0
           
           const complianceResult = checkIngredientCompliance(
             {
@@ -195,7 +198,16 @@ export default function IngredientsPage() {
               })() : [],
             certifications: ing.certifications || [],
             status: ing.status || 'active',
-            lastUpdated: new Date(ing.updated_at || ing.created_at).toLocaleDateString(),
+            lastUpdated: (() => {
+              try {
+                const dateStr = ing.updated_at || ing.created_at;
+                if (!dateStr) return 'Unknown';
+                const date = new Date(dateStr);
+                return isNaN(date.getTime()) ? 'Unknown' : date.toLocaleDateString();
+              } catch {
+                return 'Unknown';
+              }
+            })(),
             createdBy: ing.created_by || 'system',
             compliance: complianceResult.status
           }
@@ -693,20 +705,24 @@ export default function IngredientsPage() {
                         </span>
                       ) : (
                       ingredient.allergens.map((allergen: any, index: number) => {
-                        // Helper to get color based on allergen level - each level has distinct color (lighter shades)
-                        const getSeverityColor = (level: string) => {
-                          switch(level) {
-                            case 'contains': return '#fca5a5'; // red-300
-                            case 'may_contain': return '#fdba74'; // orange-300
-                            case 'not_suitable': return '#c4b5fd'; // violet-300
-                            case 'traces': return '#67e8f9'; // cyan-300
-                            case 'cross_contamination': return '#f59e0b'; // amber-500
-                            default: return '#6b7280'; // gray-500
-                          }
-                        };
-                        
-                        // If allergen is a string (legacy), handle it
-                        if (typeof allergen === 'string') {
+                        try {
+                          // Helper to get color based on allergen level - each level has distinct color (lighter shades)
+                          const getSeverityColor = (level: string) => {
+                            switch(level) {
+                              case 'contains': return '#fca5a5'; // red-300
+                              case 'may_contain': return '#fdba74'; // orange-300
+                              case 'not_suitable': return '#c4b5fd'; // violet-300
+                              case 'traces': return '#67e8f9'; // cyan-300
+                              case 'cross_contamination': return '#f59e0b'; // amber-500
+                              default: return '#6b7280'; // gray-500
+                            }
+                          };
+                          
+                          // Safety check for allergen object
+                          if (!allergen) return null;
+                          
+                          // If allergen is a string (legacy), handle it
+                          if (typeof allergen === 'string') {
                           const allergenData = ALLERGEN_LIST.find(a => 
                             a.name === allergen || 
                             a.name.toLowerCase().includes(allergen.toLowerCase()) ||
@@ -805,7 +821,7 @@ export default function IngredientsPage() {
                                 backgroundColor: `${baseColor}15`,
                                 color: baseColor
                               }}
-                              title={allergen.level.replace('_', ' ')}
+                              title={allergen.level ? allergen.level.replace('_', ' ') : ''}
                             >
                               <IconComponent className="h-3 w-3" />
                               {allergenData.name}
@@ -818,6 +834,14 @@ export default function IngredientsPage() {
                             {typeof allergen === 'string' ? allergen : allergen.name}
                           </Badge>
                         );
+                        } catch (error) {
+                          console.error('Error rendering allergen:', error, allergen);
+                          return (
+                            <Badge key={index} variant="default" size="sm">
+                              Error rendering allergen
+                            </Badge>
+                          );
+                        }
                       })
                       )}
                     </div>
