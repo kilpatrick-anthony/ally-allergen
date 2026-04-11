@@ -16,6 +16,7 @@ import {
   Mail,
   Send,
   ChevronDown,
+  Menu,
 } from 'lucide-react'
 
 export default function LandingPage() {
@@ -91,20 +92,47 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "var(--font-atkinson), sans-serif" }}>
 
+      {/* Header */}
+      <header className="relative z-20 bg-white border-b border-gray-200">
+        <Container>
+          <div className="flex items-center justify-between py-4">
+            {/* Mobile menu icon - left */}
+            <div className="lg:hidden">
+              <button
+                type="button"
+                aria-label="Open menu"
+                className="p-2 text-gray-600 hover:text-[#42b8ac] transition-colors"
+              >
+                <Menu className="h-6 w-6" />
+              </button>
+            </div>
+            
+            {/* Logo - center */}
+            <div className="flex-1 flex justify-center lg:flex-none lg:mx-auto">
+              <img
+                src="/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg"
+                alt="AllyJen Logo"
+                className="h-12 w-auto object-contain"
+              />
+            </div>
+            
+            {/* Sign In - right */}
+            <div>
+              <Link href="/auth/signin">
+                <span className="inline-flex items-center gap-2 px-3 lg:px-5 py-2 rounded-full bg-[#42b8ac] text-[#003842] font-semibold text-sm hover:bg-[#003842] hover:text-white transition-colors">
+                  Sign In <ArrowRight className="h-4 w-4" />
+                </span>
+              </Link>
+            </div>
+          </div>
+        </Container>
+      </header>
+
       {/* ── HERO ── */}
       <section className="relative bg-[#003842] overflow-hidden">
         {/* decorative teal blob */}
         <div className="absolute -top-24 -right-24 w-[500px] h-[500px] rounded-full bg-[#42b8ac]/20 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -left-24 w-[400px] h-[400px] rounded-full bg-[#42b8ac]/10 blur-3xl pointer-events-none" />
-
-        {/* Sign In – top right */}
-        <div className="absolute top-5 right-5 z-10">
-          <Link href="/auth/signin">
-            <span className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-white/10 border border-white/20 text-white font-semibold text-sm hover:bg-[#42b8ac] hover:text-[#003842] transition-colors">
-              Sign In <ArrowRight className="h-4 w-4" />
-            </span>
-          </Link>
-        </div>
 
         <Container>
           <div className="relative flex flex-col lg:flex-row items-center gap-12 py-20 lg:py-28">

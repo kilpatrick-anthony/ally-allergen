@@ -169,16 +169,21 @@ export default function EditIngredientPage() {
         throw new Error(data.error || 'Failed to update ingredient')
       }
 
-      // Upload new datasheets
+      // Upload only new datasheets that include a File object
       for (const datasheet of datasheets) {
+        if (!datasheet.file) continue
+
+        const fileName = datasheet.file_name || datasheet.file?.name || 'datasheet'
         const formData = new FormData()
         formData.append('file', datasheet.file)
         formData.append('ingredient_id', ingredientId)
-        formData.append('fileName', datasheet.name)
-        formData.append('supplier', datasheet.supplier || '')
+        formData.append('supplier_name', datasheet.supplier_name || '')
         formData.append('version', datasheet.version || '')
-        if (datasheet.reviewDate) {
-          formData.append('reviewDate', datasheet.reviewDate)
+        if (datasheet.next_review_date) {
+          formData.append('next_review_date', datasheet.next_review_date)
+        }
+        if (datasheet.notes) {
+          formData.append('notes', datasheet.notes)
         }
 
         const uploadResponse = await fetch('/api/upload/datasheet', {
@@ -189,7 +194,7 @@ export default function EditIngredientPage() {
         if (!uploadResponse.ok) {
           const error = await parseJsonSafely(uploadResponse)
           console.error('Failed to upload datasheet:', error)
-          alert(`Failed to upload ${datasheet.name}`)
+          alert(`Failed to upload ${fileName}`)
         }
       }
 

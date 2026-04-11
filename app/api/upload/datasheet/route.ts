@@ -39,6 +39,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get('file') as File
     const ingredientId = formData.get('ingredient_id') as string
+    const menuItemId = formData.get('menu_item_id') as string
     const supplierName = formData.get('supplier_name') as string
     const version = formData.get('version') as string
     const nextReviewDate = formData.get('next_review_date') as string
@@ -51,7 +52,8 @@ export async function POST(request: NextRequest) {
     // Generate unique file path
     const timestamp = Date.now()
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
-    const filePath = `${userBusiness.business_id}/${ingredientId || 'general'}/${timestamp}_${sanitizedFileName}`
+    const fileScope = ingredientId || menuItemId || 'general'
+    const filePath = `${userBusiness.business_id}/${fileScope}/${timestamp}_${sanitizedFileName}`
 
     // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer()
@@ -83,6 +85,7 @@ export async function POST(request: NextRequest) {
       .insert({
         business_id: userBusiness.business_id,
         ingredient_id: ingredientId || null,
+        menu_item_id: menuItemId || null,
         file_name: file.name,
         file_path: publicUrl,
         file_size: file.size,

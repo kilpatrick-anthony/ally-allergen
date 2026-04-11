@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const ingredientId = searchParams.get('ingredient_id')
+    const menuItemId = searchParams.get('menu_item_id')
     const ingredientIdsParam = searchParams.get('ingredientIds')
     const limit = searchParams.get('limit')
 
@@ -48,7 +49,7 @@ export async function GET(request: NextRequest) {
       .eq('status', 'active')
       .order('created_at', { ascending: false })
 
-    // Filter by ingredient if provided
+    // Filter by ingredient or menu item if provided
     if (ingredientIdsParam) {
       const ingredientIds = ingredientIdsParam
         .split(',')
@@ -60,6 +61,8 @@ export async function GET(request: NextRequest) {
       }
     } else if (ingredientId) {
       query = query.eq('ingredient_id', ingredientId)
+    } else if (menuItemId) {
+      query = query.eq('menu_item_id', menuItemId)
     }
 
     // Apply limit if specified
@@ -118,7 +121,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { ingredient_id, file_name, file_path, file_size, file_type, supplier_name, version, next_review_date, notes } = body
+    const { ingredient_id, menu_item_id, file_name, file_path, file_size, file_type, supplier_name, version, next_review_date, notes } = body
 
     if (!file_name || !file_path) {
       return NextResponse.json({ error: 'File name and path are required' }, { status: 400 })
@@ -143,6 +146,7 @@ export async function POST(request: NextRequest) {
       .insert({
         business_id: userBusiness.business_id,
         ingredient_id: ingredient_id || null,
+        menu_item_id: menu_item_id || null,
         file_name,
         file_path,
         file_size: file_size || 0,

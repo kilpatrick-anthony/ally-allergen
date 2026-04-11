@@ -3,7 +3,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { ReactNode, useEffect, useState } from 'react'
+import { ReactNode, useCallback, useEffect, useState } from 'react'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import { Building2, User, LogOut, Menu, X } from 'lucide-react'
 import { Navigation } from '../components/layout/Navigation'
@@ -27,6 +27,34 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [businessId, setBusinessId] = useState<string | null>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const pathname = usePathname()
+
+  const handleLogout = useCallback(async () => {
+    console.log('Logging out...')
+
+    // Clear server cookie first (best-effort)
+    try {
+      await fetch('/api/signout', { method: 'POST' })
+    } catch (err) {
+      console.warn('Failed to clear server cookie:', err)
+    }
+
+    // Sign out from Supabase (fire and forget)
+    const supabase = createClient()
+    supabase.auth.signOut().catch(err => {
+      console.error('Sign out error (non-blocking):', err)
+    })
+
+    // Clear per-session UI state so it resets on next login
+    sessionStorage.removeItem('jencoach_dismissed')
+
+    // Immediate redirect to sign-in
+    try {
+      window.location.replace('/auth/signin')
+    } catch {
+      // fallback
+      window.location.href = '/auth/signin'
+    }
+  }, [])
 
   useEffect(() => {
     setIsSidebarOpen(false)
@@ -58,33 +86,53 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     loadUser()
   }, [])
 
-  const handleLogout = async () => {
-    console.log('Logging out...')
+  useEffect(() => {
+    if (typeof window === 'undefined') return
 
-    // Clear server cookie first (best-effort)
-    try {
-      await fetch('/api/signout', { method: 'POST' })
-    } catch (err) {
-      console.warn('Failed to clear server cookie:', err)
+    const parseTimeout = (value: string) => {
+      const minutes = parseInt(value, 10)
+      if (isNaN(minutes) || minutes <= 0) return 15 * 60 * 1000
+      return value.includes('hour')
+        ? minutes * 60 * 60 * 1000
+        : minutes * 60 * 1000
     }
 
-    // Sign out from Supabase (fire and forget)
-    const supabase = createClient()
-    supabase.auth.signOut().catch(err => {
-      console.error('Sign out error (non-blocking):', err)
-    })
+    let timeoutString = localStorage.getItem('sessionTimeout') || '15 minutes'
+    let timeoutMs = parseTimeout(timeoutString)
 
-    // Clear per-session UI state so it resets on next login
-    sessionStorage.removeItem('jencoach_dismissed')
-
-    // Immediate redirect to sign-in
-    try {
-      window.location.replace('/auth/signin')
-    } catch {
-      // fallback
-      window.location.href = '/auth/signin'
+    let lastActivity = Date.now()
+    const updateActivity = () => {
+      lastActivity = Date.now()
     }
-  }
+
+    const events: Array<keyof DocumentEventMap> = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click']
+    events.forEach(event => document.addEventListener(event, updateActivity, { passive: true, capture: true }))
+
+    const intervalId = window.setInterval(() => {
+      const currentTimeout = localStorage.getItem('sessionTimeout') || '15 minutes'
+      if (currentTimeout !== timeoutString) {
+        timeoutString = currentTimeout
+        timeoutMs = parseTimeout(currentTimeout)
+      }
+      if (Date.now() - lastActivity >= timeoutMs) {
+        handleLogout()
+      }
+    }, 30_000)
+
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === 'sessionTimeout' && typeof event.newValue === 'string') {
+        timeoutString = event.newValue
+        timeoutMs = parseTimeout(event.newValue)
+      }
+    }
+    window.addEventListener('storage', onStorage)
+
+    return () => {
+      window.clearInterval(intervalId)
+      events.forEach(event => document.removeEventListener(event, updateActivity, { capture: true }))
+      window.removeEventListener('storage', onStorage)
+    }
+  }, [handleLogout])
 
   return (
     <ProtectedRoute requireRole="owner">

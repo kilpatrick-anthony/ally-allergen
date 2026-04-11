@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Plus, Search, Filter, Trash2, Edit, Save, X, ChefHat, AlertCircle, Leaf, Heart, CheckCircle, Apple, WheatOff, Moon, Star, Sprout, Globe, Dna, MapPin, FileText, Shield, ScanLine } from 'lucide-react'
+import { Plus, Search, Filter, Trash2, Edit, Save, X, ChefHat, AlertCircle, Leaf, Heart, CheckCircle, Apple, WheatOff, Moon, Star, Sprout, Globe, Dna, MapPin, FileText, Shield, ScanLine, Eye } from 'lucide-react'
 
 // Import design system components - NOTE: using ../../ because we're in app/admin/menu-builder/
 import { Container } from '../../components/layout/Container'
@@ -51,6 +51,7 @@ export default function MenuBuilderPage() {
   const [sites, setSites] = useState<SiteOption[]>([])
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
   const [showIngredientSelector, setShowIngredientSelector] = useState(false)
+  const [showBuilderModal, setShowBuilderModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [menuItemSearch, setMenuItemSearch] = useState('')
   const [menuItemSort, setMenuItemSort] = useState<'newest' | 'name-asc' | 'name-desc'>('newest')
@@ -63,6 +64,7 @@ export default function MenuBuilderPage() {
   const [loadingIngredientDatasheets, setLoadingIngredientDatasheets] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
   const [saveMessage, setSaveMessage] = useState('')
+  const [viewingItem, setViewingItem] = useState<MenuItem | null>(null)
   const [newMenuItem, setNewMenuItem] = useState({
     name: '',
     description: '',
@@ -157,6 +159,36 @@ export default function MenuBuilderPage() {
     } else {
       setNewMenuItem({ ...newMenuItem, site_id: nextSiteId })
     }
+  }
+
+  const closeBuilderModal = () => {
+    setShowBuilderModal(false)
+    setEditingItem(null)
+    setNewMenuItem({
+      name: '',
+      description: '',
+      category: '',
+      site_id: menuItemScopeFilter === 'global' ? null : menuItemScopeFilter === 'all' ? null : menuItemScopeFilter,
+      allergen_warnings: { ...defaultWarnings },
+      dietary: [],
+      ingredients: [],
+    })
+    setSaveStatus('idle')
+    setSaveMessage('')
+  }
+
+  const openBuilderForNew = () => {
+    setEditingItem(null)
+    setNewMenuItem({
+      name: '',
+      description: '',
+      category: '',
+      site_id: menuItemScopeFilter === 'global' ? null : menuItemScopeFilter === 'all' ? null : menuItemScopeFilter,
+      allergen_warnings: { ...defaultWarnings },
+      dietary: [],
+      ingredients: [],
+    })
+    setShowBuilderModal(true)
   }
 
   useEffect(() => {
@@ -305,7 +337,7 @@ export default function MenuBuilderPage() {
     const match = menuItems.find((item) => item.id === itemParam)
     if (match) {
       setEditingItem(match)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      setShowBuilderModal(true)
     }
   }, [searchParams, menuItems])
 
@@ -356,6 +388,44 @@ export default function MenuBuilderPage() {
             status: 'draft' as 'active' | 'draft' | 'archived'
           }
 
+      const itemId = data.menuItem?.id || savedItem.id
+      let uploadErrorMessage: string | null = null
+
+      if (datasheets.length > 0) {
+        try {
+          setSaveMessage('Uploading datasheets...')
+          const uploadPromises = datasheets
+            .filter((datasheet) => datasheet.file)
+            .map(async (datasheet) => {
+              const fileName = datasheet.file_name || datasheet.file?.name || 'datasheet'
+              const formData = new FormData()
+              formData.append('file', datasheet.file)
+              formData.append('menu_item_id', itemId)
+              if (datasheet.supplier_name) formData.append('supplier_name', datasheet.supplier_name)
+              if (datasheet.version) formData.append('version', datasheet.version)
+              if (datasheet.next_review_date) formData.append('next_review_date', datasheet.next_review_date)
+              if (datasheet.notes) formData.append('notes', datasheet.notes)
+
+              const uploadResponse = await fetch('/api/upload/datasheet', {
+                method: 'POST',
+                body: formData
+              })
+
+              const uploadData = await uploadResponse.json()
+              if (!uploadResponse.ok) {
+                throw new Error(uploadData.error || `Failed to upload ${fileName}`)
+              }
+              return uploadData
+            })
+
+          await Promise.all(uploadPromises)
+          setDatasheets([])
+        } catch (uploadError: any) {
+          console.error('Error uploading menu item datasheets:', uploadError)
+          uploadErrorMessage = uploadError?.message || 'Failed to upload datasheets'
+        }
+      }
+
       if (editingItem) {
         setMenuItems(menuItems.map(item => item.id === editingItem.id ? savedItem : item))
         setEditingItem(null)
@@ -376,8 +446,14 @@ export default function MenuBuilderPage() {
         dietary: [],
         ingredients: [],
       })
-      setSaveStatus('success')
-      setSaveMessage('Menu item saved.')
+
+      if (uploadErrorMessage) {
+        setSaveStatus('error')
+        setSaveMessage(uploadErrorMessage)
+      } else {
+        setSaveStatus('success')
+        setSaveMessage('Menu item saved.')
+      }
     } catch (error: any) {
       console.error('Error saving menu item:', error)
       setSaveStatus('error')
@@ -466,6 +542,13 @@ export default function MenuBuilderPage() {
 
   const availableIngredientCount = filteredIngredients.length
 
+  const menuItemStats = {
+    total: menuItems.length,
+    active: menuItems.filter(item => item.status === 'active').length,
+    draft: menuItems.filter(item => item.status === 'draft').length,
+    global: menuItems.filter(item => !item.site_id).length,
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
@@ -503,40 +586,131 @@ export default function MenuBuilderPage() {
         </div>
       </div>
 
-      {/* TOP SECTION: Create/Edit Menu Item */}
-      <Card className="mb-8">
-        <div className="p-6 border-b dark:border-gray-700">
-          <div className="flex justify-between items-center gap-4">
-            <div className="min-w-0">
-              <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">
-                {editingItem ? 'Edit Menu Item' : 'Create New Menu Item'}
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                {editingItem ? 'Update the details for this item' : 'Add a new item to your menu'}
-              </p>
+      <div className="grid grid-cols-1 gap-6 mb-8 xl:grid-cols-[1fr_280px]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Menu items</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">{menuItemStats.total}</p>
+              </div>
+              <Badge variant="primary">Total</Badge>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              {editingItem && (
-                <Button
-                  variant="ghost"
-                  onClick={() => setEditingItem(null)}
-                >
-                  Cancel Edit
-                </Button>
-              )}
-              <button
-                type="button"
-                onClick={() => setShowScan(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#42b8ac] to-[#003842] text-sm font-semibold text-white hover:opacity-90 transition-opacity shadow-md"
-              >
-                <ScanLine className="h-4 w-4" />
-                Scan Label
-              </button>
+          </Card>
+          <Card className="p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Global</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">{menuItemStats.global}</p>
+              </div>
+              <Badge variant="default">Global</Badge>
             </div>
-          </div>
+          </Card>
+          <Card className="p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Active</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">{menuItemStats.active}</p>
+              </div>
+              <Badge variant="success">Active</Badge>
+            </div>
+          </Card>
+          <Card className="p-6">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Draft</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">{menuItemStats.draft}</p>
+              </div>
+              <Badge variant="warning">Draft</Badge>
+            </div>
+          </Card>
         </div>
 
-        <div className="p-6">
+        <Card className="p-6 flex flex-col justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold text-[#003842] dark:text-[#42b8ac]">Quick Actions</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300">Create a new item or filter your menu items.</p>
+          </div>
+          <div className="flex flex-col gap-3">
+            <Button variant="primary" icon={Plus} onClick={openBuilderForNew}>
+              Create New Menu Item
+            </Button>
+            <Button variant="outline" onClick={() => setMenuItemScopeFilter('all')}>
+              Show all items
+            </Button>
+          </div>
+        </Card>
+      </div>
+
+      <Card className="mb-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-6">
+          <div className="flex-1 min-w-0">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                value={menuItemSearch}
+                onChange={(e) => setMenuItemSearch(e.target.value)}
+                placeholder="Search menu items..."
+                className="pl-9 pr-3 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
+              />
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <select
+              value={menuItemScopeFilter}
+              onChange={(e) => setMenuItemScopeFilter(e.target.value)}
+              className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+            >
+              <option value="all">All scopes</option>
+              <option value="global">Global only</option>
+              {sites.map((site) => (
+                <option key={site.id} value={site.id}>
+                  {site.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={menuItemSort}
+              onChange={(e) => setMenuItemSort(e.target.value as typeof menuItemSort)}
+              className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
+            >
+              <option value="newest">Newest</option>
+              <option value="name-asc">Name (A-Z)</option>
+              <option value="name-desc">Name (Z-A)</option>
+            </select>
+          </div>
+        </div>
+      </Card>
+
+      {/* TOP SECTION: Create/Edit Menu Item */}
+      {showBuilderModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 p-4">
+          <div className="mx-auto w-full max-w-6xl rounded-3xl bg-white dark:bg-gray-950 shadow-2xl border border-gray-200 dark:border-gray-800">
+            <div className="flex items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-800 p-6">
+              <div>
+                <h2 className="text-2xl font-semibold text-[#003842] dark:text-[#42b8ac]">
+                  {editingItem ? 'Edit Menu Item' : 'Create New Menu Item'}
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  {editingItem ? 'Update the details for this item' : 'Add a new item to your menu'}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" onClick={closeBuilderModal}>
+                  Close
+                </Button>
+                <button
+                  type="button"
+                  onClick={() => setShowScan(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#42b8ac] to-[#003842] text-sm font-semibold text-white hover:opacity-90 transition-opacity shadow-md"
+                >
+                  <ScanLine className="h-4 w-4" />
+                  Scan Label
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
           <div className="space-y-6">
             {/* Menu Item Name */}
             <div>
@@ -796,196 +970,9 @@ export default function MenuBuilderPage() {
               </Button>
             </div>
 
-            {/* Auto-detected Allergens from Ingredients */}
-            {(editingItem ? editingItem.ingredients : newMenuItem.ingredients).length > 0 && (
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
-                <div className="flex items-start gap-3 mb-3">
-                  <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-blue-900 mb-1">
-                      Allergens Detected from Selected Ingredients
-                    </h3>
-                    <p className="text-sm text-blue-800">
-                      These allergens are automatically detected from your selected ingredients. Review and add any additional warnings below if needed.
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="bg-white rounded-lg p-4 border border-blue-200">
-                  <AllergenWarningDisplay 
-                    warnings={
-                      // Aggregate allergens from all selected ingredients
-                      (editingItem ? editingItem.ingredients : newMenuItem.ingredients)
-                        .reduce((acc, ingredientId) => {
-                          const ingredient = ingredients.find(i => i.id === ingredientId)
-                          if (ingredient) {
-                            // Merge allergen warnings - if any ingredient contains it, mark as contains
-                            Object.keys(ingredient.allergen_warnings).forEach((key) => {
-                              const allergenKey = key as keyof AllergenWarnings
-                              const currentLevel = acc[allergenKey]
-                              const ingredientLevel = ingredient.allergen_warnings[allergenKey]
-                              
-                              // Priority: contains > not_suitable > may_contain > traces > cross_contamination > none
-                              if (ingredientLevel === 'contains' || 
-                                  (currentLevel !== 'contains' && ingredientLevel === 'not_suitable') ||
-                                  (currentLevel !== 'contains' && currentLevel !== 'not_suitable' && ingredientLevel === 'may_contain') ||
-                                  (currentLevel !== 'contains' && currentLevel !== 'not_suitable' && currentLevel !== 'may_contain' && ingredientLevel === 'traces') ||
-                                  (currentLevel === 'none' && ingredientLevel !== 'none')) {
-                                acc[allergenKey] = ingredientLevel as any
-                              }
-                            })
-                          }
-                          return acc
-                        }, {
-                          cereals_gluten: 'none',
-                          crustaceans: 'none',
-                          eggs: 'none',
-                          fish: 'none',
-                          peanuts: 'none',
-                          soybeans: 'none',
-                          milk: 'none',
-                          nuts: 'none',
-                          celery: 'none',
-                          mustard: 'none',
-                          sesame: 'none',
-                          sulphites: 'none',
-                          lupin: 'none',
-                          molluscs: 'none'
-                        } as AllergenWarnings)
-                    }
-                    compact={false}
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </Card>
-
-      {/* Ingredient-Derived Allergens Summary */}
-      {(editingItem ? editingItem.ingredients : newMenuItem.ingredients).length > 0 && (
-        <Card className="mb-8 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300">
-          <div className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="p-2 bg-blue-600 rounded-lg">
-                <AlertCircle className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-blue-900">Summary: Allergens from Ingredients</h3>
-                <p className="text-sm text-blue-800">Review before adding additional warnings</p>
-              </div>
-            </div>
-            <div className="bg-white rounded-lg p-4">
-              <AllergenWarningDisplay 
-                warnings={
-                  (editingItem ? editingItem.ingredients : newMenuItem.ingredients)
-                    .reduce((acc, ingredientId) => {
-                      const ingredient = ingredients.find(i => i.id === ingredientId)
-                      if (ingredient) {
-                        Object.keys(ingredient.allergen_warnings).forEach((key) => {
-                          const allergenKey = key as keyof AllergenWarnings
-                          const currentLevel = acc[allergenKey]
-                          const ingredientLevel = ingredient.allergen_warnings[allergenKey]
-                          
-                          if (ingredientLevel === 'contains' || 
-                              (currentLevel !== 'contains' && ingredientLevel === 'not_suitable') ||
-                              (currentLevel !== 'contains' && currentLevel !== 'not_suitable' && ingredientLevel === 'may_contain') ||
-                              (currentLevel !== 'contains' && currentLevel !== 'not_suitable' && currentLevel !== 'may_contain' && ingredientLevel === 'traces') ||
-                              (currentLevel === 'none' && ingredientLevel !== 'none')) {
-                            acc[allergenKey] = ingredientLevel as any
-                          }
-                        })
-                      }
-                      return acc
-                    }, {
-                      cereals_gluten: 'none',
-                      crustaceans: 'none',
-                      eggs: 'none',
-                      fish: 'none',
-                      peanuts: 'none',
-                      soybeans: 'none',
-                      milk: 'none',
-                      nuts: 'none',
-                      celery: 'none',
-                      mustard: 'none',
-                      sesame: 'none',
-                      sulphites: 'none',
-                      lupin: 'none',
-                      molluscs: 'none'
-                    } as AllergenWarnings)
-                }
-                compact={false}
-              />
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Additional Allergen Warnings Section */}
-      <Card className="mb-8">
-        <div className="p-6 border-b dark:border-gray-700">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-amber-600" />
-            <div>
-              <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">
-                Additional Allergen Warnings (Optional)
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Add or override allergen information for preparation methods, cross-contamination, or other factors not covered by ingredients
-              </p>
-            </div>
-          </div>
+            {/* Auto-detected Allergens from Ingredients - temporarily commented out */}
         </div>
 
-        <div className="p-6">
-          {/* EU Regulation compliance notice */}
-          <div className="mb-6 flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-            <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
-              <p className="font-semibold">EU Regulation No. 1169/2011 — Worst-Case Allergen Declaration</p>
-              <p>
-                When you attach ingredients to a menu item, allergen warnings are automatically set to the
-                <strong> most severe level</strong> declared across all linked ingredients and their suppliers.
-                For example, if one supplier marks an ingredient as &ldquo;may contain nuts&rdquo; while another
-                marks it as &ldquo;contains nuts&rdquo;, this menu item will display <strong>Contains nuts</strong>.
-              </p>
-              <p className="text-blue-600 dark:text-blue-400">
-                You may still manually override individual warnings below for preparation-specific risks (e.g. shared fryers, cross-contamination in your kitchen).
-              </p>
-            </div>
-          </div>
-          <AllergenWarningSelector
-            value={editingItem ? editingItem.allergen_warnings : newMenuItem.allergen_warnings}
-            onChange={(warnings) => {
-              if (editingItem) {
-                setEditingItem({...editingItem, allergen_warnings: warnings})
-              } else {
-                setNewMenuItem({...newMenuItem, allergen_warnings: warnings})
-              }
-            }}
-          />
-        </div>
-      </Card>
-
-      {/* Product Datasheets Section */}
-      <Card className="mb-8">
-        <div className="p-6 border-b dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">
-                Menu Item Datasheets
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                Upload additional product specification sheets or compliance documents specific to this menu item
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6">
-          {/* Ingredient datasheets */}
-          {selectedIngredientIds.length > 0 && (
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <div className="flex items-center gap-2 mb-3">
                 <FileText className="h-5 w-5 text-blue-600" />
                 <h3 className="font-semibold text-blue-900">
@@ -995,17 +982,8 @@ export default function MenuBuilderPage() {
               <p className="text-sm text-blue-700 mb-4">
                 These datasheets are inherited from the ingredients in this menu item. They are for reference only.
               </p>
-              {loadingIngredientDatasheets ? (
-                <div className="text-sm text-blue-700">Loading datasheets...</div>
-              ) : (
-                <DatasheetViewer
-                  datasheets={ingredientDatasheets}
-                  entityType="ingredient"
-                  compact={true}
-                />
-              )}
+              <div className="text-sm text-blue-700">Loading datasheets...</div>
             </div>
-          )}
 
           {/* Upload menu-item-specific datasheets */}
           <div>
@@ -1060,9 +1038,8 @@ export default function MenuBuilderPage() {
             </Button>
           </div>
         </div>
-      </Card>
 
-      {/* Final Combined Allergen Summary */}
+        {/* Final Combined Allergen Summary */}
       <Card className="mb-8 bg-gradient-to-br from-emerald-50 to-emerald-100 border-2 border-emerald-300">
         <div className="p-6">
           <div className="flex items-center gap-2 mb-4">
@@ -1076,11 +1053,9 @@ export default function MenuBuilderPage() {
           </div>
           <div className="bg-white rounded-lg p-4">
             <AllergenWarningDisplay 
-              warnings={
-                // Merge ingredient allergens with additional manual warnings
-                (() => {
-                  // First get allergens from ingredients
-                  const ingredientAllergens = (editingItem ? editingItem.ingredients : newMenuItem.ingredients)
+              warnings={{}}
+              compact={false}
+            />
                     .reduce((acc, ingredientId) => {
                       const ingredient = ingredients.find(i => i.id === ingredientId)
                       if (ingredient) {
@@ -1151,6 +1126,11 @@ export default function MenuBuilderPage() {
         </div>
       </Card>
 
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Menu Items Grid */}
       <Card className="mb-8">
         <div className="p-6 border-b dark:border-gray-700">
@@ -1211,7 +1191,7 @@ export default function MenuBuilderPage() {
             <Button
               variant="primary"
               icon={Plus}
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              onClick={openBuilderForNew}
             >
               Create First Menu Item
             </Button>
@@ -1269,10 +1249,17 @@ export default function MenuBuilderPage() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      icon={Eye}
+                      onClick={() => setViewingItem(item)}
+                      title="View"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       icon={Edit}
                       onClick={() => {
                         setEditingItem(item)
-                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                        setShowBuilderModal(true)
                       }}
                       title="Edit"
                     />
@@ -1290,6 +1277,63 @@ export default function MenuBuilderPage() {
           </div>
         )}
       </Card>
+
+      {/* Menu Item View Modal - temporarily commented out */}
+      {/* {viewingItem && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-3xl rounded-3xl bg-white dark:bg-gray-950 border border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between gap-4 border-b border-gray-200 dark:border-gray-800 p-6">
+              <div>
+                <h2 className="text-2xl font-semibold text-[#003842] dark:text-[#42b8ac]">{viewingItem.name}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Menu item details</p>
+              </div>
+              <Button variant="ghost" onClick={() => setViewingItem(null)}>
+                Close
+              </Button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Status</p>
+                  <Badge variant={viewingItem.status === 'active' ? 'success' : 'warning'}>{viewingItem.status}</Badge>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Scope</p>
+                  <Badge variant={viewingItem.site_id ? 'primary' : 'default'}>
+                    {viewingItem.site_id
+                      ? (sites.find((site) => site.id === viewingItem.site_id)?.name || 'Site-specific')
+                      : 'Global'}
+                  </Badge>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{viewingItem.description || 'No description provided.'}</p>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Ingredients</h3>
+                  <div className="space-y-2">
+                    {(viewingItem.ingredients.length > 0 ? viewingItem.ingredients : ['No ingredients selected']).map((ingredientId) => {
+                      const ingredient = ingredients.find((ingredient) => ingredient.id === ingredientId)
+                      return (
+                        <div key={ingredientId} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 px-3 py-2 text-sm text-gray-700 dark:text-gray-200">
+                          {ingredient ? ingredient.name : ingredientId}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Allergen warnings</h3>
+                  <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 p-4">
+                    <AllergenWarningDisplay warnings={viewingItem.allergen_warnings} compact={false} showNone={true} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )} */}
 
       {/* Ingredient Selector Modal */}
       {showIngredientSelector && (

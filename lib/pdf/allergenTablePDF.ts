@@ -78,6 +78,14 @@ function getSubtypeNames(item: MenuItem, allergenId: string): string[] {
   return []
 }
 
+function sortItemsByName(a: MenuItem, b: MenuItem): number {
+  const normalize = (text: string | undefined) =>
+    (text || '').toString().split('\n')[0].trim().toLowerCase()
+  const aName = normalize(a.name)
+  const bName = normalize(b.name)
+  return aName.localeCompare(bName) || (a.name || '').toString().localeCompare((b.name || '').toString())
+}
+
 /**
  * Builds the allergen detail lines that appear beneath the item name.
  * Allergen names are wrapped in ** to signal bold rendering via didParseCell.
@@ -260,11 +268,11 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
       const headers = [col0Label, ...allergenHeaders]
 
       // Section heading
-      doc.setFontSize(10)
+      doc.setFontSize(12)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(...primaryRgb)
       doc.text(sectionTitle, 7, startY)
-      startY += 6
+      startY += 8
 
       if (subNote) {
         doc.setFontSize(6.5)
@@ -298,6 +306,8 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
         body: tableData,
         startY,
         theme: 'grid',
+        rowPageBreak: 'avoid',
+        pageBreak: 'auto',
         margin: { left: 7, right: 7 },
         styles: {
           fontSize: 7,
@@ -380,7 +390,8 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
           if (data.section === 'body' && data.column.index === 0) {
             const rawLines = (tableData[data.row.index]?.[0] as string || '').split('\n')
             const markLines = rawLines.filter(l => l.startsWith(WARN_PREFIX))
-            if (markLines.length === 0) return
+            const nameLines = rawLines.filter(l => !l.startsWith(WARN_PREFIX))
+            if (nameLines.length === 0 && markLines.length === 0) return
 
             const cell = data.cell
             const padTop   = 2.5
@@ -395,9 +406,8 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
 
             let drawY = cell.y + padTop + lineH * 0.75
 
-            const nameLines = rawLines.filter(l => !l.startsWith(WARN_PREFIX))
             doc.setFont('helvetica', 'normal')
-            doc.setFontSize(7)
+            doc.setFontSize(9)
             doc.setTextColor(0, 0, 0)
             for (const line of nameLines) {
               const wrapped = doc.splitTextToSize(line, textWidth)
@@ -407,14 +417,30 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
               }
             }
 
-            doc.setFont('helvetica', 'bold')
             doc.setFontSize(7)
-            doc.setTextColor(60, 60, 60)
             for (const line of markLines) {
               const text = line.replace(WARN_PREFIX, '')
-              const wrapped = doc.splitTextToSize(text, textWidth)
-              for (const wl of wrapped) {
-                doc.text(wl, cell.x + padLeft, drawY)
+              const prefix = text.startsWith('Contains: ')
+                ? 'Contains: '
+                : text.startsWith('May contain: ')
+                ? 'May contain: '
+                : ''
+              const value = text.slice(prefix.length)
+
+              doc.setFont('helvetica', 'normal')
+              const prefixWidth = doc.getTextWidth(prefix)
+              const valueLines = doc.splitTextToSize(value, Math.max(1, textWidth - prefixWidth))
+
+              if (prefix) {
+                doc.text(prefix, cell.x + padLeft, drawY)
+              }
+              doc.setFont('helvetica', 'bold')
+              if (valueLines.length > 0) {
+                doc.text(valueLines[0], cell.x + padLeft + prefixWidth, drawY)
+                drawY += lineH
+              }
+              for (let i = 1; i < valueLines.length; i += 1) {
+                doc.text(valueLines[i], cell.x + padLeft, drawY)
                 drawY += lineH
               }
             }
@@ -436,7 +462,7 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
 
             const rawLines = (tableData[data.row.index]?.[0] as string || '').split('\n')
             const textWidth = nameColWidth - 6
-            const lineH     = 3.8
+            const lineH     = 4.2
             const padTop    = 2.5
             const padBottom = 3.5
 
@@ -456,18 +482,20 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
     }
 
     // ── Split items into sections ─────────────────────────────────────────────
-    const menuSectionItems  = items.filter(i => (i as any).itemType !== 'ingredient')
-    const ingredientItems   = items.filter(i => (i as any).itemType === 'ingredient')
+    const menuSectionItems  = items.filter(i => (i as any).itemType !== 'ingredient').sort(sortItemsByName)
+    const ingredientItems   = items.filter(i => (i as any).itemType === 'ingredient').sort(sortItemsByName)
 
     // ── Expand ingredients per supplier (one row per supplier) ─────────────────
-    const expandedIngredientItems: MenuItem[] = ingredientItems.flatMap(item => {
-      const supplierList: string[] = (item as any).suppliers ?? []
-      if (supplierList.length === 0) return [item]
-      return supplierList.map(supplier => ({
-        ...item,
-        name: `${item.name}\nSupplier: ${supplier}`,
-      }))
-    })
+    const expandedIngredientItems: MenuItem[] = ingredientItems
+      .flatMap(item => {
+        const supplierList: string[] = (item as any).suppliers ?? []
+        if (supplierList.length === 0) return [item]
+        return supplierList.map(supplier => ({
+          ...item,
+          name: `${item.name}\nSupplier: ${supplier}`,
+        }))
+      })
+      .sort(sortItemsByName)
 
     // ── Render Menu Items section ─────────────────────────────────────────────
     let finalY = currentY
@@ -479,12 +507,15 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
         'Allergen information declared in accordance with EU Regulation No. 1169/2011 (FIC Regulation). Where multiple suppliers exist, the most conservative (worst-case) declaration is shown.',
         'Item'
       )
-      finalY += 10
+      if (ingredientItems.length > 0) {
+        doc.addPage()
+        currentY = 12
+      }
     }
 
     // ── Render Ingredients section ────────────────────────────────────────────
     if (ingredientItems.length > 0) {
-      finalY = renderSection(expandedIngredientItems, 'Ingredients', finalY, undefined, 'Ingredient')
+      finalY = renderSection(expandedIngredientItems, 'Ingredients', currentY, undefined, 'Ingredient')
     }
 
     // ── If no split (legacy call without itemType), render everything together ─
@@ -494,57 +525,9 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
       finalY = renderSection(items, 'Items', currentY)
     }
 
-    // ── Legend ────────────────────────────────────────────────────────────────
-    if (showLegend) {
-      if (finalY + 28 < pageHeight) {
-        let ly = finalY + 8
-
-        doc.setFontSize(8)
-        doc.setFont('helvetica', 'bold')
-        doc.setTextColor(...primaryRgb)
-        doc.text('Legend', 7, ly)
-        ly += 5
-
-        const legendItems: { fill: [number, number, number]; high: boolean | null; text: string }[] = [
-          { fill: [254, 202, 202], high: true,  text: 'Contains (high severity)' },
-          { fill: [254, 240, 138], high: false, text: 'May contain / Traces / Cross-contamination' },
-          { fill: [255, 255, 255], high: null,  text: 'Not present' },
-        ]
-
-        doc.setFont('helvetica', 'normal')
-        doc.setFontSize(7.5)
-
-        const colW = (pageWidth - 14) / legendItems.length
-        legendItems.forEach((item, i) => {
-          const x = 7 + i * colW
-          doc.setFillColor(...item.fill)
-          doc.setDrawColor(180, 180, 180)
-          doc.rect(x, ly - 3.5, 6, 5, 'FD')
-          if (item.high !== null) {
-            drawCheckmark(doc, x, ly - 3.5, 6, 5, item.high)
-          }
-          doc.setTextColor(60, 60, 60)
-          doc.setFont('helvetica', 'normal')
-          doc.setFontSize(7.5)
-          doc.text(item.text, x + 9, ly)
-        })
-
-        ly += 8
-        doc.setFontSize(6.5)
-        doc.setTextColor(120, 120, 120)
-        doc.text(
-          'Sub-type details (e.g. specific grains or tree nuts) are listed under each item name in the first column. ' +
-            'Always inform staff of any allergy before ordering.',
-          pageWidth / 2,
-          ly,
-          { align: 'center', maxWidth: pageWidth - 20 }
-        )
-      }
-    }
-
-    // ── Footer on every page (page numbers, AllyJen logo, timestamp) ─────────
+    // ── Footer on every page (page numbers, legend, AllyJen logo, timestamp) ──
     const generatedDate = `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`
-    await drawPageFooters(doc, allyjenLogoDataUrl, generatedDate)
+    await drawPageFooters(doc, allyjenLogoDataUrl, generatedDate, showLegend)
 
     const fileName = `${business.name.replace(/[^a-z0-9]/gi, '_')}_allergen_guide.pdf`
     doc.save(fileName)
