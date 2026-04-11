@@ -1,6 +1,7 @@
 // app/admin/page.tsx - Production-ready dashboard with onboarding
 'use client'
 
+import React from 'react'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
@@ -145,7 +146,7 @@ export default function AdminDashboard() {
                   <Card className="hover:shadow-lg transition-all cursor-pointer group h-full">
                     <div className="flex items-center gap-3">
                       <div className={`p-3 rounded-lg flex-shrink-0 ${page.colorClass}`}>
-                        <Icon className={`h-6 w-6 ${page.iconClass}`} />
+                        {typeof Icon === 'function' && React.createElement(Icon as React.ComponentType<{className: string}>, { className: `h-6 w-6 ${page.iconClass}` })}
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-[#42b8ac] transition-colors truncate">
@@ -288,7 +289,7 @@ export default function AdminDashboard() {
                 <Card className="hover:shadow-lg transition-all cursor-pointer group h-full">
                   <div className="flex items-center gap-3">
                     <div className={`p-3 rounded-lg flex-shrink-0 ${page.colorClass}`}>
-                      <Icon className={`h-6 w-6 ${page.iconClass}`} />
+                      {typeof Icon === 'function' && React.createElement(Icon as React.ComponentType<{className: string}>, { className: `h-6 w-6 ${page.iconClass}` })}
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-[#42b8ac] transition-colors truncate">
