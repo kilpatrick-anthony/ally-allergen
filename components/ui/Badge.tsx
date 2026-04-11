@@ -1,4 +1,6 @@
 // app/components/ui/Badge.tsx
+import React from 'react'
+
 interface BadgeProps {
   children: React.ReactNode
   variant?: 'default' | 'success' | 'warning' | 'error' | 'info' | 'primary'
@@ -25,7 +27,10 @@ export function Badge({ children, variant = 'default', size = 'md', icon: IconOr
     <span className={`inline-flex items-center font-medium ${variants[variant]} ${sizes[size]}`}>
       {IconOrElement && (
         <span className="flex-shrink-0">
-          {typeof IconOrElement === 'function' ? <IconOrElement className="h-3 w-3" /> : IconOrElement}
+          {typeof IconOrElement === 'function'
+            ? React.createElement(IconOrElement as React.ComponentType<{className: string}>, { className: 'h-3 w-3' })
+            : IconOrElement
+          }
         </span>
       )}
       {children}

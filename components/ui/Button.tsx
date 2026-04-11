@@ -1,8 +1,10 @@
 // app/components/ui/Button.tsx
+import React from 'react'
+
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost'
   size?: 'sm' | 'md' | 'lg'
-  icon?: React.ReactNode
+  icon?: any
   fullWidth?: boolean
 }
 
@@ -43,7 +45,14 @@ export function Button({
       disabled={disabled}
       {...props}
     >
-      {icon && <span className="flex-shrink-0">{icon}</span>}
+      {icon && (
+        <span className="flex-shrink-0">
+          {typeof icon === 'function'
+            ? React.createElement(icon as React.ComponentType<{className?: string}>, { className: 'h-4 w-4' })
+            : icon
+          }
+        </span>
+      )}
       {children}
     </button>
   )
