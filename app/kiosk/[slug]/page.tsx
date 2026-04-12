@@ -1103,7 +1103,7 @@ export default function KioskPage() {
                             borderColor: (isSelected || isExpanded) ? allergen.bgColor : '#d1d5db'
                           }}
                         >
-                          <span style={{ color: allergen.bgColor }}>{allergen.icon}</span>
+                          <span style={{ color: allergen.bgColor }}>{React.createElement(allergen.icon, { className: 'w-4 h-4' })}</span>
                           <span className="font-semibold">{allergen.name}</span>
                           {hasSubtypes && (
                             isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
@@ -1239,7 +1239,7 @@ export default function KioskPage() {
                                     borderColor: `${allergen.bgColor}40`
                                   }}
                                 >
-                                  <span style={{ color: allergen.bgColor }}>{allergen.icon}</span>
+                                  <span style={{ color: allergen.bgColor }}>{React.createElement(allergen.icon, { className: 'w-4 h-4' })}</span>
                                   {allergen.name}
                                 </span>
                               ) : null
@@ -1344,7 +1344,7 @@ export default function KioskPage() {
                                               borderColor: `${allergen.bgColor}40`
                                             }}
                                           >
-                                            <span style={{ color: allergen.bgColor }}>{allergen.icon}</span>
+                                            <span style={{ color: allergen.bgColor }}>{React.createElement(allergen.icon, { className: 'w-4 h-4' })}</span>
                                             <span>{allergen.name}</span>
                                           </div>
                                         ))}
@@ -1508,7 +1508,7 @@ export default function KioskPage() {
                                               borderColor: `${allergen.bgColor}40`
                                             }}
                                           >
-                                            <span style={{ color: allergen.bgColor }}>{allergen.icon}</span>
+                                            <span style={{ color: allergen.bgColor }}>{React.createElement(allergen.icon, { className: 'w-4 h-4' })}</span>
                                             <span>{allergen.name}</span>
                                           </div>
                                         ))}
