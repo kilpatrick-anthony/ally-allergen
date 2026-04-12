@@ -1,8 +1,6 @@
 // app/admin/layout.tsx
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { ReactNode, useCallback, useEffect, useState } from 'react'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import { Building2, User, LogOut, Menu, X } from 'lucide-react'
