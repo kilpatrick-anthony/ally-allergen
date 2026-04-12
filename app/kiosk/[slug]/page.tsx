@@ -60,11 +60,21 @@ async function trackTimeOnPage(slug: string, timeOnPage: number) {
 // ===== CONSTANTS =====
 // Sleek allergen icons with polished styling - EU 14 Allergen List (Official Order)
 // Matching the admin color scheme for consistency
-const ALLERGENS = [
+// Store component references, not JSX elements (fixes React#31 error)
+type IconComponent = React.ComponentType<{ className?: string }>
+
+const ALLERGENS_CONFIG: Array<{
+  id: string
+  name: string
+  icon: IconComponent
+  color: string
+  hoverColor: string
+  bgColor: string
+}> = [
   { 
     id: 'contains_cereals_gluten', 
     name: '1. Gluten', 
-    icon: <Wheat className="w-4 h-4" />,
+    icon: Wheat,
     color: 'bg-[#f59e0b15] text-[#f59e0b] border border-[#f59e0b40]',
     hoverColor: 'hover:bg-[#f59e0b25]',
     bgColor: '#f59e0b'
@@ -72,7 +82,7 @@ const ALLERGENS = [
   { 
     id: 'contains_crustaceans', 
     name: '2. Crustaceans', 
-    icon: <Shell className="w-4 h-4" />,
+    icon: Shell,
     color: 'bg-[#ef444415] text-[#ef4444] border border-[#ef444440]',
     hoverColor: 'hover:bg-[#ef444425]',
     bgColor: '#ef4444'
@@ -80,7 +90,7 @@ const ALLERGENS = [
   { 
     id: 'contains_eggs', 
     name: '3. Eggs', 
-    icon: <Egg className="w-4 h-4" />,
+    icon: Egg,
     color: 'bg-[#f9731615] text-[#f97316] border border-[#f9731640]',
     hoverColor: 'hover:bg-[#f9731625]',
     bgColor: '#f97316'
@@ -88,7 +98,7 @@ const ALLERGENS = [
   { 
     id: 'contains_fish', 
     name: '4. Fish', 
-    icon: <Fish className="w-4 h-4" />,
+    icon: Fish,
     color: 'bg-[#3b82f615] text-[#3b82f6] border border-[#3b82f640]',
     hoverColor: 'hover:bg-[#3b82f625]',
     bgColor: '#3b82f6'
@@ -96,7 +106,7 @@ const ALLERGENS = [
   { 
     id: 'contains_peanuts', 
     name: '5. Peanuts', 
-    icon: <Nut className="w-4 h-4" />,
+    icon: Nut,
     color: 'bg-[#92400e15] text-[#92400e] border border-[#92400e40]',
     hoverColor: 'hover:bg-[#92400e25]',
     bgColor: '#92400e'
@@ -104,7 +114,7 @@ const ALLERGENS = [
   { 
     id: 'contains_soybeans', 
     name: '6. Soybeans', 
-    icon: <Sprout className="w-4 h-4" />,
+    icon: Sprout,
     color: 'bg-[#16a34a15] text-[#16a34a] border border-[#16a34a40]',
     hoverColor: 'hover:bg-[#16a34a25]',
     bgColor: '#16a34a'
@@ -112,7 +122,7 @@ const ALLERGENS = [
   { 
     id: 'contains_milk', 
     name: '7. Milk', 
-    icon: <Milk className="w-4 h-4" />,
+    icon: Milk,
     color: 'bg-[#8b5cf615] text-[#8b5cf6] border border-[#8b5cf640]',
     hoverColor: 'hover:bg-[#8b5cf625]',
     bgColor: '#8b5cf6'
@@ -120,7 +130,7 @@ const ALLERGENS = [
   { 
     id: 'contains_nuts', 
     name: '8. Tree Nuts', 
-    icon: <Nut className="w-4 h-4" />,
+    icon: Nut,
     color: 'bg-[#b4530915] text-[#b45309] border border-[#b4530940]',
     hoverColor: 'hover:bg-[#b4530925]',
     bgColor: '#b45309'
@@ -128,7 +138,7 @@ const ALLERGENS = [
   { 
     id: 'contains_celery', 
     name: '9. Celery', 
-    icon: <Carrot className="w-4 h-4" />,
+    icon: Carrot,
     color: 'bg-[#84cc1615] text-[#84cc16] border border-[#84cc1640]',
     hoverColor: 'hover:bg-[#84cc1625]',
     bgColor: '#84cc16'
@@ -136,7 +146,7 @@ const ALLERGENS = [
   { 
     id: 'contains_mustard', 
     name: '10. Mustard', 
-    icon: <Circle className="w-4 h-4" />,
+    icon: Circle,
     color: 'bg-[#eab30815] text-[#eab308] border border-[#eab30840]',
     hoverColor: 'hover:bg-[#eab30825]',
     bgColor: '#eab308'
@@ -144,7 +154,7 @@ const ALLERGENS = [
   { 
     id: 'contains_sesame', 
     name: '11. Sesame', 
-    icon: <Circle className="w-3 h-3" />,
+    icon: Circle,
     color: 'bg-[#d9730015] text-[#d97300] border border-[#d9730040]',
     hoverColor: 'hover:bg-[#d9730025]',
     bgColor: '#d97300'
@@ -152,7 +162,7 @@ const ALLERGENS = [
   { 
     id: 'contains_sulphites', 
     name: '12. Sulphites', 
-    icon: <Beaker className="w-4 h-4" />,
+    icon: Beaker,
     color: 'bg-[#a855f715] text-[#a855f7] border border-[#a855f740]',
     hoverColor: 'hover:bg-[#a855f725]',
     bgColor: '#a855f7'
@@ -160,7 +170,7 @@ const ALLERGENS = [
   { 
     id: 'contains_lupin', 
     name: '13. Lupin', 
-    icon: <Leaf className="w-4 h-4" />,
+    icon: Leaf,
     color: 'bg-[#6366f115] text-[#6366f1] border border-[#6366f140]',
     hoverColor: 'hover:bg-[#6366f125]',
     bgColor: '#6366f1'
@@ -168,12 +178,20 @@ const ALLERGENS = [
   { 
     id: 'contains_molluscs', 
     name: '14. Molluscs', 
-    icon: <Shell className="w-4 h-4" />,
+    icon: Shell,
     color: 'bg-[#14b8a615] text-[#14b8a6] border border-[#14b8a640]',
     hoverColor: 'hover:bg-[#14b8a625]',
     bgColor: '#14b8a6'
   }
 ]
+
+// Helper function to render allergen icon
+const renderAllergenIcon = (IconComponent: IconComponent, className = 'w-4 h-4') => (
+  <IconComponent className={className} />
+)
+
+// Backwards compatibility - map old ALLERGENS to new format
+const ALLERGENS = ALLERGENS_CONFIG
 
 const CATEGORY_NAMES: Record<string, string> = {
   'acai_bowls': 'Açai Bowls',
