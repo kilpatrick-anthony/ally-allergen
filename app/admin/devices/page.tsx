@@ -7,10 +7,10 @@ import {
   RefreshCw, MapPin, Calendar, Activity, Smartphone, Tablet,
   TrendingUp, TrendingDown, Bell, BellOff
 } from 'lucide-react'
-import { Container } from '@/app/components/layout/Container'
-import { Card } from '@/app/components/layout/Card'
-import { Button } from '@/app/components/ui/Button'
-import { Badge } from '@/app/components/ui/Badge'
+import { Container } from '@/components/layout/Container'
+import { Card } from '@/components/layout/Card'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
 
 interface Device {
   id: string

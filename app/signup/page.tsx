@@ -4,9 +4,9 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Container } from '../components/layout/Container'
-import { Card } from '../components/layout/Card'
-import { Button } from '../components/ui/Button'
+import { Container } from '@/components/layout/Container'
+import { Card } from '@/components/layout/Card'
+import { Button } from '@/components/ui/Button'
 import { Building, Mail, Lock, User, ArrowRight, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 

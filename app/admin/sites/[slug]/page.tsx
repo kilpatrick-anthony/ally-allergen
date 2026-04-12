@@ -5,8 +5,8 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Building, MapPin, Phone, Mail, Loader2, Tablet, Edit, ChefHat, Search, Trash2 } from 'lucide-react';
 import DeviceManagement from '@/components/admin/DeviceManagement';
-import { Button } from '@/app/components/ui/Button';
-import { Badge } from '@/app/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
 import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay';
 import Link from 'next/link';
 

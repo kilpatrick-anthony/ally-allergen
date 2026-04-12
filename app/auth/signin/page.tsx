@@ -6,9 +6,9 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, CheckCircle } from 'lucide-react'
-import { Container } from '@/app/components/layout/Container'
-import { Card } from '@/app/components/layout/Card'
-import { Button } from '@/app/components/ui/Button'
+import { Container } from '@/components/layout/Container'
+import { Card } from '@/components/layout/Card'
+import { Button } from '@/components/ui/Button'
 
 function SignInContent() {
   const searchParams = useSearchParams()

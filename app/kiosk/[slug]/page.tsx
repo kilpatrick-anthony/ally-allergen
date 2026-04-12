@@ -21,10 +21,10 @@ import { generateAllergenTablePDF } from '@/lib/pdf/allergenTablePDF'
 import { GLUTEN_TYPES, TREE_NUT_TYPES, type GlutenType, type TreeNutType } from '@/types/allergen'
 
 // Import your design system components
-import { Container } from '@/app/components/layout/Container'
-import { Card } from '@/app/components/layout/Card'
-import { Button } from '@/app/components/ui/Button'
-import { Badge } from '@/app/components/ui/Badge'
+import { Container } from '@/components/layout/Container'
+import { Card } from '@/components/layout/Card'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
 
 // Import offline functionality
 import { useOfflineKioskData, type Business, type MenuItem } from '@/lib/hooks/useOfflineKioskData'

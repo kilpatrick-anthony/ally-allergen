@@ -4,9 +4,9 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Container } from '../components/layout/Container'
-import { Card } from '../components/layout/Card'
-import { Button } from '../components/ui/Button'
+import { Container } from '@/components/layout/Container'
+import { Card } from '@/components/layout/Card'
+import { Button } from '@/components/ui/Button'
 import { 
   MapPin, 
   Users, 

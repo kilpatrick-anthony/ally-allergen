@@ -4,7 +4,7 @@
 import { ReactNode, useCallback, useEffect, useState } from 'react'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import { Building2, User, LogOut, Menu, X } from 'lucide-react'
-import { Navigation } from '../components/layout/Navigation'
+import { Navigation } from '@/components/layout/Navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
 import { useTranslation } from '@/lib/hooks/useTranslation'

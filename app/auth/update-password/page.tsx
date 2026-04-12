@@ -6,8 +6,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, CheckCircle } from 'lucide-react'
-import { Card } from '@/app/components/layout/Card'
-import { Button } from '@/app/components/ui/Button'
+import { Card } from '@/components/layout/Card'
+import { Button } from '@/components/ui/Button'
 
 function UpdatePasswordContent() {
   const [password, setPassword] = useState('')

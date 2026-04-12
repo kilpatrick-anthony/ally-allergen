@@ -5,8 +5,8 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react'
-import { Card } from '@/app/components/layout/Card'
-import { Button } from '@/app/components/ui/Button'
+import { Card } from '@/components/layout/Card'
+import { Button } from '@/components/ui/Button'
 
 export default function ResetPassword() {
   const [email, setEmail] = useState('')

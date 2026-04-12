@@ -32,11 +32,11 @@ import {
   Upload,
   RefreshCw
 } from 'lucide-react'
-import { Container } from '../components/layout/Container'
-import { Card } from '../components/layout/Card'
-import { Button } from '../components/ui/Button'
-import { Badge } from '../components/ui/Badge'
-import { Select } from '../../components/ui/Select'
+import { Container } from '@/components/layout/Container'
+import { Card } from '@/components/layout/Card'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { Select } from '@/components/ui/Select'
 import { BusinessSetupModal } from './components/BusinessSetupModal'
 import { BusinessDetailsModal } from './components/BusinessDetailsModal'
 

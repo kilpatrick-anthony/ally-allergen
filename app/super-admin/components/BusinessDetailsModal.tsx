@@ -18,8 +18,8 @@ import {
   DollarSign
 } from 'lucide-react'
 import Modal from '@/components/ui/Modal'
-import { Badge } from '../../components/ui/Badge'
-import { Button } from '../../components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { Button } from '@/components/ui/Button'
 
 interface Business {
   id: string

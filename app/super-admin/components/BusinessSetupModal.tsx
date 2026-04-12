@@ -3,8 +3,8 @@
 
 import { useState } from 'react'
 import { X, Save, User, Building, Mail, Phone, MapPin, CreditCard, DollarSign, Calendar, CheckCircle } from 'lucide-react'
-import { Button } from '../../components/ui/Button'
-import { Select } from '../../../components/ui/Select'
+import { Button } from '@/components/ui/Button'
+import { Select } from '@/components/ui/Select'
 
 interface BusinessSetupModalProps {
   isOpen: boolean
