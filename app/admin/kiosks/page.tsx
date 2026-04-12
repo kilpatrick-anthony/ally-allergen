@@ -1,7 +1,7 @@
 // app/admin/kiosks/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { 
   Tablet, Wifi, WifiOff, Monitor, Smartphone,
@@ -257,11 +257,11 @@ export default function AllKiosksPage() {
                         ? 'bg-green-100'
                         : 'bg-gray-100'
                     }`}>
-                      <DeviceIcon className={`h-6 w-6 ${
+                      {typeof DeviceIcon === 'function' && React.createElement(DeviceIcon as React.ComponentType<{className: string}>, { className: `h-6 w-6 ${
                         device.status === 'online'
                           ? 'text-green-600'
                           : 'text-gray-400'
-                      }`} />
+                      }` })}
                     </div>
                     
                     <div className="flex-1">

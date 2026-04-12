@@ -1,6 +1,6 @@
 "use client";
 // --- Accessibility: Admin Portal ---
-import { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 // app/admin/settings/page.tsx
 import { useSearchParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
@@ -683,7 +683,7 @@ export default function SettingsPage() {
                     `}
                   >
                     <div className="flex items-center">
-                      <Icon className={`mr-3 h-5 w-5 ${activeTab === tab.id ? 'text-teal-500' : 'text-gray-400 dark:text-gray-500'}`} />
+                      {typeof Icon === 'function' && React.createElement(Icon as React.ComponentType<{className: string}>, { className: `mr-3 h-5 w-5 ${activeTab === tab.id ? 'text-teal-500' : 'text-gray-400 dark:text-gray-500'}` })}
                       {tab.label}
                     </div>
                     {activeTab === tab.id && (

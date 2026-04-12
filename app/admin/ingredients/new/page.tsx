@@ -1,7 +1,7 @@
 // app/admin/ingredients/new/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useNotification } from '@/lib/hooks/useNotification'
@@ -404,7 +404,7 @@ export default function NewIngredientPage() {
                           `}
                           style={{ backgroundColor: cert.color }}
                         >
-                          <IconComponent className="h-6 w-6 text-white" />
+                          {typeof cert.icon === 'function' && React.createElement(cert.icon as React.ComponentType<{className: string}>, { className: 'h-6 w-6 text-white' })}
                         </div>
                         <span 
                           className={`text-xs font-semibold text-center transition-colors ${

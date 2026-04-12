@@ -1,7 +1,7 @@
 // app/admin/menu-builder/[id]/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useNotification } from '@/lib/hooks/useNotification'
@@ -485,7 +485,7 @@ export default function ViewMenuItemPage() {
                           color: certData.color
                         }}
                       >
-                        <Icon className="h-5 w-5" />
+                        {typeof Icon === 'function' && React.createElement(Icon as React.ComponentType<{className: string}>, { className: 'h-5 w-5' })}
                         <span className="font-medium">{dietary}</span>
                       </div>
                     )

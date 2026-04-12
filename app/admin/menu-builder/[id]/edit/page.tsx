@@ -1,7 +1,7 @@
 // app/admin/menu-builder/[id]/edit/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useNotification } from '@/lib/hooks/useNotification'
@@ -592,7 +592,6 @@ export default function EditMenuItemPage() {
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                 {dietaryOptions.map(dietary => {
                   const isSelected = menuItem.dietary.includes(dietary.name)
-                  const IconComponent = dietary.icon
                   
                   return (
                     <button
@@ -625,7 +624,7 @@ export default function EditMenuItemPage() {
                         `}
                         style={{ backgroundColor: dietary.color }}
                       >
-                        <IconComponent className="h-5 w-5 text-white" />
+                        {typeof dietary.icon === 'function' && React.createElement(dietary.icon as React.ComponentType<{className: string}>, { className: 'h-6 w-6 text-white' })}
                       </div>
                       <span
                         className={`text-xs font-semibold text-center transition-colors ${
