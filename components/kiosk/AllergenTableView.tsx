@@ -260,38 +260,49 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                   // Color coding based on allergen level - each level has distinct color
                   let bgColor = ''
                   let textColor = ''
-                  let icon = null
 
                   switch (cellContent.level) {
                     case 'contains':
                       bgColor = 'bg-red-200'
                       textColor = 'text-red-800'
-                      icon = <Check className="h-3 w-3" />
                       break
                     case 'may_contain':
                       bgColor = 'bg-orange-200'
                       textColor = 'text-orange-800'
-                      icon = <AlertCircle className="h-3 w-3" />
                       break
                     case 'not_suitable':
                       bgColor = 'bg-violet-200'
                       textColor = 'text-violet-800'
-                      icon = <AlertTriangle className="h-3 w-3" />
                       break
                     case 'traces':
                       bgColor = 'bg-cyan-200'
                       textColor = 'text-cyan-800'
-                      icon = <Info className="h-3 w-3" />
                       break
                     case 'cross_contamination':
                       bgColor = 'bg-amber-200'
                       textColor = 'text-amber-800'
-                      icon = <AlertTriangle className="h-3 w-3" />
                       break
                     default:
                       bgColor = 'bg-gray-100'
                       textColor = 'text-gray-800'
-                      icon = <Info className="h-3 w-3" />
+                  }
+
+                  // Render icon based on level
+                  const renderIcon = () => {
+                    switch (cellContent.level) {
+                      case 'contains':
+                        return <Check className="h-3 w-3" />
+                      case 'may_contain':
+                        return <AlertCircle className="h-3 w-3" />
+                      case 'not_suitable':
+                        return <AlertTriangle className="h-3 w-3" />
+                      case 'traces':
+                        return <Info className="h-3 w-3" />
+                      case 'cross_contamination':
+                        return <AlertTriangle className="h-3 w-3" />
+                      default:
+                        return <Info className="h-3 w-3" />
+                    }
                   }
 
                   return (
@@ -300,7 +311,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                       className={`text-center p-1 border border-gray-300 ${bgColor}`}
                     >
                       <div className="flex flex-col items-center gap-0.5">
-                        <span className={textColor}>{icon}</span>
+                        <span className={textColor}>{renderIcon()}</span>
                         {!compact && (
                           <span className={`text-[9px] leading-tight font-medium ${textColor}`}>
                             {cellContent.displayText}
