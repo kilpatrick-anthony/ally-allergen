@@ -35,14 +35,14 @@ export default function AdminNavbar({ brandColors }: AdminNavbarProps) {
   };
 
   const navLinks = [
-    { href: '/admin', label: 'Dashboard', icon: <Home size={20} /> },
-    { href: '/admin/ingredients', label: 'Ingredients', icon: <Package size={20} /> },
-    { href: '/admin/menu-builder', label: 'Menu Builder', icon: <ChefHat size={20} /> },
-    { href: '/admin/downloads', label: 'Downloads', icon: <Download size={20} /> },
-    { href: '/admin/analytics', label: 'Analytics', icon: <BarChart3 size={20} /> },
-    { href: '/admin/sites', label: 'Sites', icon: <Building size={20} /> },
-    { href: '/admin/devices', label: 'Devices', icon: <Monitor size={20} /> },
-    { href: '/admin/settings', label: 'Settings', icon: <Settings size={20} /> },
+    { href: '/admin', label: 'Dashboard', IconComponent: Home },
+    { href: '/admin/ingredients', label: 'Ingredients', IconComponent: Package },
+    { href: '/admin/menu-builder', label: 'Menu Builder', IconComponent: ChefHat },
+    { href: '/admin/downloads', label: 'Downloads', IconComponent: Download },
+    { href: '/admin/analytics', label: 'Analytics', IconComponent: BarChart3 },
+    { href: '/admin/sites', label: 'Sites', IconComponent: Building },
+    { href: '/admin/devices', label: 'Devices', IconComponent: Monitor },
+    { href: '/admin/settings', label: 'Settings', IconComponent: Settings },
   ];
 
   const handleLogout = async () => {
@@ -110,7 +110,7 @@ export default function AdminNavbar({ brandColors }: AdminNavbarProps) {
                     }
                   }}
                 >
-                  {link.icon}
+                  <link.IconComponent size={20} />
                   {link.label}
                 </Link>
               ))}
@@ -209,7 +209,7 @@ export default function AdminNavbar({ brandColors }: AdminNavbarProps) {
                 }}
                 onClick={() => setIsMenuOpen(false)}
               >
-                {link.icon}
+                <link.IconComponent size={20} />
                 <span className="ml-3">{link.label}</span>
               </Link>
             ))}

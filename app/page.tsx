@@ -58,32 +58,32 @@ export default function LandingPage() {
 
   const features = [
     {
-      icon: <Shield className="h-6 w-6 text-[#42b8ac]" />,
+      IconComponent: Shield,
       title: 'Sub-Allergen Detail Tracking',
       desc: 'Go beyond the 14 major allergens. Track sub-types like specific tree nuts or cereal varieties for greater precision and customer confidence.',
     },
     {
-      icon: <Globe className="h-6 w-6 text-[#42b8ac]" />,
+      IconComponent: Globe,
       title: 'Multilingual Allergen Displays',
       desc: 'Serve a diverse customer base with allergen information displayed in multiple languages, right out of the box.',
     },
     {
-      icon: <Zap className="h-6 w-6 text-[#42b8ac]" />,
+      IconComponent: Zap,
       title: 'Real-Time Menu Updates',
       desc: 'Change an ingredient and every linked menu item and kiosk updates instantly. Save precious time and printing costs.',
     },
     {
-      icon: <Building className="h-6 w-6 text-[#42b8ac]" />,
+      IconComponent: Building,
       title: 'Multi-Site Management',
       desc: 'Manage allergen data across all your locations from a single, centralised dashboard.',
     },
     {
-      icon: <CheckCircle className="h-6 w-6 text-[#42b8ac]" />,
+      IconComponent: CheckCircle,
       title: 'Customer-Facing Kiosks & QR Codes',
       desc: 'Deploy interactive kiosks or let customers scan a QR code to view live allergen information for any dish, straight from their phone.',
     },
     {
-      icon: <BarChart className="h-6 w-6 text-[#42b8ac]" />,
+      IconComponent: BarChart,
       title: 'Analytics & Reporting',
       desc: 'Understand customer allergen queries and demonstrate compliance with detailed reports.',
     },
@@ -201,7 +201,7 @@ export default function LandingPage() {
                 className="group p-7 rounded-2xl border border-gray-100 bg-white hover:bg-[#003842] hover:border-[#003842] transition-all duration-300 shadow-sm hover:shadow-xl"
               >
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#42b8ac]/10 group-hover:bg-[#42b8ac]/20 mb-5 transition-colors">
-                  {f.icon}
+                  <f.IconComponent className="h-6 w-6 text-[#42b8ac]" />
                 </div>
                 <h3 className="text-lg font-bold text-[#003842] group-hover:text-white mb-2 transition-colors">{f.title}</h3>
                 <p className="text-gray-500 group-hover:text-white/70 text-sm leading-relaxed transition-colors">{f.desc}</p>
