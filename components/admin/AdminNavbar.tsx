@@ -1,7 +1,7 @@
 // components/admin/AdminNavbar.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -26,7 +26,7 @@ export default function AdminNavbar({ brandColors }: AdminNavbarProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
 
   const currentBrandColors = brandColors || {
     primary_color: '#003842',
@@ -47,6 +47,7 @@ export default function AdminNavbar({ brandColors }: AdminNavbarProps) {
 
   const handleLogout = async () => {
     try {
+      const supabase = supabaseRef.current;
       // Clear server cookie
       await fetch('/api/signout', { method: 'POST' }).catch(() => {})
       await supabase.auth.signOut();

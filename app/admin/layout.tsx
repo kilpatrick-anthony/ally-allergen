@@ -1,7 +1,7 @@
 // app/admin/layout.tsx
 'use client'
 
-import { ReactNode, useCallback, useEffect, useState } from 'react'
+import { ReactNode, useCallback, useEffect, useState, useRef } from 'react'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
 import { Building2, User, LogOut, Menu, X } from 'lucide-react'
 import { Navigation } from '@/components/layout/Navigation'
@@ -25,6 +25,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [businessId, setBusinessId] = useState<string | null>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const pathname = usePathname()
+  const supabaseRef = useRef(createClient())
 
   const handleLogout = useCallback(async () => {
     console.log('Logging out...')
@@ -37,7 +38,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
 
     // Sign out from Supabase (fire and forget)
-    const supabase = createClient()
+    const supabase = supabaseRef.current
     supabase.auth.signOut().catch(err => {
       console.error('Sign out error (non-blocking):', err)
     })

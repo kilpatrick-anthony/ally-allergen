@@ -20,6 +20,8 @@ export function createClient() {
     }
   })
   
-  console.log('🔧 Supabase client created successfully')
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔧 Supabase client created')
+  }
   return client
 }

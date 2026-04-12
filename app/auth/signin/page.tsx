@@ -1,7 +1,7 @@
 // app/auth/signin/page.tsx
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -19,7 +19,7 @@ function SignInContent() {
   const [successMessage, setSuccessMessage] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
 
   // Get email and message from URL params; restore remembered email
   useEffect(() => {

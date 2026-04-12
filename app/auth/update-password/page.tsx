@@ -1,7 +1,7 @@
 // app/auth/update-password/page.tsx
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -17,11 +17,12 @@ function UpdatePasswordContent() {
   const [done, setDone] = useState(false)
   const [sessionReady, setSessionReady] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
 
   // Exchange the recovery token from the URL hash for a Supabase session
   useEffect(() => {
     const exchangeToken = async () => {
+      const supabase = supabaseRef.current
       // Supabase puts the recovery token in the URL hash: #access_token=...&type=recovery
       const hash = window.location.hash
       if (hash && hash.includes('access_token')) {
@@ -70,7 +71,7 @@ function UpdatePasswordContent() {
     }
 
     setLoading(true)
-    const { error } = await supabase.auth.updateUser({ password })
+    const { error } = await supabaseRef.current.auth.updateUser({ password })
 
     if (error) {
       setError(error.message)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Check } from 'lucide-react'
 
@@ -14,14 +14,14 @@ interface Allergen {
 export default function AllergenFilter() {
   const [allergens, setAllergens] = useState<Allergen[]>([])
   const [selectedAllergens, setSelectedAllergens] = useState<number[]>([])
-  
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
 
   useEffect(() => {
     loadAllergens()
   }, [])
 
   async function loadAllergens() {
+    const supabase = supabaseRef.current
     const { data } = await supabase
       .from('allergens')
       .select('*')

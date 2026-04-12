@@ -1,7 +1,7 @@
 // app/auth/confirm/page.tsx
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, Suspense, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -12,10 +12,11 @@ function ConfirmPageContent() {
   const [success, setSuccess] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const supabase = createClient()
+  const supabaseRef = useRef(createClient())
 
   useEffect(() => {
     const confirmEmail = async () => {
+      const supabase = supabaseRef.current
       const token_hash = searchParams.get('token_hash')
       const type = searchParams.get('type')
 
@@ -44,7 +45,7 @@ function ConfirmPageContent() {
     }
 
     confirmEmail()
-  }, [searchParams, router, supabase])
+  }, [searchParams, router])
 
   if (loading) {
     return (
