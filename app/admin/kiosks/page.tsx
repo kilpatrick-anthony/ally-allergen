@@ -9,10 +9,10 @@ import {
   AlertCircle, ArrowLeft,
   Filter, Search
 } from 'lucide-react'
-import { Container } from '../../components/layout/Container'
-import { Card } from '../../components/layout/Card'
-import { Button } from '../../components/ui/Button'
-import { Badge } from '../../components/ui/Badge'
+import { Container } from '@/components/layout/Container'
+import { Card } from '@/components/layout/Card'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
 
 interface Device {
   id: string

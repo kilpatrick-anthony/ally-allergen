@@ -9,10 +9,10 @@ import {
   Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck, FileText, CheckCircle
 } from 'lucide-react'
 
-import { Container } from '../../../components/layout/Container'
-import { Card } from '../../../components/layout/Card'
-import { Button } from '../../../components/ui/Button'
-import { Badge } from '../../../components/ui/Badge'
+import { Container } from '@/components/layout/Container'
+import { Card } from '@/components/layout/Card'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
 import AllergenWarningSelector from '@/components/admin/AllergenWarningSelector'
 import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay'
 import DatasheetUploader from '@/components/admin/DatasheetUploader'

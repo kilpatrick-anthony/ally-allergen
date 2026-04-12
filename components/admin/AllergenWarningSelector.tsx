@@ -8,8 +8,8 @@ import {
   Carrot, Droplet, Sparkles, Flame, Flower2, Nut, CircleDot,
   Bean, Salad, Sun, Circle, Beaker, Snail
 } from 'lucide-react';
-import { Card } from '@/app/components/layout/Card';
-import { Badge } from '@/app/components/ui/Badge';
+import { Card } from '@/components/layout/Card';
+import { Badge } from '@/components/ui/Badge';
 import type { AllergenWarnings, AllergenLevel, AllergenId, GlutenType, TreeNutType } from '@/types/allergen';
 import { 
   ALLERGEN_LIST, 

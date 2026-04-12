@@ -18,10 +18,10 @@ import {
 } from 'lucide-react'
 
 // Import design system components
-import { Container } from '../../components/layout/Container'
-import { Card } from '../../components/layout/Card'
-import { Button } from '../../components/ui/Button'
-import { Badge } from '../../components/ui/Badge'
+import { Container } from '@/components/layout/Container'
+import { Card } from '@/components/layout/Card'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
 import { ALLERGEN_LIST } from '@/types/allergen'
 import DatasheetViewer from '@/components/admin/DatasheetViewer'
 import { useTranslation } from '@/lib/hooks/useTranslation'

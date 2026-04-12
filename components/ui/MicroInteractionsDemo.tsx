@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { RippleButton } from './RippleButton'
 import { FormValidation, ValidatedInput } from './FormValidation'
 import { ProgressBar, Stepper, LoadingSpinner, Skeleton } from './ProgressIndicator'
-import { Card } from '../../app/components/layout/Card'
+import { Card } from '@/components/layout/Card'
 import { Badge } from './Badge'
 import { Zap, CheckCircle, AlertCircle, Mail, Lock, User } from 'lucide-react'
 
@@ -266,7 +266,7 @@ export function MicroInteractionsDemo() {
       </Card>
 
       {/* Usage Instructions */}
-      <Card variant="outline">
+      <Card>
         <div className="p-6">
           <h2 className="text-xl font-semibold mb-4">How to Use These Components</h2>
           <div className="grid md:grid-cols-2 gap-6 text-sm">

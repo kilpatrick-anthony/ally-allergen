@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'react';
 import { WifiOff, Wifi, RefreshCw, AlertCircle } from 'lucide-react';
-import { Button } from '@/app/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 
 interface OfflineIndicatorProps {
   isOffline: boolean;

@@ -8,9 +8,9 @@ import {
   Building, MapPin, Phone, Mail, Globe,
   ArrowLeft, Save, X, AlertCircle
 } from 'lucide-react'
-import { Container } from '../../../components/layout/Container'
-import { Card } from '../../../components/layout/Card'
-import { Button } from '../../../components/ui/Button'
+import { Container } from '@/components/layout/Container'
+import { Card } from '@/components/layout/Card'
+import { Button } from '@/components/ui/Button'
 
 export default function NewSitePage() {
   const router = useRouter()

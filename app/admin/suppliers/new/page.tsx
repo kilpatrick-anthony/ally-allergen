@@ -6,9 +6,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Truck } from 'lucide-react'
 
-import { Container } from '../../../components/layout/Container'
-import { Card } from '../../../components/layout/Card'
-import { Button } from '../../../components/ui/Button'
+import { Container } from '@/components/layout/Container'
+import { Card } from '@/components/layout/Card'
+import { Button } from '@/components/ui/Button'
 
 export default function NewSupplierPage() {
   const router = useRouter()

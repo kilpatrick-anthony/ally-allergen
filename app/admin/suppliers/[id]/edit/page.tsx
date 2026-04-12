@@ -6,9 +6,9 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, Edit, Save, AlertCircle, MessageSquare, Trash2 } from 'lucide-react'
 
-import { Container } from '../../../../components/layout/Container'
-import { Card } from '../../../../components/layout/Card'
-import { Button } from '../../../../components/ui/Button'
+import { Container } from '@/components/layout/Container'
+import { Card } from '@/components/layout/Card'
+import { Button } from '@/components/ui/Button'
 
 interface SupplierForm {
   name: string

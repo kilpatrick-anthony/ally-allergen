@@ -11,7 +11,7 @@ import {
   RotateCcw, UserCheck
 } from 'lucide-react';
 
-import { Button } from '@/app/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 
 interface AccessibilitySettings {
   fontSize: 'normal' | 'large' | 'x-large' | 'xx-large';

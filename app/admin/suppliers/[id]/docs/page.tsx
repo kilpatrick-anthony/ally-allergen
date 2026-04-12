@@ -6,10 +6,10 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, FileText, AlertCircle, Download, Upload, Eye } from 'lucide-react'
 
-import { Container } from '../../../../components/layout/Container'
-import { Card } from '../../../../components/layout/Card'
-import { Button } from '../../../../components/ui/Button'
-import { Badge } from '../../../../components/ui/Badge'
+import { Container } from '@/components/layout/Container'
+import { Card } from '@/components/layout/Card'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
 import DatasheetUploader from '@/components/admin/DatasheetUploader'
 
 interface Supplier {

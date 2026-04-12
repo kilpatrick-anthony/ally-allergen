@@ -7,9 +7,9 @@ import Link from 'next/link'
 import { 
   Building, MapPin, Phone, Mail, ArrowLeft, Save, X, AlertCircle, Loader2, Trash2
 } from 'lucide-react'
-import { Container } from '../../../../components/layout/Container'
-import { Card } from '../../../../components/layout/Card'
-import { Button } from '../../../../components/ui/Button'
+import { Container } from '@/components/layout/Container'
+import { Card } from '@/components/layout/Card'
+import { Button } from '@/components/ui/Button'
 
 export default function EditSitePage() {
   const params = useParams()

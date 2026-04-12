@@ -13,7 +13,7 @@ import {
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
-import { Badge } from '../../components/ui/Badge'
+import { Badge } from '@/components/ui/Badge'
 import { NotificationsPanel } from '@/components/admin/NotificationsPanel'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { getFrequentPages, type AdminPage } from '@/lib/hooks/useFrequentPages'
