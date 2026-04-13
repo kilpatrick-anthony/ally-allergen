@@ -107,7 +107,8 @@ export async function drawPageFooters(
   doc: jsPDF,
   allyjenLogoDataUrl: string | null,
   generatedDate: string,
-  showLegend = true
+  showLegend = true,
+  ficNote?: string
 ): Promise<void> {
   const pageCount = doc.getNumberOfPages()
   const pw = doc.internal.pageSize.getWidth()
@@ -128,6 +129,14 @@ export async function drawPageFooters(
     doc.setTextColor(160, 160, 160)
 
     if (showLegend) {
+      // FIC / regulation note — sits just above the legend, centred, subtle italic
+      if (ficNote) {
+        doc.setFont('helvetica', 'italic')
+        doc.setFontSize(5.5)
+        doc.setTextColor(140, 140, 140)
+        doc.text(ficNote, pw / 2, legendY - 7, { align: 'center', maxWidth: pw - 20 })
+      }
+
       // Measure text widths so the whole legend block can be centred
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(7)

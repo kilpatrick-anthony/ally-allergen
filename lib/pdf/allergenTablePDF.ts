@@ -308,7 +308,7 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
         theme: 'grid',
         rowPageBreak: 'avoid',
         pageBreak: 'auto',
-        margin: { left: 7, right: 7, bottom: 22 },
+        margin: { left: 7, right: 7, bottom: 28 },
         styles: {
           fontSize: 7,
           cellPadding: { top: 2, right: 1, bottom: 2, left: 1 },
@@ -513,6 +513,7 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
     }
 
     // ── Render Menu Items section (categories first) ──────────────────────────
+    const FIC_NOTE = 'Allergen information declared in accordance with EU Regulation No. 1169/2011 (FIC Regulation). Where multiple suppliers exist, the most conservative (worst-case) declaration is shown.'
     let finalY = currentY
     if (menuSectionItems.length > 0) {
       // Top-level "Menu Items" heading — centred
@@ -520,17 +521,12 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(...primaryRgb)
       doc.text('Menu Items', pageWidth / 2, finalY, { align: 'center' })
-      finalY += 7
+      finalY += 4
       doc.setFontSize(6.5)
       doc.setFont('helvetica', 'italic')
       doc.setTextColor(100, 100, 100)
-      doc.text(
-        'Allergen information declared in accordance with EU Regulation No. 1169/2011 (FIC Regulation). Where multiple suppliers exist, the most conservative (worst-case) declaration is shown.',
-        7,
-        finalY,
-        { maxWidth: pageWidth - 14 }
-      )
-      finalY += 6
+      doc.text(FIC_NOTE, pageWidth / 2, finalY, { align: 'center', maxWidth: pageWidth - 14 })
+      finalY += 8
       doc.setFont('helvetica', 'normal')
       doc.setTextColor(0, 0, 0)
 
@@ -540,7 +536,6 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
         if (i > 0) { doc.addPage(); finalY = 12 }
         finalY = renderSection(menuGroups[menuCategoryOrder[i]].sort(sortItemsByName), menuCategoryOrder[i], finalY, undefined, 'Item')
       }
-
       if (ingredientItems.length > 0) {
         doc.addPage()
         currentY = 12
@@ -576,7 +571,7 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
 
     // ── Footer on every page (page numbers, legend, AllyJen logo, timestamp) ──
     const generatedDate = `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`
-    await drawPageFooters(doc, allyjenLogoDataUrl, generatedDate, showLegend)
+    await drawPageFooters(doc, allyjenLogoDataUrl, generatedDate, showLegend, FIC_NOTE)
 
     const fileName = `${business.name.replace(/[^a-z0-9]/gi, '_')}_allergen_guide.pdf`
     doc.save(fileName)
