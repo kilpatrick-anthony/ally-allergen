@@ -1,7 +1,7 @@
 // app/page.tsx
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { Container } from '@/components/layout/Container'
 import { Button } from '@/components/ui/Button'
@@ -201,7 +201,7 @@ export default function LandingPage() {
                 className="group p-7 rounded-2xl border border-gray-100 bg-white hover:bg-[#003842] hover:border-[#003842] transition-all duration-300 shadow-sm hover:shadow-xl"
               >
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[#42b8ac]/10 group-hover:bg-[#42b8ac]/20 mb-5 transition-colors">
-                  <f.IconComponent className="h-6 w-6 text-[#42b8ac]" />
+                  {React.createElement(f.IconComponent, { className: 'h-6 w-6 text-[#42b8ac]' })}
                 </div>
                 <h3 className="text-lg font-bold text-[#003842] group-hover:text-white mb-2 transition-colors">{f.title}</h3>
                 <p className="text-gray-500 group-hover:text-white/70 text-sm leading-relaxed transition-colors">{f.desc}</p>

@@ -1,7 +1,7 @@
 // components/admin/AdminNavbar.tsx
 'use client';
 
-import { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -110,7 +110,7 @@ export default function AdminNavbar({ brandColors }: AdminNavbarProps) {
                     }
                   }}
                 >
-                  <link.IconComponent size={20} />
+                  {React.createElement(link.IconComponent, { size: 20 })}
                   {link.label}
                 </Link>
               ))}
@@ -209,7 +209,7 @@ export default function AdminNavbar({ brandColors }: AdminNavbarProps) {
                 }}
                 onClick={() => setIsMenuOpen(false)}
               >
-                <link.IconComponent size={20} />
+                {React.createElement(link.IconComponent, { size: 20 })}
                 <span className="ml-3">{link.label}</span>
               </Link>
             ))}
