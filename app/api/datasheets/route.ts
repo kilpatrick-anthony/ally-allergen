@@ -74,40 +74,40 @@ export async function GET(request: NextRequest) {
 
     let { data: datasheets, error } = await query
 
-    // If we're looking for menu item datasheets and got empty results (or error about missing column)
-    // search by notes field for fallback references
-    if ((menuItemId && (!datasheets || datasheets.length === 0)) || (error && error.message && error.message.includes('menu_item_id'))) {
-      console.log(`No menu_item_id matches found or column missing, checking notes field for fallback references...`)
-      
-      // Fetch all active datasheets for this business and filter in code
-      const fallbackQuery = supabase
+    // For menu_item_id queries: always also search the notes-based fallback and merge results.
+    // Datasheets may have been stored via (a) the menu_item_id column, (b) a [MENU_ITEM_REF:id]
+    // tag in the notes field (used when the column didn't yet exist), or both.
+    if (menuItemId) {
+      // Clear column-not-found errors so we don't surface them — notes fallback covers this
+      if (error && (error.code === '42703' || (error.message && error.message.includes('menu_item_id')))) {
+        datasheets = null
+        error = null
+      }
+
+      // Fetch all active datasheets for this business and look for notes-based references
+      const { data: allDatasheets, error: fallbackError } = await supabase
         .from('datasheets')
         .select('*')
         .eq('business_id', userBusiness.business_id)
         .eq('status', 'active')
         .order('created_at', { ascending: false })
-      
-      if (limit) {
-        fallbackQuery.limit(parseInt(limit))
-      }
 
-      const { data: allDatasheets, error: fallbackError } = await fallbackQuery
-      
-      if (fallbackError) {
-        console.error('Error fetching datasheets for fallback:', fallbackError)
-        // If we have an error and no datasheets yet, return what we have
-        if (!datasheets) {
-          return NextResponse.json({ error: 'Failed to fetch datasheets' }, { status: 500 })
-        }
-      } else {
-        // Filter datasheets that have the menu_item reference in notes
+      if (!fallbackError && allDatasheets) {
         const menuItemRef = `[MENU_ITEM_REF:${menuItemId}]`
-        const filteredDatasheets = (allDatasheets || []).filter(ds => 
+        const notesDatasheets = allDatasheets.filter((ds: any) =>
           ds.notes && ds.notes.includes(menuItemRef)
         )
-        datasheets = filteredDatasheets.length > 0 ? filteredDatasheets : datasheets
+
+        // Merge: take column-based results and append any notes-based ones not already present
+        const columnIds = new Set((datasheets || []).map((ds: any) => ds.id))
+        const merged = [
+          ...(datasheets || []),
+          ...notesDatasheets.filter((ds: any) => !columnIds.has(ds.id)),
+        ]
+        datasheets = merged
       }
-      error = null // Clear the error since we handled it
+
+      error = null // fallback handled any remaining error
     }
 
     if (error) {

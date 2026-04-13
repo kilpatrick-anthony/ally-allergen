@@ -62,6 +62,7 @@ export default function EditMenuItemPage() {
   const [sites, setSites] = useState<SiteOption[]>([])
   const [showIngredientSelector, setShowIngredientSelector] = useState(false)
   const [datasheets, setDatasheets] = useState<any[]>([])
+  const [existingDatasheets, setExistingDatasheets] = useState<any[]>([])
   const [showScan, setShowScan] = useState(false)
   const [customDietaryInput, setCustomDietaryInput] = useState('')
   const [showCustomDietaryInput, setShowCustomDietaryInput] = useState(false)
@@ -183,7 +184,7 @@ export default function EditMenuItemPage() {
         const response = await fetch(`/api/datasheets?menu_item_id=${itemId}`)
         const data = await response.json()
         if (response.ok && data.datasheets) {
-          setDatasheets(data.datasheets)
+          setExistingDatasheets(data.datasheets)
         }
       } catch (error) {
         console.error('Error fetching existing datasheets:', error)
@@ -402,6 +403,7 @@ export default function EditMenuItemPage() {
 
           await Promise.all(uploadPromises)
           setDatasheets([])
+          setExistingDatasheets([])
         } catch (uploadError: any) {
           console.error('Error uploading datasheets:', uploadError)
           setSaveStatus('error')
@@ -797,7 +799,7 @@ export default function EditMenuItemPage() {
               </p>
               <DatasheetUploader
                 entityType="menu_item"
-                existingDatasheets={datasheets}
+                existingDatasheets={existingDatasheets}
                 onFilesChange={setDatasheets}
                 maxFiles={5}
                 compact={false}
