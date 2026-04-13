@@ -1010,15 +1010,15 @@ export default function IngredientsPage() {
 
               <div className="flex items-center justify-end gap-1 pt-4 border-t dark:border-gray-700 mt-4">
                 <Link href={`/admin/ingredients/${ingredient.id}`}>
-                  <Button variant="ghost" size="sm" icon={<Eye className="h-4 w-4" />} title={t('admin.view')} />
+                  <Button variant="ghost" size="sm" icon={Eye} title={t('admin.view')} />
                 </Link>
                 <Link href={`/admin/ingredients/${ingredient.id}/edit`}>
-                  <Button variant="ghost" size="sm" icon={<Edit className="h-4 w-4" />} title={t('admin.edit')} />
+                  <Button variant="ghost" size="sm" icon={Edit} title={t('admin.edit')} />
                 </Link>
                 <Button
                   variant="ghost"
                   size="sm"
-                  icon={<Trash2 className="h-4 w-4" />}
+                  icon={Trash2}
                   onClick={() => handleDelete(ingredient.id)}
                   title={t('admin.delete')}
                 />

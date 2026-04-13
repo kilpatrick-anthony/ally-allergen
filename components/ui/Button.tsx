@@ -86,6 +86,29 @@ export function Button({
     lg: 'h-6 w-6',
   }
   
+  // Icon handler
+  const renderIcon = (icon: any, sizeClass: string) => {
+    if (!icon) return null;
+    
+    // If it's a function/component, use React.createElement
+    if (typeof icon === 'function') {
+      return React.createElement(icon as React.ComponentType<{className: string}>, { className: sizeClass });
+    }
+    
+    // If it's a JSX element (has $$typeof), render it but ensure className is set properly
+    if (icon && typeof icon === 'object' && '$$typeof' in icon) {
+      // For JSX elements, we need to clone and add/update className
+      if (icon.props?.className) {
+        return icon;
+      }
+      // If no className, clone the element with the size class
+      return React.cloneElement(icon as any, { className: sizeClass });
+    }
+    
+    // Otherwise render as-is (string, number, etc.)
+    return icon;
+  };
+  
   return (
     <button
       className={`${combinedClasses} relative overflow-hidden`}
@@ -120,17 +143,9 @@ export function Button({
         </>
       ) : (
         <>
-          {Icon && iconPosition === 'left' && (
-            typeof Icon === 'function' 
-              ? React.createElement(Icon as React.ComponentType<{className: string}>, { className: iconSizes[size] })
-              : Icon
-          )}
+          {Icon && iconPosition === 'left' && renderIcon(Icon, iconSizes[size])}
           {children}
-          {Icon && iconPosition === 'right' && (
-            typeof Icon === 'function' 
-              ? React.createElement(Icon as React.ComponentType<{className: string}>, { className: iconSizes[size] })
-              : Icon
-          )}
+          {Icon && iconPosition === 'right' && renderIcon(Icon, iconSizes[size])}
         </>
       )}
     </button>
