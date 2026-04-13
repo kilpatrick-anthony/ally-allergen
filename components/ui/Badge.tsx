@@ -49,7 +49,7 @@ export function Badge({
         <span className="flex-shrink-0">
           {typeof icon === 'function' 
             ? React.createElement(icon as React.ComponentType<{className: string}>, { className: 'h-3 w-3' })
-            : icon
+            : null
           }
         </span>
       )}

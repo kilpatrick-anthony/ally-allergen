@@ -86,26 +86,17 @@ export function Button({
     lg: 'h-6 w-6',
   }
   
-  // Icon handler
+  // Icon handler - properly render component functions with fresh instances
   const renderIcon = (icon: any, sizeClass: string) => {
     if (!icon) return null;
     
-    // If it's a function/component, use React.createElement
+    // Only handle component functions - creates fresh JSX each render
     if (typeof icon === 'function') {
       return React.createElement(icon as React.ComponentType<{className: string}>, { className: sizeClass });
     }
     
-    // If it's a JSX element (has $$typeof), render it but ensure className is set properly
-    if (icon && typeof icon === 'object' && '$$typeof' in icon) {
-      // For JSX elements, we need to clone and add/update className
-      if (icon.props?.className) {
-        return icon;
-      }
-      // If no className, clone the element with the size class
-      return React.cloneElement(icon as any, { className: sizeClass });
-    }
-    
-    // Otherwise render as-is (string, number, etc.)
+    // If something else was passed (JSX element, string, etc), just render it
+    // This is a fallback - callers should only pass component functions
     return icon;
   };
   
