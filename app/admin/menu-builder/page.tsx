@@ -1,7 +1,7 @@
 // app/admin/menu-builder/page.tsx - List View Only
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { Plus, Search, Trash2, Edit, ChefHat, FilterIcon, ChevronDown, SortAsc, SortDesc, Grid, List, Package, MapPin, Eye, Building } from 'lucide-react'
@@ -42,6 +42,7 @@ export default function MenuBuilderPage() {
   const [sortBy, setSortBy] = useState<'name' | 'date'>('name')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [scopeFilter, setScopeFilter] = useState<'all' | 'global' | string>('all')
+  const [categoryFilter, setCategoryFilter] = useState('all')
   const [showFilters, setShowFilters] = useState(false)
 
   const defaultWarnings: AllergenWarnings = {
@@ -122,7 +123,9 @@ export default function MenuBuilderPage() {
       const matchesScope = scopeFilter === 'all' ||
         (scopeFilter === 'global' && !item.site_id) ||
         (scopeFilter !== 'all' && item.site_id === scopeFilter)
-      return matchesSearch && matchesScope
+      const matchesCategory = categoryFilter === 'all' ||
+        (categoryFilter === 'uncategorized' ? !item.category : item.category === categoryFilter)
+      return matchesSearch && matchesScope && matchesCategory
     })
     .sort((a, b) => {
       let cmp = 0
@@ -140,6 +143,25 @@ export default function MenuBuilderPage() {
     ingredients: ingredients.length,
     sites: sites.length,
   }
+
+  // Get unique categories for filter dropdown
+  const uniqueMenuCategories = Array.from(
+    new Set(menuItems.map(i => i.category).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b))
+
+  // Group filtered items by category
+  const groupedMenuItems = filteredItems.reduce((acc, item) => {
+    const cat = item.category || 'Uncategorized'
+    if (!acc[cat]) acc[cat] = []
+    acc[cat].push(item)
+    return acc
+  }, {} as Record<string, typeof filteredItems>)
+
+  const menuCategoryOrder = Object.keys(groupedMenuItems).sort((a, b) => {
+    if (a === 'Uncategorized') return 1
+    if (b === 'Uncategorized') return -1
+    return a.localeCompare(b)
+  })
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this menu item?')) return
@@ -332,6 +354,23 @@ export default function MenuBuilderPage() {
                   ))}
                 </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Category
+                </label>
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
+                >
+                  <option value="all">All categories</option>
+                  {uniqueMenuCategories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                  <option value="uncategorized">Uncategorized</option>
+                </select>
+              </div>
             </div>
           </div>
         )}
@@ -355,8 +394,16 @@ export default function MenuBuilderPage() {
             </Link>
           </div>
         ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-            {filteredItems.map((item) => (
+          <div className="p-6 space-y-8">
+            {menuCategoryOrder.map(cat => (
+              <div key={cat}>
+                <div className="flex items-center gap-2 mb-4">
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{cat}</h3>
+                  <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-full px-2 py-0.5">{groupedMenuItems[cat].length}</span>
+                  <div className="flex-1 border-t border-gray-200 dark:border-gray-700 ml-1" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {groupedMenuItems[cat].map((item) => (
               <div
                 key={item.id}
                 className="border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg transition-shadow bg-white dark:bg-gray-800 flex flex-col"
@@ -421,6 +468,9 @@ export default function MenuBuilderPage() {
                 </div>
               </div>
             ))}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -436,8 +486,18 @@ export default function MenuBuilderPage() {
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.map((item, idx) => (
-                  <tr key={item.id} className={idx !== filteredItems.length - 1 ? 'border-b border-gray-200 dark:border-gray-700' : ''}>
+                {menuCategoryOrder.map(cat => (
+                  <React.Fragment key={cat}>
+                    <tr>
+                      <td colSpan={6} className="px-6 py-2 bg-gray-50 dark:bg-gray-700/50">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                          {cat}
+                          <span className="ml-2 text-gray-400 font-normal normal-case tracking-normal">({groupedMenuItems[cat].length})</span>
+                        </span>
+                      </td>
+                    </tr>
+                {groupedMenuItems[cat].map((item, idx) => (
+                  <tr key={item.id} className="border-b border-gray-200 dark:border-gray-700">
                     <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{item.name}</td>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate">{item.description}</td>
                     <td className="px-6 py-4 text-sm">
@@ -477,6 +537,8 @@ export default function MenuBuilderPage() {
                       </div>
                     </td>
                   </tr>
+                ))}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>

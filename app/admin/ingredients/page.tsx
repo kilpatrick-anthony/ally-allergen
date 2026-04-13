@@ -44,6 +44,7 @@ interface Allergen {
 interface Ingredient {
   id: string
   name: string
+  category: string
   suppliers: string[]
   allergens: Allergen[]
   certifications: string[]
@@ -121,6 +122,7 @@ export default function IngredientsPage() {
   const [selectedAllergen, setSelectedAllergen] = useState('all')
   const [selectedCertification, setSelectedCertification] = useState('all')
   const [selectedStatus, setSelectedStatus] = useState('all')
+  const [selectedCategory, setSelectedCategory] = useState('all')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState<'name' | 'date' | 'status' | 'compliance'>('name')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
@@ -172,6 +174,7 @@ export default function IngredientsPage() {
           return {
             id: ing.id,
             name: ing.name,
+            category: ing.category || '',
             suppliers: ing.suppliers || [],
             allergens: ing.allergen_warnings ? 
               (() => {
@@ -252,8 +255,10 @@ export default function IngredientsPage() {
     const matchesCertification = selectedCertification === 'all' || 
                                 ingredient.certifications.includes(selectedCertification)
     const matchesStatus = selectedStatus === 'all' || ingredient.status === selectedStatus
+    const matchesCategory = selectedCategory === 'all' ||
+                            (selectedCategory === 'uncategorized' ? !ingredient.category : ingredient.category === selectedCategory)
     
-    return matchesSearch && matchesAllergen && matchesCertification && matchesStatus
+    return matchesSearch && matchesAllergen && matchesCertification && matchesStatus && matchesCategory
   })
 
   const sortedIngredients = [...filteredIngredients].sort((a, b) => {
@@ -269,6 +274,25 @@ export default function IngredientsPage() {
       cmp = (order[a.compliance] ?? 0) - (order[b.compliance] ?? 0)
     }
     return sortDir === 'asc' ? cmp : -cmp
+  })
+
+  // Get unique categories for filter dropdown
+  const uniqueCategories = Array.from(
+    new Set(ingredients.map(i => i.category).filter(Boolean))
+  ).sort((a, b) => a.localeCompare(b))
+
+  // Group sorted ingredients by category
+  const groupedIngredients = sortedIngredients.reduce((acc, item) => {
+    const cat = item.category || 'Uncategorized'
+    if (!acc[cat]) acc[cat] = []
+    acc[cat].push(item)
+    return acc
+  }, {} as Record<string, typeof sortedIngredients>)
+
+  const categoryOrder = Object.keys(groupedIngredients).sort((a, b) => {
+    if (a === 'Uncategorized') return 1
+    if (b === 'Uncategorized') return -1
+    return a.localeCompare(b)
   })
 
   // Stats
@@ -569,6 +593,23 @@ export default function IngredientsPage() {
                   <option value="archived">{t('admin.archived')}</option>
                 </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Category
+                </label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
+                >
+                  <option value="all">All categories</option>
+                  {uniqueCategories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                  <option value="uncategorized">Uncategorized</option>
+                </select>
+              </div>
             </div>
             
             <div className="mt-4 flex justify-end gap-3">
@@ -578,6 +619,7 @@ export default function IngredientsPage() {
                   setSelectedAllergen('all')
                   setSelectedCertification('all')
                   setSelectedStatus('all')
+                  setSelectedCategory('all')
                 }}
               >
                 {t('admin.clearFilters')}
@@ -682,7 +724,17 @@ export default function IngredientsPage() {
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-gray-700">
-              {sortedIngredients.map((ingredient) => (
+              {categoryOrder.map(cat => (
+                <React.Fragment key={cat}>
+                  <tr>
+                    <td colSpan={7} className="py-2 px-4 bg-gray-50 dark:bg-gray-700/50">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                        {cat}
+                        <span className="ml-2 text-gray-400 font-normal normal-case tracking-normal">({groupedIngredients[cat].length})</span>
+                      </span>
+                    </td>
+                  </tr>
+                  {groupedIngredients[cat].map((ingredient) => (
                 <tr
                   key={ingredient.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
@@ -961,13 +1013,23 @@ export default function IngredientsPage() {
                     </div>
                   </td>
                 </tr>
+                  ))}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-          {sortedIngredients.map((ingredient) => (
+        <div className="p-6 space-y-8">
+          {categoryOrder.map(cat => (
+            <div key={cat}>
+              <div className="flex items-center gap-2 mb-4">
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{cat}</h3>
+                <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-full px-2 py-0.5">{groupedIngredients[cat].length}</span>
+                <div className="flex-1 border-t border-gray-200 dark:border-gray-700 ml-1" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {groupedIngredients[cat].map((ingredient) => (
             <div
               key={ingredient.id}
               className="border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:shadow-lg transition-shadow bg-white dark:bg-gray-800 flex flex-col h-full"
@@ -1022,6 +1084,9 @@ export default function IngredientsPage() {
                   onClick={() => handleDelete(ingredient.id)}
                   title={t('admin.delete')}
                 />
+              </div>
+            </div>
+          ))}
               </div>
             </div>
           ))}

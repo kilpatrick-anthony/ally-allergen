@@ -389,6 +389,25 @@ export default function EditIngredientPage() {
                   placeholder="Enter ingredient description..."
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Category
+                </label>
+                <input
+                  type="text"
+                  list="ingredient-categories"
+                  value={ingredient.category}
+                  onChange={(e) => setIngredient({ ...ingredient, category: e.target.value })}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
+                  placeholder="e.g., Dairy, Produce, Dry Goods"
+                />
+                <datalist id="ingredient-categories">
+                  {categoryOptions.map(opt => (
+                    <option key={opt} value={opt} />
+                  ))}
+                </datalist>
+              </div>
             </div>
           </Card>
 

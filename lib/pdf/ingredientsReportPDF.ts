@@ -60,29 +60,59 @@ export async function generateIngredientsReportPDF(options: IngredientsReportOpt
   doc.text(`Generated: ${new Date().toLocaleDateString()}  •  Total Ingredients: ${ingredients.length}`, pageWidth / 2, y, { align: 'center' })
   y += 10
 
-  const tableData = ingredients.map(ingredient => [
-    ingredient.name || 'N/A',
-    ingredient.description || 'N/A',
-    ingredient.status || 'N/A',
-    ingredient.compliance || 'N/A',
-    ingredient.suppliers?.length || 0
-  ])
+  // Group ingredients by category
+  const grouped = ingredients.reduce((acc: Record<string, any[]>, ing) => {
+    const cat = ing.category || 'Uncategorized'
+    if (!acc[cat]) acc[cat] = []
+    acc[cat].push(ing)
+    return acc
+  }, {})
 
-  autoTable(doc, {
-    head: [['Name', 'Description', 'Status', 'Compliance', 'Suppliers']],
-    body: tableData,
-    startY: y,
-    styles: { fontSize: 8, cellPadding: 3 },
-    headStyles: { fillColor: primaryRgb, textColor: 255, fontSize: 9, fontStyle: 'bold' },
-    alternateRowStyles: { fillColor: [248, 250, 252] },
-    columnStyles: {
-      0: { cellWidth: 45 },
-      1: { cellWidth: 70 },
-      2: { cellWidth: 25 },
-      3: { cellWidth: 25 },
-      4: { cellWidth: 25 },
-    },
+  const categoryOrder = Object.keys(grouped).sort((a, b) => {
+    if (a === 'Uncategorized') return 1
+    if (b === 'Uncategorized') return -1
+    return a.localeCompare(b)
   })
+
+  for (const cat of categoryOrder) {
+    // Category header
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...primaryRgb)
+    // Check if we need a new page (leave room for header + table header)
+    if (y > doc.internal.pageSize.getHeight() - 30) {
+      doc.addPage()
+      y = 15
+    }
+    doc.text(cat, 14, y)
+    y += 1
+
+    const tableData = grouped[cat].map((ingredient: any) => [
+      ingredient.name || 'N/A',
+      ingredient.description || 'N/A',
+      ingredient.status || 'N/A',
+      ingredient.compliance || 'N/A',
+      ingredient.suppliers?.length || 0
+    ])
+
+    autoTable(doc, {
+      head: [['Name', 'Description', 'Status', 'Compliance', 'Suppliers']],
+      body: tableData,
+      startY: y,
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: primaryRgb, textColor: 255, fontSize: 9, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles: {
+        0: { cellWidth: 45 },
+        1: { cellWidth: 70 },
+        2: { cellWidth: 25 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 25 },
+      },
+    })
+
+    y = (doc as any).lastAutoTable.finalY + 10
+  }
 
   const generatedDate = `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`
   await drawPageFooters(doc, allyjenLogoDataUrl, generatedDate)

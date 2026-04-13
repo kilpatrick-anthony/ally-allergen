@@ -571,6 +571,32 @@ export default function EditMenuItemPage() {
               )}
             </Card>
 
+            {/* Category */}
+            <Card className="p-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Category
+              </label>
+              <input
+                type="text"
+                list="menu-item-categories"
+                value={menuItem.category}
+                onChange={(e) => setMenuItem({ ...menuItem, category: e.target.value })}
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                placeholder="e.g., Starters, Mains, Desserts"
+              />
+              <datalist id="menu-item-categories">
+                <option value="Starters" />
+                <option value="Mains" />
+                <option value="Desserts" />
+                <option value="Sides" />
+                <option value="Drinks" />
+                <option value="Snacks" />
+                <option value="Breakfast" />
+                <option value="Lunch" />
+                <option value="Specials" />
+              </datalist>
+            </Card>
+
             {/* Description */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

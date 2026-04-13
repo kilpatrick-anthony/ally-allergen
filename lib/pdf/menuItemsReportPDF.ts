@@ -60,25 +60,54 @@ export async function generateMenuItemsReportPDF(options: MenuItemsReportOptions
   doc.text(`Generated: ${new Date().toLocaleDateString()}  •  Total Menu Items: ${menuItems.length}`, pageWidth / 2, y, { align: 'center' })
   y += 10
 
-  const tableData = menuItems.map(item => [
-    item.name || 'N/A',
-    item.description || 'N/A',
-    item.is_active ? 'Active' : 'Inactive',
-  ])
+  // Group menu items by category
+  const grouped = menuItems.reduce((acc: Record<string, any[]>, item) => {
+    const cat = item.category || 'Uncategorized'
+    if (!acc[cat]) acc[cat] = []
+    acc[cat].push(item)
+    return acc
+  }, {})
 
-  autoTable(doc, {
-    head: [['Name', 'Description', 'Status']],
-    body: tableData,
-    startY: y,
-    styles: { fontSize: 8, cellPadding: 3 },
-    headStyles: { fillColor: primaryRgb, textColor: 255, fontSize: 9, fontStyle: 'bold' },
-    alternateRowStyles: { fillColor: [248, 250, 252] },
-    columnStyles: {
-      0: { cellWidth: 50 },
-      1: { cellWidth: 110 },
-      2: { cellWidth: 30 },
-    },
+  const categoryOrder = Object.keys(grouped).sort((a, b) => {
+    if (a === 'Uncategorized') return 1
+    if (b === 'Uncategorized') return -1
+    return a.localeCompare(b)
   })
+
+  for (const cat of categoryOrder) {
+    // Category header
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...primaryRgb)
+    if (y > doc.internal.pageSize.getHeight() - 30) {
+      doc.addPage()
+      y = 15
+    }
+    doc.text(cat, 14, y)
+    y += 1
+
+    const tableData = grouped[cat].map((item: any) => [
+      item.name || 'N/A',
+      item.description || 'N/A',
+      item.is_active ? 'Active' : 'Inactive',
+    ])
+
+    autoTable(doc, {
+      head: [['Name', 'Description', 'Status']],
+      body: tableData,
+      startY: y,
+      styles: { fontSize: 8, cellPadding: 3 },
+      headStyles: { fillColor: primaryRgb, textColor: 255, fontSize: 9, fontStyle: 'bold' },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles: {
+        0: { cellWidth: 50 },
+        1: { cellWidth: 110 },
+        2: { cellWidth: 30 },
+      },
+    })
+
+    y = (doc as any).lastAutoTable.finalY + 10
+  }
 
   const generatedDate = `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`
   await drawPageFooters(doc, allyjenLogoDataUrl, generatedDate)

@@ -29,6 +29,7 @@ export default function NewIngredientPage() {
   const [ingredient, setIngredient] = useState({
     name: '',
     description: '',
+    category: '',
     allergen_warnings: {
       cereals_gluten: 'none',
       crustaceans: 'none',
@@ -363,6 +364,26 @@ export default function NewIngredientPage() {
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                   placeholder="e.g., Acai Berry"
                 />
+              </div>
+
+              {/* Category */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Category
+                </label>
+                <input
+                  type="text"
+                  list="ingredient-categories"
+                  value={ingredient.category}
+                  onChange={(e) => setIngredient({...ingredient, category: e.target.value})}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
+                  placeholder="e.g., Dairy, Produce, Dry Goods"
+                />
+                <datalist id="ingredient-categories">
+                  {categoryOptions.map(opt => (
+                    <option key={opt} value={opt} />
+                  ))}
+                </datalist>
               </div>
 
               {/* Certifications */}
