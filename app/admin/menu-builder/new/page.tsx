@@ -95,6 +95,22 @@ export default function NewMenuItemPage() {
     { name: 'Coeliac-Friendly', color: '#ec4899', icon: ShieldCheck }
   ]
 
+  const DEFAULT_MENU_CATEGORIES = [
+    'Breakfast', 'Desserts', 'Drinks', 'Lunch', 'Mains',
+    'Sides', 'Snacks', 'Specials', 'Starters'
+  ]
+  const [categoryOptions, setCategoryOptions] = useState<string[]>(DEFAULT_MENU_CATEGORIES)
+
+  useEffect(() => {
+    fetch('/api/menu-items/categories')
+      .then(r => r.ok ? r.json() : { categories: [] })
+      .then(({ categories }: { categories: string[] }) => {
+        const merged = [...new Set([...DEFAULT_MENU_CATEGORIES, ...(categories || [])])].sort()
+        setCategoryOptions(merged)
+      })
+      .catch(() => {})
+  }, [])
+
   const defaultWarnings: AllergenWarnings = {
     cereals_gluten: 'none',
     crustaceans: 'none',
@@ -391,15 +407,9 @@ export default function NewMenuItemPage() {
                 placeholder="e.g., Starters, Mains, Desserts"
               />
               <datalist id="menu-item-categories">
-                <option value="Starters" />
-                <option value="Mains" />
-                <option value="Desserts" />
-                <option value="Sides" />
-                <option value="Drinks" />
-                <option value="Snacks" />
-                <option value="Breakfast" />
-                <option value="Lunch" />
-                <option value="Specials" />
+                {categoryOptions.map(opt => (
+                  <option key={opt} value={opt} />
+                ))}
               </datalist>
             </Card>
 

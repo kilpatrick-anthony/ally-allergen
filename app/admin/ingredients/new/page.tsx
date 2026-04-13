@@ -137,21 +137,21 @@ export default function NewIngredientPage() {
     fetchSuppliers()
   }, [])
 
-  const categoryOptions = [
-    'Fruit',
-    'Vegetable',
-    'Grain',
-    'Protein',
-    'Dairy',
-    'Dairy Alternative',
-    'Spread',
-    'Seed',
-    'Nut',
-    'Spice',
-    'Sweetener',
-    'Oil',
-    'Other'
+  const DEFAULT_INGREDIENT_CATEGORIES = [
+    'Dairy', 'Dairy Alternative', 'Fruit', 'Grain', 'Nut', 'Oil',
+    'Other', 'Protein', 'Seed', 'Spice', 'Spread', 'Sweetener', 'Vegetable'
   ]
+  const [categoryOptions, setCategoryOptions] = useState<string[]>(DEFAULT_INGREDIENT_CATEGORIES)
+
+  useEffect(() => {
+    fetch('/api/ingredients/categories')
+      .then(r => r.ok ? r.json() : { categories: [] })
+      .then(({ categories }: { categories: string[] }) => {
+        const merged = [...new Set([...DEFAULT_INGREDIENT_CATEGORIES, ...(categories || [])])].sort()
+        setCategoryOptions(merged)
+      })
+      .catch(() => {})
+  }, [])
 
   const certificationOptions = [
     { name: 'Vegan', color: '#16a34a', icon: Leaf },
