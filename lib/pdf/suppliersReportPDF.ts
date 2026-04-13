@@ -74,7 +74,7 @@ export async function generateSuppliersReportPDF(options: SuppliersReportOptions
     head: [['Name', 'Contact', 'Phone', 'Email', 'Website', 'Ingredients', 'Notes']],
     body: tableData,
     startY: y,
-    margin: { left: 10, right: 10 },
+    margin: { left: 10, right: 10, bottom: 22 },
     styles: { fontSize: 7, cellPadding: 2 },
     headStyles: { fillColor: primaryRgb, textColor: 255, fontSize: 8, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [248, 250, 252] },

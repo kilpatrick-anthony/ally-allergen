@@ -308,7 +308,7 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
         theme: 'grid',
         rowPageBreak: 'avoid',
         pageBreak: 'auto',
-        margin: { left: 7, right: 7 },
+        margin: { left: 7, right: 7, bottom: 22 },
         styles: {
           fontSize: 7,
           cellPadding: { top: 2, right: 1, bottom: 2, left: 1 },
@@ -497,25 +497,74 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
       })
       .sort(sortItemsByName)
 
-    // ── Render Menu Items section ─────────────────────────────────────────────
+    // ── Helper: group items by category, Uncategorized last ──────────────────
+    const groupByCategory = (arr: MenuItem[]): Record<string, MenuItem[]> => {
+      const groups: Record<string, MenuItem[]> = {}
+      arr.forEach(item => {
+        const cat = (item as any).category?.trim() || 'Uncategorized'
+        if (!groups[cat]) groups[cat] = []
+        groups[cat].push(item)
+      })
+      return groups
+    }
+    const sortCategoryKeys = (keys: string[]): string[] => {
+      const rest = keys.filter(k => k !== 'Uncategorized').sort()
+      return keys.includes('Uncategorized') ? [...rest, 'Uncategorized'] : rest
+    }
+
+    // ── Render Menu Items section (categories first) ──────────────────────────
     let finalY = currentY
     if (menuSectionItems.length > 0) {
-      finalY = renderSection(
-        menuSectionItems,
-        'Menu Items',
-        currentY,
+      // Top-level "Menu Items" heading
+      doc.setFontSize(14)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(...primaryRgb)
+      doc.text('Menu Items', 7, finalY)
+      finalY += 7
+      doc.setFontSize(6.5)
+      doc.setFont('helvetica', 'italic')
+      doc.setTextColor(100, 100, 100)
+      doc.text(
         'Allergen information declared in accordance with EU Regulation No. 1169/2011 (FIC Regulation). Where multiple suppliers exist, the most conservative (worst-case) declaration is shown.',
-        'Item'
+        7,
+        finalY,
+        { maxWidth: pageWidth - 14 }
       )
+      finalY += 6
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(0, 0, 0)
+
+      const menuGroups = groupByCategory(menuSectionItems)
+      const menuCategoryOrder = sortCategoryKeys(Object.keys(menuGroups))
+      for (const cat of menuCategoryOrder) {
+        finalY = renderSection(menuGroups[cat].sort(sortItemsByName), cat, finalY, undefined, 'Item')
+        finalY += 4
+      }
+
       if (ingredientItems.length > 0) {
         doc.addPage()
         currentY = 12
+        finalY = currentY
       }
     }
 
-    // ── Render Ingredients section ────────────────────────────────────────────
+    // ── Render Ingredients section (categories after menu items) ─────────────
     if (ingredientItems.length > 0) {
-      finalY = renderSection(expandedIngredientItems, 'Ingredients', currentY, undefined, 'Ingredient')
+      // Top-level "Ingredients" heading
+      doc.setFontSize(14)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(...primaryRgb)
+      doc.text('Ingredients', 7, finalY)
+      finalY += 10
+      doc.setFont('helvetica', 'normal')
+      doc.setTextColor(0, 0, 0)
+
+      const ingredientGroups = groupByCategory(expandedIngredientItems)
+      const ingredientCategoryOrder = sortCategoryKeys(Object.keys(ingredientGroups))
+      for (const cat of ingredientCategoryOrder) {
+        finalY = renderSection(ingredientGroups[cat].sort(sortItemsByName), cat, finalY, undefined, 'Ingredient')
+        finalY += 4
+      }
     }
 
     // ── If no split (legacy call without itemType), render everything together ─

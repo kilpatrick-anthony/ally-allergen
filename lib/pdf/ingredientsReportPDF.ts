@@ -99,6 +99,7 @@ export async function generateIngredientsReportPDF(options: IngredientsReportOpt
       head: [['Name', 'Description', 'Status', 'Compliance', 'Suppliers']],
       body: tableData,
       startY: y,
+      margin: { bottom: 22 },
       styles: { fontSize: 8, cellPadding: 3 },
       headStyles: { fillColor: primaryRgb, textColor: 255, fontSize: 9, fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [248, 250, 252] },

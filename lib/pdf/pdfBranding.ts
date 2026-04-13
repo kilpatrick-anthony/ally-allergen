@@ -128,20 +128,30 @@ export async function drawPageFooters(
     doc.setTextColor(160, 160, 160)
 
     if (showLegend) {
-      const legendWidth = pw - 20
-      const itemWidth = legendWidth / legendItems.length
+      // Measure text widths so the whole legend block can be centred
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(7)
+      const boxW = 5
+      const boxTextGap = 2   // mm between right edge of box and start of text
+      const interItemGap = 10  // mm between end of one item's text and next item's box
+      const textWidths = legendItems.map(item => doc.getTextWidth(item.text))
+      const itemWidths = textWidths.map(tw => boxW + boxTextGap + tw)
+      const totalLegendW = itemWidths.reduce((a, b) => a + b, 0) + interItemGap * (legendItems.length - 1)
+      let startX = (pw - totalLegendW) / 2
+
       legendItems.forEach((item, index) => {
-        const x = 10 + index * itemWidth
+        const x = startX
         doc.setFillColor(...item.fill)
         doc.setDrawColor(180, 180, 180)
-        doc.rect(x, legendY - 4, 5, 5, 'FD')
+        doc.rect(x, legendY - 4, boxW, 5, 'FD')
         if (item.high !== null) {
-          drawLegendCheckmark(doc, x, legendY - 4, 5, 5, item.high)
+          drawLegendCheckmark(doc, x, legendY - 4, boxW, 5, item.high)
         }
         doc.setFont('helvetica', 'normal')
         doc.setFontSize(7)
         doc.setTextColor(80, 80, 80)
-        doc.text(item.text, x + 7, legendY, { maxWidth: itemWidth - 10 })
+        doc.text(item.text, x + boxW + boxTextGap, legendY)
+        startX += itemWidths[index] + interItemGap
       })
     }
 

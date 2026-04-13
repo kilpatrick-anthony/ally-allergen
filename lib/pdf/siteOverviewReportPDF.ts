@@ -79,6 +79,7 @@ export async function generateSiteOverviewReportPDF(options: SiteOverviewReportO
     head: [['Site Name', 'Menu Items', 'Ingredients']],
     body: sitesData,
     startY: y,
+    margin: { bottom: 22 },
     styles: { fontSize: 9, cellPadding: 3 },
     headStyles: { fillColor: primaryRgb, textColor: 255, fontSize: 10, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [248, 250, 252] },
