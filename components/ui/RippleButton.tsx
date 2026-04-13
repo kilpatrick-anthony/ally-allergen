@@ -117,15 +117,19 @@ export function RippleButton({
       ) : (
         <>
           {Icon && iconPosition === 'left' && (
-            typeof Icon === 'function'
-              ? React.createElement(Icon as React.ComponentType<{className: string}>, { className: iconSizes[size] })
-              : Icon
+            React.isValidElement(Icon)
+              ? Icon
+              : (typeof Icon === 'function' || (typeof Icon === 'object' && typeof (Icon as any).render === 'function'))
+                ? React.createElement(Icon as React.ComponentType<{className: string}>, { className: iconSizes[size] })
+                : null
           )}
           {children}
           {Icon && iconPosition === 'right' && (
-            typeof Icon === 'function'
-              ? React.createElement(Icon as React.ComponentType<{className: string}>, { className: iconSizes[size] })
-              : Icon
+            React.isValidElement(Icon)
+              ? Icon
+              : (typeof Icon === 'function' || (typeof Icon === 'object' && typeof (Icon as any).render === 'function'))
+                ? React.createElement(Icon as React.ComponentType<{className: string}>, { className: iconSizes[size] })
+                : null
           )}
         </>
       )}

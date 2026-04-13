@@ -90,14 +90,20 @@ export function Button({
   const renderIcon = (icon: any, sizeClass: string) => {
     if (!icon) return null;
     
-    // Only handle component functions - creates fresh JSX each render
-    if (typeof icon === 'function') {
+    // If it's already a rendered JSX element, return it as-is
+    if (React.isValidElement(icon)) {
+      return icon;
+    }
+    
+    // Handle both regular function components AND forwardRef components.
+    // React.forwardRef() returns a plain object (typeof === 'object'), not a function,
+    // so Lucide icons (which all use forwardRef) fail the 'function' check and must
+    // be caught here to avoid the React#31 "object is not a valid React child" error.
+    if (typeof icon === 'function' || (typeof icon === 'object' && typeof (icon as any).render === 'function')) {
       return React.createElement(icon as React.ComponentType<{className: string}>, { className: sizeClass });
     }
     
-    // If something else was passed (JSX element, string, etc), just render it
-    // This is a fallback - callers should only pass component functions
-    return icon;
+    return null;
   };
   
   return (
