@@ -271,7 +271,7 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
       doc.setFontSize(16)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(...primaryRgb)
-      doc.text(sectionTitle, pageWidth / 2, startY, { align: 'center' })
+      doc.text(sectionTitle, 7, startY)
       startY += 5
 
       if (subNote) {
