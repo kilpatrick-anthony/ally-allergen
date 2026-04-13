@@ -459,7 +459,7 @@ export default function IngredientsPage() {
             <Button
               variant="ghost"
               size="sm"
-              icon={<FilterIcon className="h-4 w-4" />}
+              icon={FilterIcon}
               onClick={() => setShowFilters(!showFilters)}
             >
               {t('admin.filters')}
@@ -614,7 +614,7 @@ export default function IngredientsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                icon={<Eye className="h-4 w-4" />}
+                icon={Eye}
                 onClick={() => {
                   // Handle bulk view
                 }}
@@ -624,7 +624,7 @@ export default function IngredientsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                icon={<Copy className="h-4 w-4" />}
+                icon={Copy}
                 onClick={() => {
                   // Handle bulk duplicate
                 }}
@@ -634,7 +634,7 @@ export default function IngredientsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                icon={<FileText className="h-4 w-4" />}
+                icon={FileText}
                 onClick={handleBulkArchive}
               >
                 {t('admin.archive')}
@@ -642,7 +642,7 @@ export default function IngredientsPage() {
               <Button
                 variant="danger"
                 size="sm"
-                icon={<Trash2 className="h-4 w-4" />}
+                icon={Trash2}
                 onClick={handleBulkDelete}
               >
                 {t('admin.delete')}
@@ -939,7 +939,7 @@ export default function IngredientsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          icon={<Eye className="h-4 w-4" />}
+                          icon={Eye}
                           title={t('admin.viewIngredient')}
                         />
                       </Link>
@@ -947,14 +947,14 @@ export default function IngredientsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          icon={<Edit className="h-4 w-4" />}
+                          icon={Edit}
                           title={t('admin.editIngredient')}
                         />
                       </Link>
                       <Button
                         variant="ghost"
                         size="sm"
-                        icon={<Trash2 className="h-4 w-4" />}
+                        icon={Trash2}
                         onClick={() => handleDelete(ingredient.id)}
                         title={t('admin.deleteIngredient')}
                       />
@@ -1041,7 +1041,7 @@ export default function IngredientsPage() {
               : t('admin.getStartedFirstIngredient')}
           </p>
           <Link href="/admin/ingredients/new">
-            <Button variant="primary" icon={<Plus className="h-4 w-4" />}>
+            <Button variant="primary" icon={Plus}>
               {t('admin.addFirstIngredient')}
             </Button>
           </Link>
