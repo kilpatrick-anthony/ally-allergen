@@ -268,11 +268,11 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
       const headers = [col0Label, ...allergenHeaders]
 
       // Section heading
-      doc.setFontSize(12)
+      doc.setFontSize(16)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(...primaryRgb)
-      doc.text(sectionTitle, 7, startY)
-      startY += 8
+      doc.text(sectionTitle, pageWidth / 2, startY, { align: 'center' })
+      startY += 5
 
       if (subNote) {
         doc.setFontSize(6.5)
@@ -515,11 +515,11 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
     // ── Render Menu Items section (categories first) ──────────────────────────
     let finalY = currentY
     if (menuSectionItems.length > 0) {
-      // Top-level "Menu Items" heading
-      doc.setFontSize(14)
+      // Top-level "Menu Items" heading — centred
+      doc.setFontSize(20)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(...primaryRgb)
-      doc.text('Menu Items', 7, finalY)
+      doc.text('Menu Items', pageWidth / 2, finalY, { align: 'center' })
       finalY += 7
       doc.setFontSize(6.5)
       doc.setFont('helvetica', 'italic')
@@ -536,9 +536,9 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
 
       const menuGroups = groupByCategory(menuSectionItems)
       const menuCategoryOrder = sortCategoryKeys(Object.keys(menuGroups))
-      for (const cat of menuCategoryOrder) {
-        finalY = renderSection(menuGroups[cat].sort(sortItemsByName), cat, finalY, undefined, 'Item')
-        finalY += 4
+      for (let i = 0; i < menuCategoryOrder.length; i++) {
+        if (i > 0) { doc.addPage(); finalY = 12 }
+        finalY = renderSection(menuGroups[menuCategoryOrder[i]].sort(sortItemsByName), menuCategoryOrder[i], finalY, undefined, 'Item')
       }
 
       if (ingredientItems.length > 0) {
@@ -550,20 +550,20 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
 
     // ── Render Ingredients section (categories after menu items) ─────────────
     if (ingredientItems.length > 0) {
-      // Top-level "Ingredients" heading
-      doc.setFontSize(14)
+      // Top-level "Ingredients" heading — centred
+      doc.setFontSize(20)
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(...primaryRgb)
-      doc.text('Ingredients', 7, finalY)
+      doc.text('Ingredients', pageWidth / 2, finalY, { align: 'center' })
       finalY += 10
       doc.setFont('helvetica', 'normal')
       doc.setTextColor(0, 0, 0)
 
       const ingredientGroups = groupByCategory(expandedIngredientItems)
       const ingredientCategoryOrder = sortCategoryKeys(Object.keys(ingredientGroups))
-      for (const cat of ingredientCategoryOrder) {
-        finalY = renderSection(ingredientGroups[cat].sort(sortItemsByName), cat, finalY, undefined, 'Ingredient')
-        finalY += 4
+      for (let i = 0; i < ingredientCategoryOrder.length; i++) {
+        if (i > 0) { doc.addPage(); finalY = 12 }
+        finalY = renderSection(ingredientGroups[ingredientCategoryOrder[i]].sort(sortItemsByName), ingredientCategoryOrder[i], finalY, undefined, 'Ingredient')
       }
     }
 

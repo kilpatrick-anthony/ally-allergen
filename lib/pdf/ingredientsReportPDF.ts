@@ -74,18 +74,20 @@ export async function generateIngredientsReportPDF(options: IngredientsReportOpt
     return a.localeCompare(b)
   })
 
-  for (const cat of categoryOrder) {
-    // Category header
-    doc.setFontSize(10)
-    doc.setFont('helvetica', 'bold')
-    doc.setTextColor(...primaryRgb)
-    // Check if we need a new page (leave room for header + table header)
-    if (y > doc.internal.pageSize.getHeight() - 30) {
+  for (let catIndex = 0; catIndex < categoryOrder.length; catIndex++) {
+    const cat = categoryOrder[catIndex]
+    // Each category starts on a new page (except the first, which follows the header)
+    if (catIndex > 0) {
       doc.addPage()
       y = 15
     }
+
+    // Category header
+    doc.setFontSize(14)
+    doc.setFont('helvetica', 'bold')
+    doc.setTextColor(...primaryRgb)
     doc.text(cat, 14, y)
-    y += 1
+    y += 3
 
     const tableData = grouped[cat].map((ingredient: any) => [
       ingredient.name || 'N/A',
