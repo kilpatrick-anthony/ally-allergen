@@ -521,11 +521,6 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
       doc.setFont('helvetica', 'bold')
       doc.setTextColor(...primaryRgb)
       doc.text('Menu Items', pageWidth / 2, finalY, { align: 'center' })
-      finalY += 4
-      doc.setFontSize(6.5)
-      doc.setFont('helvetica', 'italic')
-      doc.setTextColor(100, 100, 100)
-      doc.text(FIC_NOTE, pageWidth / 2, finalY, { align: 'center', maxWidth: pageWidth - 14 })
       finalY += 8
       doc.setFont('helvetica', 'normal')
       doc.setTextColor(0, 0, 0)
