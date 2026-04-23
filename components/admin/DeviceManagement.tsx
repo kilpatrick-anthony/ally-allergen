@@ -280,14 +280,14 @@ export default function DeviceManagement({
           <div className="flex items-center gap-2 flex-shrink-0">
             <Button
               variant="outline"
-              icon={RefreshCw}
+              icon={<RefreshCw className="h-5 w-5" />}
               onClick={loadDevices}
             >
               Refresh
             </Button>
             <Button
               variant="primary"
-              icon={Plus}
+              icon={<Plus className="h-5 w-5" />}
               onClick={() => setShowAddDevice(true)}
             >
               Add Device
@@ -414,7 +414,7 @@ export default function DeviceManagement({
           </p>
           <Button
             variant="primary"
-            icon={Plus}
+            icon={<Plus className="h-5 w-5" />}
             onClick={() => setShowAddDevice(true)}
           >
             Add First Device
@@ -449,7 +449,11 @@ export default function DeviceManagement({
                         <div className="flex items-center gap-2 mt-1">
                           <Badge 
                             variant={device.status === 'online' ? 'success' : 'default'}
-                            icon={device.status === 'online' ? Wifi : WifiOff}
+                            icon={
+                              device.status === 'online'
+                                ? <Wifi className="h-3 w-3" />
+                                : <WifiOff className="h-3 w-3" />
+                            }
                           >
                             {device.status === 'online' ? 'Online' : 'Offline'}
                           </Badge>

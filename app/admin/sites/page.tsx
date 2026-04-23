@@ -165,10 +165,10 @@ export default function SitesPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="primary" icon={Building}>
+            <Badge variant="primary" icon={<Building className="h-3 w-3" />}>
               {stats.total} sites
             </Badge>
-            <Badge variant={stats.online === stats.active ? 'success' : 'warning'} icon={Wifi}>
+            <Badge variant={stats.online === stats.active ? 'success' : 'warning'} icon={<Wifi className="h-3 w-3" />}>
               {stats.online} online
             </Badge>
           </div>
@@ -289,7 +289,7 @@ export default function SitesPage() {
                       <Badge variant={site.status === 'active' ? 'success' : 'default'}>
                         {site.status}
                       </Badge>
-                      <Badge variant={site.kioskStatus === 'online' ? 'success' : 'error'} icon={Wifi}>
+                      <Badge variant={site.kioskStatus === 'online' ? 'success' : 'error'} icon={<Wifi className="h-3 w-3" />}>
                         {site.kioskStatus}
                       </Badge>
                     </div>

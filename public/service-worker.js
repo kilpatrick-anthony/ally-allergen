@@ -96,6 +96,11 @@ self.addEventListener('fetch', (event) => {
         if (!response || response.status !== 200 || response.type === 'error') {
           return response;
         }
+
+        // Cache API only supports GET requests
+        if (request.method !== 'GET') {
+          return response;
+        }
         
         const responseToCache = response.clone();
         caches.open(CACHE_NAME).then((cache) => {
