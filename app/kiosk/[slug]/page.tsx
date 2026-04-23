@@ -448,6 +448,7 @@ export default function KioskPage() {
   const handleInactivityReset = () => {
     console.log('⏱️ [Kiosk] Inactivity timeout - Returning to home screen')
     setKioskStarted(false)
+    setActiveView('menu')
     setShowInactivityWarning(false)
     setRemainingSeconds(0)
     
@@ -684,6 +685,7 @@ export default function KioskPage() {
   // Track when user starts the kiosk
   const handleStartKiosk = () => {
     setKioskStarted(true)
+    setActiveView('menu')
     trackKioskInteraction(slug, 'home_screen_start')
   }
 
@@ -740,7 +742,7 @@ export default function KioskPage() {
   // ===== HOME SCREEN =====
   if (!kioskStarted) {
     return (
-      <div className="min-h-screen bg-[#003842] relative overflow-hidden flex flex-col items-center justify-center">
+      <div className="min-h-screen flex flex-col lg:flex-row bg-[#003842] relative overflow-hidden">
         {/* Animated background orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-[#42b8ac]/10 blur-3xl animate-pulse" />
@@ -791,63 +793,102 @@ export default function KioskPage() {
 
         <AccessibilityPanel />
 
-        <div className="relative z-10 w-full max-w-3xl mx-auto px-6 py-12 flex flex-col items-center">
-          {/* AllyJen Wordmark */}
-          <div className="mb-10">
+        <div className="relative z-10 flex flex-col justify-center items-center w-full lg:w-1/2 text-white py-10 px-6 md:p-12 lg:min-h-screen">
+          <div className="relative z-10 flex flex-col items-start text-left w-full max-w-xl lg:-mt-16">
             <img
               src={ADMIN_WORDMARK_SRC}
               alt="AllyJen"
-              className="h-14 sm:h-16 w-auto mx-auto"
+              className="h-14 sm:h-16 lg:h-20 w-auto mb-8"
             />
-          </div>
-
-          {/* Business name + subtitle */}
-          <div className="text-center mb-10">
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 leading-tight tracking-tight">
-              {landingTitle}
-            </h1>
-            <p className="text-[#8dd8d2] text-lg md:text-xl max-w-xl mx-auto">
-              {t.homeSubtitle}
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white mb-3 leading-tight">
+              Serving <span className="text-[#42b8ac]">Confidence</span>
+            </h2>
+            <p className="text-white/70 text-base md:text-lg max-w-lg mb-8">
+              The complete allergen management solution for Irish and EU food businesses, now tailored to help you browse this menu with confidence.
             </p>
-          </div>
-
-          {/* CTA Button */}
-          <button
-            onClick={handleStartKiosk}
-            className="mb-12 inline-flex items-center gap-3 px-12 py-5 bg-[#42b8ac] hover:bg-[#36948a] text-white rounded-2xl font-bold text-xl shadow-[0_0_40px_rgba(66,184,172,0.35)] hover:shadow-[0_0_60px_rgba(66,184,172,0.5)] hover:scale-105 transition-all duration-300 group"
-          >
-            <span>{t.startBrowsing}</span>
-            <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
-          </button>
-
-          {/* Feature Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full mb-10">
-            <div className="rounded-2xl p-6 border border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/8 transition-all">
-              <Shield className="h-7 w-7 text-[#42b8ac] mb-3" />
-              <h3 className="text-white font-semibold mb-1">{t.homeSafeDining}</h3>
-              <p className="text-white/50 text-sm leading-relaxed">{t.homeSafeDiningDesc}</p>
-            </div>
-            <div className="rounded-2xl p-6 border border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/8 transition-all">
-              <Package className="h-7 w-7 text-[#42b8ac] mb-3" />
-              <h3 className="text-white font-semibold mb-1">{t.homeDetailedMenu}</h3>
-              <p className="text-white/50 text-sm leading-relaxed">{t.homeDetailedMenuDesc}</p>
-            </div>
-            <div className="rounded-2xl p-6 border border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/8 transition-all">
-              <FileText className="h-7 w-7 text-[#42b8ac] mb-3" />
-              <h3 className="text-white font-semibold mb-1">{t.homeDownloadGuides}</h3>
-              <p className="text-white/50 text-sm leading-relaxed">{t.homeDownloadGuidesDesc}</p>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="text-center text-white/30 text-sm space-y-1">
-            <p>{t.pressButton}</p>
-            {business && (
-              <div className="flex items-center justify-center gap-1.5 mt-1">
-                <MapPin className="h-3.5 w-3.5" />
-                <span>{business.name}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
+              <div className="rounded-2xl p-5 border border-white/10 bg-white/5 backdrop-blur-sm">
+                <Shield className="h-6 w-6 text-[#42b8ac] mb-3" />
+                <h3 className="text-white font-semibold mb-1">{t.homeSafeDining}</h3>
+                <p className="text-white/50 text-sm leading-relaxed">{t.homeSafeDiningDesc}</p>
               </div>
-            )}
+              <div className="rounded-2xl p-5 border border-white/10 bg-white/5 backdrop-blur-sm">
+                <Package className="h-6 w-6 text-[#42b8ac] mb-3" />
+                <h3 className="text-white font-semibold mb-1">{t.homeDetailedMenu}</h3>
+                <p className="text-white/50 text-sm leading-relaxed">{t.homeDetailedMenuDesc}</p>
+              </div>
+              <div className="rounded-2xl p-5 border border-white/10 bg-white/5 backdrop-blur-sm">
+                <FileText className="h-6 w-6 text-[#42b8ac] mb-3" />
+                <h3 className="text-white font-semibold mb-1">{t.homeDownloadGuides}</h3>
+                <p className="text-white/50 text-sm leading-relaxed">{t.homeDownloadGuidesDesc}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative z-10 flex flex-1 items-center justify-center bg-white px-6 py-12 lg:px-10">
+          <div className="w-full max-w-xl">
+            <div className="mb-8 text-left">
+              <h1 className="text-3xl md:text-4xl font-extrabold text-[#003842] mb-2">
+                {landingTitle}
+              </h1>
+              <p className="text-gray-500 text-base md:text-lg">
+                Browse the live allergen menu, search dishes, and check details before you order.
+              </p>
+            </div>
+
+            <Card className="w-full p-8 shadow-xl rounded-3xl border border-gray-100 bg-white">
+              <div className="space-y-7">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="rounded-2xl border border-[#42b8ac]/20 bg-[#f0f9f8] p-5">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Search className="h-5 w-5 text-[#42b8ac]" />
+                      <h3 className="font-semibold text-[#003842]">Browse the menu</h3>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Search dishes, view allergens, and save the guide to your phone.
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                    <div className="flex items-center gap-3 mb-2">
+                      <AlertCircle className="h-5 w-5 text-amber-600" />
+                      <h3 className="font-semibold text-[#003842]">Always double-check</h3>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Please speak to staff if you have a severe allergy or need extra reassurance.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl bg-[#003842] text-white p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                      <p className="text-sm uppercase tracking-[0.18em] text-[#8dd8d2] mb-1">Current menu</p>
+                      <p className="text-xl font-bold">{menuTitle}</p>
+                      <p className="text-sm text-white/65 mt-1">Use the filter tools after you start if you need to exclude allergens.</p>
+                    </div>
+                    {businessName && (
+                      <div className="inline-flex items-center gap-2 text-sm text-white/70">
+                        <MapPin className="h-4 w-4 text-[#42b8ac]" />
+                        <span>{businessName}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleStartKiosk}
+                  className="w-full inline-flex items-center justify-center gap-3 px-8 py-5 bg-[#42b8ac] hover:bg-[#36948a] text-white rounded-2xl font-bold text-xl shadow-[0_0_40px_rgba(66,184,172,0.2)] hover:shadow-[0_0_60px_rgba(66,184,172,0.35)] transition-all duration-300 group"
+                >
+                  <span>Get Started</span>
+                  <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
+                </button>
+
+                <p className="text-center text-sm text-gray-400">
+                  Touch the button to open the full allergen menu.
+                </p>
+              </div>
+            </Card>
           </div>
         </div>
       </div>
@@ -926,6 +967,14 @@ export default function KioskPage() {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    icon={<Filter className="h-4 w-4" />}
+                    onClick={() => setActiveView(activeView === 'filters' ? 'menu' : 'filters')}
+                  >
+                    {activeView === 'filters' ? 'Browse Menu' : 'Filter Allergens'}
+                  </Button>
                   <Button variant="outline" size="sm" icon={<FileText className="h-4 w-4" />} onClick={() => setShowPDFOptions(true)}>
                     {t.emailMenu}
                   </Button>
@@ -971,7 +1020,9 @@ export default function KioskPage() {
                     size="sm"
                     icon={<Home className="h-4 w-4" />}
                     onClick={() => {
-                      setActiveView('landing')
+                      setKioskStarted(false)
+                      setActiveView('menu')
+                      clearFilters()
                       setShowInactivityWarning(false)
                     }}
                     title="Return to home screen"
