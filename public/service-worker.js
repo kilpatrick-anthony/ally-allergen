@@ -1,8 +1,8 @@
 // Service Worker for AllyJen Kiosk
 // Enables offline functionality with cache-first strategy
 
-const CACHE_NAME = 'ally-allergen-v1';
-const DATA_CACHE_NAME = 'ally-allergen-data-v1';
+const CACHE_NAME = 'ally-allergen-v2';
+const DATA_CACHE_NAME = 'ally-allergen-data-v2';
 
 // Assets to cache immediately on install
 const STATIC_ASSETS = [
@@ -53,6 +53,34 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
+
+  // Always prefer fresh HTML/documents so kiosk UI updates are not stuck behind cache.
+  if (request.mode === 'navigate' || request.destination === 'document') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          if (!response || response.status !== 200 || response.type === 'error') {
+            return response;
+          }
+
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseToCache);
+          });
+
+          return response;
+        })
+        .catch(async () => {
+          const cachedResponse = await caches.match(request);
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+
+          return caches.match('/offline.html');
+        })
+    );
+    return;
+  }
 
   // Handle API requests with network-first strategy (with offline fallback)
   if (url.pathname.includes('/api/') || url.pathname.includes('/kiosk-data/')) {

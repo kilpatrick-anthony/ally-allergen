@@ -3,6 +3,8 @@
 
 export function registerServiceWorker() {
   if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+    let hasRefreshed = false
+
     window.addEventListener('load', () => {
       navigator.serviceWorker
         .register('/service-worker.js')
@@ -34,6 +36,10 @@ export function registerServiceWorker() {
       // Handle controller change (when a new service worker takes over)
       navigator.serviceWorker.addEventListener('controllerchange', () => {
         console.log('🔄 Service Worker controller changed');
+        if (!hasRefreshed) {
+          hasRefreshed = true
+          window.location.reload()
+        }
       });
     });
   }
