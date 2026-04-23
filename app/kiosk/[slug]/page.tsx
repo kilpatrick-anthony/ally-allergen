@@ -216,6 +216,7 @@ const CATEGORY_NAMES: Record<string, string> = {
 // ===== CONSTANTS =====
 const INACTIVITY_TIMEOUT = 45000 // 45 seconds - CHANGE THIS VALUE
 const WARNING_TIME = 15000 // 15 seconds before reset - CHANGE THIS VALUE
+const SCREENSAVER_TIMEOUT = 60000 // 60 seconds idle on home screen → screensaver
 
 // Examples:
 // 10000 = 10 seconds
@@ -302,6 +303,7 @@ export default function KioskPage() {
   )
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
   const [menuViewMode, setMenuViewMode] = useState<'cards' | 'table'>('table')
+  const [showScreensaver, setShowScreensaver] = useState(false)
   
   const t = translations[currentLanguage]
   
@@ -311,6 +313,7 @@ export default function KioskPage() {
   const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const lastActivityRef = useRef<number>(Date.now())
   const pageLoadTime = useRef(Date.now())
+  const screensaverTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   // Listen for language changes from admin settings
   useEffect(() => {
@@ -324,6 +327,34 @@ export default function KioskPage() {
       window.removeEventListener('languageChange', handleLanguageChange as EventListener)
     }
   }, [])
+
+  // ===== SCREENSAVER (HOME SCREEN IDLE) =====
+  useEffect(() => {
+    if (kioskStarted) {
+      if (screensaverTimerRef.current) clearTimeout(screensaverTimerRef.current)
+      setShowScreensaver(false)
+      return
+    }
+
+    const startTimer = () => {
+      if (screensaverTimerRef.current) clearTimeout(screensaverTimerRef.current)
+      screensaverTimerRef.current = setTimeout(() => setShowScreensaver(true), SCREENSAVER_TIMEOUT)
+    }
+
+    const handleActivity = () => {
+      setShowScreensaver(false)
+      startTimer()
+    }
+
+    const events = ['touchstart', 'click', 'mousemove', 'keydown'] as const
+    events.forEach(e => document.addEventListener(e, handleActivity, true))
+    startTimer()
+
+    return () => {
+      if (screensaverTimerRef.current) clearTimeout(screensaverTimerRef.current)
+      events.forEach(e => document.removeEventListener(e, handleActivity, true))
+    }
+  }, [kioskStarted])
 
   // ===== INACTIVITY TIMER SETUP =====
   useEffect(() => {
@@ -657,35 +688,35 @@ export default function KioskPage() {
 
   // ===== INACTIVITY WARNING MODAL =====
   const InactivityWarning = () => (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <Card className="max-w-md w-full animate-pulse">
+    <div className="fixed inset-0 bg-[#001e24]/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+      <div className="max-w-md w-full bg-[#003842] border border-[#42b8ac]/30 rounded-3xl shadow-2xl overflow-hidden">
         <div className="p-8 text-center">
-          <div className="p-4 bg-amber-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <Clock className="h-8 w-8 text-amber-600 animate-spin" />
+          <div className="p-4 bg-[#42b8ac]/15 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center border border-[#42b8ac]/30">
+            <Clock className="h-8 w-8 text-[#42b8ac] animate-spin" />
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Inactivity Warning
+          <h2 className="text-2xl font-bold text-white mb-2">
+            Still there?
           </h2>
 
-          <p className="text-gray-600 mb-6">
-            No activity detected. This kiosk will return to the home screen in:
+          <p className="text-[#8dd8d2] mb-6">
+            Returning to home screen in:
           </p>
 
           <div className="mb-8">
-            <div className="text-5xl font-bold text-amber-600 font-mono">
-              {String(remainingSeconds).padStart(2, '0')}s
+            <div className="text-6xl font-bold text-[#42b8ac] font-mono tabular-nums">
+              {String(remainingSeconds).padStart(2, '0')}
             </div>
-            <p className="text-sm text-gray-500 mt-2">Tap anywhere to continue</p>
+            <p className="text-sm text-white/40 mt-2">Tap anywhere to continue</p>
           </div>
 
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-8 overflow-hidden">
+          <div className="w-full bg-white/10 rounded-full h-1.5 mb-8 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-amber-500 to-red-500 h-full transition-all"
+              className="bg-[#42b8ac] h-full transition-all duration-1000"
               style={{
                 width: `${(remainingSeconds / Math.ceil(WARNING_TIME / 1000)) * 100}%`,
               }}
-            ></div>
+            />
           </div>
 
           <Button
@@ -696,120 +727,123 @@ export default function KioskPage() {
             Continue Using Kiosk
           </Button>
         </div>
-      </Card>
+      </div>
     </div>
   )
 
   // ===== HOME SCREEN =====
   if (!kioskStarted) {
     return (
-      <div className="min-h-screen bg-white relative overflow-hidden flex items-center justify-center">
+      <div className="min-h-screen bg-[#003842] relative overflow-hidden flex flex-col items-center justify-center">
+        {/* Animated background orbs */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {/* Subtle wave patterns */}
-          <svg className="absolute top-0 left-0 w-full h-32 opacity-30" preserveAspectRatio="none" viewBox="0 0 1200 120">
-            <path d="M0,40 Q300,10 600,40 T1200,40 L1200,0 L0,0 Z" fill="url(#wave1)" />
-            <defs>
-              <linearGradient id="wave1" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#42b8ac" stopOpacity="0.1" />
-                <stop offset="50%" stopColor="#7EC850" stopOpacity="0.15" />
-                <stop offset="100%" stopColor="#A8D83F" stopOpacity="0.1" />
-              </linearGradient>
-            </defs>
-          </svg>
-          <svg className="absolute bottom-0 right-0 w-full h-32 opacity-30" preserveAspectRatio="none" viewBox="0 0 1200 120">
-            <path d="M0,80 Q300,110 600,80 T1200,80 L1200,120 L0,120 Z" fill="url(#wave2)" />
-            <defs>
-              <linearGradient id="wave2" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#003842" stopOpacity="0.1" />
-                <stop offset="50%" stopColor="#42b8ac" stopOpacity="0.15" />
-                <stop offset="100%" stopColor="#003842" stopOpacity="0.1" />
-              </linearGradient>
-            </defs>
-          </svg>
-          {/* Subtle dots pattern */}
-          <div className="absolute top-1/4 right-1/4 flex gap-3">
-            <div className="w-3 h-3 rounded-full bg-[#42b8ac]/20"></div>
-            <div className="w-3 h-3 rounded-full bg-[#7EC850]/20"></div>
-            <div className="w-3 h-3 rounded-full bg-[#A8D83F]/20"></div>
-          </div>
-          <div className="absolute bottom-1/3 left-1/4 flex gap-3">
-            <div className="w-3 h-3 rounded-full bg-[#003842]/20"></div>
-            <div className="w-3 h-3 rounded-full bg-[#42b8ac]/20"></div>
-            <div className="w-3 h-3 rounded-full bg-[#7EC850]/20"></div>
-          </div>
+          <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full bg-[#42b8ac]/10 blur-3xl animate-pulse" />
+          <div
+            className="absolute -bottom-40 -right-40 w-[500px] h-[500px] rounded-full bg-[#42b8ac]/12 blur-3xl animate-pulse"
+            style={{ animationDelay: '1.5s' }}
+          />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-[#42b8ac]/4 blur-3xl" />
+          {/* Subtle dot grid */}
+          <div
+            className="absolute inset-0 opacity-[0.03]"
+            style={{ backgroundImage: 'radial-gradient(circle, #42b8ac 1px, transparent 1px)', backgroundSize: '48px 48px' }}
+          />
         </div>
+
+        {/* Screensaver Overlay */}
+        {showScreensaver && (
+          <div className="absolute inset-0 bg-[#001a20] z-50 flex flex-col items-center justify-center cursor-pointer">
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {[...Array(5)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute rounded-full bg-[#42b8ac] blur-3xl animate-pulse"
+                  style={{
+                    width: `${140 + i * 60}px`,
+                    height: `${140 + i * 60}px`,
+                    opacity: 0.04 + i * 0.012,
+                    top: `${5 + i * 18}%`,
+                    left: `${3 + i * 22}%`,
+                    animationDelay: `${i * 0.7}s`,
+                    animationDuration: `${2.5 + i * 0.5}s`,
+                  }}
+                />
+              ))}
+            </div>
+            <div className="relative z-10 text-center px-8">
+              <img
+                src="/Logo-AllyJen-Transparent BG.svg"
+                alt="AllyJen"
+                className="h-24 w-auto mx-auto mb-10 opacity-75"
+                style={{ filter: 'brightness(10)' }}
+              />
+              <p className="text-white/40 text-base font-light tracking-[0.3em] uppercase animate-pulse">
+                Touch screen to begin
+              </p>
+            </div>
+          </div>
+        )}
 
         <AccessibilityPanel />
 
-        <div className="relative z-10 w-full max-w-2xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center justify-center mb-8 mt-16">
-              <div className="p-8 bg-white rounded-3xl shadow-2xl border-2 border-[#003842]/10">
-                <img 
-                  src="/allyjen-logo.svg" 
-                  alt="AllyJen Logo" 
-                  className="h-48 w-48 object-contain"
-                />
-              </div>
-            </div>
+        <div className="relative z-10 w-full max-w-3xl mx-auto px-6 py-12 flex flex-col items-center">
+          {/* AllyJen Wordmark */}
+          <div className="mb-10">
+            <img
+              src="/Logo-AllyJen-Transparent BG.svg"
+              alt="AllyJen"
+              className="h-20 w-auto mx-auto"
+              style={{ filter: 'brightness(10)' }}
+            />
+          </div>
 
-            <h1 className="text-3xl md:text-4xl font-bold text-[#003842] mb-3 leading-tight">
-              {business?.kiosk_display_name || business?.name}
+          {/* Business name + subtitle */}
+          <div className="text-center mb-10">
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 leading-tight tracking-tight">
+              {business?.kiosk_display_name || business?.name || 'Welcome'}
             </h1>
-
-            <p className="text-base md:text-lg text-gray-600 mb-8 max-w-xl mx-auto">
+            <p className="text-[#8dd8d2] text-lg md:text-xl max-w-xl mx-auto">
               {t.homeSubtitle}
             </p>
+          </div>
 
-            <button
-              onClick={handleStartKiosk}
-              className="inline-flex items-center gap-3 px-10 py-4 bg-gradient-to-r from-[#003842] to-[#42b8ac] text-white rounded-2xl font-bold text-lg hover:shadow-2xl hover:scale-105 transition-all duration-300 group mb-8"
-            >
-              <span>{t.startBrowsing}</span>
-              <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
-            </button>
+          {/* CTA Button */}
+          <button
+            onClick={handleStartKiosk}
+            className="mb-12 inline-flex items-center gap-3 px-12 py-5 bg-[#42b8ac] hover:bg-[#36948a] text-white rounded-2xl font-bold text-xl shadow-[0_0_40px_rgba(66,184,172,0.35)] hover:shadow-[0_0_60px_rgba(66,184,172,0.5)] hover:scale-105 transition-all duration-300 group"
+          >
+            <span>{t.startBrowsing}</span>
+            <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
+          </button>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12 max-w-2xl mx-auto">
-              <div className="bg-[#003842] rounded-xl p-6 border border-[#003842]/20 hover:shadow-lg transition-all">
-                <Shield className="h-8 w-8 text-white mx-auto mb-3" />
-                <h3 className="text-white font-semibold mb-1">{t.homeSafeDining}</h3>
-                <p className="text-white/90 text-sm">{t.homeSafeDiningDesc}</p>
-              </div>
-
-              <div className="bg-[#003842] rounded-xl p-6 border border-[#003842]/20 hover:shadow-lg transition-all">
-                <Package className="h-8 w-8 text-white mx-auto mb-3" />
-                <h3 className="text-white font-semibold mb-1">{t.homeDetailedMenu}</h3>
-                <p className="text-white/90 text-sm">{t.homeDetailedMenuDesc}</p>
-              </div>
-
-              <div className="bg-[#003842] rounded-xl p-6 border border-[#003842]/20 hover:shadow-lg transition-all">
-                <FileText className="h-8 w-8 text-white mx-auto mb-3" />
-                <h3 className="text-white font-semibold mb-1">{t.homeDownloadGuides}</h3>
-                <p className="text-white/90 text-sm">{t.homeDownloadGuidesDesc}</p>
-              </div>
+          {/* Feature Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full mb-10">
+            <div className="rounded-2xl p-6 border border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/8 transition-all">
+              <Shield className="h-7 w-7 text-[#42b8ac] mb-3" />
+              <h3 className="text-white font-semibold mb-1">{t.homeSafeDining}</h3>
+              <p className="text-white/50 text-sm leading-relaxed">{t.homeSafeDiningDesc}</p>
             </div>
-
-            <p className="text-gray-500 text-sm mt-8 max-w-md mx-auto">
-              {t.pressButton}
-            </p>
-
-            <div className="mt-12 pt-8 border-t border-gray-200">
-              <p className="text-gray-600 text-sm mb-3">
-                {t.questionsAboutAllergens}
-              </p>
-              {business && (
-                <div className="flex items-center justify-center gap-4 flex-wrap text-gray-700 text-sm">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-4 w-4" />
-                    <span>{business.name}</span>
-                  </div>
-                </div>
-              )}
+            <div className="rounded-2xl p-6 border border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/8 transition-all">
+              <Package className="h-7 w-7 text-[#42b8ac] mb-3" />
+              <h3 className="text-white font-semibold mb-1">{t.homeDetailedMenu}</h3>
+              <p className="text-white/50 text-sm leading-relaxed">{t.homeDetailedMenuDesc}</p>
             </div>
-
-            <div className="mt-8">
-              <Badge variant="primary">{t.devMode}</Badge>
+            <div className="rounded-2xl p-6 border border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/8 transition-all">
+              <FileText className="h-7 w-7 text-[#42b8ac] mb-3" />
+              <h3 className="text-white font-semibold mb-1">{t.homeDownloadGuides}</h3>
+              <p className="text-white/50 text-sm leading-relaxed">{t.homeDownloadGuidesDesc}</p>
             </div>
+          </div>
+
+          {/* Footer */}
+          <div className="text-center text-white/30 text-sm space-y-1">
+            <p>{t.pressButton}</p>
+            {business && (
+              <div className="flex items-center justify-center gap-1.5 mt-1">
+                <MapPin className="h-3.5 w-3.5" />
+                <span>{business.name}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -822,11 +856,11 @@ export default function KioskPage() {
   const kioskUrl = typeof window !== 'undefined' ? `${window.location.origin}/kiosk/${slug}` : ''
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#f0f9f8] to-gray-50 relative">
+    <div className="min-h-screen bg-gray-50 relative">
       {showInactivityWarning && <InactivityWarning />}
 
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-white shadow-md border-b">
+      <header className="sticky top-0 z-40 bg-[#003842] shadow-lg border-b border-[#42b8ac]/20">
         <Container>
           <div className="py-4">
             {/* Offline Indicator */}
@@ -853,10 +887,10 @@ export default function KioskPage() {
                   <ChefHat className="h-7 w-7 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-[#003842]">
+                  <h1 className="text-2xl font-bold text-white">
                     {business?.kiosk_display_name || `${business?.name} Menu`}
                   </h1>
-                  <p className="text-gray-600 text-sm flex items-center gap-1">
+                  <p className="text-[#8dd8d2] text-sm flex items-center gap-1">
                     <MapPin className="h-3 w-3" />
                     Powered by AllyJen • {business?.name}
                   </p>
@@ -865,25 +899,25 @@ export default function KioskPage() {
 
               <div className="flex items-center gap-4">
                 <div className="relative hidden md:block">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none" style={{ color: '#8dd8d2' }} />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none" style={{ color: 'rgba(66, 184, 172, 0.6)' }} />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search menu items..."
                     style={{
-                      borderColor: '#8dd8d2',
-                      color: '#2a7068',
+                      borderColor: 'rgba(66, 184, 172, 0.35)',
+                      color: 'white',
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = '#68cbc3'
-                      e.target.style.boxShadow = '0 0 0 3px rgba(66, 184, 172, 0.1)'
+                      e.target.style.borderColor = '#42b8ac'
+                      e.target.style.boxShadow = '0 0 0 3px rgba(66, 184, 172, 0.15)'
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = '#8dd8d2'
+                      e.target.style.borderColor = 'rgba(66, 184, 172, 0.35)'
                       e.target.style.boxShadow = 'none'
                     }}
-                    className="pl-10 pr-4 py-1.5 rounded-lg border-2 bg-white w-64 transition-colors focus:outline-none font-sans font-medium text-sm"
+                    className="pl-10 pr-4 py-1.5 rounded-lg border-2 bg-white/10 placeholder-white/30 w-64 transition-colors focus:outline-none font-sans font-medium text-sm"
                   />
                 </div>
 
@@ -944,25 +978,25 @@ export default function KioskPage() {
 
             <div className="mt-4 md:hidden">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none" style={{ color: '#8dd8d2' }} />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none" style={{ color: 'rgba(66, 184, 172, 0.6)' }} />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search menu items..."
                   style={{
-                    borderColor: '#8dd8d2',
-                    color: '#2a7068',
+                    borderColor: 'rgba(66, 184, 172, 0.35)',
+                    color: 'white',
                   }}
                   onFocus={(e) => {
-                    e.target.style.borderColor = '#68cbc3'
-                    e.target.style.boxShadow = '0 0 0 3px rgba(66, 184, 172, 0.1)'
+                    e.target.style.borderColor = '#42b8ac'
+                    e.target.style.boxShadow = '0 0 0 3px rgba(66, 184, 172, 0.15)'
                   }}
                   onBlur={(e) => {
-                    e.target.style.borderColor = '#8dd8d2'
+                    e.target.style.borderColor = 'rgba(66, 184, 172, 0.35)'
                     e.target.style.boxShadow = 'none'
                   }}
-                  className="pl-10 pr-4 py-1.5 rounded-lg border-2 bg-white w-full transition-colors focus:outline-none font-sans font-medium text-sm"
+                  className="pl-10 pr-4 py-1.5 rounded-lg border-2 bg-white/10 placeholder-white/30 w-full transition-colors focus:outline-none font-sans font-medium text-sm"
                 />
               </div>
             </div>

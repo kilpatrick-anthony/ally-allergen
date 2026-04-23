@@ -99,25 +99,43 @@ export default function KioskPairPage() {
   const isComplete = digits.every(d => d !== '')
 
   return (
-    <div className="min-h-screen bg-[#003842] flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen bg-[#003842] flex flex-col items-center justify-center px-6 relative overflow-hidden">
+      {/* Animated background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -left-40 w-[400px] h-[400px] rounded-full bg-[#42b8ac]/10 blur-3xl animate-pulse" />
+        <div
+          className="absolute -bottom-40 -right-40 w-[400px] h-[400px] rounded-full bg-[#42b8ac]/8 blur-3xl animate-pulse"
+          style={{ animationDelay: '1.5s' }}
+        />
+        <div
+          className="absolute inset-0 opacity-[0.025]"
+          style={{ backgroundImage: 'radial-gradient(circle, #42b8ac 1px, transparent 1px)', backgroundSize: '40px 40px' }}
+        />
+      </div>
+
       {/* Logo / branding */}
-      <div className="flex items-center gap-3 mb-12">
-        <div className="bg-[#42b8ac] p-3 rounded-xl">
-          <Monitor className="h-8 w-8 text-white" />
-        </div>
-        <div>
-          <p className="text-[#42b8ac] text-sm font-semibold uppercase tracking-widest">Ally</p>
-          <p className="text-white text-2xl font-bold leading-none">Allergen Kiosk</p>
+      <div className="relative z-10 flex flex-col items-center gap-3 mb-12">
+        <img
+          src="/Logo-AllyJen-Transparent BG.svg"
+          alt="AllyJen"
+          className="h-16 w-auto mb-2"
+          style={{ filter: 'brightness(10)' }}
+        />
+        <div className="flex items-center gap-2">
+          <div className="bg-[#42b8ac]/20 border border-[#42b8ac]/30 p-2 rounded-lg">
+            <Monitor className="h-5 w-5 text-[#42b8ac]" />
+          </div>
+          <p className="text-[#8dd8d2] text-base font-medium tracking-wide">Kiosk Setup</p>
         </div>
       </div>
 
       {status === 'success' ? (
-        <div className="flex flex-col items-center gap-4 text-center animate-pulse">
+        <div className="relative z-10 flex flex-col items-center gap-4 text-center animate-pulse">
           <CheckCircle className="h-20 w-20 text-[#42b8ac]" />
           <p className="text-white text-2xl font-semibold">Paired! Opening kiosk…</p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm space-y-6">
+        <div className="relative z-10 bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm space-y-6">
           <div className="text-center space-y-2">
             <h1 className="text-2xl font-bold text-[#003842]">Enter Pairing Code</h1>
             <p className="text-sm text-gray-500">
