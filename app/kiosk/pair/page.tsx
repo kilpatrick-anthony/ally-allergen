@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation'
 import { Monitor, AlertCircle, CheckCircle } from 'lucide-react'
 
 const CODE_LENGTH = 4 // chars after "ALLY-"
+const ADMIN_WORDMARK_SRC = '/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg'
 
 export default function KioskPairPage() {
   const router = useRouter()
@@ -116,10 +117,9 @@ export default function KioskPairPage() {
       {/* Logo / branding */}
       <div className="relative z-10 flex flex-col items-center gap-3 mb-12">
         <img
-          src="/Logo-AllyJen-Transparent BG.svg"
+          src={ADMIN_WORDMARK_SRC}
           alt="AllyJen"
           className="h-16 w-auto mb-2"
-          style={{ filter: 'brightness(10)' }}
         />
         <div className="flex items-center gap-2">
           <div className="bg-[#42b8ac]/20 border border-[#42b8ac]/30 p-2 rounded-lg">

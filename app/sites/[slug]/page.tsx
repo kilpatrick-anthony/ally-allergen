@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server';
 import { Building } from 'lucide-react';
 import KioskMenu from '@/components/kiosk/MenuDisplay';
 
+const ADMIN_WORDMARK_SRC = '/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg'
+
 export default async function SiteKioskPage({ 
   params 
 }: { 
@@ -42,9 +44,9 @@ export default async function SiteKioskPage({
         <div className="mb-8 text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
             <img 
-              src="/allyjen-logo.svg" 
+              src={ADMIN_WORDMARK_SRC}
               alt="AllyJen Logo" 
-              className="h-12 w-12 object-contain"
+              className="h-12 w-auto object-contain"
             />
           </div>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">

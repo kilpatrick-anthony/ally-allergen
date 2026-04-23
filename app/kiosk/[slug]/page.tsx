@@ -217,6 +217,7 @@ const CATEGORY_NAMES: Record<string, string> = {
 const INACTIVITY_TIMEOUT = 45000 // 45 seconds - CHANGE THIS VALUE
 const WARNING_TIME = 15000 // 15 seconds before reset - CHANGE THIS VALUE
 const SCREENSAVER_TIMEOUT = 60000 // 60 seconds idle on home screen → screensaver
+const ADMIN_WORDMARK_SRC = '/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg'
 
 // Examples:
 // 10000 = 10 seconds
@@ -306,6 +307,11 @@ export default function KioskPage() {
   const [showScreensaver, setShowScreensaver] = useState(false)
   
   const t = translations[currentLanguage]
+  const businessName = business?.name?.trim() || ''
+  const kioskDisplayName = business?.kiosk_display_name?.trim() || ''
+  const landingTitle = kioskDisplayName || businessName || 'Welcome'
+  const menuTitle = kioskDisplayName || (businessName ? `${businessName} Menu` : 'Allergen Menu')
+  const menuSubtitle = businessName ? `Powered by AllyJen • ${businessName}` : 'Powered by AllyJen'
   
   // Refs for timeout management
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -772,10 +778,9 @@ export default function KioskPage() {
             </div>
             <div className="relative z-10 text-center px-8">
               <img
-                src="/Logo-AllyJen-Transparent BG.svg"
+                src={ADMIN_WORDMARK_SRC}
                 alt="AllyJen"
-                className="h-24 w-auto mx-auto mb-10 opacity-75"
-                style={{ filter: 'brightness(10)' }}
+                className="h-16 sm:h-20 w-auto mx-auto mb-10 opacity-85"
               />
               <p className="text-white/40 text-base font-light tracking-[0.3em] uppercase animate-pulse">
                 Touch screen to begin
@@ -790,17 +795,16 @@ export default function KioskPage() {
           {/* AllyJen Wordmark */}
           <div className="mb-10">
             <img
-              src="/Logo-AllyJen-Transparent BG.svg"
+              src={ADMIN_WORDMARK_SRC}
               alt="AllyJen"
-              className="h-20 w-auto mx-auto"
-              style={{ filter: 'brightness(10)' }}
+              className="h-14 sm:h-16 w-auto mx-auto"
             />
           </div>
 
           {/* Business name + subtitle */}
           <div className="text-center mb-10">
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-3 leading-tight tracking-tight">
-              {business?.kiosk_display_name || business?.name || 'Welcome'}
+              {landingTitle}
             </h1>
             <p className="text-[#8dd8d2] text-lg md:text-xl max-w-xl mx-auto">
               {t.homeSubtitle}
@@ -876,28 +880,28 @@ export default function KioskPage() {
               </div>
             )}
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-center gap-3 min-w-0">
                 <img 
-                  src="/allyjen-logo.svg" 
+                  src={ADMIN_WORDMARK_SRC}
                   alt="AllyJen Logo" 
-                  className="h-12 w-12 object-contain"
+                  className="h-10 sm:h-12 w-auto object-contain"
                 />
-                <div className="p-3 bg-gradient-to-br from-[#003842] to-[#42b8ac] rounded-xl shadow-sm">
-                  <ChefHat className="h-7 w-7 text-white" />
+                <div className="p-2.5 sm:p-3 bg-gradient-to-br from-[#003842] to-[#42b8ac] rounded-xl shadow-sm flex-shrink-0">
+                  <ChefHat className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
                 </div>
-                <div>
-                  <h1 className="text-2xl font-bold text-white">
-                    {business?.kiosk_display_name || `${business?.name} Menu`}
+                <div className="min-w-0">
+                  <h1 className="text-xl sm:text-2xl font-bold text-white truncate">
+                    {menuTitle}
                   </h1>
-                  <p className="text-[#8dd8d2] text-sm flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    Powered by AllyJen • {business?.name}
+                  <p className="text-[#8dd8d2] text-xs sm:text-sm flex items-center gap-1 min-w-0">
+                    <MapPin className="h-3 w-3 flex-shrink-0" />
+                    <span className="truncate">{menuSubtitle}</span>
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:justify-end">
                 <div className="relative hidden md:block">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none" style={{ color: 'rgba(66, 184, 172, 0.6)' }} />
                   <input
@@ -921,7 +925,7 @@ export default function KioskPage() {
                   />
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Button variant="outline" size="sm" icon={<FileText className="h-4 w-4" />} onClick={() => setShowPDFOptions(true)}>
                     {t.emailMenu}
                   </Button>

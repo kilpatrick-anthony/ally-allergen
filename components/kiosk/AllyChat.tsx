@@ -2,13 +2,16 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { AllyAvatar } from '../ally/AllyAvatar'
+import { JenAvatar } from '../ally/JenAvatar'
 import { X, Send, ChevronDown } from 'lucide-react'
 import type { MenuItem } from '@/lib/hooks/useOfflineKioskData'
 
 interface Message {
-  role: 'user' | 'ally'
+  role: 'user' | 'ally' | 'jen'
   text: string
 }
+
+type CoachMode = 'ally' | 'jen'
 
 const STARTERS = [
   "I'm allergic to nuts — what can I eat?",
@@ -17,6 +20,15 @@ const STARTERS = [
   'Which dishes are suitable for a vegan?',
 ]
 
+const JEN_STARTERS = [
+  'What should I ask staff about severe allergies?',
+  'How does AllyJen handle allergen information?',
+  'What does cross-contamination mean here?',
+  'What is the safest way to double-check my order?',
+]
+
+const COACH_SEQUENCE: CoachMode[] = ['ally', 'jen']
+
 interface AllyChatProps {
   menuItems: MenuItem[]
   businessName?: string
@@ -24,11 +36,18 @@ interface AllyChatProps {
 
 export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
   const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([])
+  const [activeCoach, setActiveCoach] = useState<CoachMode>('ally')
+  const [messagesByCoach, setMessagesByCoach] = useState<Record<CoachMode, Message[]>>({ ally: [], jen: [] })
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [rotationIndex, setRotationIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  const messages = messagesByCoach[activeCoach]
+  const coachName = activeCoach === 'ally' ? 'Ally' : 'Jen'
+  const closedCoach = COACH_SEQUENCE[rotationIndex % COACH_SEQUENCE.length]
+  const closedLabel = closedCoach === 'ally' ? 'Ask Ally' : 'Ask Jen'
 
   useEffect(() => {
     if (open && inputRef.current) inputRef.current.focus()
@@ -38,11 +57,24 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
 
+  useEffect(() => {
+    if (open) return
+
+    const interval = window.setInterval(() => {
+      setRotationIndex((prev) => (prev + 1) % COACH_SEQUENCE.length)
+    }, 3500)
+
+    return () => window.clearInterval(interval)
+  }, [open])
+
   async function send(text: string) {
     const trimmed = text.trim()
     if (!trimmed || loading) return
 
-    setMessages((prev) => [...prev, { role: 'user', text: trimmed }])
+    setMessagesByCoach((prev) => ({
+      ...prev,
+      [activeCoach]: [...prev[activeCoach], { role: 'user', text: trimmed }],
+    }))
     setInput('')
     setLoading(true)
 
@@ -50,21 +82,59 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
       const res = await fetch('/api/ally-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed, menuItems, businessName }),
+        body: JSON.stringify(
+          activeCoach === 'ally'
+            ? { message: trimmed, menuItems, businessName }
+            : {
+                message: trimmed,
+                menuItems: [],
+                businessName: 'EU Food Safety (Regulation 1169/2011)',
+                _jenMode: true,
+              }
+        ),
       })
       const data = await res.json()
-      setMessages((prev) => [
+      setMessagesByCoach((prev) => ({
         ...prev,
-        { role: 'ally', text: data.reply ?? "I'm not sure — please ask a staff member." },
-      ])
+        [activeCoach]: [
+          ...prev[activeCoach],
+          {
+            role: activeCoach,
+            text:
+              data.reply ??
+              (activeCoach === 'ally'
+                ? "I'm not sure — please ask a staff member."
+                : 'I’m not certain — please confirm with a member of staff or a manager.'),
+          },
+        ],
+      }))
     } catch {
-      setMessages((prev) => [
+      setMessagesByCoach((prev) => ({
         ...prev,
-        { role: 'ally', text: 'Connection issue. Please ask a member of staff for allergen details.' },
-      ])
+        [activeCoach]: [
+          ...prev[activeCoach],
+          {
+            role: activeCoach,
+            text:
+              activeCoach === 'ally'
+                ? 'Connection issue. Please ask a member of staff for allergen details.'
+                : 'Connection issue. Please verify anything important with staff before ordering.',
+          },
+        ],
+      }))
     } finally {
       setLoading(false)
     }
+  }
+
+  const starterQuestions = activeCoach === 'ally' ? STARTERS : JEN_STARTERS
+
+  const renderCoachAvatar = (mode: CoachMode, size: number, className = '', thinking = false) => {
+    if (mode === 'ally') {
+      return <AllyAvatar size={size} className={className} thinking={thinking} />
+    }
+
+    return <JenAvatar size={size} className={className} />
   }
 
   return (
@@ -77,10 +147,26 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
         >
           {/* Header */}
           <div className="flex items-center gap-2 px-4 py-3 bg-[#003842] text-white">
-            <AllyAvatar size={36} />
+            {renderCoachAvatar(activeCoach, 36)}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold leading-tight">Ally</p>
-              <p className="text-xs text-teal-300 leading-tight">Food Allergy Assistant</p>
+              <p className="text-sm font-semibold leading-tight">{coachName}</p>
+              <p className="text-xs text-teal-300 leading-tight">
+                {activeCoach === 'ally' ? 'Food Allergy Assistant' : 'Safety Guidance Assistant'}
+              </p>
+            </div>
+            <div className="flex items-center rounded-full bg-white/10 p-1 mr-1">
+              {COACH_SEQUENCE.map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setActiveCoach(mode)}
+                  className={`px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-semibold rounded-full transition-colors ${
+                    activeCoach === mode ? 'bg-white text-[#003842]' : 'text-white/70 hover:text-white'
+                  }`}
+                >
+                  {mode === 'ally' ? 'Ally' : 'Jen'}
+                </button>
+              ))}
             </div>
             <button
               onClick={() => setOpen(false)}
@@ -96,15 +182,16 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
             {messages.length === 0 && (
               <div className="space-y-3">
                 <div className="flex gap-2">
-                  <AllyAvatar size={28} className="mt-0.5 shrink-0" />
+                  {renderCoachAvatar(activeCoach, 28, 'mt-0.5 shrink-0')}
                   <div className="bg-white rounded-2xl rounded-tl-sm px-3 py-2 text-sm text-gray-700 shadow-sm border border-gray-100">
-                    Hi! I&apos;m Ally 👋 I can help you find dishes that are safe for your dietary
-                    needs. What can I help you with?
+                    {activeCoach === 'ally'
+                      ? 'Hi! I\'m Ally 👋 I can help you find dishes that are safe for your dietary needs. What can I help you with?'
+                      : 'Hi! I\'m Jen 👋 I can help with allergy safety guidance and what to double-check with staff before ordering.'}
                   </div>
                 </div>
                 <p className="text-xs text-gray-400 text-center mt-2">Suggested questions:</p>
                 <div className="space-y-1.5">
-                  {STARTERS.map((starter) => (
+                  {starterQuestions.map((starter) => (
                     <button
                       key={starter}
                       onClick={() => send(starter)}
@@ -122,7 +209,7 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
                 key={i}
                 className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
               >
-                {msg.role === 'ally' && <AllyAvatar size={28} className="mt-0.5 shrink-0" />}
+                {msg.role !== 'user' && renderCoachAvatar(msg.role, 28, 'mt-0.5 shrink-0')}
                 <div
                   className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm leading-relaxed shadow-sm ${
                     msg.role === 'user'
@@ -137,7 +224,7 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
 
             {loading && (
               <div className="flex gap-2">
-                <AllyAvatar size={28} thinking className="mt-0.5 shrink-0" />
+                {renderCoachAvatar(activeCoach, 28, 'mt-0.5 shrink-0', activeCoach === 'ally')}
                 <div className="bg-white rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm border border-gray-100">
                   <span className="flex gap-1">
                     {[0, 1, 2].map((i) => (
@@ -166,7 +253,7 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about allergens…"
+              placeholder={activeCoach === 'ally' ? 'Ask about allergens…' : 'Ask about allergy safety…'}
               className="flex-1 text-sm bg-gray-50 rounded-full px-3 py-1.5 outline-none focus:ring-2 focus:ring-teal-300 border border-gray-200"
               disabled={loading}
             />
@@ -182,23 +269,48 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
 
           {/* Disclaimer */}
           <p className="text-[10px] text-gray-400 text-center px-3 pb-2 leading-tight">
-            Ally uses AI. Always confirm allergens with staff for medical dietary needs.
+            {activeCoach === 'ally'
+              ? 'Ally uses AI. Always confirm allergens with staff for medical dietary needs.'
+              : 'Jen uses AI. Guidance may be incomplete. Please verify anything important with staff.'}
           </p>
         </div>
       )}
 
       {/* Floating button */}
       <button
-        onClick={() => setOpen((o) => !o)}
-        className="relative rounded-full shadow-xl border-2 border-white hover:scale-105 active:scale-95 transition-transform focus:outline-none focus:ring-2 focus:ring-teal-400 w-14 h-14 sm:w-14 sm:h-14"
-        aria-label={open ? 'Close Ally chat' : 'Open Ally chat'}
+        onClick={() => {
+          if (!open) {
+            setActiveCoach(closedCoach)
+          }
+          setOpen((o) => !o)
+        }}
+        className="relative flex items-center gap-0 rounded-full shadow-2xl hover:shadow-teal-400/30 hover:scale-[1.03] active:scale-[0.97] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 overflow-visible h-[56px] sm:h-[62px]"
+        style={{
+          background: open
+            ? 'linear-gradient(135deg, #003842 0%, #005a6e 100%)'
+            : 'linear-gradient(135deg, #003842 0%, #00616e 60%, #42b8ac 100%)',
+          paddingRight: open ? '0' : '18px',
+        }}
+        aria-label={open ? `Close ${coachName} chat` : `Open ${closedLabel}`}
       >
         {open ? (
-          <span className="flex items-center justify-center w-14 h-14 rounded-full bg-[#003842]">
-            <X size={22} className="text-white" />
-          </span>
+          <>
+            <span className="relative shrink-0 -ml-1 -my-2 sm:-my-3">
+              {renderCoachAvatar(activeCoach, 56, 'rounded-full block ring-2 ring-white/40 sm:w-[78px] sm:h-[78px] w-[56px] h-[56px]')}
+            </span>
+            <span className="flex items-center justify-center w-10 h-10 ml-1 mr-1">
+              <X size={20} className="text-white" />
+            </span>
+          </>
         ) : (
-          <AllyAvatar size={56} />
+          <>
+            <span className="relative shrink-0 -ml-1 -my-2 sm:-my-3">
+              {renderCoachAvatar(closedCoach, 56, 'rounded-full block ring-2 ring-white/40 sm:w-[78px] sm:h-[78px] w-[56px] h-[56px]')}
+            </span>
+            <span className="block ml-2 pr-1 text-[12px] sm:text-[15px] font-bold text-white tracking-wide min-w-[70px] sm:min-w-[88px] text-left leading-none">
+              {closedLabel}
+            </span>
+          </>
         )}
       </button>
     </div>
