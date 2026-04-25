@@ -470,6 +470,23 @@ html.contrast-inverted :focus-visible,
   background: linear-gradient(135deg, #003842 0%, #42b8ac 100%);
 }
 
+/* ===== ADMIN DOT-GRID BACKGROUND ===== */
+/* Subtle dot pattern overlaid on the main content area */
+.admin-dot-grid {
+  background-color: #f4f7f8;
+  background-image:
+    radial-gradient(circle, rgba(66,184,172,0.18) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.dark .admin-dot-grid,
+.admin-dot-grid-dark {
+  background-color: #0d1b1e;
+  background-image:
+    radial-gradient(circle, rgba(66,184,172,0.10) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
 .gradient-text {
   background: linear-gradient(to right, #003842, #42b8ac);
   -webkit-background-clip: text;

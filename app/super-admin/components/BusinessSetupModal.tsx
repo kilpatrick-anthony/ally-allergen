@@ -43,6 +43,7 @@ const PLAN_DETAILS: Record<string, PlanDetails> = {
 export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupModalProps) {
   const [loading, setLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
+  const [stepError, setStepError] = useState('')
   const [formData, setFormData] = useState({
     // Business Owner Info
     ownerName: '',
@@ -55,13 +56,13 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
     businessAddress: '',
     businessCity: '',
     businessPostalCode: '',
-    businessCountry: '',
+    businessCountry: 'Ireland',
 
     // Subscription Info
     plan: 'starter',
     subscriptionStatus: 'active',
     billingCycle: 'monthly',
-    setupStripePayment: true,
+    setupStripePayment: false,
     sendWelcomeEmail: true,
     createSampleData: true,
 
@@ -77,10 +78,37 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
   const selectedPlan = PLAN_DETAILS[formData.plan]
   const totalSteps = formData.setupStripePayment ? 4 : 3
 
+  const validateStep = () => {
+    if (currentStep === 1) {
+      if (!formData.ownerName.trim() || !formData.ownerEmail.trim()) {
+        setStepError('Owner name and email are required to continue.')
+        return false
+      }
+    }
+
+    if (currentStep === 2) {
+      if (!formData.businessName.trim()) {
+        setStepError('Business name is required to continue.')
+        return false
+      }
+    }
+
+    if (currentStep === 4 && formData.setupStripePayment) {
+      if (!formData.cardNumber || !formData.expiryMonth || !formData.expiryYear || !formData.cvc) {
+        setStepError('Complete payment details or disable payment setup for now.')
+        return false
+      }
+    }
+
+    setStepError('')
+    return true
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (currentStep < totalSteps) {
+      if (!validateStep()) return
       setCurrentStep(currentStep + 1)
       return
     }
@@ -147,11 +175,11 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
         businessAddress: '',
         businessCity: '',
         businessPostalCode: '',
-        businessCountry: '',
+        businessCountry: 'Ireland',
         plan: 'starter',
         subscriptionStatus: 'active',
         billingCycle: 'monthly',
-        setupStripePayment: true,
+        setupStripePayment: false,
         sendWelcomeEmail: true,
         createSampleData: true,
         cardNumber: '',
@@ -162,6 +190,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
         billingAddress: ''
       })
       setCurrentStep(1)
+      setStepError('')
     } catch (error) {
       console.error('Failed to create business:', error)
       alert('Failed to create business. Please try again.')
@@ -172,6 +201,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
+    setStepError('')
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value
@@ -564,16 +594,25 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
         <div className="p-6 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Set Up New Business
+              New Customer Setup
             </h2>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-5 w-5" />
             </Button>
           </div>
+          <p className="text-sm text-gray-500 mt-2">
+            Fast path: create owner + business now, then handle billing details later if needed.
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
           {renderStepIndicator()}
+
+          {stepError && (
+            <div className="mb-4 p-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-sm">
+              {stepError}
+            </div>
+          )}
 
           <div className="min-h-[400px]">
             {renderStepContent()}
@@ -593,7 +632,14 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
                 Cancel
               </Button>
               {currentStep < totalSteps ? (
-                <Button type="button" variant="primary" onClick={nextStep}>
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={() => {
+                    if (!validateStep()) return
+                    nextStep()
+                  }}
+                >
                   Next
                 </Button>
               ) : (

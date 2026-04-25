@@ -17,9 +17,11 @@ import {
   Send,
   ChevronDown,
   Menu,
+  X,
 } from 'lucide-react'
 
 export default function LandingPage() {
+  const [isNavOpen, setIsNavOpen] = useState(false)
   const [contactForm, setContactForm] = useState({
     name: '',
     email: '',
@@ -105,8 +107,8 @@ export default function LandingPage() {
               />
             </div>
             
-            {/* Navigation - center (hidden on mobile) */}
-            <nav className="hidden lg:flex items-center gap-8 flex-1 justify-center">
+            {/* Navigation - left-aligned after logo (hidden on mobile) */}
+            <nav className="hidden lg:flex items-center gap-8">
               <button
                 onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
                 className="text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
@@ -120,6 +122,12 @@ export default function LandingPage() {
                 How It Works
               </button>
               <button
+                onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
+                className="text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
+              >
+                Pricing
+              </button>
+              <button
                 onClick={() => document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })}
                 className="text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
               >
@@ -127,19 +135,25 @@ export default function LandingPage() {
               </button>
             </nav>
             
-            {/* Mobile menu icon - center (for mobile) */}
+            {/* Mobile menu toggle */}
             <div className="lg:hidden flex-1 flex justify-center">
               <button
                 type="button"
-                aria-label="Open menu"
+                aria-label={isNavOpen ? 'Close menu' : 'Open menu'}
+                onClick={() => setIsNavOpen((o) => !o)}
                 className="p-2 text-white hover:text-[#42b8ac] transition-colors"
               >
-                <Menu className="h-6 w-6" />
+                {isNavOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
               </button>
             </div>
             
-            {/* Sign In - right */}
-            <div className="flex-shrink-0">
+            {/* CTAs - right */}
+            <div className="flex-shrink-0 flex items-center gap-2">
+              <Link href="/book-demo" className="hidden sm:inline-flex">
+                <span className="inline-flex items-center gap-2 px-3 lg:px-5 py-2 rounded-full bg-[#42b8ac] text-white font-semibold text-sm hover:bg-[#3aa89e] transition-colors">
+                  Book a Demo
+                </span>
+              </Link>
               <Link href="/auth/signin">
                 <span className="inline-flex items-center gap-2 px-3 lg:px-5 py-2 rounded-full bg-white text-[#003842] font-semibold text-sm hover:bg-[#42b8ac] hover:text-white transition-colors">
                   Sign In <ArrowRight className="h-4 w-4" />
@@ -149,6 +163,38 @@ export default function LandingPage() {
           </div>
         </Container>
       </header>
+
+      {/* Mobile nav dropdown */}
+      {isNavOpen && (
+        <div className="lg:hidden bg-[#002d38] border-b border-white/10 z-10">
+          <nav className="flex flex-col divide-y divide-white/10">
+            {[
+              { label: 'Features', id: 'features' },
+              { label: 'How It Works', id: 'how-it-works' },
+              { label: 'Pricing', id: 'pricing' },
+              { label: 'Contact', id: 'contact-form' },
+            ].map(({ label, id }) => (
+              <button
+                key={id}
+                onClick={() => {
+                  setIsNavOpen(false)
+                  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+                }}
+                className="px-6 py-3 text-left text-white hover:text-[#42b8ac] hover:bg-white/5 transition-colors font-medium text-sm"
+              >
+                {label}
+              </button>
+            ))}
+            <Link
+              href="/book-demo"
+              onClick={() => setIsNavOpen(false)}
+              className="px-6 py-3 text-[#42b8ac] font-semibold text-sm hover:bg-white/5 transition-colors"
+            >
+              Book a Free Demo →
+            </Link>
+          </nav>
+        </div>
+      )}
 
       {/* ── HERO ── */}
       <section className="relative bg-[#003842] overflow-hidden">
@@ -164,6 +210,7 @@ export default function LandingPage() {
                 <img
                   src="/Home%20Image.svg"
                   alt="AllyJen allergen management platform"
+                  fetchPriority="high"
                   className="w-full h-auto block"
                 />
               </div>
@@ -178,7 +225,23 @@ export default function LandingPage() {
               <p className="text-lg text-white/70 mb-8 max-w-xl mx-auto lg:mx-0">
                 The all-in-one platform for Irish &amp; EU food businesses to track allergens, inform customers, and stay compliant.
               </p>
+
             </div>
+          </div>
+        </Container>
+      </section>
+
+      {/* ── TRUST STRIP ── */}
+      <section className="bg-[#f0f9f8] border-y border-[#42b8ac]/20 py-5">
+        <Container>
+          <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10 text-sm text-[#003842] font-medium">
+            <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac]" />EU Regulation 1169/2011 compliant</span>
+            <span className="hidden sm:inline text-[#42b8ac]/40">|</span>
+            <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac]" />FSAI-aligned allergen workflows</span>
+            <span className="hidden sm:inline text-[#42b8ac]/40">|</span>
+            <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac]" />Irish-owned</span>
+            <span className="hidden sm:inline text-[#42b8ac]/40">|</span>
+            <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac]" />12-month minimum agreement</span>
           </div>
         </Container>
       </section>
@@ -223,7 +286,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
               { step: '01', title: 'Get in Touch', desc: 'Fill out the contact form below and tell us about your business. We\'ll respond within one business day.' },
-              { step: '02', title: 'We Set You Up', desc: 'Our team configures your allergen system, imports your menu data, and gets your kiosks ready to go.' },
+              { step: '02', title: 'We Get You Running', desc: 'Our team configures your allergen system, installs your kiosk, and gets you set up on the platform. Menu management support is included for those on the Fully Managed plan.' },
               { step: '03', title: 'Go Live with Confidence', desc: 'Launch your AllyJen dashboard, start managing allergens, and give your customers the transparency they deserve.' },
             ].map((s, i) => (
               <div key={i} className="relative pl-6 border-l-2 border-[#42b8ac]">
@@ -233,6 +296,181 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+        </Container>
+      </section>
+
+      {/* ── PRICING ── */}
+      <section id="pricing" className="py-24 bg-white">
+        <Container>
+          <div className="text-center mb-14">
+            <span className="inline-block mb-3 text-[#42b8ac] text-xs font-bold uppercase tracking-widest">Simple, Transparent Pricing</span>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-[#003842] mb-3">Everything You Need, Nothing You Don&apos;t</h2>
+            <p className="text-gray-500 text-lg max-w-xl mx-auto">
+              One-time setup per location, then a simple monthly subscription. All plans are on a minimum 12-month agreement. Clear, transparent pricing from day one.
+            </p>
+          </div>
+
+          {/* ── ONE-TIME SETUP FEE BANNER ── */}
+          <div className="max-w-3xl mx-auto mb-12">
+            <div className="relative rounded-2xl bg-[#003842] text-white p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl overflow-hidden">
+              {/* subtle decorative ring */}
+              <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-[#42b8ac]/10 pointer-events-none" />
+              <div className="absolute -right-4 -bottom-10 w-32 h-32 rounded-full bg-[#42b8ac]/10 pointer-events-none" />
+              <div className="relative z-10">
+                <p className="text-[#42b8ac] text-xs font-bold uppercase tracking-widest mb-1">One-Time Setup Fee</p>
+                <h3 className="text-2xl font-extrabold mb-2">Device Installation &amp; Training</h3>
+                <ul className="space-y-1 text-sm text-white/80">
+                  <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac] flex-shrink-0" /> On-site kiosk device installation</li>
+                  <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac] flex-shrink-0" /> Staff training &amp; hands-on walkthrough</li>
+                  <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac] flex-shrink-0" /> Platform onboarding &amp; initial configuration</li>
+                </ul>
+              </div>
+              <div className="relative z-10 text-center sm:text-right flex-shrink-0">
+                <div className="text-5xl font-extrabold text-white">€299</div>
+                <div className="text-white/60 text-sm mt-1">per location, once</div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── SUBSCRIPTION PLANS ── */}
+          <div className="text-center mb-8">
+            <p className="text-[#003842] font-semibold text-sm uppercase tracking-widest">Then choose your monthly plan</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {[
+              {
+                name: 'Self-Managed',
+                price: '€19.99',
+                priceSuffix: '/month per location',
+                badge: null,
+                desc: 'Full access to the AllyJen platform. You keep your menu up to date; we power the technology.',
+                features: [
+                  'Full AllyJen platform access',
+                  'Customer-facing allergen kiosk &amp; QR code',
+                  'All 14 EU-mandated allergens tracked',
+                  'Sub-allergen detail tracking',
+                  'Multilingual allergen display',
+                  'Real-time menu updates (self-managed)',
+                  'Unlimited menu items',
+                  'Audit-ready compliance reports',
+                  'Analytics &amp; usage dashboard',
+                  'Email support',
+                ],
+                cta: 'Get Started',
+                highlight: false,
+              },
+              {
+                name: 'Fully Managed',
+                price: '€39.99',
+                priceSuffix: '/month per location',
+                badge: 'Most Popular',
+                desc: 'Everything in Self-Managed, plus our team handles your menu and platform management for you.',
+                features: [
+                  'Everything in Self-Managed',
+                  'Menu management by our team',
+                  'Regular menu &amp; ingredient updates on your behalf',
+                  'Content accuracy guaranteed',
+                  'Dedicated account manager',
+                  'Priority email support',
+                  'Proactive compliance monitoring',
+                  'Seasonal menu change assistance',
+                ],
+                cta: 'Get Started',
+                highlight: true,
+              },
+              {
+                name: 'Enterprise',
+                price: 'Contact Us',
+                priceSuffix: '',
+                badge: null,
+                desc: 'For large chains and multi-site groups. Tailored pricing, dedicated support, and a rollout plan built around your business.',
+                features: [
+                  'Everything in Fully Managed',
+                  'Unlimited locations',
+                  'Volume pricing for large chains',
+                  'Dedicated account team',
+                  'Custom onboarding &amp; rollout plan',
+                  'SLA-backed support agreement',
+                  'Flexible contract terms',
+                ],
+                cta: 'Contact Us',
+                highlight: false,
+              },
+            ].map((plan, i) => (
+              <div
+                key={i}
+                className={`relative flex flex-col rounded-2xl border-2 p-7 ${
+                  plan.highlight
+                    ? 'border-[#42b8ac] shadow-xl shadow-[#42b8ac]/10'
+                    : 'border-gray-100 shadow-sm'
+                }`}
+              >
+                {plan.badge && (
+                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                    <span className="inline-block px-3 py-1 bg-[#42b8ac] text-white text-xs font-bold rounded-full uppercase tracking-wide">
+                      {plan.badge}
+                    </span>
+                  </div>
+                )}
+                <div className="mb-5">
+                  <p className="text-sm font-bold text-[#42b8ac] uppercase tracking-widest mb-1">{plan.name}</p>
+                  <div className="flex items-end gap-1 mb-3 flex-wrap">
+                    <span className="text-4xl font-extrabold text-[#003842]">{plan.price}</span>
+                    {plan.priceSuffix && <span className="text-gray-400 text-sm mb-1">{plan.priceSuffix}</span>}
+                  </div>
+                  <p className="text-gray-500 text-sm leading-relaxed">{plan.desc}</p>
+                </div>
+                <ul className="space-y-2.5 flex-1 mb-7">
+                  {plan.features.map((f, j) => (
+                    <li key={j} className="flex items-center gap-2.5 text-sm text-gray-700">
+                      <CheckCircle className={`h-4 w-4 flex-shrink-0 ${plan.highlight && j === 0 ? 'text-[#003842]' : 'text-[#42b8ac]'}`} />
+                      <span dangerouslySetInnerHTML={{ __html: f }} />
+                    </li>
+                  ))}
+                </ul>
+                {plan.cta === 'Contact Us' ? (
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })}
+                    className="block w-full py-3 rounded-full text-center font-semibold text-sm transition-colors border-2 border-[#003842] text-[#003842] hover:bg-[#003842] hover:text-white"
+                  >
+                    {plan.cta}
+                  </button>
+                ) : (
+                  <Link href="/book-demo">
+                    <span className={`block w-full py-3 rounded-full text-center font-semibold text-sm transition-colors ${
+                      plan.highlight
+                        ? 'bg-[#42b8ac] text-white hover:bg-[#3aa89e]'
+                        : 'bg-[#003842] text-white hover:bg-[#004d5e]'
+                    }`}>
+                      {plan.cta}
+                    </span>
+                  </Link>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <p className="text-center text-sm text-gray-400 mt-10">
+            The €299 setup fee covers device installation per location. Need an additional device at a location?{' '}
+            <button
+              type="button"
+              onClick={() => document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })}
+              className="text-[#42b8ac] hover:underline font-medium"
+            >
+              Contact us
+            </button>
+            {' '}to discuss options.{' '}Not sure which plan suits you?{' '}
+            <button
+              type="button"
+              onClick={() => document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })}
+              className="text-[#42b8ac] hover:underline font-medium"
+            >
+              Talk to us
+            </button>
+            {' '}and we&apos;ll help you get started.
+          </p>
         </Container>
       </section>
 
@@ -266,7 +504,7 @@ export default function LandingPage() {
               <div className="rounded-2xl overflow-hidden shadow-2xl ring-4 ring-[#42b8ac]/30">
                 <img
                   src="/Home%20Image%202.svg"
-                  alt="AllyJen — Food Safety Partner"
+                  alt="AllyJen: Food Safety Partner"
                   className="w-full h-auto block"
                 />
               </div>
@@ -420,7 +658,14 @@ export default function LandingPage() {
         <Container>
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <img src="/Logo-AllyJen.svg" alt="AllyJen" className="h-24 w-auto" />
-            <div className="text-center md:text-right space-y-1">
+            <div className="text-center md:text-right space-y-2">
+              <div className="flex flex-wrap items-center justify-center md:justify-end gap-4 text-xs text-white/40">
+                <a href="mailto:info@allyjen.ie" className="hover:text-white/70 transition-colors">info@allyjen.ie</a>
+                <span>·</span>
+                <Link href="/auth/signin" className="hover:text-white/70 transition-colors">Sign In</Link>
+                <span>·</span>
+                <Link href="/book-demo" className="hover:text-white/70 transition-colors">Book a Demo</Link>
+              </div>
               <p className="text-sm text-white/40">© 2026 AllyJen Solutions Limited. All rights reserved.</p>
               <p className="text-xs text-white/30">CRO No. 811542 | Limerick, Republic of Ireland</p>
             </div>

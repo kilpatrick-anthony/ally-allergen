@@ -1,11 +1,12 @@
 // app/admin/devices/page.tsx
 'use client'
 
+import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { 
   Wifi, WifiOff, Monitor, Clock, AlertCircle, CheckCircle,
   RefreshCw, MapPin, Calendar, Activity, Smartphone, Tablet,
-  TrendingUp, TrendingDown, Bell, BellOff
+  TrendingUp, TrendingDown, Bell, BellOff, Plus
 } from 'lucide-react'
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
@@ -20,6 +21,7 @@ interface Device {
   is_online: boolean
   last_heartbeat: string
   site_name: string
+  site_slug: string
   site_email: string
   business_name: string
   admin_email: string
@@ -62,6 +64,7 @@ export default function DeviceMonitoringPage() {
           ? (Date.now() - new Date(d.last_heartbeat).getTime()) / 60000
           : 9999,
         site_name: d.site?.name ?? '',
+        site_slug: d.site?.slug ?? '',
         site_email: '',
         business_name: '',
         admin_email: '',
@@ -145,15 +148,27 @@ export default function DeviceMonitoringPage() {
             <p className="text-gray-600 mt-2">
               Track kiosk device status and receive offline alerts
             </p>
+            <p className="text-sm text-gray-500 mt-1">
+              Need to add a device? Set it up from Sites so it can be assigned to a location.
+            </p>
           </div>
-          <Button
-            onClick={fetchDevices}
-            disabled={refreshing}
-            variant="outline"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/admin/sites"
+              className="inline-flex items-center justify-center rounded-lg bg-[#42b8ac] px-4 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#36948a]"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Device by Location
+            </Link>
+            <Button
+              onClick={fetchDevices}
+              disabled={refreshing}
+              variant="outline"
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Error Alert */}
@@ -262,6 +277,13 @@ export default function DeviceMonitoringPage() {
                 <p className="text-sm text-gray-400 mt-2">
                   Devices will appear here once kiosks are accessed
                 </p>
+                <Link
+                  href="/admin/sites"
+                  className="inline-flex items-center justify-center mt-4 rounded-lg border border-[#42b8ac] px-4 py-2 text-sm font-medium text-[#42b8ac] hover:bg-[#f0f9f8]"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Device and Assign Location
+                </Link>
               </div>
             </Card>
           ) : (
@@ -313,7 +335,16 @@ export default function DeviceMonitoringPage() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-600">
                             <div className="flex items-center gap-2">
                               <MapPin className="h-4 w-4 text-gray-400" />
-                              <span>{device.site_name}</span>
+                              {device.site_slug ? (
+                                <Link
+                                  href={`/admin/sites/${device.site_slug}?tab=devices`}
+                                  className="text-[#003842] hover:text-[#42b8ac] font-medium"
+                                >
+                                  {device.site_name || 'Open location'}
+                                </Link>
+                              ) : (
+                                <span>{device.site_name}</span>
+                              )}
                             </div>
                             <div className="flex items-center gap-2">
                               <Clock className="h-4 w-4 text-gray-400" />
@@ -362,6 +393,14 @@ export default function DeviceMonitoringPage() {
                             <TrendingUp className="h-5 w-5 mb-1" />
                             <p className="text-xs font-medium">Active</p>
                           </div>
+                        )}
+                        {device.site_slug && (
+                          <Link
+                            href={`/admin/sites/${device.site_slug}?tab=devices`}
+                            className="inline-flex items-center justify-center mt-3 rounded-md border border-[#42b8ac] px-3 py-1.5 text-xs font-medium text-[#42b8ac] hover:bg-[#f0f9f8]"
+                          >
+                            Manage in Location
+                          </Link>
                         )}
                       </div>
                     </div>

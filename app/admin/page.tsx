@@ -4,10 +4,11 @@
 import React from 'react'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import {
   Package, ChefHat, Building, Shield,
   Check, ArrowRight, ChevronRight,
-  BookOpen, Zap, Star
+  BookOpen, Zap, Star, Monitor
 } from 'lucide-react'
 
 import { Container } from '@/components/layout/Container'
@@ -20,6 +21,7 @@ import { getFrequentPages, type AdminPage } from '@/lib/hooks/useFrequentPages'
 
 export default function AdminDashboard() {
   const { t } = useTranslation()
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [hasData, setHasData] = useState(false)
   const [businessId, setBusinessId] = useState<string | null>(null)
@@ -40,22 +42,31 @@ export default function AdminDashboard() {
     const checkForData = async () => {
       try {
         // Check if user has any data
-        const [ingredientsRes, menuItemsRes, datasheetsRes, suppliersRes] = await Promise.all([
+        const [ingredientsRes, menuItemsRes, datasheetsRes, suppliersRes, sitesRes] = await Promise.all([
           fetch('/api/ingredients?limit=1'),
           fetch('/api/menu-items?limit=1'),
           fetch('/api/datasheets?limit=1'),
-          fetch('/api/suppliers?limit=1')
+          fetch('/api/suppliers?limit=1'),
+          fetch('/api/sites')
         ])
 
         const ingredientsData = ingredientsRes.ok ? await ingredientsRes.json() : []
         const menuItemsData = menuItemsRes.ok ? await menuItemsRes.json() : []
         const datasheetsData = datasheetsRes.ok ? await datasheetsRes.json() : []
         const suppliersData = suppliersRes.ok ? await suppliersRes.json() : []
+        const sitesPayload = sitesRes.ok ? await sitesRes.json() : { sites: [] }
 
         const hasIngredients = Array.isArray(ingredientsData) && ingredientsData.length > 0
         const hasMenuItems = Array.isArray(menuItemsData) && menuItemsData.length > 0
         const hasDatasheets = Array.isArray(datasheetsData) && datasheetsData.length > 0
         const hasSuppliers = Array.isArray(suppliersData) && suppliersData.length > 0
+        const hasSites = Array.isArray(sitesPayload?.sites) && sitesPayload.sites.length > 0
+
+        // First-login fast path: push users into setup wizard until they create first site.
+        if (!hasSites) {
+          router.replace('/onboarding')
+          return
+        }
 
         setHasData(hasIngredients || hasMenuItems || hasDatasheets || hasSuppliers)
 
@@ -86,7 +97,7 @@ export default function AdminDashboard() {
     }
 
     checkForData()
-  }, [])
+  }, [router])
 
   if (loading) {
     return (
@@ -200,23 +211,23 @@ export default function AdminDashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Step 1 */}
-          <Link href="/admin/ingredients">
+          <Link href="/admin/sites/new">
             <Card className="h-full hover:shadow-xl transition-all hover:scale-105 cursor-pointer border-2 border-transparent hover:border-[#42b8ac]">
               <div className="text-center h-full flex flex-col">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full mb-4 mx-auto">
-                  <Package className="h-8 w-8 text-white" />
+                  <Building className="h-8 w-8 text-white" />
                 </div>
                 <div className="mb-4">
                   <Badge variant="info" size="sm">Step 1</Badge>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  {t('admin.addFirstIngredient')}
+                  Add Your First Location
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 flex-grow">
-                  {t('admin.addFirstIngredientDesc')}
+                  Create a site so you can pair your first kiosk device.
                 </p>
                 <div className="flex items-center justify-center text-[#42b8ac] font-medium mt-auto">
-                  {t('admin.getStarted')}
+                  Add Location
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </div>
               </div>
@@ -224,23 +235,23 @@ export default function AdminDashboard() {
           </Link>
 
           {/* Step 2 */}
-          <Link href="/admin/menu-builder">
+          <Link href="/admin/devices">
             <Card className="h-full hover:shadow-xl transition-all hover:scale-105 cursor-pointer border-2 border-transparent hover:border-[#42b8ac]">
               <div className="text-center h-full flex flex-col">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full mb-4 mx-auto">
-                  <ChefHat className="h-8 w-8 text-white" />
+                  <Monitor className="h-8 w-8 text-white" />
                 </div>
                 <div className="mb-4">
                   <Badge variant="info" size="sm">Step 2</Badge>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  {t('admin.createYourMenu')}
+                  Pair Your First Device
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 flex-grow">
-                  {t('admin.createYourMenuDesc')}
+                  Generate a setup code and link your kiosk to the location.
                 </p>
                 <div className="flex items-center justify-center text-[#42b8ac] font-medium mt-auto">
-                  {t('admin.buildMenu')}
+                  Open Device Monitoring
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </div>
               </div>
@@ -248,23 +259,23 @@ export default function AdminDashboard() {
           </Link>
 
           {/* Step 3 */}
-          <Link href="/admin/sites">
+          <Link href="/admin/menu-builder">
             <Card className="h-full hover:shadow-xl transition-all hover:scale-105 cursor-pointer border-2 border-transparent hover:border-[#42b8ac]">
               <div className="text-center h-full flex flex-col">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-full mb-4 mx-auto">
-                  <Building className="h-8 w-8 text-white" />
+                  <ChefHat className="h-8 w-8 text-white" />
                 </div>
                 <div className="mb-4">
                   <Badge variant="info" size="sm">Step 3</Badge>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  {t('admin.setUpLocations')}
+                  Build Your Menu
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 flex-grow">
-                  {t('admin.setUpLocationsDesc')}
+                  Add ingredients and publish menu items with allergen data.
                 </p>
                 <div className="flex items-center justify-center text-[#42b8ac] font-medium mt-auto">
-                  {t('admin.addLocations')}
+                  Open Menu Builder
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </div>
               </div>

@@ -1,13 +1,14 @@
 'use client'
 // components/admin/FsaiNewsTicker.tsx
 // Scrolling food-safety news ticker sourced from FSAI / EU RASFF RSS feeds.
-// Sits at the top of the admin content area on every page.
+// Sits at the bottom of every admin page.
 
 import { useEffect, useRef, useState } from 'react'
-import { AlertTriangle, ExternalLink, RefreshCw, Rss } from 'lucide-react'
+import { AlertTriangle, ExternalLink, RefreshCw, Rss, X } from 'lucide-react'
 import type { AlertItem } from '@/app/api/fsai-alerts/route'
 
 const POLL_INTERVAL = 10 * 60 * 1000 // re-fetch every 10 minutes
+const SESSION_KEY = 'fsai_ticker_dismissed'
 
 function SourceBadge({ source }: { source: AlertItem['source'] }) {
   if (source === 'IE') {
@@ -44,22 +45,32 @@ function SourceBadge({ source }: { source: AlertItem['source'] }) {
 export function FsaiNewsTicker() {
   const [alerts, setAlerts] = useState<AlertItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState(false)
-  const [dismissed, setDismissed] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  // Session-persistent dismiss: stays dismissed across page navigations within the tab,
+  // resets automatically when the user opens a new session.
+  const [dismissed, setDismissed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return sessionStorage.getItem(SESSION_KEY) === '1'
+  })
   const scrollRef = useRef<HTMLDivElement>(null)
   const animRef = useRef<Animation | null>(null)
 
-  async function fetchAlerts() {
+  async function fetchAlerts(force = false) {
     try {
-      const res = await fetch('/api/fsai-alerts')
+      const url = force ? '/api/fsai-alerts?force=true' : '/api/fsai-alerts'
+      const res = await fetch(url)
       if (!res.ok) throw new Error('non-ok')
       const data = await res.json()
       setAlerts(data.alerts || [])
+      setLastUpdated(new Date())
       setError(false)
     } catch {
       setError(true)
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }
 
@@ -75,12 +86,11 @@ export function FsaiNewsTicker() {
     const el = scrollRef.current
     if (!el || alerts.length === 0) return
 
-    // Wait one paint for the element to measure
     const frame = requestAnimationFrame(() => {
       const contentWidth = el.scrollWidth
       const containerWidth = el.parentElement?.clientWidth ?? 0
       const distance = contentWidth + containerWidth
-      const duration = Math.max(distance * 30, 15000) // ~30ms per px, min 15s
+      const duration = Math.max(distance * 30, 15000)
 
       animRef.current?.cancel()
       animRef.current = el.animate(
@@ -88,11 +98,7 @@ export function FsaiNewsTicker() {
           { transform: `translateX(${containerWidth}px)` },
           { transform: `translateX(-${contentWidth}px)` },
         ],
-        {
-          duration,
-          iterations: Infinity,
-          easing: 'linear',
-        }
+        { duration, iterations: Infinity, easing: 'linear' }
       )
     })
 
@@ -102,30 +108,50 @@ export function FsaiNewsTicker() {
     }
   }, [alerts])
 
+  function dismiss() {
+    sessionStorage.setItem(SESSION_KEY, '1')
+    setDismissed(true)
+  }
+
+  function handleRefresh() {
+    setRefreshing(true)
+    fetchAlerts(true)
+  }
+
   if (dismissed) return null
+
+  const alertCount = alerts.filter(a => a.source !== 'Static').length
 
   return (
     <div
-      className="relative flex items-center bg-amber-50 dark:bg-amber-950/40 border-t border-amber-200 dark:border-amber-800 h-8 overflow-hidden select-none"
+      className="relative flex items-stretch bg-amber-50 dark:bg-amber-950/40 border-t-2 border-amber-300 dark:border-amber-700 overflow-hidden select-none"
+      style={{ minHeight: '44px' }}
       aria-label="Food safety news ticker"
     >
       {/* Static left label */}
-      <div className="shrink-0 flex items-center gap-1.5 px-3 bg-amber-100 dark:bg-amber-900/60 border-r border-amber-200 dark:border-amber-700 h-full z-10">
-        <Rss className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-        <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 whitespace-nowrap uppercase tracking-wide">
-          Food Safety
-        </span>
+      <div className="shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 bg-amber-100 dark:bg-amber-900/60 border-r border-amber-200 dark:border-amber-700 z-10 min-w-[72px]">
+        <div className="flex items-center gap-1.5">
+          <Rss className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+          <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 whitespace-nowrap uppercase tracking-wide">
+            Food Safety
+          </span>
+        </div>
+        {alertCount > 0 && (
+          <span className="text-[9px] font-semibold text-amber-600 dark:text-amber-400">
+            {alertCount} alert{alertCount !== 1 ? 's' : ''}
+          </span>
+        )}
       </div>
 
       {/* Scrolling content */}
-      <div className="flex-1 overflow-hidden relative">
+      <div className="flex-1 overflow-hidden relative flex items-center">
         {loading ? (
-          <div className="flex items-center gap-2 px-4 text-xs text-amber-600 dark:text-amber-400 h-8">
+          <div className="flex items-center gap-2 px-4 text-xs text-amber-600 dark:text-amber-400">
             <RefreshCw className="h-3 w-3 animate-spin" />
             Loading latest alerts…
           </div>
         ) : error ? (
-          <div className="flex items-center gap-2 px-4 text-xs text-amber-600 dark:text-amber-400 h-8">
+          <div className="flex items-center gap-2 px-4 text-xs text-amber-600 dark:text-amber-400">
             <AlertTriangle className="h-3 w-3" />
             Unable to load feed — visit{' '}
             <a
@@ -141,7 +167,7 @@ export function FsaiNewsTicker() {
         ) : (
           <div
             ref={scrollRef}
-            className="flex items-center gap-8 whitespace-nowrap will-change-transform h-8"
+            className="flex items-center gap-8 whitespace-nowrap will-change-transform"
             style={{ width: 'max-content' }}
           >
             {alerts.map(alert => (
@@ -169,15 +195,34 @@ export function FsaiNewsTicker() {
         )}
       </div>
 
-      {/* Dismiss button */}
-      <button
-        type="button"
-        onClick={() => setDismissed(true)}
-        aria-label="Dismiss news ticker"
-        className="shrink-0 px-2 h-full flex items-center text-amber-400 hover:text-amber-700 dark:hover:text-amber-200 transition-colors border-l border-amber-200 dark:border-amber-700"
-      >
-        <span className="text-xs leading-none">&times;</span>
-      </button>
+      {/* Right controls: last updated + refresh + dismiss */}
+      <div className="shrink-0 flex items-center border-l border-amber-200 dark:border-amber-700">
+        {lastUpdated && (
+          <span className="hidden sm:block text-[10px] text-amber-500 dark:text-amber-500 px-2 whitespace-nowrap">
+            {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={handleRefresh}
+          disabled={refreshing}
+          aria-label="Refresh news feed"
+          title="Refresh"
+          className="px-2 h-full flex items-center text-amber-400 hover:text-amber-700 dark:hover:text-amber-200 transition-colors disabled:opacity-40"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+        </button>
+        <button
+          type="button"
+          onClick={dismiss}
+          aria-label="Dismiss news ticker for this session"
+          title="Dismiss for this session"
+          className="px-2 h-full flex items-center text-amber-400 hover:text-amber-700 dark:hover:text-amber-200 transition-colors border-l border-amber-200 dark:border-amber-700"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
     </div>
   )
 }
+

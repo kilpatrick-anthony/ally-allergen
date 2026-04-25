@@ -1,6 +1,6 @@
 // app/kiosk/pair/page.tsx
-// Full-screen pairing page for kiosk devices.
-// Staff enter the ALLY-XXXX code shown in the admin portal and the kiosk
+// Full-screen setup page for kiosk devices.
+// Staff enter the ALLY-XXXX setup code shown in the admin portal and the kiosk
 // automatically redirects to the correct allergen menu.
 'use client'
 
@@ -39,7 +39,7 @@ export default function KioskPairPage() {
 
       if (!res.ok) {
         setStatus('error')
-        setErrorMsg(data.error || 'Invalid pairing code')
+        setErrorMsg(data.error || 'Invalid setup code')
         setDigits(Array(CODE_LENGTH).fill(''))
         inputRefs.current[0]?.focus()
         return
@@ -137,9 +137,9 @@ export default function KioskPairPage() {
       ) : (
         <div className="relative z-10 bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm space-y-6">
           <div className="text-center space-y-2">
-            <h1 className="text-2xl font-bold text-[#003842]">Enter Pairing Code</h1>
+            <h1 className="text-2xl font-bold text-[#003842]">Enter Setup Code</h1>
             <p className="text-sm text-gray-500">
-              Find the code in your admin portal under<br />
+              Find the setup code in your admin portal under<br />
               <span className="font-medium text-[#003842]">Sites → Devices &amp; Kiosks → Add Device</span>
             </p>
           </div>
@@ -193,7 +193,7 @@ export default function KioskPairPage() {
           </button>
 
           <p className="text-center text-xs text-gray-400">
-            Codes expire after 24 hours and can only be used once.
+            Setup codes expire after 24 hours and can only be used once.
           </p>
         </div>
       )}

@@ -12,6 +12,7 @@ import SpeechController from '@/components/SpeechController'
 import { trackAdminPageVisit } from '@/lib/hooks/useFrequentPages'
 import { FsaiNewsTicker } from '@/components/admin/FsaiNewsTicker'
 import { JenCoach } from '@/components/admin/JenCoach'
+import { AdminTopBar } from '@/components/admin/AdminTopBar'
 
 interface AdminLayoutProps {
   children: ReactNode
@@ -170,25 +171,25 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         )}
 
         {/* Sidebar */}
-        <div className={`fixed inset-y-0 left-0 w-[224px] bg-gradient-to-br from-[#003842] to-[#42b8ac] border-r border-[#42b8ac]/20 shadow-lg z-50 flex flex-col transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div className={`fixed inset-y-0 left-0 w-[224px] bg-gradient-to-b from-[#002e38] via-[#003e4a] to-[#2a7068] border-r border-[#42b8ac]/15 shadow-[4px_0_24px_-4px_rgba(0,0,0,0.25)] z-50 flex flex-col transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
           {/* Logo */}
-          <div className="w-full px-4 flex items-center justify-center">
+          <div className="w-full px-4 pt-2 flex items-center justify-center">
             <img
               src="/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg"
               alt="AllyJen Logo"
-              className="h-32 w-auto object-contain"
+              className="h-28 w-auto object-contain drop-shadow-[0_2px_8px_rgba(66,184,172,0.3)]"
             />
           </div>
 
           {/* Navigation - scrollable with discreet thin scrollbar */}
-          <div className="flex-1 overflow-y-auto px-4 pb-4 -mt-4 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+          <div className="flex-1 overflow-y-auto px-3 pb-4 -mt-2 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
             <Navigation />
           </div>
 
           {/* Footer - user profile */}
-          <div className="p-4 border-t border-white/20 bg-gradient-to-t from-black/20 to-transparent footer-shadow">
+          <div className="p-3 border-t border-white/10 bg-black/20 backdrop-blur-sm">
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 bg-white/10 rounded-lg backdrop-blur-sm">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#42b8ac] to-[#003842] flex items-center justify-center shrink-0 shadow-sm">
                 <User className="h-5 w-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
@@ -211,7 +212,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* Main Content */}
         <div className="lg:pl-[224px] pt-14 lg:pt-0 flex flex-col min-h-screen">
-          <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-900 dark:to-gray-800/50">
+          <AdminTopBar userName={userName} userEmail={userEmail} />
+          <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 admin-dot-grid dark:admin-dot-grid-dark">
             {children}
           </main>
           {/* Food safety news ticker — pinned to the bottom of every admin page */}

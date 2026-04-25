@@ -46,6 +46,45 @@ export async function GET() {
 
     if (error) throw error
 
+    const businessIds = (businesses || []).map((b: any) => b.id)
+
+    let siteCountsByBusiness: Record<string, number> = {}
+    let deviceCountsByBusiness: Record<string, number> = {}
+    let menuItemCountsByBusiness: Record<string, number> = {}
+
+    if (businessIds.length > 0) {
+      const [sitesResult, devicesResult, menuItemsResult] = await Promise.all([
+        supabase
+          .from('sites')
+          .select('business_id')
+          .in('business_id', businessIds),
+        supabase
+          .from('devices')
+          .select('business_id')
+          .in('business_id', businessIds),
+        supabase
+          .from('menu_items')
+          .select('business_id')
+          .in('business_id', businessIds)
+          .eq('is_active', true),
+      ])
+
+      siteCountsByBusiness = (sitesResult.data || []).reduce((acc: Record<string, number>, row: any) => {
+        acc[row.business_id] = (acc[row.business_id] || 0) + 1
+        return acc
+      }, {})
+
+      deviceCountsByBusiness = (devicesResult.data || []).reduce((acc: Record<string, number>, row: any) => {
+        acc[row.business_id] = (acc[row.business_id] || 0) + 1
+        return acc
+      }, {})
+
+      menuItemCountsByBusiness = (menuItemsResult.data || []).reduce((acc: Record<string, number>, row: any) => {
+        acc[row.business_id] = (acc[row.business_id] || 0) + 1
+        return acc
+      }, {})
+    }
+
     // Enrich with owner email from auth.users via admin API
     const enriched = await Promise.all((businesses || []).map(async (b: any) => {
       const ownerRow = b.user_businesses?.find((ub: any) => ub.role === 'owner')
@@ -70,6 +109,11 @@ export async function GET() {
         address: [b.settings?.address?.street, b.settings?.address?.city, b.settings?.address?.country].filter(Boolean).join(', '),
         subscriptionStatus: b.status === 'active' ? 'active' : b.status === 'trial' ? 'trial' : b.status,
         revenue: b.plan_type === 'starter' ? 99 : b.plan_type === 'pro' ? 299 : 499,
+        setupMilestones: {
+          sitesCount: siteCountsByBusiness[b.id] || 0,
+          devicesCount: deviceCountsByBusiness[b.id] || 0,
+          menuItemsCount: menuItemCountsByBusiness[b.id] || 0,
+        }
       }
     }))
 

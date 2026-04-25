@@ -10,7 +10,7 @@
 //
 // If all feeds fail the API returns static fallback entries pointing to FSAI.ie and RASFF.
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 // Next.js 16 route-level cache revalidation (5 minutes)
@@ -86,7 +86,8 @@ async function fetchFeed(url: string, source: 'IE' | 'EU' | 'FSN' | 'FSAI'): Pro
 
 // Google News RSS — curated queries. Returns ~10-80 matching news articles.
 // Note: Google News RSS is a longstanding public feature intended for RSS readers.
-const IE_FEED_URL  = 'https://news.google.com/rss/search?q=food+recall+ireland+allergen&hl=en-IE&gl=IE&ceid=IE:en'
+// IE query: prioritises FSAI recalls, undeclared allergens and Irish food safety news.
+const IE_FEED_URL  = 'https://news.google.com/rss/search?q=FSAI+food+recall+OR+%22undeclared+allergen%22+OR+%22food+safety+alert%22+ireland&hl=en-IE&gl=IE&ceid=IE:en'
 const EU_FEED_URL  = 'https://news.google.com/rss/search?q=RASFF+EU+food+recall+alert+allergen&hl=en&gl=EU&ceid=IE:en'
 const FSN_FEED_URL = 'https://www.foodsafetynews.com/feed/'
 
@@ -109,10 +110,13 @@ const STATIC_FALLBACK: AlertItem[] = [
 
 // ── Route handler ─────────────────────────────────────────────────────────────
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    // Serve from cache if fresh
-    if (cache && Date.now() - cache.fetchedAt < CACHE_TTL) {
+    // ?force=true bypasses the cache (used by the manual refresh button)
+    const force = request.nextUrl.searchParams.get('force') === 'true'
+
+    // Serve from cache if fresh and not forced
+    if (!force && cache && Date.now() - cache.fetchedAt < CACHE_TTL) {
       return NextResponse.json({ alerts: cache.data, cached: true })
     }
 

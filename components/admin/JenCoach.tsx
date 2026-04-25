@@ -356,7 +356,7 @@ export function JenCoach() {
       {!dismissed && (
         <button
           onClick={() => setOpen((o) => !o)}
-          className="relative flex items-center gap-0 rounded-full shadow-2xl hover:shadow-teal-400/30 hover:scale-[1.03] active:scale-[0.97] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 overflow-visible h-[62px] sm:h-[62px] h-[56px]"
+          className="relative flex items-center gap-0 rounded-full shadow-2xl hover:shadow-teal-400/30 hover:scale-[1.03] active:scale-[0.97] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 overflow-visible h-[56px] sm:h-[62px]"
           style={{
             background: open
               ? 'linear-gradient(135deg, #003842 0%, #005a6e 100%)'
@@ -365,15 +365,15 @@ export function JenCoach() {
           }}
           aria-label={open ? 'Close' : coachMode === 'ally' ? 'Open Ally' : 'Open Jen'}
         >
-            {/* Avatar — overflows pill vertically to appear larger */}
-            <span className="relative shrink-0 -ml-1 -my-3 sm:-my-3 -my-2">
+            {/* Avatar — overflows pill vertically on sm+ to appear larger; sits flush on mobile */}
+            <span className="relative shrink-0 -ml-1 -my-1 sm:-my-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={coachMode === 'ally' ? '/Ally_9.svg' : '/Jen_2.svg'}
                 alt=""
                 width={78}
                 height={78}
-                className="rounded-full block ring-2 ring-white/40 sm:w-[78px] sm:h-[78px] w-[56px] h-[56px]"
+                className="rounded-full block ring-2 ring-white/40 w-[52px] h-[52px] sm:w-[78px] sm:h-[78px]"
                 style={{ display: 'block' }}
               />
             </span>

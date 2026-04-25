@@ -47,10 +47,19 @@ export default function DeviceManagement({
   const [codeCopied, setCodeCopied] = useState(false);
   const [regeneratingFor, setRegeneratingFor] = useState<string | null>(null);
   const [cardCopied, setCardCopied] = useState<string | null>(null);
+  const [nowMs, setNowMs] = useState(Date.now());
 
   useEffect(() => {
     loadDevices();
   }, [siteId]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNowMs(Date.now());
+    }, 30000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const loadDevices = async () => {
     setLoading(true);
@@ -92,7 +101,14 @@ export default function DeviceManagement({
         throw new Error(data.error || 'Failed to create device')
       }
 
-      setDevices([data.device, ...devices])
+      setDevices([
+        {
+          ...data.device,
+          active_pairing_code: data.pairing_code ?? null,
+          pairing_code_expires_at: data.expires_at ?? null,
+        },
+        ...devices,
+      ])
       setPairingCode(data.pairing_code)
       setPairingExpiry(data.expires_at)
       setShowAddDevice(false)
@@ -202,6 +218,34 @@ export default function DeviceManagement({
     return `${Math.floor(seconds / 86400)}d ago`;
   };
 
+  const getExpiryCountdown = (expiry?: string | null) => {
+    if (!expiry) return null
+
+    const expiryMs = new Date(expiry).getTime()
+    const remainingMs = expiryMs - nowMs
+
+    if (Number.isNaN(expiryMs) || remainingMs <= 0) {
+      return { label: 'Expired', urgency: 'expired' as const }
+    }
+
+    const totalMinutes = Math.ceil(remainingMs / 60000)
+    const days = Math.floor(totalMinutes / 1440)
+    const hours = Math.floor((totalMinutes % 1440) / 60)
+    const minutes = totalMinutes % 60
+
+    let label = ''
+    if (days > 0) {
+      label = `${days}d ${hours}h`
+    } else if (hours > 0) {
+      label = `${hours}h ${minutes}m`
+    } else {
+      label = `${minutes}m`
+    }
+
+    const urgency = totalMinutes <= 60 ? 'critical' : totalMinutes <= 360 ? 'warning' : 'normal'
+    return { label, urgency }
+  }
+
   const stats = {
     total: devices.length,
     online: devices.filter(d => d.status === 'online').length,
@@ -274,7 +318,7 @@ export default function DeviceManagement({
               Devices for {siteName}
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              Manage kiosks, tablets, and displays connected to this location
+              Add, pair, and monitor devices for this location
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -309,6 +353,10 @@ export default function DeviceManagement({
                 <X className="h-5 w-5" />
               </button>
             </div>
+
+            <p className="text-sm text-gray-600">
+              Create the device first, then use the setup code to link the physical kiosk.
+            </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -353,7 +401,7 @@ export default function DeviceManagement({
                 onClick={addDevice}
                 disabled={!newDeviceName.trim() || generatingCode}
               >
-                {generatingCode ? 'Generating…' : 'Generate Pairing Code'}
+                {generatingCode ? 'Creating…' : 'Create Setup Code'}
               </Button>
             </div>
           </div>
@@ -365,14 +413,15 @@ export default function DeviceManagement({
         <Card className="border-2 border-[#42b8ac] bg-[#f0faf9]">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-[#003842]">Pairing Code Ready</h3>
+              <h3 className="text-lg font-semibold text-[#003842]">Setup Code Ready</h3>
               <button onClick={dismissPairingCode} className="text-gray-400 hover:text-gray-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <p className="text-sm text-gray-600">
-              On the kiosk device, open <span className="font-semibold">allyjen.ie/kiosk/pair</span> and enter the code below.
+              Step 1: On the kiosk, open <span className="font-semibold">allyjen.ie/kiosk/pair</span>.<br />
+              Step 2: Enter this code to link the device.
             </p>
 
             <div className="flex items-center gap-3">
@@ -395,7 +444,7 @@ export default function DeviceManagement({
             {pairingExpiry && (
               <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
                 <Clock className="h-4 w-4 flex-shrink-0" />
-                <span>Expires {new Date(pairingExpiry).toLocaleString()} — single use</span>
+                <span>Code expires {new Date(pairingExpiry).toLocaleString()} - one-time use for setup only</span>
               </div>
             )}
           </div>
@@ -424,6 +473,7 @@ export default function DeviceManagement({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {devices.map((device) => {
             const DeviceIcon = getDeviceIcon(device.device_type);
+            const expiryCountdown = getExpiryCountdown(device.pairing_code_expires_at);
             
             return (
               <Card key={device.id} className="hover:shadow-lg transition-shadow">
@@ -467,6 +517,91 @@ export default function DeviceManagement({
                     </div>
                   </div>
 
+                  {/* Pairing Code Section */}
+                  <div className="rounded-xl border border-[#42b8ac]/30 bg-[#f0faf9] p-3 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold text-[#003842] uppercase tracking-wide">
+                        Setup Code
+                      </span>
+                      {device.active_pairing_code && device.pairing_code_expires_at && (
+                        <div className="flex flex-col items-end gap-1">
+                          {expiryCountdown && (
+                            <span className={`text-[11px] font-semibold rounded-full px-2 py-0.5 flex items-center gap-1 ${
+                              expiryCountdown.urgency === 'critical'
+                                ? 'bg-red-100 text-red-700'
+                                : expiryCountdown.urgency === 'warning'
+                                ? 'bg-amber-100 text-amber-700'
+                                : expiryCountdown.urgency === 'expired'
+                                ? 'bg-gray-200 text-gray-700'
+                                : 'bg-emerald-100 text-emerald-700'
+                            }`}>
+                              <Clock className="h-3 w-3" />
+                              Code expires in {expiryCountdown.label}
+                            </span>
+                          )}
+                          <span className="text-[11px] text-gray-500">
+                            {new Date(device.pairing_code_expires_at).toLocaleString()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {device.active_pairing_code ? (
+                      <div className="space-y-2">
+                        <div className="bg-white border border-[#42b8ac]/40 rounded-lg px-3 py-2 text-center">
+                          <span className="font-mono font-bold tracking-widest text-[#003842] text-lg">
+                            {device.active_pairing_code}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => copyCardCode(device.id, device.active_pairing_code!)}
+                            className="flex-1"
+                          >
+                            {cardCopied === device.id
+                              ? <Check className="h-4 w-4 mr-2 text-green-600" />
+                              : <Copy className="h-4 w-4 mr-2" />}
+                            {cardCopied === device.id ? 'Copied' : 'Copy Code'}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => regenerateCode(device.id)}
+                            disabled={regeneratingFor === device.id}
+                            className="flex-1"
+                          >
+                            <RefreshCw className={`h-4 w-4 mr-2 ${regeneratingFor === device.id ? 'animate-spin' : ''}`} />
+                            {regeneratingFor === device.id ? 'Generating…' : 'New Code'}
+                          </Button>
+                        </div>
+                        <p className="text-xs text-gray-600">
+                          Open <span className="font-semibold">allyjen.ie/kiosk/pair</span> on the kiosk and enter this code.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3">
+                        <p className="text-xs text-amber-800 mb-2">
+                          No active setup code for this device.
+                        </p>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => regenerateCode(device.id)}
+                          disabled={regeneratingFor === device.id}
+                          className="w-full"
+                        >
+                          <RefreshCw className={`h-4 w-4 mr-2 ${regeneratingFor === device.id ? 'animate-spin' : ''}`} />
+                          {regeneratingFor === device.id ? 'Creating…' : 'Create Setup Code'}
+                        </Button>
+                        <p className="text-xs text-amber-800 mt-2">
+                          Create a code, then enter it on allyjen.ie/kiosk/pair.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Device Info */}
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -488,53 +623,6 @@ export default function DeviceManagement({
                           {device.ip_address}
                         </span>
                       </div>
-                    )}
-                  </div>
-
-                  {/* Pairing Code Section */}
-                  <div className="border-t border-gray-100 pt-3 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                        Pairing Code
-                      </span>
-                      <button
-                        onClick={() => regenerateCode(device.id)}
-                        disabled={regeneratingFor === device.id}
-                        className="flex items-center gap-1 text-xs text-[#42b8ac] hover:text-[#37a398] disabled:opacity-50"
-                      >
-                        <RefreshCw className={`h-3 w-3 ${regeneratingFor === device.id ? 'animate-spin' : ''}`} />
-                        {regeneratingFor === device.id ? 'Generating…' : 'New Code'}
-                      </button>
-                    </div>
-
-                    {device.active_pairing_code ? (
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-[#f0faf9] border border-[#42b8ac]/40 rounded-lg px-3 py-2 text-center">
-                          <span className="font-mono font-bold tracking-widest text-[#003842] text-lg">
-                            {device.active_pairing_code}
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => copyCardCode(device.id, device.active_pairing_code!)}
-                          className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
-                          title="Copy code"
-                        >
-                          {cardCopied === device.id
-                            ? <Check className="h-4 w-4 text-green-600" />
-                            : <Copy className="h-4 w-4 text-gray-500" />}
-                        </button>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-gray-400 italic">
-                        No active code — click <span className="font-medium">New Code</span> to generate one
-                      </p>
-                    )}
-
-                    {device.active_pairing_code && device.pairing_code_expires_at && (
-                      <p className="text-xs text-amber-600 flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        Expires {new Date(device.pairing_code_expires_at).toLocaleString()}
-                      </p>
                     )}
                   </div>
 
@@ -575,10 +663,11 @@ export default function DeviceManagement({
               Device Management Tips
             </h4>
             <ul className="text-sm text-blue-800 space-y-1 ml-4 list-disc">
-              <li>Click <strong>Add Device</strong>, give it a name, and click <strong>Generate Pairing Code</strong></li>
-              <li>On the kiosk, go to <strong>allyjen.ie/kiosk/pair</strong> and enter the code shown</li>
-              <li>The kiosk will automatically open the correct allergen menu for this site</li>
-              <li>Devices send a heartbeat every minute — status updates automatically</li>
+              <li>Click <strong>Add Device</strong>, enter a name, and click <strong>Create Setup Code</strong></li>
+              <li>On the kiosk, go to <strong>allyjen.ie/kiosk/pair</strong> and enter the setup code</li>
+              <li>Each setup code is one-time use and for linking only</li>
+              <li>The kiosk then opens the correct allergen menu for this site automatically</li>
+              <li>Devices send a heartbeat every minute so status updates automatically</li>
               <li>Offline devices continue showing cached allergen data</li>
             </ul>
           </div>

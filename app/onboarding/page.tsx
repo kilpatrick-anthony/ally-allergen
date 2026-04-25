@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
@@ -15,12 +14,13 @@ import {
   ArrowRight, 
   ArrowLeft,
   Building,
+  Monitor,
   Globe,
   Phone,
   Mail
 } from 'lucide-react'
 
-type OnboardingStep = 'welcome' | 'location' | 'team' | 'complete'
+type OnboardingStep = 'welcome' | 'location' | 'complete'
 
 interface LocationData {
   name: string
@@ -39,6 +39,7 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null)
   const [businessName, setBusinessName] = useState('')
   const [businessId, setBusinessId] = useState<string | null>(null)
+  const [createdSiteSlug, setCreatedSiteSlug] = useState<string | null>(null)
   
   const [locationData, setLocationData] = useState<LocationData>({
     name: '',
@@ -53,67 +54,43 @@ export default function OnboardingPage() {
   useEffect(() => {
     // Get business info
     const fetchBusinessInfo = async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) {
-        console.log('No user found, redirecting to signin')
-        router.push('/auth/signin')
-        return
-      }
+      try {
+        const sessionResponse = await fetch('/api/auth/session')
+        const sessionData = await sessionResponse.json()
 
-      console.log('🔍 Fetching business for user:', user.id)
-
-      // Retry logic for getting business (in case of timing issues)
-      let attempts = 0
-      const maxAttempts = 5
-      
-      while (attempts < maxAttempts) {
-        attempts++
-        console.log(`🔄 Attempt ${attempts}/${maxAttempts}: Querying user_businesses...`)
-        
-        // First, try to get just the user_business record
-        const { data: userBusinessData, error: ubError } = await supabase
-          .from('user_businesses')
-          .select('business_id, role')
-          .eq('user_id', user.id)
-          .single()
-
-        console.log(`📊 Attempt ${attempts} user_business result:`, { 
-          userBusinessData, 
-          ubError,
-          hasBusinessId: userBusinessData?.business_id ? 'YES' : 'NO'
-        })
-
-        if (userBusinessData && userBusinessData.business_id) {
-          // Now get the business name separately
-          const { data: businessData, error: businessError } = await supabase
-            .from('businesses')
-            .select('name')
-            .eq('id', userBusinessData.business_id)
-            .single()
-
-          console.log('📊 Business query result:', { businessData, businessError })
-
-          setBusinessId(userBusinessData.business_id)
-          setBusinessName(businessData?.name || 'Your Business')
-          console.log('✅ Business loaded successfully:', {
-            id: userBusinessData.business_id,
-            name: businessData?.name
-          })
+        if (!sessionData?.authenticated || !sessionData?.user) {
+          router.push('/auth/signin?redirect=/onboarding')
           return
         }
-        
-        // Wait before retrying
-        if (attempts < maxAttempts) {
-          console.log(`⏳ Business not found, waiting 1 second before retry ${attempts + 1}...`)
-          await new Promise(resolve => setTimeout(resolve, 1000))
-        }
-      }
 
-      // If still not found after retries, show error
-      console.error('❌ Failed to load business after', maxAttempts, 'attempts')
-      setError('Failed to load your business information. Please contact support.')
+        const businessIdFromSession = sessionData.user.businessId as string | null
+        if (!businessIdFromSession) {
+          setError('No business is linked to this account yet. Please contact support.')
+          return
+        }
+
+        setBusinessId(businessIdFromSession)
+
+        // If setup is already done, skip onboarding.
+        const sitesResponse = await fetch('/api/sites')
+        const sitesData = await sitesResponse.json()
+        if (sitesResponse.ok && Array.isArray(sitesData.sites) && sitesData.sites.length > 0) {
+          router.replace('/admin')
+          return
+        }
+
+        // Fetch business name for a personalized greeting.
+        const businessResponse = await fetch(`/api/business/${businessIdFromSession}`)
+        if (businessResponse.ok) {
+          const businessData = await businessResponse.json()
+          setBusinessName(businessData?.name || 'Your Business')
+        } else {
+          setBusinessName('Your Business')
+        }
+      } catch (fetchError) {
+        console.error('Failed to load onboarding context:', fetchError)
+        setError('Failed to load your onboarding details. Please try again.')
+      }
     }
 
     fetchBusinessInfo()
@@ -135,69 +112,37 @@ export default function OnboardingPage() {
     }
     
     // Validate required fields
-    if (!locationData.name || !locationData.address || !locationData.city) {
-      alert('Please fill in all required fields (Name, Address, and City)')
+    if (!locationData.name) {
+      alert('Please enter a location name to continue.')
       return
     }
     
     setLoading(true)
     try {
-      const supabase = createClient()
-      
-      // Create unique slug from location name with timestamp to avoid duplicates
-      const baseSlug = locationData.name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '')
-      const timestamp = Date.now().toString().slice(-6)
-      const slug = `${baseSlug}-${timestamp}`
-
-      console.log('Inserting site:', {
-        business_id: businessId,
-        name: locationData.name,
-        slug
+      const response = await fetch('/api/sites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: locationData.name,
+          address: locationData.address || null,
+          city: locationData.city || null,
+          country: 'Ireland',
+          eircode: locationData.eircode || null,
+          phone: locationData.phone || null,
+          email: locationData.email || null,
+          is_active: true,
+        })
       })
 
-      console.log('⏳ Calling sites INSERT...')
-      const insertPromise = supabase
-        .from('sites')
-        .insert({
-          business_id: businessId,
-          name: locationData.name,
-          address: locationData.address,
-          city: locationData.city,
-          country: 'Ireland',
-          phone: locationData.phone,
-          email: locationData.email,
-          slug: slug,
-          is_active: true
-        })
-        .select()
-      
-      // Add timeout
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Site insert timeout after 10 seconds')), 10000)
-      )
-      
-      const { data, error } = await Promise.race([
-        insertPromise,
-        timeoutPromise
-      ]) as any
-      
-      console.log('📥 Insert completed. Data:', data, 'Error:', error)
+      const payload = await response.json()
 
-      if (error) {
-        console.error('❌ Supabase INSERT error:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        })
-        throw new Error(error.message || 'Failed to create site')
+      if (!response.ok) {
+        throw new Error(payload.error || 'Failed to create location')
       }
 
-      console.log('Site created successfully:', data)
-      setCurrentStep('team')
+      console.log('Location created successfully:', payload?.site?.id)
+      setCreatedSiteSlug(payload?.site?.slug || null)
+      setCurrentStep('complete')
     } catch (err: any) {
       console.error('Error creating location:', err)
       alert(`Failed to create location: ${err.message || 'Unknown error'}`)
@@ -206,19 +151,23 @@ export default function OnboardingPage() {
     }
   }
 
-  const handleSkipTeam = () => {
-    setCurrentStep('complete')
-  }
-
   const handleComplete = () => {
     router.push('/admin')
+  }
+
+  const handlePairFirstDevice = () => {
+    if (createdSiteSlug) {
+      router.push(`/admin/sites/${createdSiteSlug}?tab=devices`)
+      return
+    }
+
+    router.push('/admin/devices')
   }
 
   const renderStepIndicator = () => {
     const steps = [
       { key: 'welcome', label: 'Welcome' },
       { key: 'location', label: 'Location' },
-      { key: 'team', label: 'Team' },
       { key: 'complete', label: 'Complete' }
     ]
 
@@ -276,15 +225,15 @@ export default function OnboardingPage() {
         </div>
 
         <div className="p-6 bg-gray-50 rounded-xl">
-          <Users className="h-8 w-8 text-[#42b8ac] mb-3 mx-auto" />
-          <h3 className="font-semibold text-[#003842] mb-2">Invite Your Team</h3>
-          <p className="text-sm text-gray-600">Collaborate with your staff members</p>
+          <MapPin className="h-8 w-8 text-[#42b8ac] mb-3 mx-auto" />
+          <h3 className="font-semibold text-[#003842] mb-2">Pair Your First Device</h3>
+          <p className="text-sm text-gray-600">Generate a setup code and link your kiosk in minutes</p>
         </div>
 
         <div className="p-6 bg-gray-50 rounded-xl">
           <Building className="h-8 w-8 text-[#42b8ac] mb-3 mx-auto" />
-          <h3 className="font-semibold text-[#003842] mb-2">Start Managing</h3>
-          <p className="text-sm text-gray-600">Add ingredients and create your menu</p>
+          <h3 className="font-semibold text-[#003842] mb-2">Publish Your Menu</h3>
+          <p className="text-sm text-gray-600">Add menu items and go live with confidence</p>
         </div>
       </div>
 
@@ -329,14 +278,13 @@ export default function OnboardingPage() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Street Address *
+              Street Address
           </label>
           <input
             type="text"
             name="address"
             value={locationData.address}
             onChange={handleLocationChange}
-            required
             placeholder="12 Main Street"
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
           />
@@ -345,14 +293,13 @@ export default function OnboardingPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              City/Town *
+              City/Town
             </label>
             <input
               type="text"
               name="city"
               value={locationData.city}
               onChange={handleLocationChange}
-              required
               placeholder="Dublin"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
             />
@@ -430,7 +377,7 @@ export default function OnboardingPage() {
         <Button
           onClick={handleCreateLocation}
           variant="primary"
-          disabled={loading || !businessId || !locationData.name || !locationData.address || !locationData.city}
+          disabled={loading || !businessId || !locationData.name}
         >
           {loading ? (
             <>
@@ -443,43 +390,6 @@ export default function OnboardingPage() {
               <ArrowRight className="h-5 w-5 ml-2" />
             </>
           )}
-        </Button>
-      </div>
-    </div>
-  )
-
-  const renderTeam = () => (
-    <div className="text-center space-y-6">
-      <Users className="h-12 w-12 text-[#42b8ac] mx-auto mb-4" />
-      <h2 className="text-3xl font-bold text-[#003842] mb-2">
-        Invite Your Team
-      </h2>
-      <p className="text-gray-600 max-w-2xl mx-auto">
-        You can invite team members to help manage ingredients, menu items, and allergen information. 
-        Don't worry—you can always do this later from your dashboard.
-      </p>
-
-      <div className="bg-gray-50 rounded-xl p-8 max-w-md mx-auto">
-        <p className="text-sm text-gray-600 mb-4">
-          Team invitations will be available in your admin dashboard under Settings → Team.
-        </p>
-      </div>
-
-      <div className="flex justify-center gap-4 pt-6">
-        <Button
-          onClick={() => setCurrentStep('location')}
-          variant="outline"
-        >
-          <ArrowLeft className="h-5 w-5 mr-2" />
-          Back
-        </Button>
-
-        <Button
-          onClick={handleSkipTeam}
-          variant="primary"
-        >
-          Continue to Dashboard
-          <ArrowRight className="h-5 w-5 ml-2" />
         </Button>
       </div>
     </div>
@@ -506,35 +416,46 @@ export default function OnboardingPage() {
           <div className="flex items-start gap-3">
             <CheckCircle className="h-5 w-5 text-[#42b8ac] mt-0.5" />
             <div>
-              <p className="font-medium text-[#003842]">Add Ingredients</p>
-              <p className="text-sm text-gray-600">Build your ingredient database with allergen information</p>
+                <p className="font-medium text-[#003842]">Pair Your First Device</p>
+                <p className="text-sm text-gray-600">Open Device Monitoring and generate a setup code</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <CheckCircle className="h-5 w-5 text-[#42b8ac] mt-0.5" />
             <div>
-              <p className="font-medium text-[#003842]">Create Menu Items</p>
-              <p className="text-sm text-gray-600">Build your menu with automatic allergen tracking</p>
+                <p className="font-medium text-[#003842]">Add Ingredients</p>
+                <p className="text-sm text-gray-600">Build your ingredient database with allergen information</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
             <CheckCircle className="h-5 w-5 text-[#42b8ac] mt-0.5" />
             <div>
-              <p className="font-medium text-[#003842]">Set Up Kiosks</p>
-              <p className="text-sm text-gray-600">Deploy customer-facing allergen information displays</p>
+                <p className="font-medium text-[#003842]">Create Menu Items</p>
+                <p className="text-sm text-gray-600">Build your menu with automatic allergen tracking</p>
             </div>
           </div>
         </div>
       </div>
 
-      <Button
-        onClick={handleComplete}
-        variant="primary"
-        className="px-8"
-      >
-        Go to Dashboard
-        <ArrowRight className="h-5 w-5 ml-2" />
-      </Button>
+      <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
+        <Button
+          onClick={handlePairFirstDevice}
+          variant="primary"
+          className="px-8"
+        >
+          Pair First Device
+          <Monitor className="h-5 w-5 ml-2" />
+        </Button>
+
+        <Button
+          onClick={handleComplete}
+          variant="outline"
+          className="px-8"
+        >
+          Go to Dashboard
+          <ArrowRight className="h-5 w-5 ml-2" />
+        </Button>
+      </div>
     </div>
   )
 
@@ -548,7 +469,6 @@ export default function OnboardingPage() {
             <Card className="p-8 md:p-12">
               {currentStep === 'welcome' && renderWelcome()}
               {currentStep === 'location' && renderLocation()}
-              {currentStep === 'team' && renderTeam()}
               {currentStep === 'complete' && renderComplete()}
             </Card>
           </div>

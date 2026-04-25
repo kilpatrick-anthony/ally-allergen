@@ -12,6 +12,7 @@ import Link from 'next/link'
 
 export default function SignupPage() {
   const router = useRouter()
+  const publicSignupEnabled = false
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
@@ -29,6 +30,52 @@ export default function SignupPage() {
     businessCountry: '',
     businessPhone: ''
   })
+
+  if (!publicSignupEnabled) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#f0f9f8] to-gray-50">
+        <Container>
+          <div className="min-h-screen flex items-center justify-center py-12">
+            <div className="max-w-2xl w-full">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center p-4 bg-gradient-to-br from-[#42b8ac] to-[#003842] rounded-2xl mb-4 shadow-lg">
+                  <Building className="h-12 w-12 text-white" />
+                </div>
+                <h1 className="text-4xl font-bold text-[#003842] mb-2">
+                  Account Setup by Invitation
+                </h1>
+                <p className="text-gray-600 text-lg">
+                  New business accounts are currently created by the AllyJen team.
+                </p>
+              </div>
+
+              <Card className="p-8">
+                <div className="space-y-6 text-center">
+                  <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-900 text-sm">
+                    Public self-service signup is temporarily unavailable.
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Link href="/auth/signin" className="block">
+                      <Button variant="primary" className="w-full">
+                        Go to Sign In
+                        <ArrowRight className="h-5 w-5 ml-2" />
+                      </Button>
+                    </Link>
+                    <a href="mailto:info@allyjen.ie" className="block">
+                      <Button variant="outline" className="w-full">
+                        Contact Sales / Support
+                      </Button>
+                    </a>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </div>
+        </Container>
+      </div>
+    )
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({

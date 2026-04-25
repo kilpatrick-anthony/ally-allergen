@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { Building, MapPin, Phone, Mail, Loader2, Tablet, Edit, ChefHat, Search, Trash2 } from 'lucide-react';
 import DeviceManagement from '@/components/admin/DeviceManagement';
 import { Button } from '@/components/ui/Button';
@@ -12,6 +12,7 @@ import Link from 'next/link';
 
 export default function SiteKioskPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const slug = params.slug as string;
   
   const [site, setSite] = useState<any>(null);
@@ -29,6 +30,13 @@ export default function SiteKioskPage() {
       loadData();
     }
   }, [slug]);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'menu' || tab === 'devices') {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (activeTab === 'menu' && site?.id) {

@@ -30,7 +30,8 @@ import {
   Lock,
   Download,
   Upload,
-  RefreshCw
+  RefreshCw,
+  Zap
 } from 'lucide-react'
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
@@ -53,6 +54,11 @@ interface Business {
   trialEndsAt?: string
   subscriptionStatus?: 'active' | 'past_due' | 'canceled' | 'trial'
   revenue?: number
+  setupMilestones?: {
+    sitesCount?: number
+    devicesCount?: number
+    menuItemsCount?: number
+  }
 }
 
 export default function SuperAdminDashboard() {
@@ -73,6 +79,51 @@ export default function SuperAdminDashboard() {
   const [setPasswordValue, setSetPasswordValue] = useState('')
   const [setPasswordConfirm, setSetPasswordConfirm] = useState('')
   const [setPasswordError, setSetPasswordError] = useState('')
+  const [actionNotice, setActionNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [showDemoModal, setShowDemoModal] = useState(false)
+  const [demoForm, setDemoForm] = useState({ ownerEmail: '', ownerName: '', businessName: '', locationName: '' })
+  const [demoLoading, setDemoLoading] = useState(false)
+
+  const handleCreateDemoAccount = async () => {
+    if (!demoForm.ownerEmail.trim()) {
+      setActionNotice({ type: 'error', text: 'Owner email is required to create a demo account.' })
+      return
+    }
+    setDemoLoading(true)
+    try {
+      const res = await fetch('/api/super-admin/demo-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ownerEmail: demoForm.ownerEmail.trim(),
+          ownerName: demoForm.ownerName.trim() || 'Demo User',
+          businessName: demoForm.businessName.trim() || 'Demo Restaurant',
+          locationName: demoForm.locationName.trim() || 'Main Location',
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to create demo account')
+      await loadBusinesses()
+      setLastCreatedBusiness({
+        businessId: data.businessId,
+        businessName: data.businessName,
+        ownerEmail: data.ownerEmail,
+      })
+      setActionNotice({ type: 'success', text: `Demo account "${data.businessName}" created with ${data.menuItemsSeeded} sample menu items. Password setup email sent to ${data.ownerEmail}.` })
+      setShowDemoModal(false)
+      setDemoForm({ ownerEmail: '', ownerName: '', businessName: '', locationName: '' })
+    } catch (err: any) {
+      setActionNotice({ type: 'error', text: err.message || 'Failed to create demo account.' })
+    } finally {
+      setDemoLoading(false)
+    }
+  }
+
+  const [lastCreatedBusiness, setLastCreatedBusiness] = useState<{
+    businessId?: string
+    businessName: string
+    ownerEmail: string
+  } | null>(null)
 
   const loadBusinesses = async () => {
     try {
@@ -174,9 +225,71 @@ export default function SuperAdminDashboard() {
     }
   }
 
-  const handleCreateBusiness = async (_result: any) => {
+  const handleCreateBusiness = async (result: any) => {
     // BusinessSetupModal already called the API — just refresh the list
     await loadBusinesses()
+    setLastCreatedBusiness({
+      businessId: result?.businessId,
+      businessName: result?.businessName || result?.name || 'New business',
+      ownerEmail: result?.ownerEmail || result?.contactEmail || ''
+    })
+    setActionNotice({ type: 'success', text: 'New business created successfully.' })
+  }
+
+  const getSetupProgress = (business: Business) => {
+    const steps = [
+      (business.setupMilestones?.sitesCount || 0) > 0,
+      (business.setupMilestones?.devicesCount || 0) > 0,
+      (business.setupMilestones?.menuItemsCount || 0) > 0
+    ]
+    const completed = steps.filter(Boolean).length
+    return {
+      completed,
+      total: steps.length,
+      label: completed === steps.length ? 'Complete' : 'In Progress',
+      detail: `${business.setupMilestones?.sitesCount || 0} sites, ${business.setupMilestones?.devicesCount || 0} devices, ${business.setupMilestones?.menuItemsCount || 0} menu items`
+    }
+  }
+
+  const getRecentBusinessMatch = () => {
+    if (!lastCreatedBusiness) return null
+
+    return businesses.find((business) =>
+      business.id === lastCreatedBusiness.businessId ||
+      (lastCreatedBusiness.ownerEmail && business.contactEmail === lastCreatedBusiness.ownerEmail)
+    ) || null
+  }
+
+  const handleCopyOwnerEmail = async () => {
+    if (!lastCreatedBusiness?.ownerEmail) {
+      setActionNotice({ type: 'error', text: 'No owner email available to copy.' })
+      return
+    }
+
+    try {
+      await navigator.clipboard.writeText(lastCreatedBusiness.ownerEmail)
+      setActionNotice({ type: 'success', text: `Copied ${lastCreatedBusiness.ownerEmail} to clipboard.` })
+    } catch {
+      setActionNotice({ type: 'error', text: 'Unable to copy email to clipboard.' })
+    }
+  }
+
+  const handleOpenRecentBusiness = () => {
+    const business = getRecentBusinessMatch()
+    if (!business) {
+      setActionNotice({ type: 'error', text: 'Could not find the newly created business in the list yet.' })
+      return
+    }
+    handleViewBusinessDetails(business)
+  }
+
+  const handleSetPasswordForRecentBusiness = () => {
+    const business = getRecentBusinessMatch()
+    if (!business) {
+      setActionNotice({ type: 'error', text: 'Could not find the newly created business in the list yet.' })
+      return
+    }
+    handleSetPassword(business)
   }
 
   const handleViewBusinessDetails = (business: Business) => {
@@ -202,9 +315,9 @@ export default function SuperAdminDashboard() {
       })
       if (!response.ok) throw new Error('Failed to suspend business')
       await loadBusinesses()
-      alert(`Business "${business.name}" has been suspended`)
+      setActionNotice({ type: 'success', text: `Business "${business.name}" has been suspended.` })
     } catch (error) {
-      alert('Failed to suspend business')
+      setActionNotice({ type: 'error', text: 'Failed to suspend business.' })
     } finally {
       setIsLoading(false)
     }
@@ -220,9 +333,9 @@ export default function SuperAdminDashboard() {
       })
       if (!response.ok) throw new Error('Failed to activate business')
       await loadBusinesses()
-      alert(`Business "${business.name}" has been activated`)
+      setActionNotice({ type: 'success', text: `Business "${business.name}" has been activated.` })
     } catch (error) {
-      alert('Failed to activate business')
+      setActionNotice({ type: 'error', text: 'Failed to activate business.' })
     } finally {
       setIsLoading(false)
     }
@@ -239,9 +352,9 @@ export default function SuperAdminDashboard() {
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Failed to send reset email')
-      alert(`Password reset email sent to ${data.email}`)
+      setActionNotice({ type: 'success', text: `Password reset email sent to ${data.email}.` })
     } catch (error: any) {
-      alert(error.message || 'Failed to send password reset email')
+      setActionNotice({ type: 'error', text: error.message || 'Failed to send password reset email.' })
     } finally {
       setIsLoading(false)
     }
@@ -275,7 +388,7 @@ export default function SuperAdminDashboard() {
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Failed to set password')
       setShowSetPasswordModal(false)
-      alert(`Password set successfully for ${data.email}. You can now log in as this user.`)
+      setActionNotice({ type: 'success', text: `Password set successfully for ${data.email}.` })
     } catch (error: any) {
       setSetPasswordError(error.message || 'Failed to set password')
     } finally {
@@ -364,6 +477,48 @@ export default function SuperAdminDashboard() {
         </div>
       </div>
 
+      {actionNotice && (
+        <div className={`mb-6 rounded-lg border px-4 py-3 text-sm flex items-center justify-between ${
+          actionNotice.type === 'success'
+            ? 'bg-green-50 border-green-200 text-green-800'
+            : 'bg-red-50 border-red-200 text-red-800'
+        }`}>
+          <span>{actionNotice.text}</span>
+          <button
+            type="button"
+            className="ml-4 font-medium opacity-80 hover:opacity-100"
+            onClick={() => setActionNotice(null)}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
+      {lastCreatedBusiness && (
+        <Card className="mb-6 border border-[#42b8ac]/30 bg-[#42b8ac]/5">
+          <div className="p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">New customer ready</p>
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                {lastCreatedBusiness.businessName}
+                {lastCreatedBusiness.ownerEmail ? ` (${lastCreatedBusiness.ownerEmail})` : ''}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" size="sm" onClick={handleCopyOwnerEmail}>
+                Copy Owner Email
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleSetPasswordForRecentBusiness}>
+                Set Temporary Password
+              </Button>
+              <Button variant="primary" size="sm" onClick={handleOpenRecentBusiness}>
+                Open Business Details
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Quick Actions */}
       <div className="mb-8">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
@@ -380,28 +535,42 @@ export default function SuperAdminDashboard() {
           <Button
             variant="outline"
             className="h-20 flex flex-col items-center justify-center gap-2"
-            onClick={() => window.open('/api/debug-db', '_blank')}
+            onClick={loadBusinesses}
+            disabled={isLoading}
           >
-            <BarChart3 className="h-6 w-6" />
-            <span className="text-sm">View Analytics</span>
+            <RefreshCw className="h-6 w-6" />
+            <span className="text-sm">Refresh Businesses</span>
           </Button>
 
           <Button
             variant="outline"
             className="h-20 flex flex-col items-center justify-center gap-2"
-            onClick={() => window.open('/api/test-db', '_blank')}
+            onClick={() => {
+              setStatusFilter('trial')
+              setPlanFilter('all')
+              setSearchTerm('')
+            }}
           >
-            <Settings className="h-6 w-6" />
-            <span className="text-sm">System Status</span>
+            <AlertCircle className="h-6 w-6" />
+            <span className="text-sm">Review Trial Accounts</span>
           </Button>
 
           <Button
             variant="outline"
             className="h-20 flex flex-col items-center justify-center gap-2"
-            onClick={() => window.open('/api/health', '_blank')}
+            onClick={handleExportData}
           >
-            <CheckCircle className="h-6 w-6" />
-            <span className="text-sm">Health Check</span>
+            <Download className="h-6 w-6" />
+            <span className="text-sm">Export Customer List</span>
+          </Button>
+
+          <Button
+            variant="outline"
+            className="h-20 flex flex-col items-center justify-center gap-2 border-[#42b8ac]/50 text-[#42b8ac] hover:bg-[#42b8ac]/5"
+            onClick={() => setShowDemoModal(true)}
+          >
+            <Zap className="h-6 w-6" />
+            <span className="text-sm">Create Demo Account</span>
           </Button>
         </div>
       </div>
@@ -590,12 +759,18 @@ export default function SuperAdminDashboard() {
                   Revenue
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  Setup Progress
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredBusinesses.map((business) => (
+              {filteredBusinesses.map((business) => {
+                const progress = getSetupProgress(business)
+
+                return (
                 <tr key={business.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div>
@@ -634,60 +809,85 @@ export default function SuperAdminDashboard() {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {business.revenue ? `$${business.revenue}/mo` : 'Trial'}
                   </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        {progress.completed}/{progress.total}
+                      </span>
+                      <Badge variant={progress.completed === progress.total ? 'success' : 'warning'}>
+                        {progress.label}
+                      </Badge>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {progress.detail}
+                      </span>
+                    </div>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center justify-end gap-2">
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        icon={<Eye className="h-4 w-4" />}
                         onClick={() => handleViewBusinessDetails(business)}
-                        title="View Details"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={<Edit className="h-4 w-4" />}
-                        onClick={() => handleEditBusiness(business)}
-                        title="Edit Business"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={<Lock className="h-4 w-4" />}
-                        onClick={() => handleSetPassword(business)}
-                        title="Set Password"
-                        className="text-blue-600 hover:text-blue-700"
-                      />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={<Key className="h-4 w-4" />}
-                        onClick={() => handleResetPassword(business)}
-                        title="Send Reset Email"
-                      />
-                      {business.status === 'active' ? (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={<UserX className="h-4 w-4" />}
-                          onClick={() => handleSuspendBusiness(business)}
-                          title="Suspend Business"
-                          className="text-red-600 hover:text-red-700"
-                        />
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={<UserCheck className="h-4 w-4" />}
-                          onClick={() => handleActivateBusiness(business)}
-                          title="Activate Business"
-                          className="text-green-600 hover:text-green-700"
-                        />
-                      )}
+                      >
+                        Open Details
+                      </Button>
+
+                      <details className="relative">
+                        <summary className="list-none cursor-pointer">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={<MoreVertical className="h-4 w-4" />}
+                            title="More Actions"
+                          />
+                        </summary>
+
+                        <div className="absolute right-0 z-20 mt-2 w-48 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg p-1">
+                          <button
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                            onClick={() => handleEditBusiness(business)}
+                          >
+                            Edit Business
+                          </button>
+                          <button
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                            onClick={() => handleSetPassword(business)}
+                          >
+                            Set Temporary Password
+                          </button>
+                          <button
+                            type="button"
+                            className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                            onClick={() => handleResetPassword(business)}
+                          >
+                            Send Reset Email
+                          </button>
+                          {business.status === 'active' ? (
+                            <button
+                              type="button"
+                              className="w-full text-left px-3 py-2 text-sm rounded-md text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              onClick={() => handleSuspendBusiness(business)}
+                            >
+                              Suspend Business
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="w-full text-left px-3 py-2 text-sm rounded-md text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                              onClick={() => handleActivateBusiness(business)}
+                            >
+                              Activate Business
+                            </button>
+                          )}
+                        </div>
+                      </details>
                     </div>
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -702,6 +902,66 @@ export default function SuperAdminDashboard() {
           </div>
         )}
       </Card>
+
+      {/* Demo Account Modal */}
+      {showDemoModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 w-full max-w-md mx-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Create Demo Account</h2>
+            <p className="text-sm text-gray-500 mb-6">
+              Creates a fully-seeded account with a sample location, device, and 8 menu items — ready to demonstrate in under a minute.
+            </p>
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Prospect Email *</label>
+                <input
+                  type="email"
+                  value={demoForm.ownerEmail}
+                  onChange={e => setDemoForm(p => ({ ...p, ownerEmail: e.target.value }))}
+                  placeholder="prospect@restaurant.ie"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contact Name</label>
+                <input
+                  type="text"
+                  value={demoForm.ownerName}
+                  onChange={e => setDemoForm(p => ({ ...p, ownerName: e.target.value }))}
+                  placeholder="Demo User"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Business Name</label>
+                <input
+                  type="text"
+                  value={demoForm.businessName}
+                  onChange={e => setDemoForm(p => ({ ...p, businessName: e.target.value }))}
+                  placeholder="Demo Restaurant"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Location Name</label>
+                <input
+                  type="text"
+                  value={demoForm.locationName}
+                  onChange={e => setDemoForm(p => ({ ...p, locationName: e.target.value }))}
+                  placeholder="Main Location"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setShowDemoModal(false)} disabled={demoLoading}>Cancel</Button>
+              <Button variant="primary" className="flex-1" onClick={handleCreateDemoAccount} disabled={demoLoading}>
+                {demoLoading ? 'Creating…' : 'Create Demo Account'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Business Setup Modal */}
       <BusinessSetupModal

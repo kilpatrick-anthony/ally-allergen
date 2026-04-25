@@ -30,6 +30,8 @@ interface PDFOptions {
   title?: string
   includeDescription?: boolean
   showLegend?: boolean
+  /** When 'base64', returns the raw base64 PDF string instead of triggering a browser download */
+  outputMode?: 'download' | 'base64'
 }
 
 // ---------- helpers ----------------------------------------------------------
@@ -182,7 +184,7 @@ function drawParentheses(
 
 // ---------- main export ------------------------------------------------------
 
-export async function generateAllergenTablePDF(options: PDFOptions): Promise<void> {
+export async function generateAllergenTablePDF(options: PDFOptions): Promise<string | void> {
   const { business, items, title, showLegend = true } = options
 
   try {
@@ -569,6 +571,12 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<voi
     await drawPageFooters(doc, allyjenLogoDataUrl, generatedDate, showLegend, FIC_NOTE)
 
     const fileName = `${business.name.replace(/[^a-z0-9]/gi, '_')}_allergen_guide.pdf`
+
+    if (options.outputMode === 'base64') {
+      // Return raw base64 string (no data-URI prefix) for server-side email attachment
+      return doc.output('datauristring').split(',')[1]
+    }
+
     doc.save(fileName)
   } catch (error: any) {
     console.error('❌ PDF generation failed:', error)

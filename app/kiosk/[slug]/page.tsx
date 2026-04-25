@@ -8,7 +8,7 @@ import {
   FileText, Shield, ChefHat, Package, MapPin, Calendar,
   Wheat, Fish, Egg, Nut, Leaf, Milk, Carrot, Shell, 
   Circle, Sprout, Shrimp, Cookie, Beaker, ArrowRight, Clock, Home, Table2, Grid3x3,
-  ChevronDown, ChevronUp, CheckSquare, Square
+  ChevronDown, ChevronUp, CheckSquare, Square, RefreshCw
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import jsPDF from 'jspdf'
@@ -214,9 +214,9 @@ const CATEGORY_NAMES: Record<string, string> = {
 // Production ready - no mock data (data fetched via useOfflineKioskData hook)
 
 // ===== CONSTANTS =====
-const INACTIVITY_TIMEOUT = 45000 // 45 seconds - CHANGE THIS VALUE
-const WARNING_TIME = 15000 // 15 seconds before reset - CHANGE THIS VALUE
-const SCREENSAVER_TIMEOUT = 60000 // 60 seconds idle on home screen → screensaver
+const INACTIVITY_TIMEOUT = 120000 // 2 minutes before returning to home screen
+const WARNING_TIME = 20000 // 20 seconds warning before reset
+const SCREENSAVER_TIMEOUT = 180000 // 3 minutes idle on home screen → screensaver
 const ADMIN_WORDMARK_SRC = '/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg'
 
 // Examples:
@@ -299,12 +299,16 @@ export default function KioskPage() {
   const [activeView, setActiveView] = useState<'landing' | 'filters' | 'menu'>('landing')
   const [emailInput, setEmailInput] = useState('')
   const [showEmailInput, setShowEmailInput] = useState(false)
+  const [sendingEmail, setSendingEmail] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
+  const [emailError, setEmailError] = useState('')
   const [currentLanguage, setCurrentLanguage] = useState<LanguageCode>(
     (typeof window !== 'undefined' ? localStorage.getItem('defaultLanguage') as LanguageCode || 'en' : 'en') as LanguageCode
   )
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
-  const [menuViewMode, setMenuViewMode] = useState<'cards' | 'table'>('table')
+  const [menuViewMode, setMenuViewMode] = useState<'cards' | 'table'>('cards')
   const [showScreensaver, setShowScreensaver] = useState(false)
+  const [isSmallScreen, setIsSmallScreen] = useState(false)
   
   const t = translations[currentLanguage]
   const businessName = business?.name?.trim() || ''
@@ -312,6 +316,7 @@ export default function KioskPage() {
   const landingTitle = kioskDisplayName || businessName || 'Welcome'
   const menuTitle = kioskDisplayName || (businessName ? `${businessName} Menu` : 'Allergen Menu')
   const menuSubtitle = businessName ? `Powered by AllyJen • ${businessName}` : 'Powered by AllyJen'
+  const totalActiveFilters = selectedAllergens.length + selectedGlutenTypes.length + selectedTreeNutTypes.length
   
   // Refs for timeout management
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -332,6 +337,22 @@ export default function KioskPage() {
     return () => {
       window.removeEventListener('languageChange', handleLanguageChange as EventListener)
     }
+  }, [])
+
+  // Keep table view off on smaller screens where it becomes hard to read.
+  useEffect(() => {
+    const handleResize = () => {
+      const small = window.innerWidth < 1024
+      setIsSmallScreen(small)
+      if (small) {
+        setMenuViewMode('cards')
+      }
+    }
+
+    handleResize()
+    window.addEventListener('resize', handleResize)
+
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   // ===== SCREENSAVER (HOME SCREEN IDLE) =====
@@ -581,7 +602,12 @@ export default function KioskPage() {
 
   function filterMenuItems() {
     return menuItems.filter(item => {
-      if (searchQuery && !item.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      const normalizedQuery = searchQuery.toLowerCase()
+      if (
+        searchQuery &&
+        !item.name.toLowerCase().includes(normalizedQuery) &&
+        !(item.description || '').toLowerCase().includes(normalizedQuery)
+      ) {
         return false
       }
       
@@ -667,8 +693,8 @@ export default function KioskPage() {
       await generateAllergenTablePDF({
         business: business,
         items: itemsToInclude,
-        title: includeFilters && selectedAllergens.length > 0 
-          ? `Allergen Guide (${selectedAllergens.length} allergen${selectedAllergens.length > 1 ? 's' : ''} filtered)`
+          title: includeFilters && totalActiveFilters > 0 
+            ? `Allergen Guide (${totalActiveFilters} active filter${totalActiveFilters > 1 ? 's' : ''})`
           : 'Complete Allergen Information Guide',
         showLegend: true
       })
@@ -682,6 +708,54 @@ export default function KioskPage() {
     }
   }
 
+  // Send allergen PDF to customer email
+  const handleEmailMenu = async (includeFilters: boolean = false) => {
+    if (!business) return
+    const email = emailInput.trim()
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailError('Please enter a valid email address.')
+      return
+    }
+    setSendingEmail(true)
+    setEmailError('')
+    try {
+      const itemsToInclude = includeFilters ? filteredItems : menuItems
+      // Generate PDF as base64 in the browser, then POST to server for mailing
+      const pdfBase64 = await generateAllergenTablePDF({
+        business,
+        items: itemsToInclude,
+        title: includeFilters && totalActiveFilters > 0
+          ? `Allergen Guide (${totalActiveFilters} active filter${totalActiveFilters > 1 ? 's' : ''})`
+          : 'Complete Allergen Information Guide',
+        showLegend: true,
+        outputMode: 'base64',
+      }) as string
+
+      const response = await fetch('/api/kiosk/email-menu', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email,
+          pdfBase64,
+          businessName: business.name,
+          filteredCount: includeFilters ? filteredItems.length : 0,
+        }),
+      })
+      if (!response.ok) {
+        const data = await response.json()
+        setEmailError(data.error || 'Failed to send. Please try again.')
+        return
+      }
+      setEmailSent(true)
+      setEmailInput('')
+    } catch (err) {
+      console.error('Error emailing menu:', err)
+      setEmailError('Failed to send. Please try again.')
+    } finally {
+      setSendingEmail(false)
+    }
+  }
+
   // Track when user starts the kiosk
   const handleStartKiosk = () => {
     setKioskStarted(true)
@@ -692,6 +766,39 @@ export default function KioskPage() {
   // Helper function for tracking
   async function trackKioskInteraction(slug: string, action: string) {
     console.log('📊 [Dev] Kiosk interaction:', action, 'for:', slug)
+  }
+
+  if (loading && !business && menuItems.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#003842] flex items-center justify-center px-6">
+        <div className="text-center text-white max-w-md">
+          <div className="relative h-12 w-12 mx-auto mb-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/25 border-t-[#42b8ac]" />
+          </div>
+          <h1 className="text-2xl font-bold mb-2">Loading Kiosk</h1>
+          <p className="text-white/70">Fetching the latest allergen menu...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error && !business && menuItems.length === 0) {
+    return (
+      <div className="min-h-screen bg-[#003842] flex items-center justify-center px-6">
+        <div className="bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-6 w-6 text-red-600 mt-0.5" />
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 mb-2">Kiosk Data Unavailable</h1>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <Button variant="primary" onClick={refresh} icon={<RefreshCw className="h-4 w-4" />}>
+                Retry Loading
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // ===== INACTIVITY WARNING MODAL =====
@@ -760,7 +867,11 @@ export default function KioskPage() {
 
         {/* Screensaver Overlay */}
         {showScreensaver && (
-          <div className="absolute inset-0 bg-[#001a20] z-50 flex flex-col items-center justify-center cursor-pointer">
+          <div
+            className="absolute inset-0 bg-[#001a20] z-50 flex flex-col items-center justify-center cursor-pointer p-5 sm:p-8"
+            onClick={() => setShowScreensaver(false)}
+            onTouchStart={() => setShowScreensaver(false)}
+          >
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
               {[...Array(5)].map((_, i) => (
                 <div
@@ -778,15 +889,25 @@ export default function KioskPage() {
                 />
               ))}
             </div>
-            <div className="relative z-10 text-center px-8">
-              <img
-                src={ADMIN_WORDMARK_SRC}
-                alt="AllyJen"
-                className="h-16 sm:h-20 w-auto mx-auto mb-10 opacity-85"
-              />
-              <p className="text-white/40 text-base font-light tracking-[0.3em] uppercase animate-pulse">
-                Touch screen to begin
-              </p>
+              <div className="relative z-10 w-full max-w-xl rounded-3xl border border-white/15 bg-white/5 backdrop-blur-md px-6 sm:px-10 py-10 sm:py-12 text-center shadow-2xl">
+                <img
+                  src={ADMIN_WORDMARK_SRC}
+                  alt="AllyJen"
+                  className="h-14 sm:h-16 w-auto mx-auto mb-6 opacity-90"
+                />
+
+                <h2 className="text-white text-2xl sm:text-3xl font-semibold tracking-tight mb-3">
+                  Kiosk Sleeping
+                </h2>
+
+                <p className="text-white/70 text-sm sm:text-base mb-8">
+                  Tap anywhere on the screen to wake and continue.
+                </p>
+
+                <div className="mx-auto max-w-sm rounded-2xl border border-[#42b8ac]/45 bg-[#42b8ac]/15 px-5 py-4">
+                  <p className="text-[#9fe5de] text-xs uppercase tracking-[0.22em] mb-1">Ready When You Are</p>
+                  <p className="text-white font-semibold text-lg sm:text-xl">Touch screen to begin</p>
+                </div>
             </div>
           </div>
         )}
@@ -1408,7 +1529,7 @@ export default function KioskPage() {
                   <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">No items match your filters</h3>
                   <p className="text-gray-600 mb-4">Try adjusting your filters or search term</p>
-                  {selectedAllergens.length > 0 && (
+                    {totalActiveFilters > 0 && (
                     <Button variant="primary" onClick={clearFilters} className="mx-auto">
                       Clear Allergen Filters
                     </Button>
@@ -1502,7 +1623,7 @@ export default function KioskPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">Current Filters</p>
-                    <p className="text-2xl font-bold text-[#003842]">{selectedAllergens.length}</p>
+                      <p className="text-2xl font-bold text-[#003842]">{totalActiveFilters}</p>
                   </div>
                   <div className="p-3 bg-amber-100 rounded-lg">
                     <Filter className="h-6 w-6 text-amber-600" />
@@ -1547,6 +1668,8 @@ export default function KioskPage() {
                   </button>
                   <button
                     onClick={() => setMenuViewMode('table')}
+                    disabled={isSmallScreen}
+                    title={isSmallScreen ? 'Table view is available on larger screens' : 'Show table view'}
                     className={`flex items-center gap-2 px-4 py-2 rounded-md transition ${
                       menuViewMode === 'table'
                         ? 'bg-white text-[#003842] shadow-sm'
@@ -1559,12 +1682,16 @@ export default function KioskPage() {
                 </div>
               </div>
 
+              {isSmallScreen && (
+                <p className="text-xs text-gray-500 -mt-3 mb-4">Table view is disabled on smaller screens for readability.</p>
+              )}
+
               {filteredItems.length === 0 ? (
                 <Card className="text-center py-12">
                   <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">No items match your filters</h3>
                   <p className="text-gray-600 mb-4">Try adjusting your filters or search term</p>
-                  {selectedAllergens.length > 0 && (
+                    {totalActiveFilters > 0 && (
                     <Button variant="primary" onClick={clearFilters} className="mx-auto">
                       Clear Allergen Filters
                     </Button>
@@ -1666,7 +1793,7 @@ export default function KioskPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600">Current Filters</p>
-                    <p className="text-2xl font-bold text-[#003842]">{selectedAllergens.length}</p>
+                      <p className="text-2xl font-bold text-[#003842]">{totalActiveFilters}</p>
                   </div>
                   <div className="p-3 bg-amber-100 rounded-lg">
                     <Filter className="h-6 w-6 text-amber-600" />
@@ -1716,19 +1843,20 @@ export default function KioskPage() {
         </div>
       )}
 
-      {/* PDF Options Modal */}
+      {/* PDF / Email Options Modal */}
       {showPDFOptions && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <Card className="max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-[#003842]">Download Allergen Guide</h3>
-                <button onClick={() => { setShowPDFOptions(false); setShowEmailInput(false); setEmailInput(''); }} className="text-gray-400 hover:text-gray-600">
+                <h3 className="text-lg font-semibold text-[#003842]">Get Your Allergen Guide</h3>
+                <button onClick={() => { setShowPDFOptions(false); setShowEmailInput(false); setEmailInput(''); setEmailSent(false); setEmailError(''); }} className="text-gray-400 hover:text-gray-600">
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
               <div className="space-y-4">
+                {/* Download section */}
                 <Button 
                   variant="primary" 
                   className="w-full justify-start h-auto py-4" 
@@ -1736,7 +1864,7 @@ export default function KioskPage() {
                     await handleGeneratePDF(false)
                     setShowPDFOptions(false)
                   }}
-                  disabled={generatingPDF}
+                  disabled={generatingPDF || sendingEmail}
                 >
                   <FileText className="h-5 w-5 text-white mr-3" />
                   <div className="text-left flex-1">
@@ -1745,7 +1873,7 @@ export default function KioskPage() {
                   </div>
                 </Button>
 
-                {selectedAllergens.length > 0 && (
+                {totalActiveFilters > 0 && (
                   <Button 
                     variant="outline" 
                     className="w-full justify-start h-auto py-4" 
@@ -1753,26 +1881,59 @@ export default function KioskPage() {
                       await handleGeneratePDF(true)
                       setShowPDFOptions(false)
                     }}
-                    disabled={generatingPDF}
+                    disabled={generatingPDF || sendingEmail}
                   >
                     <Filter className="h-5 w-5 text-[#42b8ac] mr-3" />
                     <div className="text-left flex-1">
                       <div className="font-semibold text-gray-900">Download Filtered Menu</div>
                       <div className="text-sm text-gray-600">
-                        {filteredItems.length} items without {selectedAllergens.length} selected allergen(s)
+                        {filteredItems.length} items after {totalActiveFilters} active filter(s)
                       </div>
                     </div>
                   </Button>
                 )}
 
-                <div className="text-xs text-gray-500 p-3 bg-gray-50 rounded-lg">
-                  <p className="font-medium mb-1">📋 Table format includes:</p>
-                  <ul className="list-disc list-inside space-y-1 ml-2">
-                    <li>All items in rows</li>
-                    <li>14 EU allergens in columns</li>
-                    <li>Color-coded severity levels</li>
-                    <li>Specific sub-types (e.g., wheat, almonds)</li>
-                  </ul>
+                <div className="border-t border-gray-200 pt-4">
+                  {emailSent ? (
+                    <div className="text-center py-4">
+                      <div className="text-2xl mb-2">✅</div>
+                      <p className="font-semibold text-[#003842]">Email sent!</p>
+                      <p className="text-sm text-gray-500 mt-1">Check your inbox for the allergen guide PDF.</p>
+                      <button
+                        onClick={() => { setEmailSent(false); setEmailInput(''); }}
+                        className="mt-3 text-sm text-[#42b8ac] underline"
+                      >
+                        Send to a different address
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium text-gray-700 mb-2">📧 Email me this guide</p>
+                      <p className="text-xs text-gray-500 mb-3">
+                        We&apos;ll send the allergen PDF straight to your inbox — handy to keep on your phone.
+                      </p>
+                      <div className="flex gap-2">
+                        <input
+                          type="email"
+                          value={emailInput}
+                          onChange={e => { setEmailInput(e.target.value); setEmailError(''); }}
+                          placeholder="your@email.com"
+                          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#42b8ac]"
+                          disabled={sendingEmail}
+                        />
+                        <button
+                          onClick={() => handleEmailMenu(totalActiveFilters > 0)}
+                          disabled={sendingEmail || !emailInput.trim()}
+                          className="bg-[#42b8ac] text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-[#389e93] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {sendingEmail ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                          ) : 'Send'}
+                        </button>
+                      </div>
+                      {emailError && <p className="text-red-500 text-xs mt-2">{emailError}</p>}
+                    </>
+                  )}
                 </div>
               </div>
 

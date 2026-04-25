@@ -118,6 +118,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${atkinson.variable} ${arsenal.variable}`}> 
       <head>
+        <link rel="preload" href="/Home%20Image.svg" as="image" type="image/svg+xml" />
         <link rel="icon" type="image/svg+xml" href="/Logo-AllyJen.svg" />
         <meta name="theme-color" content="#42b8ac" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
