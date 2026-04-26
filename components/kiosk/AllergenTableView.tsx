@@ -181,14 +181,14 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
     return count + 1
   }, 0)
 
-  const stickyTopStyle = { top: stickyTopOffset }
+  const stickyTopStyle: React.CSSProperties = { top: stickyTopOffset }
 
   return (
     <div className={wrapperClassName ?? 'w-full overflow-x-auto overflow-y-visible'}>
       <table className="w-full border-separate border-spacing-0 bg-white rounded-lg overflow-hidden shadow-sm text-xs">
         <thead>
           <tr className="bg-[#003842]">
-            <th className="text-left p-2 text-white font-semibold border border-gray-300 sticky left-0 bg-[#003842] z-40 min-w-[120px]" style={stickyTopStyle}>
+            <th className="text-left p-2 text-white font-semibold border border-gray-300 sticky left-0 bg-[#003842] z-40 min-w-[120px] shadow-[0_2px_0_0_rgba(0,0,0,0.08)]" style={stickyTopStyle}>
               Item Name
             </th>
             {ALLERGENS.map(allergen => {
@@ -199,7 +199,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                 return (
                   <React.Fragment key={allergen.id}>
                     <th 
-                      className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[60px] sticky bg-[#003842] z-30"
+                      className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[60px] sticky bg-[#003842] z-30 shadow-[0_2px_0_0_rgba(0,0,0,0.08)]"
                       style={stickyTopStyle}
                       title={allergen.name}
                     >
@@ -212,7 +212,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                     {GLUTEN_TYPES.map(glutenType => (
                       <th 
                         key={`${allergen.id}-${glutenType.key}`}
-                        className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[50px] bg-[#f59e0b] bg-opacity-80 sticky z-30"
+                        className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[50px] bg-[#f59e0b] bg-opacity-80 sticky z-30 shadow-[0_2px_0_0_rgba(0,0,0,0.08)]"
                         style={stickyTopStyle}
                         title={glutenType.name}
                       >
@@ -231,7 +231,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                 return (
                   <React.Fragment key={allergen.id}>
                     <th 
-                      className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[60px] sticky bg-[#003842] z-30"
+                      className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[60px] sticky bg-[#003842] z-30 shadow-[0_2px_0_0_rgba(0,0,0,0.08)]"
                       style={stickyTopStyle}
                       title={allergen.name}
                     >
@@ -244,7 +244,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                     {TREE_NUT_TYPES.map(nutType => (
                       <th 
                         key={`${allergen.id}-${nutType.key}`}
-                        className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[50px] bg-[#b45309] bg-opacity-80 sticky z-30"
+                        className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[50px] bg-[#b45309] bg-opacity-80 sticky z-30 shadow-[0_2px_0_0_rgba(0,0,0,0.08)]"
                         style={stickyTopStyle}
                         title={nutType.name}
                       >
@@ -262,7 +262,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
               return (
                 <th 
                   key={allergen.id} 
-                  className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[60px] sticky bg-[#003842] z-30"
+                  className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[60px] sticky bg-[#003842] z-30 shadow-[0_2px_0_0_rgba(0,0,0,0.08)]"
                   style={stickyTopStyle}
                   title={allergen.name}
                 >

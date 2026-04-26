@@ -1783,14 +1783,14 @@ export default function KioskPage() {
                   <div className="inline-flex items-center gap-3 rounded-lg border border-[#42b8ac]/30 bg-[#e8f7f5] px-3 py-2 text-xs text-[#0f4f4a] font-medium">
                     <span>↔ Swipe left/right for more allergens</span>
                     <span className="text-[#42b8ac]">|</span>
-                    <span>↕ Scroll down/up through items</span>
+                    <span>↕ Scroll inside table for more rows</span>
                   </div>
                   <AllergenTableView 
                     items={filteredItems} 
                     compact={false}
                     showLegend={true}
-                    wrapperClassName="w-full overflow-x-auto overflow-y-visible"
-                    stickyTopOffset={96}
+                    wrapperClassName="w-full max-h-[68vh] overflow-auto rounded-lg"
+                    stickyTopOffset={0}
                   />
                 </div>
               ) : (
@@ -1955,16 +1955,16 @@ export default function KioskPage() {
               <div className="inline-flex items-center gap-3 rounded-lg border border-[#42b8ac]/30 bg-[#e8f7f5] px-3 py-2 text-xs text-[#0f4f4a] font-medium mb-3">
                 <span>↔ Swipe left/right for more allergens</span>
                 <span className="text-[#42b8ac]">|</span>
-                <span>↕ Scroll down/up through items</span>
+                <span>↕ Scroll inside table for more rows</span>
               </div>
               {sortedMenuItems.length > 0 ? (
                 <AllergenTableView
                   items={sortedMenuItems}
                   compact={false}
                   showLegend={true}
-                  wrapperClassName="w-full overflow-x-auto overflow-y-visible"
+                  wrapperClassName="w-full max-h-[58vh] overflow-auto rounded-lg"
                   groupByCategory={true}
-                  stickyTopOffset={74}
+                  stickyTopOffset={0}
                 />
               ) : (
                 <div className="flex items-center justify-center py-8 text-gray-500">
@@ -1978,16 +1978,16 @@ export default function KioskPage() {
               <div className="inline-flex items-center gap-3 rounded-lg border border-[#42b8ac]/30 bg-[#e8f7f5] px-3 py-2 text-xs text-[#0f4f4a] font-medium mb-3">
                 <span>↔ Swipe left/right for more allergens</span>
                 <span className="text-[#42b8ac]">|</span>
-                <span>↕ Scroll down/up through items</span>
+                <span>↕ Scroll inside table for more rows</span>
               </div>
               {ingredientGuideRows.length > 0 ? (
                 <AllergenTableView
                   items={ingredientGuideRows}
                   compact={false}
                   showLegend={false}
-                  wrapperClassName="w-full overflow-x-auto overflow-y-visible"
+                  wrapperClassName="w-full max-h-[58vh] overflow-auto rounded-lg"
                   groupByCategory={false}
-                  stickyTopOffset={74}
+                  stickyTopOffset={0}
                 />
               ) : (
                 <div className="py-6 text-gray-500">No ingredients available.</div>
