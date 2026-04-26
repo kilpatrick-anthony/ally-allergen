@@ -331,6 +331,8 @@ export default function KioskPage() {
   const [menuViewMode, setMenuViewMode] = useState<'cards' | 'table'>('cards')
   const [showScreensaver, setShowScreensaver] = useState(false)
   const [isSmallScreen, setIsSmallScreen] = useState(false)
+  const [pdfViewerUrl, setPdfViewerUrl] = useState<string | null>(null)
+  const [generatingPDFViewer, setGeneratingPDFViewer] = useState(false)
   
   const t = translations[currentLanguage] as typeof translations.en
   const businessName = business?.name?.trim() || ''
@@ -695,6 +697,32 @@ export default function KioskPage() {
            category.split('_').map(word => 
              word.charAt(0).toUpperCase() + word.slice(1)
            ).join(' ')
+  }
+
+  // Open allergen guide PDF inline in browser (no auth check needed)
+  const handleViewPDF = async () => {
+    if (!business || !menuItems.length) return
+    setGeneratingPDFViewer(true)
+    try {
+      const url = await generateAllergenTablePDF({
+        business,
+        items: menuItems,
+        title: 'Complete Allergen Information Guide',
+        showLegend: true,
+        outputMode: 'bloburl',
+      })
+      if (url) {
+        // Revoke any previous blob URL to free memory
+        if (pdfViewerUrl) URL.revokeObjectURL(pdfViewerUrl)
+        setPdfViewerUrl(url as string)
+        await trackDownload(slug, 'inline_view', siteIdParam)
+      }
+    } catch (error) {
+      console.error('Error generating PDF for viewer:', error)
+      alert('Sorry, there was an error loading the allergen guide. Please try again.')
+    } finally {
+      setGeneratingPDFViewer(false)
+    }
   }
 
   // Handle PDF generation with table format
@@ -1089,19 +1117,21 @@ export default function KioskPage() {
                 <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#fff5f4] via-[#ffeceb] to-[#ffdeda] border border-[#f5c8c2] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
                   <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
                   <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#ef4444]/10 group-hover:scale-110 transition-transform" />
-                  <div className="flex items-start gap-4 h-full">
-                    <div className="p-3.5 bg-gradient-to-br from-[#dc2626] to-[#ef4444] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
-                      <Filter className="h-6 w-6 text-white" />
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="p-3.5 bg-gradient-to-br from-[#dc2626] to-[#ef4444] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
+                        <Filter className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl sm:text-2xl font-bold text-[#7f1d1d] mb-2 tracking-tight leading-tight">{t.avoidAllergens}</h3>
+                        <p className="text-[#991b1b] text-sm sm:text-[15px] leading-relaxed">
+                          {t.avoidAllergensDesc}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 flex flex-col h-full">
-                      <h3 className="text-xl sm:text-2xl font-bold text-[#7f1d1d] mb-2 tracking-tight leading-tight">{t.avoidAllergens}</h3>
-                      <p className="text-[#991b1b] text-sm sm:text-[15px] mb-4 leading-relaxed">
-                        {t.avoidAllergensDesc}
-                      </p>
-                      <div className="mt-auto flex justify-center">
-                        <div className="inline-flex px-5 py-2.5 bg-[#dc2626] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
-                          {t.startFiltering}
-                        </div>
+                    <div className="mt-auto w-full flex justify-center">
+                      <div className="inline-flex px-5 py-2.5 bg-[#dc2626] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
+                        {t.startFiltering}
                       </div>
                     </div>
                   </div>
@@ -1116,19 +1146,21 @@ export default function KioskPage() {
                 <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#eef7ff] via-[#e3f2ff] to-[#d5ebff] border border-[#b8d8f3] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
                   <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
                   <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#0ea5e9]/10 group-hover:scale-110 transition-transform" />
-                  <div className="flex items-start gap-4 h-full">
-                    <div className="p-3.5 bg-gradient-to-br from-[#0284c7] to-[#0ea5e9] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
-                      <Search className="h-6 w-6 text-white" />
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="p-3.5 bg-gradient-to-br from-[#0284c7] to-[#0ea5e9] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
+                        <Search className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl sm:text-2xl font-bold text-[#0c4a6e] mb-2 tracking-tight leading-tight">{t.browseFullMenu}</h3>
+                        <p className="text-[#0e7490] text-sm sm:text-[15px] leading-relaxed">
+                          {t.browseFullMenuDesc}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 flex flex-col h-full">
-                      <h3 className="text-xl sm:text-2xl font-bold text-[#0c4a6e] mb-2 tracking-tight leading-tight">{t.browseFullMenu}</h3>
-                      <p className="text-[#0e7490] text-sm sm:text-[15px] mb-4 leading-relaxed">
-                        {t.browseFullMenuDesc}
-                      </p>
-                      <div className="mt-auto flex justify-center">
-                        <div className="inline-flex px-5 py-2.5 bg-[#0284c7] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
-                          {t.viewMenu}
-                        </div>
+                    <div className="mt-auto w-full flex justify-center">
+                      <div className="inline-flex px-5 py-2.5 bg-[#0284c7] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
+                        {t.viewMenu}
                       </div>
                     </div>
                   </div>
@@ -1143,19 +1175,21 @@ export default function KioskPage() {
                 <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#f7f0ff] via-[#f1e6ff] to-[#e8d6ff] border border-[#d4b9f2] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
                   <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
                   <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#9333ea]/10 group-hover:scale-110 transition-transform" />
-                  <div className="flex items-start gap-4 h-full">
-                    <div className="p-3.5 bg-gradient-to-br from-[#7e22ce] to-[#a855f7] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
-                      <QrCode className="h-6 w-6 text-white" />
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="p-3.5 bg-gradient-to-br from-[#7e22ce] to-[#a855f7] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
+                        <QrCode className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl sm:text-2xl font-bold text-[#581c87] mb-2 tracking-tight leading-tight">{t.saveMenuToPhone}</h3>
+                        <p className="text-[#6b21a8] text-sm sm:text-[15px] leading-relaxed">
+                          {t.saveMenuToPhoneDesc}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 flex flex-col h-full">
-                      <h3 className="text-xl sm:text-2xl font-bold text-[#581c87] mb-2 tracking-tight leading-tight">{t.saveMenuToPhone}</h3>
-                      <p className="text-[#6b21a8] text-sm sm:text-[15px] mb-4 leading-relaxed">
-                        {t.saveMenuToPhoneDesc}
-                      </p>
-                      <div className="mt-auto flex justify-center">
-                        <div className="inline-flex px-5 py-2.5 bg-[#7e22ce] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
-                          {t.showQRCode}
-                        </div>
+                    <div className="mt-auto w-full flex justify-center">
+                      <div className="inline-flex px-5 py-2.5 bg-[#7e22ce] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
+                        {t.showQRCode}
                       </div>
                     </div>
                   </div>
@@ -1164,25 +1198,27 @@ export default function KioskPage() {
 
               {/* Full Allergen Guide PDF Tile */}
               <button
-                onClick={() => handleGeneratePDF(false)}
+                onClick={handleViewPDF}
                 className="group text-left transition-transform hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#047857] rounded-3xl"
               >
                 <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#ecfdf5] via-[#d1fae5] to-[#a7f3d0] border border-[#6ee7b7] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
                   <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
                   <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#059669]/10 group-hover:scale-110 transition-transform" />
-                  <div className="flex items-start gap-4 h-full">
-                    <div className="p-3.5 bg-gradient-to-br from-[#047857] to-[#059669] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
-                      <FileText className="h-6 w-6 text-white" />
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="p-3.5 bg-gradient-to-br from-[#047857] to-[#059669] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
+                        <FileText className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl sm:text-2xl font-bold text-[#064e3b] mb-2 tracking-tight leading-tight">Full Allergen Guide</h3>
+                        <p className="text-[#065f46] text-sm sm:text-[15px] leading-relaxed">
+                          View the complete allergen guide for all menu items directly on screen.
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1 flex flex-col h-full">
-                      <h3 className="text-xl sm:text-2xl font-bold text-[#064e3b] mb-2 tracking-tight leading-tight">Full Allergen Guide</h3>
-                      <p className="text-[#065f46] text-sm sm:text-[15px] mb-4 leading-relaxed">
-                        Download the complete allergen information PDF directly to your device.
-                      </p>
-                      <div className="mt-auto flex justify-center">
-                        <div className="inline-flex px-5 py-2.5 bg-[#047857] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
-                          {generatingPDF ? 'Generating…' : 'Download PDF'}
-                        </div>
+                    <div className="mt-auto w-full flex justify-center">
+                      <div className="inline-flex px-5 py-2.5 bg-[#047857] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
+                        {generatingPDFViewer ? 'Loading…' : 'View Guide'}
                       </div>
                     </div>
                   </div>
@@ -1771,6 +1807,33 @@ export default function KioskPage() {
               </div>
             </div>
           </Card>
+        </div>
+      )}
+
+      {/* Inline PDF Viewer */}
+      {pdfViewerUrl && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-white">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-[#003842] flex-shrink-0">
+            <div className="flex items-center gap-3">
+              <FileText className="h-5 w-5 text-white" />
+              <span className="text-white font-semibold text-sm">Full Allergen Guide</span>
+            </div>
+            <button
+              onClick={() => {
+                URL.revokeObjectURL(pdfViewerUrl)
+                setPdfViewerUrl(null)
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition"
+            >
+              <X className="h-4 w-4" />
+              Close
+            </button>
+          </div>
+          <iframe
+            src={pdfViewerUrl}
+            className="flex-1 w-full border-none"
+            title="Full Allergen Guide PDF"
+          />
         </div>
       )}
 

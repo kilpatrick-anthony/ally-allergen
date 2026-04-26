@@ -30,8 +30,9 @@ interface PDFOptions {
   title?: string
   includeDescription?: boolean
   showLegend?: boolean
-  /** When 'base64', returns the raw base64 PDF string instead of triggering a browser download */
-  outputMode?: 'download' | 'base64'
+  /** When 'base64', returns the raw base64 PDF string instead of triggering a browser download.
+   *  When 'bloburl', returns a blob: URL string for inline viewing. */
+  outputMode?: 'download' | 'base64' | 'bloburl'
 }
 
 // ---------- helpers ----------------------------------------------------------
@@ -618,6 +619,11 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
     if (options.outputMode === 'base64') {
       // Return raw base64 string (no data-URI prefix) for server-side email attachment
       return doc.output('datauristring').split(',')[1]
+    }
+
+    if (options.outputMode === 'bloburl') {
+      // Return a blob: URL for inline browser viewing
+      return URL.createObjectURL(doc.output('blob'))
     }
 
     doc.save(fileName)
