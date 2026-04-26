@@ -185,20 +185,24 @@ export default function AdminDashboard() {
   return (
     <Container>
       {/* Welcome Header */}
-      <div className="rounded-2xl bg-gradient-to-br from-[#003842] to-[#42b8ac] text-white mb-12 overflow-hidden">
-        <div className="relative w-full">
-          <img
-            src="/Home%20Image%202%20(1400%20x%20350%20px)%20(800%20x%20400%20px).svg"
-            alt=""
-            aria-hidden="true"
-            className="w-full object-cover block sm:hidden"
-          />
-          <img
-            src="/Home%20Image%202%20(1400%20x%20350%20px)%20(1).svg"
-            alt=""
-            aria-hidden="true"
-            className="w-full object-cover hidden sm:block"
-          />
+      <div className="rounded-2xl bg-gradient-to-br from-[#003842] via-[#004d5e] to-[#42b8ac] text-white mb-12 overflow-hidden relative">
+        {/* Decorative background circles */}
+        <div className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-white/5 pointer-events-none" />
+        <div className="absolute -bottom-10 -left-10 w-48 h-48 rounded-full bg-white/5 pointer-events-none" />
+        <div className="absolute top-1/2 right-1/4 w-32 h-32 rounded-full bg-[#42b8ac]/10 pointer-events-none" />
+        <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6 px-8 py-10">
+          <div className="text-center sm:text-left">
+            <p className="text-[#42b8ac] text-xs font-bold uppercase tracking-widest mb-2">AllyJen</p>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-2">{t('admin.welcomeToAllyJen')}</h1>
+            <p className="text-white/70 text-sm sm:text-base max-w-md">{t('admin.welcomeSubtitle')}</p>
+          </div>
+          <div className="flex-shrink-0 flex items-center justify-center">
+            <img
+              src="/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg"
+              alt="AllyJen"
+              className="h-16 w-auto object-contain drop-shadow-[0_2px_12px_rgba(66,184,172,0.4)]"
+            />
+          </div>
         </div>
       </div>
 

@@ -34,6 +34,30 @@ interface AllyChatProps {
   businessName?: string
 }
 
+// ── Font switching helper ─────────────────────────────────────────────────────
+// Intercepts chat messages asking to change font before hitting the API.
+function handleFontRequest(text: string): string | null {
+  const wantsAtkinson = /atkinson|accessibility font|dyslexic font|easier.*read|readable font|change.*font/i.test(text)
+  const wantsDefault  = /default font|normal font|reset font|original font|back.*font/i.test(text)
+  if (wantsAtkinson) {
+    document.documentElement.classList.add('dyslexia-mode')
+    try {
+      const saved = JSON.parse(localStorage.getItem('accessibilitySettings') || '{}')
+      localStorage.setItem('accessibilitySettings', JSON.stringify({ ...saved, fontFamily: 'dyslexic' }))
+    } catch {}
+    return "Done! Switched to Atkinson Hyperlegible — a font designed for accessibility and easier reading. You can change this anytime in the Accessibility panel."
+  }
+  if (wantsDefault) {
+    document.documentElement.classList.remove('dyslexia-mode')
+    try {
+      const saved = JSON.parse(localStorage.getItem('accessibilitySettings') || '{}')
+      localStorage.setItem('accessibilitySettings', JSON.stringify({ ...saved, fontFamily: 'default' }))
+    } catch {}
+    return "Done! Switched back to the default font."
+  }
+  return null
+}
+
 export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
   const [open, setOpen] = useState(false)
   const [activeCoach, setActiveCoach] = useState<CoachMode>('ally')
@@ -76,6 +100,16 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
       [activeCoach]: [...prev[activeCoach], { role: 'user', text: trimmed }],
     }))
     setInput('')
+
+    const fontReply = handleFontRequest(trimmed)
+    if (fontReply) {
+      setMessagesByCoach((prev) => ({
+        ...prev,
+        [activeCoach]: [...prev[activeCoach], { role: activeCoach, text: fontReply }],
+      }))
+      return
+    }
+
     setLoading(true)
 
     try {

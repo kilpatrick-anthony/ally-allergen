@@ -28,11 +28,6 @@ interface NavItem {
   icon: LucideIcon
 }
 
-interface NavGroup {
-  label: string | null
-  items: NavItem[]
-}
-
 export function Navigation() {
   const pathname = usePathname()
   const { t } = useTranslation()
@@ -49,85 +44,49 @@ export function Navigation() {
       .catch(() => {})
   }, [])
 
-  const navGroups: NavGroup[] = [
-    {
-      label: null,
-      items: [
-        { name: t('admin.dashboard'), href: '/admin', icon: Home },
-      ],
-    },
-    {
-      label: 'Manage',
-      items: [
-        { name: t('admin.ingredients'),  href: '/admin/ingredients',  icon: Package },
-        { name: t('admin.menuBuilder'),  href: '/admin/menu-builder', icon: ChefHat },
-        { name: t('admin.sites'),        href: '/admin/sites',        icon: Building },
-        { name: t('admin.suppliers'),    href: '/admin/suppliers',    icon: ShoppingBag },
-      ],
-    },
-    {
-      label: 'Insights',
-      items: [
-        { name: t('admin.analytics'), href: '/admin/analytics', icon: BarChart },
-        { name: t('admin.downloads'), href: '/admin/downloads', icon: Download },
-      ],
-    },
-    {
-      label: 'Operations',
-      items: [
-        { name: t('admin.devices'),  href: '/admin/devices',    icon: Monitor },
-        { name: 'Compliance',        href: '/admin/compliance', icon: CheckCircle2 },
-      ],
-    },
-    {
-      label: 'System',
-      items: [
-        { name: t('admin.settings'), href: '/admin/settings', icon: Settings },
-        { name: t('admin.help'),     href: '/admin/help',     icon: HelpCircle },
-        ...(isSuperAdmin ? [{ name: 'Super Admin', href: '/super-admin', icon: Shield }] : []),
-      ],
-    },
+  const navItems: NavItem[] = [
+    { name: t('admin.dashboard'),   href: '/admin',              icon: Home },
+    { name: t('admin.ingredients'), href: '/admin/ingredients',  icon: Package },
+    { name: t('admin.menuBuilder'), href: '/admin/menu-builder', icon: ChefHat },
+    { name: t('admin.sites'),       href: '/admin/sites',        icon: Building },
+    { name: t('admin.suppliers'),   href: '/admin/suppliers',    icon: ShoppingBag },
+    { name: t('admin.analytics'),   href: '/admin/analytics',    icon: BarChart },
+    { name: t('admin.downloads'),   href: '/admin/downloads',    icon: Download },
+    { name: t('admin.devices'),     href: '/admin/devices',      icon: Monitor },
+    { name: 'Compliance',           href: '/admin/compliance',   icon: CheckCircle2 },
+    { name: t('admin.settings'),    href: '/admin/settings',     icon: Settings },
+    { name: t('admin.help'),        href: '/admin/help',         icon: HelpCircle },
+    ...(isSuperAdmin ? [{ name: 'Super Admin', href: '/super-admin', icon: Shield }] : []),
   ]
 
   return (
-    <nav className="space-y-4 pt-2">
-      {navGroups.map((group, gi) => (
-        <div key={gi}>
-          {group.label && (
-            <p className="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-widest text-white/40 select-none">
-              {group.label}
-            </p>
-          )}
-          <div className="space-y-0.5">
-            {group.items.map((item) => {
-              const isActive =
-                pathname === item.href ||
-                (item.href !== '/admin' && pathname.startsWith(item.href))
+    <nav className="space-y-0.5 pt-2">
+      {navItems.map((item) => {
+        const isActive =
+          pathname === item.href ||
+          (item.href !== '/admin' && pathname.startsWith(item.href))
 
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`
-                    group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200
-                    ${isActive
-                      ? 'bg-white text-[#003842] shadow-md font-semibold'
-                      : 'text-white/80 hover:bg-white/15 hover:text-white font-medium'
-                    }
-                  `}
-                >
-                  <item.icon
-                    className={`h-4 w-4 shrink-0 transition-colors ${
-                      isActive ? 'text-[#42b8ac]' : 'text-white/70 group-hover:text-white'
-                    }`}
-                  />
-                  <span className="truncate">{item.name}</span>
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      ))}
+        return (
+          <Link
+            key={item.name}
+            href={item.href}
+            className={`
+              group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200
+              ${isActive
+                ? 'bg-white text-[#003842] shadow-md font-semibold'
+                : 'text-white/80 hover:bg-white/15 hover:text-white font-medium'
+              }
+            `}
+          >
+            <item.icon
+              className={`h-4 w-4 shrink-0 transition-colors ${
+                isActive ? 'text-[#42b8ac]' : 'text-white/70 group-hover:text-white'
+              }`}
+            />
+            <span className="truncate">{item.name}</span>
+          </Link>
+        )
+      })}
     </nav>
   )
 }

@@ -406,7 +406,7 @@ export default function AccessibilityPanel() {
                           <option value="default">Default (Arsenal)</option>
                           <option value="verdana-pro">Verdana Pro</option>
                           <option value="arsenal">Arsenal</option>
-                          <option value="dyslexic">Dyslexia-friendly</option>
+                          <option value="dyslexic">Atkinson Hyperlegible (Accessibility)</option>
                           <option value="high-contrast">High Visibility</option>
                         </select>
                       </div>

@@ -623,7 +623,7 @@ export default function LandingPage() {
                   <h3 className="text-xl font-bold text-[#003842] mb-5">Why Choose AllyJen?</h3>
                   <div className="space-y-4">
                     {[
-                      { title: 'Expert-Guided Setup', body: 'Our team handles the initial configuration and imports your existing menu data.' },
+                      { title: 'Expert-Guided Setup', body: 'Our team handles the initial configuration.' },
                       { title: 'Ongoing Support', body: 'We\'re always on hand with dedicated support and regular platform updates.' },
                       { title: 'FSAI Compliance Ready', body: 'Built fully in line with Irish and EU food safety regulations.' },
                       { title: 'No Technical Skills Needed', body: 'An intuitive platform designed for busy food businesses, not IT professionals.' },

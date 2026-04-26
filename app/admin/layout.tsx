@@ -12,7 +12,6 @@ import SpeechController from '@/components/SpeechController'
 import { trackAdminPageVisit } from '@/lib/hooks/useFrequentPages'
 import { FsaiNewsTicker } from '@/components/admin/FsaiNewsTicker'
 import { JenCoach } from '@/components/admin/JenCoach'
-import { AdminTopBar } from '@/components/admin/AdminTopBar'
 
 interface AdminLayoutProps {
   children: ReactNode
@@ -22,7 +21,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter()
   const { t } = useTranslation()
   const [userName, setUserName] = useState<string>('')
-  const [userEmail, setUserEmail] = useState<string>('')
   const [businessId, setBusinessId] = useState<string | null>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const pathname = usePathname()
@@ -137,7 +135,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <ProtectedRoute requireRole="owner">
       <SpeechController />
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900" data-context="admin">
         {/* Mobile header */}
         <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-[#003842] h-14 flex items-center px-4 shadow-md">
           {isSidebarOpen ? (
@@ -181,9 +179,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             />
           </div>
 
-          {/* Navigation - scrollable with discreet thin scrollbar */}
-          <div className="flex-1 overflow-y-auto px-3 pb-4 -mt-2 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
-            <Navigation />
+          {/* Navigation - scrollable with subtle indicator */}
+          <div className="relative flex-1 min-h-0">
+            <div className="h-full overflow-y-auto px-3 pb-4 -mt-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/35">
+              <Navigation />
+            </div>
+            {/* Faint animated gradient at bottom to hint at scrollability */}
+            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-[#2a7068]/70 to-transparent animate-pulse" />
           </div>
 
           {/* Footer - user profile */}
@@ -212,7 +214,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* Main Content */}
         <div className="lg:pl-[224px] pt-14 lg:pt-0 flex flex-col min-h-screen">
-          <AdminTopBar userName={userName} userEmail={userEmail} />
           <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 admin-dot-grid dark:admin-dot-grid-dark">
             {children}
           </main>

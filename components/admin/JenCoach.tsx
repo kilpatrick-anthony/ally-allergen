@@ -5,8 +5,21 @@ import { usePathname } from 'next/navigation'
 import { JenAvatar } from '../ally/JenAvatar'
 import { X, ChevronDown, Send } from 'lucide-react'
 
-// Pages where Ally (food/menu context) is the primary coach
-const ALLY_PATHS = ['/admin/menu-builder', '/admin/ingredients', '/admin/kiosks', '/admin/suppliers']
+// Pages where Ally (food/menu context) is always the coach
+const ALWAYS_ALLY_PATHS = ['/admin/menu-builder', '/admin/ingredients', '/admin/kiosks', '/admin/suppliers']
+
+// Pages where Jen (compliance/general) is always the coach
+const ALWAYS_JEN_PATHS = ['/admin/compliance', '/admin/settings', '/admin/help', '/super-admin']
+
+// For neutral pages (dashboard, sites, analytics, devices etc.) alternate each visit
+function resolveCoachMode(pathname: string | null): 'ally' | 'jen' {
+  if (ALWAYS_ALLY_PATHS.some(p => pathname?.startsWith(p))) return 'ally'
+  if (ALWAYS_JEN_PATHS.some(p => pathname?.startsWith(p))) return 'jen'
+  if (typeof window === 'undefined') return 'jen'
+  const n = parseInt(sessionStorage.getItem('coach_visit') ?? '0', 10)
+  sessionStorage.setItem('coach_visit', String(n + 1))
+  return n % 2 === 0 ? 'ally' : 'jen'
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -18,11 +31,40 @@ interface MenuItem {
   site_id?: string
 }
 
+// ── Font switching helper ─────────────────────────────────────────────────────
+// Intercepts chat messages asking to change font before hitting the API.
+function handleFontRequest(text: string): string | null {
+  const wantsAtkinson = /atkinson|accessibility font|dyslexic font|easier.*read|readable font|change.*font/i.test(text)
+  const wantsDefault  = /default font|normal font|reset font|original font|back.*font/i.test(text)
+  if (wantsAtkinson) {
+    document.documentElement.classList.add('dyslexia-mode')
+    try {
+      const saved = JSON.parse(localStorage.getItem('accessibilitySettings') || '{}')
+      localStorage.setItem('accessibilitySettings', JSON.stringify({ ...saved, fontFamily: 'dyslexic' }))
+    } catch {}
+    return "Done! Switched to Atkinson Hyperlegible — a font designed for accessibility and easier reading. You can change this anytime in the Accessibility panel (bottom-right corner)."
+  }
+  if (wantsDefault) {
+    document.documentElement.classList.remove('dyslexia-mode')
+    try {
+      const saved = JSON.parse(localStorage.getItem('accessibilitySettings') || '{}')
+      localStorage.setItem('accessibilitySettings', JSON.stringify({ ...saved, fontFamily: 'default' }))
+    } catch {}
+    return "Done! Switched back to the default font."
+  }
+  return null
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function JenCoach() {
   const pathname = usePathname()
-  const coachMode: 'ally' | 'jen' = ALLY_PATHS.some((p) => pathname?.startsWith(p)) ? 'ally' : 'jen'
+  const [coachMode, setCoachMode] = useState<'ally' | 'jen'>(() => resolveCoachMode(pathname))
+
+  // Re-resolve on every navigation so neutral pages alternate properly
+  useEffect(() => {
+    setCoachMode(resolveCoachMode(pathname))
+  }, [pathname])
 
   const [open, setOpen] = useState(false)
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
@@ -87,6 +129,13 @@ export function JenCoach() {
 
     setPreviewMessages((prev) => [...prev, { role: 'user', text: trimmed }])
     setPreviewInput('')
+
+    const fontReply = handleFontRequest(trimmed)
+    if (fontReply) {
+      setPreviewMessages((prev) => [...prev, { role: 'ally', text: fontReply }])
+      return
+    }
+
     setPreviewLoading(true)
 
     try {
@@ -116,6 +165,13 @@ export function JenCoach() {
 
     setChatMessages((prev) => [...prev, { role: 'user', text: trimmed }])
     setChatInput('')
+
+    const fontReply = handleFontRequest(trimmed)
+    if (fontReply) {
+      setChatMessages((prev) => [...prev, { role: 'jen', text: fontReply }])
+      return
+    }
+
     setChatLoading(true)
 
     try {

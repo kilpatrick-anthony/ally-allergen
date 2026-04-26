@@ -8,6 +8,8 @@
 :root {
   --font-atkinson: 'Atkinson Hyperlegible', system-ui, sans-serif;
   --font-arsenal: 'Arsenal', system-ui, sans-serif;
+  --font-inter: 'Inter', system-ui, sans-serif;
+  --font-nunito: 'Nunito', system-ui, sans-serif;
   --font-verdana-pro: 'Verdana Pro', 'Verdana', system-ui, sans-serif;
   --background: #ffffff;
   --foreground: #171717;
@@ -98,6 +100,35 @@ body {
   font-size: inherit;
   letter-spacing: inherit;
   line-height: inherit;
+}
+
+/* ===== CONTEXT-SCOPED FONTS ===== */
+/* Admin portal: Inter — clean, modern, excellent at UI density */
+[data-context="admin"],
+[data-context="admin"] body,
+[data-context="admin"] input,
+[data-context="admin"] button,
+[data-context="admin"] select,
+[data-context="admin"] textarea {
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+/* Kiosk: Nunito — rounded letterforms, highly readable at large sizes */
+[data-context="kiosk"],
+[data-context="kiosk"] input,
+[data-context="kiosk"] button,
+[data-context="kiosk"] select {
+  font-family: var(--font-nunito), system-ui, sans-serif;
+}
+
+/* Atkinson override (via accessibility panel or Jen/Ally chat) takes priority */
+html.dyslexia-mode [data-context="admin"],
+html.dyslexia-mode [data-context="kiosk"],
+html.dyslexia-mode [data-context="admin"] input,
+html.dyslexia-mode [data-context="kiosk"] input,
+html.dyslexia-mode [data-context="admin"] button,
+html.dyslexia-mode [data-context="kiosk"] button {
+  font-family: var(--font-atkinson), sans-serif !important;
 }
 
 /* ===== ACCESSIBILITY FOCUS STATES ===== */

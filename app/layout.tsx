@@ -1,6 +1,6 @@
 // app/layout.tsx
 import type { Metadata } from "next";
-import { Atkinson_Hyperlegible, Arsenal } from "next/font/google";
+import { Atkinson_Hyperlegible, Arsenal, Inter, Nunito } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import AccessibilityPanel from "@/components/shared/AccessibilityPanel";
@@ -23,6 +23,20 @@ const arsenal = Arsenal({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-arsenal",
+});
+
+const inter = Inter({
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
+const nunito = Nunito({
+  weight: ["400", "600", "700", "800"],
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-nunito",
 });
 
 const BASE_URL = 'https://allyjen.ie'
@@ -116,7 +130,7 @@ export default function RootLayout({
   // Only show AccessibilityPanel in kiosk mode
   const isKiosk = typeof window !== 'undefined' && window.location.pathname.startsWith('/kiosk');
   return (
-    <html lang="en" className={`${atkinson.variable} ${arsenal.variable}`}> 
+    <html lang="en" className={`${atkinson.variable} ${arsenal.variable} ${inter.variable} ${nunito.variable}`}> 
       <head>
         <link rel="preload" href="/Home%20Image.svg" as="image" type="image/svg+xml" />
         <link rel="icon" type="image/svg+xml" href="/Logo-AllyJen.svg" />
