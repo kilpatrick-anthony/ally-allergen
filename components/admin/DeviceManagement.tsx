@@ -26,6 +26,9 @@ interface Device {
   active_pairing_code?: string | null;
   pairing_code_expires_at?: string | null;
   active_pairing_code_redeemed?: boolean | null;
+  live_minutes_since_heartbeat?: number | null;
+  last_page_url?: string | null;
+  is_on_expected_screen?: boolean | null;
   site?: {
     id: string;
     name: string;
@@ -686,6 +689,26 @@ export default function DeviceManagement({
                         {getTimeSince(device.last_heartbeat)}
                       </span>
                     </div>
+                    {typeof device.is_on_expected_screen === 'boolean' && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600">Screen:</span>
+                        <span
+                          className={`text-xs font-semibold rounded-full px-2 py-1 ${
+                            device.is_on_expected_screen
+                              ? 'bg-emerald-100 text-emerald-700'
+                              : 'bg-red-100 text-red-700'
+                          }`}
+                        >
+                          {device.is_on_expected_screen ? 'Correct kiosk screen' : 'Wrong screen'}
+                        </span>
+                      </div>
+                    )}
+                    {device.last_page_url && (
+                      <div>
+                        <p className="text-gray-600 mb-1">Current page:</p>
+                        <p className="text-xs text-gray-700 break-all leading-relaxed">{device.last_page_url}</p>
+                      </div>
+                    )}
                     {device.ip_address && (
                       <div className="flex justify-between">
                         <span className="text-gray-600">IP:</span>

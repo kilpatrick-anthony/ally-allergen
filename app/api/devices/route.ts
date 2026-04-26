@@ -112,7 +112,95 @@ export async function GET(request: NextRequest) {
       active_pairing_code_redeemed: pairingByDevice[d.id]?.redeemed ?? null,
     }))
 
-    return NextResponse.json({ devices: devicesWithCodes })
+    const siteIds = Array.from(new Set(devicesWithCodes.map((d: any) => d.site_id).filter(Boolean)))
+    const liveByPairedDeviceId = new Map<string, {
+      last_heartbeat: string | null
+      page_url: string | null
+      minutes_since_heartbeat: number | null
+      is_online: boolean
+    }>()
+
+    if (siteIds.length > 0) {
+      const { data: liveKioskDevices, error: liveKioskDevicesError } = await supabase
+        .from('kiosk_devices')
+        .select('id, site_id, is_online, last_heartbeat, device_info')
+        .eq('business_id', businessId)
+        .in('site_id', siteIds)
+
+      if (liveKioskDevicesError) {
+        console.warn('Failed to fetch live kiosk device status:', liveKioskDevicesError.message)
+      } else if ((liveKioskDevices || []).length > 0) {
+        const kioskDeviceIds = (liveKioskDevices || []).map((row: any) => row.id)
+
+        const { data: recentHeartbeats, error: recentHeartbeatsError } = await supabase
+          .from('device_heartbeats')
+          .select('device_id, timestamp, page_url')
+          .in('device_id', kioskDeviceIds)
+          .order('timestamp', { ascending: false })
+
+        if (recentHeartbeatsError) {
+          console.warn('Failed to fetch recent device heartbeats:', recentHeartbeatsError.message)
+        }
+
+        const latestHeartbeatByKioskDeviceId = new Map<string, { timestamp: string; page_url: string | null }>()
+        for (const heartbeat of recentHeartbeats || []) {
+          if (!latestHeartbeatByKioskDeviceId.has(heartbeat.device_id)) {
+            latestHeartbeatByKioskDeviceId.set(heartbeat.device_id, {
+              timestamp: heartbeat.timestamp,
+              page_url: heartbeat.page_url ?? null,
+            })
+          }
+        }
+
+        for (const row of liveKioskDevices || []) {
+          const pairedDeviceId = String((row as any)?.device_info?.paired_device_id || '').trim()
+          if (!pairedDeviceId) continue
+
+          const latestHeartbeat = latestHeartbeatByKioskDeviceId.get(row.id)
+          const heartbeatTimestamp = latestHeartbeat?.timestamp || row.last_heartbeat || null
+          const minutesSinceHeartbeat = heartbeatTimestamp
+            ? (Date.now() - new Date(heartbeatTimestamp).getTime()) / 60000
+            : null
+          const isOnline = Boolean(row.is_online) && minutesSinceHeartbeat !== null && minutesSinceHeartbeat <= 3
+
+          liveByPairedDeviceId.set(pairedDeviceId, {
+            last_heartbeat: heartbeatTimestamp,
+            page_url: latestHeartbeat?.page_url ?? null,
+            minutes_since_heartbeat: minutesSinceHeartbeat,
+            is_online: isOnline,
+          })
+        }
+      }
+    }
+
+    const devicesWithLiveStatus = devicesWithCodes.map((d: any) => {
+      const live = liveByPairedDeviceId.get(String(d.id))
+      const kioskTarget = String(d.business?.slug || d.business_id || '').trim()
+      const expectedPath = kioskTarget && d.site_id
+        ? `/kiosk/${kioskTarget}`
+        : null
+
+      let isOnExpectedScreen = false
+      if (live?.page_url && expectedPath) {
+        try {
+          const pageUrl = new URL(live.page_url, 'http://localhost')
+          isOnExpectedScreen = pageUrl.pathname === expectedPath && pageUrl.searchParams.get('site_id') === d.site_id
+        } catch {
+          isOnExpectedScreen = false
+        }
+      }
+
+      return {
+        ...d,
+        status: live ? (live.is_online ? 'online' : 'offline') : d.status,
+        last_heartbeat: live?.last_heartbeat ?? d.last_heartbeat,
+        live_minutes_since_heartbeat: live?.minutes_since_heartbeat ?? null,
+        last_page_url: live?.page_url ?? null,
+        is_on_expected_screen: live?.page_url ? isOnExpectedScreen : null,
+      }
+    })
+
+    return NextResponse.json({ devices: devicesWithLiveStatus })
   } catch (error: any) {
     console.error('Unexpected error:', error)
     return NextResponse.json(

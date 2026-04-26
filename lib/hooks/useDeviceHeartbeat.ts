@@ -65,6 +65,10 @@ export function useDeviceHeartbeat(options: HeartbeatOptions = {}) {
 
   // Get device info
   const getDeviceInfo = () => {
+    const pairedDeviceId = typeof window !== 'undefined'
+      ? localStorage.getItem('ally_paired_device_id')
+      : null
+
     return {
       userAgent: navigator.userAgent,
       screenWidth: screen.width,
@@ -73,7 +77,8 @@ export function useDeviceHeartbeat(options: HeartbeatOptions = {}) {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       language: navigator.language,
       platform: navigator.platform,
-      online: navigator.onLine
+      online: navigator.onLine,
+      paired_device_id: pairedDeviceId,
     }
   }
 

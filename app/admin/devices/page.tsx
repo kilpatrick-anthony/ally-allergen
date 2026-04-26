@@ -29,6 +29,9 @@ interface Device {
   business_id: string
   business_slug: string
   admin_email: string
+  last_page_url?: string | null
+  is_on_expected_screen?: boolean | null
+  live_minutes_since_heartbeat?: number | null
   minutes_since_heartbeat: number
   active_alerts: number
   total_sessions: number
@@ -411,6 +414,24 @@ export default function DeviceMonitoringPage() {
                               Open
                             </a>
                           </div>
+                        </div>
+                      )}
+
+                      {typeof device.is_on_expected_screen === 'boolean' && (
+                        <div className="sm:col-span-2 rounded-lg border border-gray-200 bg-white p-2.5 mt-1">
+                          <p className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide mb-1">Screen Check</p>
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${
+                              device.is_on_expected_screen
+                                ? 'bg-emerald-100 text-emerald-700'
+                                : 'bg-red-100 text-red-700'
+                            }`}
+                          >
+                            {device.is_on_expected_screen ? 'Correct kiosk screen' : 'Wrong screen'}
+                          </span>
+                          {device.last_page_url && (
+                            <p className="text-xs text-gray-600 break-all mt-2">{device.last_page_url}</p>
+                          )}
                         </div>
                       )}
                     </div>
