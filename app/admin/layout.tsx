@@ -178,13 +178,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             />
           </div>
 
-          {/* Navigation - scrollable with subtle indicator */}
-          <div className="relative flex-1 min-h-0">
-            <div className="h-full overflow-y-auto px-3 pb-4 -mt-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-white/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-white/35">
+          {/* Navigation - discreet scrollbar appears only on interaction */}
+          <div className="relative flex-1 min-h-0 group/nav">
+            <div className="h-full overflow-y-auto px-3 pb-4 -mt-2 [&::-webkit-scrollbar]:w-[3px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-transparent [&::-webkit-scrollbar-thumb]:transition-colors [&::-webkit-scrollbar-thumb]:duration-200 group-hover/nav:[&::-webkit-scrollbar-thumb]:bg-white/20 focus-within:[&::-webkit-scrollbar-thumb]:bg-white/20 active:[&::-webkit-scrollbar-thumb]:bg-white/20">
               <Navigation />
             </div>
-            {/* Faint animated gradient at bottom to hint at scrollability */}
-            <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-[#2a7068]/70 to-transparent animate-pulse" />
           </div>
 
           {/* Footer - user profile */}
@@ -203,7 +201,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <button
               type="button"
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white bg-white/10 hover:bg-white/20 rounded-lg transition-colors backdrop-blur-sm"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-rose-100 bg-rose-900/30 hover:bg-rose-800/45 border border-rose-300/25 rounded-lg transition-colors backdrop-blur-sm"
             >
               <LogOut className="h-4 w-4" />
               {t('admin.logout')}
