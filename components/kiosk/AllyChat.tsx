@@ -62,7 +62,6 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
   const [messagesByCoach, setMessagesByCoach] = useState<Record<CoachMode, Message[]>>({ ally: [], jen: [] })
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const language = typeof window !== 'undefined'
@@ -71,10 +70,6 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
 
   const messages = messagesByCoach[activeCoach]
   const coachName = activeCoach === 'ally' ? 'Ally' : 'Jen'
-
-  useEffect(() => {
-    if (open && inputRef.current) inputRef.current.focus()
-  }, [open])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -283,7 +278,6 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
             className="flex items-center gap-2 px-3 py-2 border-t border-gray-100 bg-white"
           >
             <input
-              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={activeCoach === 'ally' ? 'Ask about allergens…' : 'Ask about allergy safety…'}

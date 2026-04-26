@@ -930,21 +930,6 @@ export default function KioskPage() {
           />
           <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: 'radial-gradient(circle, #42b8ac 1px, transparent 1px)', backgroundSize: '52px 52px' }} />
 
-          {/* Subtle DVD-style bounce, tuned to rarely align perfectly in corners */}
-          <div className="kioskBounceStage" aria-hidden="true">
-            <div className="kioskBounceX">
-              <div className="kioskBounceY">
-                <div className="kioskBounceBadge">
-                  <span className="kioskBounceIconWrap" aria-hidden="true">
-                    <Wheat className="kioskBounceIcon kioskIconOne" />
-                    <Fish className="kioskBounceIcon kioskIconTwo" />
-                    <Nut className="kioskBounceIcon kioskIconThree" />
-                  </span>
-                  <span className="kioskBounceText">ALLYJEN</span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <AccessibilityPanel />
@@ -985,70 +970,6 @@ export default function KioskPage() {
           @keyframes kioskDrift {
             0% { transform: rotate(0deg) translate3d(0, 0, 0); }
             100% { transform: rotate(360deg) translate3d(0, 0, 0); }
-          }
-          @keyframes kioskBounceX {
-            from { transform: translateX(0); }
-            to { transform: translateX(calc(100vw - 180px)); }
-          }
-          @keyframes kioskBounceY {
-            from { transform: translateY(0); }
-            to { transform: translateY(calc(100vh - 74px)); }
-          }
-          .kioskBounceStage {
-            position: absolute;
-            inset: 0;
-            opacity: 0.68;
-          }
-          .kioskBounceX {
-            width: 180px;
-            animation: kioskBounceX 17s linear infinite alternate;
-            will-change: transform;
-          }
-          .kioskBounceY {
-            width: 180px;
-            animation: kioskBounceY 13s linear infinite alternate;
-            will-change: transform;
-          }
-          .kioskBounceBadge {
-            margin: 12px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 7px 12px;
-            border-radius: 999px;
-            border: 1px solid rgba(159, 229, 222, 0.35);
-            background: rgba(7, 41, 48, 0.42);
-            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.25);
-            backdrop-filter: blur(2px);
-          }
-          .kioskBounceIconWrap {
-            position: relative;
-            width: 12px;
-            height: 12px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-          }
-          .kioskBounceIcon {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            color: #42b8ac;
-            opacity: 0;
-            transform-origin: center;
-          }
-          @keyframes kioskIconCycle {
-            0%, 28% { opacity: 1; transform: rotate(0deg) scale(1); }
-            33%, 100% { opacity: 0; transform: rotate(120deg) scale(0.88); }
-          }
-          .kioskIconOne { animation: kioskIconCycle 6.2s linear infinite; }
-          .kioskIconTwo { animation: kioskIconCycle 6.2s linear infinite 2.06s; }
-          .kioskIconThree { animation: kioskIconCycle 6.2s linear infinite 4.12s; }
-          .kioskBounceText {
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.12em;
-            color: rgba(207, 246, 241, 0.95);
           }
         `}</style>
       </div>
@@ -1202,7 +1123,7 @@ export default function KioskPage() {
                     }}
                     title="Return to sleep screen"
                   >
-                    ZZZ
+                    Kiosk
                   </Button>
                 </div>
               </div>
