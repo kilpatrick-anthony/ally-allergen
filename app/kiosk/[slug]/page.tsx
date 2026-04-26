@@ -1239,8 +1239,9 @@ export default function KioskPage() {
                       </div>
                     </div>
                     <div className="mt-auto w-full flex justify-center">
-                      <div className="inline-flex px-4 py-2 bg-[#7e22ce] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
+                      <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#7e22ce] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
                         {t.showQRCode}
+                        <ArrowRight className="h-4 w-4" />
                       </div>
                     </div>
                   </div>
@@ -1263,13 +1264,14 @@ export default function KioskPage() {
                       <div>
                         <h3 className="text-xl sm:text-2xl font-bold text-[#134e4a] mb-2 tracking-tight leading-tight">Email Allergen Guide</h3>
                         <p className="text-[#115e59] text-sm sm:text-[15px] leading-relaxed">
-                          Send the full allergen guide to your email so you can review it on your phone.
+                          Send the full allergen guide to your email so you can review it on any device or computer.
                         </p>
                       </div>
                     </div>
                     <div className="mt-auto w-full flex justify-center">
-                      <div className="inline-flex px-4 py-2 bg-[#0f4f4a] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
+                      <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0f4f4a] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
                         Email Guide
+                        <ArrowRight className="h-4 w-4" />
                       </div>
                     </div>
                   </div>
