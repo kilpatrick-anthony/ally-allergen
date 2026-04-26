@@ -907,10 +907,8 @@ export default function KioskPage() {
   if (!kioskStarted) {
     return (
       <div
-        className="min-h-screen bg-[#001a20] relative overflow-hidden cursor-pointer"
+        className="min-h-screen bg-[#001a20] relative overflow-hidden"
         data-context="kiosk"
-        onClick={handleStartKiosk}
-        onTouchStart={handleStartKiosk}
       >
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div
@@ -946,11 +944,14 @@ export default function KioskPage() {
               Interactive Allergen Check Guide
             </p>
 
-            <div className="mx-auto mt-14 max-w-lg rounded-2xl border border-[#42b8ac]/45 bg-[#42b8ac]/15 px-4 py-3">
+            <button
+              onClick={handleStartKiosk}
+              className="mx-auto mt-28 max-w-lg rounded-2xl border border-[#42b8ac]/45 bg-[#42b8ac]/15 px-6 py-4 cursor-pointer hover:bg-[#42b8ac]/25 transition-colors block w-full"
+            >
               <p className="text-white font-bold text-lg sm:text-xl lg:text-2xl mb-0">
                 Click here to begin
               </p>
-            </div>
+            </button>
 
             {showScreensaver && (
               <p className="text-white/45 text-sm mt-6">Sleep mode active</p>
