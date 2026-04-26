@@ -1976,11 +1976,13 @@ export default function KioskPage() {
           {/* Guide content */}
           <div className="flex-1 overflow-auto bg-gray-50 p-4 space-y-5">
             <Card className="p-4">
-              <h3 className="text-lg font-semibold text-[#003842] mb-3">Menu Items by Sub Menu (A-Z)</h3>
-              <div className="inline-flex items-center gap-3 rounded-lg border border-[#42b8ac]/30 bg-[#e8f7f5] px-3 py-2 text-xs text-[#0f4f4a] font-medium mb-3">
-                <span>↔ Swipe left/right for more allergens</span>
-                <span className="text-[#42b8ac]">|</span>
-                <span>↕ Scroll inside table for more rows</span>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <h3 className="text-lg font-semibold text-[#003842]">Menu Items by Sub Menu (A-Z)</h3>
+                <div className="inline-flex items-center gap-2 rounded-lg border border-[#42b8ac]/30 bg-[#e8f7f5] px-3 py-1.5 text-[11px] text-[#0f4f4a] font-medium">
+                  <span>↔ Swipe allergens</span>
+                  <span className="text-[#42b8ac]">|</span>
+                  <span>↕ Scroll rows</span>
+                </div>
               </div>
               {sortedMenuItems.length > 0 ? (
                 <AllergenTableView
@@ -1988,6 +1990,7 @@ export default function KioskPage() {
                   compact={false}
                   showLegend={true}
                   showLegendTop={true}
+                  compactLegend={true}
                   wrapperClassName="w-full max-h-[58vh] overflow-auto rounded-lg"
                   groupByCategory={true}
                   stickyTopOffset={2}
@@ -2000,11 +2003,13 @@ export default function KioskPage() {
             </Card>
 
             <Card className="p-4">
-              <h3 className="text-lg font-semibold text-[#003842] mb-3">Full Ingredients List (A-Z)</h3>
-              <div className="inline-flex items-center gap-3 rounded-lg border border-[#42b8ac]/30 bg-[#e8f7f5] px-3 py-2 text-xs text-[#0f4f4a] font-medium mb-3">
-                <span>↔ Swipe left/right for more allergens</span>
-                <span className="text-[#42b8ac]">|</span>
-                <span>↕ Scroll inside table for more rows</span>
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <h3 className="text-lg font-semibold text-[#003842]">Full Ingredients List (A-Z)</h3>
+                <div className="inline-flex items-center gap-2 rounded-lg border border-[#42b8ac]/30 bg-[#e8f7f5] px-3 py-1.5 text-[11px] text-[#0f4f4a] font-medium">
+                  <span>↔ Swipe allergens</span>
+                  <span className="text-[#42b8ac]">|</span>
+                  <span>↕ Scroll rows</span>
+                </div>
               </div>
               {ingredientGuideRows.length > 0 ? (
                 <AllergenTableView
@@ -2012,6 +2017,7 @@ export default function KioskPage() {
                   compact={false}
                   showLegend={true}
                   showLegendTop={true}
+                  compactLegend={true}
                   wrapperClassName="w-full max-h-[58vh] overflow-auto rounded-lg"
                   groupByCategory={false}
                   stickyTopOffset={2}

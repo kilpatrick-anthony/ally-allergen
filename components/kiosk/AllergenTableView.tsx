@@ -12,6 +12,7 @@ interface AllergenTableViewProps {
   compact?: boolean
   showLegend?: boolean
   showLegendTop?: boolean
+  compactLegend?: boolean
   /** Extra classes applied to the outer scrollable wrapper */
   wrapperClassName?: string
   /** Group rows by category headings before rendering */
@@ -25,6 +26,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
   compact = false,
   showLegend = true,
   showLegendTop = false,
+  compactLegend = false,
   wrapperClassName,
   groupByCategory = true,
   stickyTopOffset = 0,
@@ -161,10 +163,16 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
   }
 
   const sortedItems = [...expandedItems].sort((a, b) => {
+    const aName = String((a as any).displayName || a.name || '')
+    const bName = String((b as any).displayName || b.name || '')
+    if (!groupByCategory) {
+      return aName.localeCompare(bName)
+    }
+
     const aCategory = getCategoryLabel((a as any).category)
     const bCategory = getCategoryLabel((b as any).category)
     if (aCategory !== bCategory) return aCategory.localeCompare(bCategory)
-    return String((a as any).displayName || a.name || '').localeCompare(String((b as any).displayName || b.name || ''))
+    return aName.localeCompare(bName)
   })
 
   const groupedItems = sortedItems.reduce<Record<string, typeof sortedItems>>((acc, item) => {
@@ -186,9 +194,9 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
   const stickyTopStyle: React.CSSProperties = { top: stickyTopOffset }
 
   const Legend = () => (
-    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-      <h4 className="text-sm font-semibold text-gray-900 mb-3">Legend:</h4>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+    <div className={`bg-gray-50 rounded-lg border border-gray-200 ${compactLegend ? 'p-2.5' : 'p-4'}`}>
+      <h4 className={`font-semibold text-gray-900 ${compactLegend ? 'text-xs mb-2' : 'text-sm mb-3'}`}>Legend:</h4>
+      <div className={compactLegend ? 'flex items-center gap-3 overflow-x-auto whitespace-nowrap text-[11px]' : 'grid grid-cols-2 md:grid-cols-3 gap-3 text-xs'}>
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 bg-red-200 rounded flex items-center justify-center">
             <Check className="h-4 w-4 text-red-800" />
@@ -224,7 +232,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
           <span className="text-gray-700">Not present</span>
         </div>
       </div>
-      <p className="mt-3 text-xs text-gray-600 italic">
+      <p className={`${compactLegend ? 'mt-2 text-[11px]' : 'mt-3 text-xs'} text-gray-600 italic`}>
         Note: For items with specific sub-types (e.g., wheat, almonds), the cell will show which specific allergen is present.
       </p>
     </div>
