@@ -659,7 +659,7 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <img src="/Logo-AllyJen.svg" alt="AllyJen" className="h-24 w-auto" />
             <div className="text-center md:text-right space-y-2">
-              <p className="text-sm text-white/40">© 2026 AllyJen Solutions Limited. All rights reserved.</p>
+              <p className="text-sm text-white/40">© 2026 AllyJen Solutions Limited.</p>
               <p className="text-xs text-white/30">CRO No. 811542 | Republic of Ireland</p>
             </div>
           </div>
