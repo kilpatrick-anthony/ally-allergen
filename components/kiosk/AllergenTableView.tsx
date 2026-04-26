@@ -184,8 +184,8 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
   const stickyTopStyle = { top: stickyTopOffset }
 
   return (
-    <div className={wrapperClassName ?? 'w-full overflow-auto'} style={!wrapperClassName ? { maxHeight: 'calc(100vh - 260px)' } : undefined}>
-      <table className="w-full border-collapse bg-white rounded-lg overflow-hidden shadow-sm text-xs">
+    <div className={wrapperClassName ?? 'w-full overflow-x-auto overflow-y-visible'}>
+      <table className="w-full border-separate border-spacing-0 bg-white rounded-lg overflow-hidden shadow-sm text-xs">
         <thead>
           <tr className="bg-[#003842]">
             <th className="text-left p-2 text-white font-semibold border border-gray-300 sticky left-0 bg-[#003842] z-40 min-w-[120px]" style={stickyTopStyle}>

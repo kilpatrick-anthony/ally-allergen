@@ -1779,13 +1779,20 @@ export default function KioskPage() {
                 </Card>
               ) : menuViewMode === 'table' ? (
                 /* Table View */
-                <AllergenTableView 
-                  items={filteredItems} 
-                  compact={false}
-                  showLegend={true}
-                  wrapperClassName="w-full overflow-auto max-h-[calc(100vh-290px)]"
-                  stickyTopOffset={-1}
-                />
+                <div className="space-y-3">
+                  <div className="inline-flex items-center gap-3 rounded-lg border border-[#42b8ac]/30 bg-[#e8f7f5] px-3 py-2 text-xs text-[#0f4f4a] font-medium">
+                    <span>↔ Swipe left/right for more allergens</span>
+                    <span className="text-[#42b8ac]">|</span>
+                    <span>↕ Scroll down/up through items</span>
+                  </div>
+                  <AllergenTableView 
+                    items={filteredItems} 
+                    compact={false}
+                    showLegend={true}
+                    wrapperClassName="w-full overflow-x-auto overflow-y-visible"
+                    stickyTopOffset={96}
+                  />
+                </div>
               ) : (
                 /* Card View */
                 <div className="space-y-6">
@@ -1945,14 +1952,19 @@ export default function KioskPage() {
           <div className="flex-1 overflow-auto bg-gray-50 p-4 space-y-5">
             <Card className="p-4">
               <h3 className="text-lg font-semibold text-[#003842] mb-3">Menu Items by Sub Menu (A-Z)</h3>
+              <div className="inline-flex items-center gap-3 rounded-lg border border-[#42b8ac]/30 bg-[#e8f7f5] px-3 py-2 text-xs text-[#0f4f4a] font-medium mb-3">
+                <span>↔ Swipe left/right for more allergens</span>
+                <span className="text-[#42b8ac]">|</span>
+                <span>↕ Scroll down/up through items</span>
+              </div>
               {sortedMenuItems.length > 0 ? (
                 <AllergenTableView
                   items={sortedMenuItems}
                   compact={false}
                   showLegend={true}
-                  wrapperClassName="w-full overflow-auto max-h-[calc(100vh-360px)]"
+                  wrapperClassName="w-full overflow-x-auto overflow-y-visible"
                   groupByCategory={true}
-                  stickyTopOffset={-1}
+                  stickyTopOffset={74}
                 />
               ) : (
                 <div className="flex items-center justify-center py-8 text-gray-500">
@@ -1963,14 +1975,19 @@ export default function KioskPage() {
 
             <Card className="p-4">
               <h3 className="text-lg font-semibold text-[#003842] mb-3">Full Ingredients List (A-Z)</h3>
+              <div className="inline-flex items-center gap-3 rounded-lg border border-[#42b8ac]/30 bg-[#e8f7f5] px-3 py-2 text-xs text-[#0f4f4a] font-medium mb-3">
+                <span>↔ Swipe left/right for more allergens</span>
+                <span className="text-[#42b8ac]">|</span>
+                <span>↕ Scroll down/up through items</span>
+              </div>
               {ingredientGuideRows.length > 0 ? (
                 <AllergenTableView
                   items={ingredientGuideRows}
                   compact={false}
                   showLegend={false}
-                  wrapperClassName="w-full overflow-auto max-h-[calc(100vh-360px)]"
+                  wrapperClassName="w-full overflow-x-auto overflow-y-visible"
                   groupByCategory={false}
-                  stickyTopOffset={-1}
+                  stickyTopOffset={74}
                 />
               ) : (
                 <div className="py-6 text-gray-500">No ingredients available.</div>
