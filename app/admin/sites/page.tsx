@@ -159,7 +159,6 @@ export default function SitesPage() {
                 <Building className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Site Management</h1>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('admin.siteManagement')}</h1>
                 <p className="text-gray-600 dark:text-gray-300">{t('admin.siteManagementDesc')}</p>
               </div>
