@@ -338,7 +338,7 @@ export default function DeviceMonitoringPage() {
                         {device.site_slug ? (
                           <Link
                             href={`/admin/sites/${device.site_slug}?tab=devices`}
-                            className="text-[#003842] hover:text-[#42b8ac] font-medium truncate"
+                            className="inline-flex items-center text-[#003842] hover:text-[#42b8ac] font-medium truncate"
                           >
                             {device.site_name || 'Open location'}
                           </Link>
