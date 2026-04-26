@@ -1098,8 +1098,10 @@ export default function KioskPage() {
                       <p className="text-[#991b1b] text-sm sm:text-[15px] mb-4 leading-relaxed">
                         {t.avoidAllergensDesc}
                       </p>
-                      <div className="mt-auto inline-flex self-start px-5 py-2.5 bg-[#dc2626] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform">
-                        {t.startFiltering}
+                      <div className="mt-auto flex justify-center">
+                        <div className="inline-flex px-5 py-2.5 bg-[#dc2626] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
+                          {t.startFiltering}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1123,8 +1125,10 @@ export default function KioskPage() {
                       <p className="text-[#0e7490] text-sm sm:text-[15px] mb-4 leading-relaxed">
                         {t.browseFullMenuDesc}
                       </p>
-                      <div className="mt-auto inline-flex self-start px-5 py-2.5 bg-[#0284c7] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform">
-                        {t.viewMenu}
+                      <div className="mt-auto flex justify-center">
+                        <div className="inline-flex px-5 py-2.5 bg-[#0284c7] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
+                          {t.viewMenu}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1148,8 +1152,37 @@ export default function KioskPage() {
                       <p className="text-[#6b21a8] text-sm sm:text-[15px] mb-4 leading-relaxed">
                         {t.saveMenuToPhoneDesc}
                       </p>
-                      <div className="mt-auto inline-flex self-start px-5 py-2.5 bg-[#7e22ce] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform">
-                        {t.showQRCode}
+                      <div className="mt-auto flex justify-center">
+                        <div className="inline-flex px-5 py-2.5 bg-[#7e22ce] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
+                          {t.showQRCode}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </button>
+
+              {/* Full Allergen Guide PDF Tile */}
+              <button
+                onClick={() => handleGeneratePDF(false)}
+                className="group text-left transition-transform hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#047857] rounded-3xl"
+              >
+                <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#ecfdf5] via-[#d1fae5] to-[#a7f3d0] border border-[#6ee7b7] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
+                  <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
+                  <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#059669]/10 group-hover:scale-110 transition-transform" />
+                  <div className="flex items-start gap-4 h-full">
+                    <div className="p-3.5 bg-gradient-to-br from-[#047857] to-[#059669] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
+                      <FileText className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="flex-1 flex flex-col h-full">
+                      <h3 className="text-xl sm:text-2xl font-bold text-[#064e3b] mb-2 tracking-tight leading-tight">Full Allergen Guide</h3>
+                      <p className="text-[#065f46] text-sm sm:text-[15px] mb-4 leading-relaxed">
+                        Download the complete allergen information PDF directly to your device.
+                      </p>
+                      <div className="mt-auto flex justify-center">
+                        <div className="inline-flex px-5 py-2.5 bg-[#047857] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
+                          {generatingPDF ? 'Generating…' : 'Download PDF'}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -1731,10 +1764,7 @@ export default function KioskPage() {
                 <QRCodeSVG id="qr-code-svg" value={kioskUrl + '?pdf=1' + (siteIdParam ? '&site_id=' + siteIdParam : '')} size={256} level="H" bgColor="#FFFFFF" fgColor="#003842" />
               </div>
               <p className="text-sm text-gray-600 text-center mt-4">Scan with your phone camera — the full allergen guide PDF will download automatically</p>
-              <div className="mt-6 flex gap-3 justify-center">
-                <Button variant="primary" icon={<Download className="h-4 w-4" />} onClick={downloadQRCode}>
-                  Download QR
-                </Button>
+              <div className="mt-6 flex justify-center">
                 <Button variant="ghost" onClick={() => setShowQRCode(false)}>
                   Close
                 </Button>
