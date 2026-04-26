@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { 
   Filter, Search, AlertCircle, Check, X, QrCode, Download, 
-  FileText, Shield, ChefHat, Package, MapPin, Calendar,
+  FileText, Shield, ChefHat, Package, Calendar,
   Wheat, Fish, Egg, Nut, Leaf, Milk, Carrot, Shell, 
   Circle, Sprout, Shrimp, Cookie, Beaker, ArrowRight, Clock, Home, Table2, Grid3x3,
   ChevronDown, ChevronUp, CheckSquare, Square, RefreshCw
@@ -315,7 +315,6 @@ export default function KioskPage() {
   const kioskDisplayName = business?.kiosk_display_name?.trim() || ''
   const landingTitle = kioskDisplayName || businessName || 'Welcome'
   const menuTitle = kioskDisplayName || (businessName ? `${businessName} Menu` : 'Allergen Menu')
-  const menuSubtitle = businessName ? `Powered by AllyJen • ${businessName}` : 'Powered by AllyJen'
   const totalActiveFilters = selectedAllergens.length + selectedGlutenTypes.length + selectedTreeNutTypes.length
   
   // Refs for timeout management
@@ -935,15 +934,6 @@ export default function KioskPage() {
                 <div className="p-2.5 sm:p-3 bg-gradient-to-br from-[#003842] to-[#42b8ac] rounded-xl shadow-sm flex-shrink-0">
                   <ChefHat className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
                 </div>
-                <div className="min-w-0">
-                  <h1 className="text-xl sm:text-2xl font-bold text-white truncate">
-                    {menuTitle}
-                  </h1>
-                  <p className="text-[#8dd8d2] text-xs sm:text-sm flex items-center gap-1 min-w-0">
-                    <MapPin className="h-3 w-3 flex-shrink-0" />
-                    <span className="truncate">{menuSubtitle}</span>
-                  </p>
-                </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:justify-end">
@@ -1072,19 +1062,20 @@ export default function KioskPage() {
               {/* Search by Allergen Tile */}
               <button
                 onClick={() => setActiveView('filters')}
-                className="text-left transition-transform hover:scale-105"
+                className="group text-left transition-transform hover:scale-[1.015]"
               >
-                <Card className="p-8 bg-gradient-to-br from-red-50 to-red-100 border border-red-200 hover:shadow-lg transition-shadow h-full">
+                <Card className="relative overflow-hidden p-8 bg-gradient-to-br from-[#fff5f4] via-[#ffeceb] to-[#ffdeda] border border-[#f5c8c2] shadow-md hover:shadow-xl transition-all h-full">
+                  <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#ef4444]/10 group-hover:scale-110 transition-transform" />
                   <div className="flex items-start gap-4">
-                    <div className="p-3 bg-red-600 rounded-xl shadow-sm flex-shrink-0">
+                    <div className="p-3 bg-gradient-to-br from-[#dc2626] to-[#ef4444] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
                       <Filter className="h-6 w-6 text-white" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-red-900 mb-2">{t.avoidAllergens}</h3>
-                      <p className="text-red-700 text-sm mb-3">
+                      <h3 className="text-xl font-bold text-[#7f1d1d] mb-2 tracking-tight">{t.avoidAllergens}</h3>
+                      <p className="text-[#991b1b] text-sm mb-4">
                         {t.avoidAllergensDesc}
                       </p>
-                      <div className="inline-block px-4 py-2 bg-red-600 text-white rounded-lg font-medium text-sm hover:bg-red-700 transition">
+                      <div className="inline-block px-4 py-2 bg-[#dc2626] text-white rounded-lg font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform">
                         {t.startFiltering}
                       </div>
                     </div>
@@ -1095,19 +1086,20 @@ export default function KioskPage() {
               {/* Search Menu Tile */}
               <button
                 onClick={() => setActiveView('menu')}
-                className="text-left transition-transform hover:scale-105"
+                className="group text-left transition-transform hover:scale-[1.015]"
               >
-                <Card className="p-8 bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 hover:shadow-lg transition-shadow h-full">
+                <Card className="relative overflow-hidden p-8 bg-gradient-to-br from-[#eef7ff] via-[#e3f2ff] to-[#d5ebff] border border-[#b8d8f3] shadow-md hover:shadow-xl transition-all h-full">
+                  <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#0ea5e9]/10 group-hover:scale-110 transition-transform" />
                   <div className="flex items-start gap-4">
-                    <div className="p-3 bg-blue-600 rounded-xl shadow-sm flex-shrink-0">
+                    <div className="p-3 bg-gradient-to-br from-[#0284c7] to-[#0ea5e9] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
                       <Search className="h-6 w-6 text-white" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-blue-900 mb-2">{t.browseFullMenu}</h3>
-                      <p className="text-blue-700 text-sm mb-3">
+                      <h3 className="text-xl font-bold text-[#0c4a6e] mb-2 tracking-tight">{t.browseFullMenu}</h3>
+                      <p className="text-[#0e7490] text-sm mb-4">
                         {t.browseFullMenuDesc}
                       </p>
-                      <div className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition">
+                      <div className="inline-block px-4 py-2 bg-[#0284c7] text-white rounded-lg font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform">
                         {t.viewMenu}
                       </div>
                     </div>
@@ -1118,19 +1110,20 @@ export default function KioskPage() {
               {/* QR Code Download Tile */}
               <button
                 onClick={() => setShowQRCode(true)}
-                className="text-left transition-transform hover:scale-105"
+                className="group text-left transition-transform hover:scale-[1.015]"
               >
-                <Card className="p-8 bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 hover:shadow-lg transition-shadow h-full">
+                <Card className="relative overflow-hidden p-8 bg-gradient-to-br from-[#f7f0ff] via-[#f1e6ff] to-[#e8d6ff] border border-[#d4b9f2] shadow-md hover:shadow-xl transition-all h-full">
+                  <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#9333ea]/10 group-hover:scale-110 transition-transform" />
                   <div className="flex items-start gap-4">
-                    <div className="p-3 bg-purple-600 rounded-xl shadow-sm flex-shrink-0">
+                    <div className="p-3 bg-gradient-to-br from-[#7e22ce] to-[#a855f7] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
                       <QrCode className="h-6 w-6 text-white" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-purple-900 mb-2">{t.saveMenuToPhone}</h3>
-                      <p className="text-purple-700 text-sm mb-3">
+                      <h3 className="text-xl font-bold text-[#581c87] mb-2 tracking-tight">{t.saveMenuToPhone}</h3>
+                      <p className="text-[#6b21a8] text-sm mb-4">
                         {t.saveMenuToPhoneDesc}
                       </p>
-                      <div className="inline-block px-4 py-2 bg-purple-600 text-white rounded-lg font-medium text-sm hover:bg-purple-700 transition">
+                      <div className="inline-block px-4 py-2 bg-[#7e22ce] text-white rounded-lg font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform">
                         {t.showQRCode}
                       </div>
                     </div>
@@ -1140,37 +1133,39 @@ export default function KioskPage() {
             </div>
 
             {/* Disclaimer Section */}
-            <Card className="p-8 bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200">
+            <Card className="p-6 bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200">
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-orange-600 rounded-xl shadow-sm flex-shrink-0 mt-1">
                   <AlertCircle className="h-6 w-6 text-white" />
                 </div>
                 <div className="flex-1">
                   <h2 className="text-lg font-bold text-orange-900 mb-3">{t.crossContamination}</h2>
-                  <p className="text-orange-800 text-sm mb-4">
+                  <p className="text-orange-800 text-sm mb-3 leading-relaxed">
                     {t.disclaimerText}
                   </p>
-                  <h3 className="text-sm font-semibold text-orange-900 mb-3">{t.importantNotice}</h3>
-                  <ul className="text-orange-800 text-sm space-y-2 mb-4">
-                    <li className="flex gap-2">
-                      <span className="font-medium min-w-fit">{t.peanuts}:</span>
-                      <span>{t.peanutsDesc}</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="font-medium min-w-fit">{t.treeNuts}:</span>
-                      <span>{t.treeNutsDesc}</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="font-medium min-w-fit">{t.dairyGluten}:</span>
-                      <span>{t.dairyGlutenDesc}</span>
-                    </li>
-                  </ul>
-                  <p className="text-orange-800 text-sm mb-3">
+                  <p className="text-orange-800 text-sm mb-3 leading-relaxed">
                     {t.severeAllergyWarning}
                   </p>
-                  <p className="text-orange-800 text-sm font-medium">
-                    {t.appreciateUnderstanding}
-                  </p>
+
+                  <details className="group mt-2">
+                    <summary className="cursor-pointer list-none inline-flex items-center gap-2 text-sm font-semibold text-orange-900 hover:text-orange-700 transition-colors">
+                      {t.importantNotice}
+                      <span className="text-xs text-orange-700 group-open:rotate-180 transition-transform">▼</span>
+                    </summary>
+                    <div className="mt-3 rounded-xl border border-orange-200 bg-white/60 p-4">
+                      <ul className="text-orange-800 text-sm space-y-2">
+                        <li>
+                          <span className="font-semibold">{t.peanuts}:</span> {t.peanutsDesc}
+                        </li>
+                        <li>
+                          <span className="font-semibold">{t.treeNuts}:</span> {t.treeNutsDesc}
+                        </li>
+                        <li>
+                          <span className="font-semibold">{t.dairyGluten}:</span> {t.dairyGlutenDesc}
+                        </li>
+                      </ul>
+                    </div>
+                  </details>
                 </div>
               </div>
             </Card>

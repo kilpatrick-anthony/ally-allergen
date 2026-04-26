@@ -266,6 +266,67 @@ RULES:
 - Decline to answer anything unrelated to food, allergens, or dietary requirements.`
 }
 
+function buildLocalFallbackReply(params: {
+  message: string
+  menuItems: MenuItem[]
+  jenMode: boolean
+}): string {
+  const lower = params.message.toLowerCase()
+
+  if (params.jenMode) {
+    if (/cross.?contamination|traces|may contain/i.test(lower)) {
+      return 'Cross-contamination means an allergen can transfer during storage, prep, or service even if it is not an ingredient. If your allergy is severe, ask staff to check prep steps and shared equipment before ordering.'
+    }
+    if (/staff|ask|safe|safest|what should i ask/i.test(lower)) {
+      return 'Ask staff to confirm ingredient allergens, possible cross-contamination, and whether separate utensils or prep areas are used. For severe allergies, always request manager confirmation before placing your order.'
+    }
+    return 'I can help with practical allergy safety guidance even while AI is offline. For this order, confirm allergens, cross-contamination risk, and final prep method with staff before consuming.'
+  }
+
+  const allergenKeywords: Array<{ key: string; terms: string[] }> = [
+    { key: 'nuts', terms: ['nut', 'nuts', 'tree nut', 'almond', 'hazelnut', 'walnut', 'cashew', 'pecan', 'pistachio', 'macadamia'] },
+    { key: 'cereals_gluten', terms: ['gluten', 'wheat', 'barley', 'rye', 'oat', 'coeliac'] },
+    { key: 'milk', terms: ['milk', 'dairy', 'lactose'] },
+    { key: 'eggs', terms: ['egg', 'eggs'] },
+    { key: 'fish', terms: ['fish'] },
+    { key: 'crustaceans', terms: ['crustacean', 'prawn', 'shrimp', 'crab', 'lobster'] },
+    { key: 'peanuts', terms: ['peanut', 'peanuts'] },
+    { key: 'soybeans', terms: ['soy', 'soya'] },
+    { key: 'sesame', terms: ['sesame'] },
+    { key: 'mustard', terms: ['mustard'] },
+    { key: 'celery', terms: ['celery'] },
+    { key: 'sulphites', terms: ['sulphite', 'sulfite'] },
+    { key: 'lupin', terms: ['lupin'] },
+    { key: 'molluscs', terms: ['mollusc', 'mussels', 'oyster', 'squid'] },
+  ]
+
+  const detected = allergenKeywords.find((entry) => entry.terms.some((term) => lower.includes(term)))
+  const warningsField = detected ? detected.key : null
+
+  const safeItems = params.menuItems.filter((item) => {
+    if (!warningsField) return true
+    const warnings = item.allergen_warnings || {}
+    const level = warnings[warningsField]
+    return !level || level === 'none'
+  })
+
+  if (warningsField) {
+    if (safeItems.length === 0) {
+      return 'I cannot confirm a clearly safe option for that allergen from the current data. Please ask a staff member to verify ingredients and cross-contamination risk before ordering.'
+    }
+
+    const top = safeItems.slice(0, 5).map((item) => item.name).join(', ')
+    return `Based on the current menu data, options that appear free from that allergen include: ${top}. Please still confirm with staff, especially for severe allergies.`
+  }
+
+  const popular = params.menuItems.slice(0, 5).map((item) => item.name)
+  if (popular.length > 0) {
+    return `I can still help while AI is offline. You can start with: ${popular.join(', ')}. Tell me your allergen and I will narrow this list for you.`
+  }
+
+  return 'I can help with allergen checks, but no menu items are currently available in this session. Please ask staff for the latest allergen guide.'
+}
+
 // ── Route handler ─────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   // Rate limiting
@@ -377,7 +438,13 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.OPENAI_API_KEY
   if (!apiKey) {
     return NextResponse.json(
-      { reply: "I'm not fully connected right now — please ask a staff member for allergen information." },
+      {
+        reply: buildLocalFallbackReply({
+          message: sanitised,
+          menuItems: Array.isArray(menuItems) ? menuItems : [],
+          jenMode: Boolean(_jenMode),
+        }),
+      },
       { status: 200 }
     )
   }
