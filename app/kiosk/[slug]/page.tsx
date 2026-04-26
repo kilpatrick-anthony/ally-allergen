@@ -314,7 +314,6 @@ export default function KioskPage() {
   const businessName = business?.name?.trim() || ''
   const kioskDisplayName = business?.kiosk_display_name?.trim() || ''
   const landingTitle = kioskDisplayName || businessName || 'Welcome'
-  const menuTitle = kioskDisplayName || (businessName ? `${businessName} Menu` : 'Allergen Menu')
   const totalActiveFilters = selectedAllergens.length + selectedGlutenTypes.length + selectedTreeNutTypes.length
   
   // Refs for timeout management
@@ -1062,20 +1061,21 @@ export default function KioskPage() {
               {/* Search by Allergen Tile */}
               <button
                 onClick={() => setActiveView('filters')}
-                className="group text-left transition-transform hover:scale-[1.015]"
+                className="group text-left transition-transform hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#dc2626] rounded-3xl"
               >
-                <Card className="relative overflow-hidden p-8 bg-gradient-to-br from-[#fff5f4] via-[#ffeceb] to-[#ffdeda] border border-[#f5c8c2] shadow-md hover:shadow-xl transition-all h-full">
+                <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#fff5f4] via-[#ffeceb] to-[#ffdeda] border border-[#f5c8c2] shadow-md hover:shadow-xl transition-all h-full min-h-[240px] sm:min-h-[255px]">
+                  <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
                   <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#ef4444]/10 group-hover:scale-110 transition-transform" />
                   <div className="flex items-start gap-4">
-                    <div className="p-3 bg-gradient-to-br from-[#dc2626] to-[#ef4444] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
+                    <div className="p-3.5 bg-gradient-to-br from-[#dc2626] to-[#ef4444] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
                       <Filter className="h-6 w-6 text-white" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-[#7f1d1d] mb-2 tracking-tight">{t.avoidAllergens}</h3>
-                      <p className="text-[#991b1b] text-sm mb-4">
+                      <h3 className="text-xl sm:text-2xl font-bold text-[#7f1d1d] mb-2 tracking-tight leading-tight">{t.avoidAllergens}</h3>
+                      <p className="text-[#991b1b] text-sm sm:text-[15px] mb-4 leading-relaxed">
                         {t.avoidAllergensDesc}
                       </p>
-                      <div className="inline-block px-4 py-2 bg-[#dc2626] text-white rounded-lg font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform">
+                      <div className="inline-block px-5 py-2.5 bg-[#dc2626] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform">
                         {t.startFiltering}
                       </div>
                     </div>
@@ -1086,20 +1086,21 @@ export default function KioskPage() {
               {/* Search Menu Tile */}
               <button
                 onClick={() => setActiveView('menu')}
-                className="group text-left transition-transform hover:scale-[1.015]"
+                className="group text-left transition-transform hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0284c7] rounded-3xl"
               >
-                <Card className="relative overflow-hidden p-8 bg-gradient-to-br from-[#eef7ff] via-[#e3f2ff] to-[#d5ebff] border border-[#b8d8f3] shadow-md hover:shadow-xl transition-all h-full">
+                <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#eef7ff] via-[#e3f2ff] to-[#d5ebff] border border-[#b8d8f3] shadow-md hover:shadow-xl transition-all h-full min-h-[240px] sm:min-h-[255px]">
+                  <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
                   <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#0ea5e9]/10 group-hover:scale-110 transition-transform" />
                   <div className="flex items-start gap-4">
-                    <div className="p-3 bg-gradient-to-br from-[#0284c7] to-[#0ea5e9] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
+                    <div className="p-3.5 bg-gradient-to-br from-[#0284c7] to-[#0ea5e9] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
                       <Search className="h-6 w-6 text-white" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-[#0c4a6e] mb-2 tracking-tight">{t.browseFullMenu}</h3>
-                      <p className="text-[#0e7490] text-sm mb-4">
+                      <h3 className="text-xl sm:text-2xl font-bold text-[#0c4a6e] mb-2 tracking-tight leading-tight">{t.browseFullMenu}</h3>
+                      <p className="text-[#0e7490] text-sm sm:text-[15px] mb-4 leading-relaxed">
                         {t.browseFullMenuDesc}
                       </p>
-                      <div className="inline-block px-4 py-2 bg-[#0284c7] text-white rounded-lg font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform">
+                      <div className="inline-block px-5 py-2.5 bg-[#0284c7] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform">
                         {t.viewMenu}
                       </div>
                     </div>
@@ -1110,20 +1111,21 @@ export default function KioskPage() {
               {/* QR Code Download Tile */}
               <button
                 onClick={() => setShowQRCode(true)}
-                className="group text-left transition-transform hover:scale-[1.015]"
+                className="group text-left transition-transform hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7e22ce] rounded-3xl"
               >
-                <Card className="relative overflow-hidden p-8 bg-gradient-to-br from-[#f7f0ff] via-[#f1e6ff] to-[#e8d6ff] border border-[#d4b9f2] shadow-md hover:shadow-xl transition-all h-full">
+                <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#f7f0ff] via-[#f1e6ff] to-[#e8d6ff] border border-[#d4b9f2] shadow-md hover:shadow-xl transition-all h-full min-h-[240px] sm:min-h-[255px]">
+                  <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
                   <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#9333ea]/10 group-hover:scale-110 transition-transform" />
                   <div className="flex items-start gap-4">
-                    <div className="p-3 bg-gradient-to-br from-[#7e22ce] to-[#a855f7] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
+                    <div className="p-3.5 bg-gradient-to-br from-[#7e22ce] to-[#a855f7] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
                       <QrCode className="h-6 w-6 text-white" />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-[#581c87] mb-2 tracking-tight">{t.saveMenuToPhone}</h3>
-                      <p className="text-[#6b21a8] text-sm mb-4">
+                      <h3 className="text-xl sm:text-2xl font-bold text-[#581c87] mb-2 tracking-tight leading-tight">{t.saveMenuToPhone}</h3>
+                      <p className="text-[#6b21a8] text-sm sm:text-[15px] mb-4 leading-relaxed">
                         {t.saveMenuToPhoneDesc}
                       </p>
-                      <div className="inline-block px-4 py-2 bg-[#7e22ce] text-white rounded-lg font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform">
+                      <div className="inline-block px-5 py-2.5 bg-[#7e22ce] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform">
                         {t.showQRCode}
                       </div>
                     </div>
@@ -1133,19 +1135,31 @@ export default function KioskPage() {
             </div>
 
             {/* Disclaimer Section */}
-            <Card className="p-6 bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200">
+            <Card className="p-5 sm:p-6 bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200">
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-orange-600 rounded-xl shadow-sm flex-shrink-0 mt-1">
                   <AlertCircle className="h-6 w-6 text-white" />
                 </div>
                 <div className="flex-1">
                   <h2 className="text-lg font-bold text-orange-900 mb-3">{t.crossContamination}</h2>
-                  <p className="text-orange-800 text-sm mb-3 leading-relaxed">
+                  <p className="text-orange-800 text-sm mb-2 leading-relaxed">
                     {t.disclaimerText}
                   </p>
                   <p className="text-orange-800 text-sm mb-3 leading-relaxed">
                     {t.severeAllergyWarning}
                   </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
+                    <div className="rounded-lg border border-orange-200 bg-white/65 px-3 py-2 text-xs text-orange-900">
+                      <span className="font-semibold">{t.peanuts}</span>
+                    </div>
+                    <div className="rounded-lg border border-orange-200 bg-white/65 px-3 py-2 text-xs text-orange-900">
+                      <span className="font-semibold">{t.treeNuts}</span>
+                    </div>
+                    <div className="rounded-lg border border-orange-200 bg-white/65 px-3 py-2 text-xs text-orange-900">
+                      <span className="font-semibold">{t.dairyGluten}</span>
+                    </div>
+                  </div>
 
                   <details className="group mt-2">
                     <summary className="cursor-pointer list-none inline-flex items-center gap-2 text-sm font-semibold text-orange-900 hover:text-orange-700 transition-colors">
