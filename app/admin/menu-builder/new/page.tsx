@@ -544,6 +544,20 @@ export default function NewMenuItemPage() {
               )}
             </Card>
 
+            {/* Allergen Information */}
+            <Card className="p-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Allergen Information
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                Set allergen levels for this menu item. If you select ingredients above, levels are calculated automatically and can be adjusted here.
+              </p>
+              <AllergenWarningSelector
+                value={menuItem.allergen_warnings}
+                onChange={(warnings) => setMenuItem({ ...menuItem, allergen_warnings: warnings })}
+              />
+            </Card>
+
             {/* Selected Ingredients */}
             <Card className="p-6">
               <div className="flex justify-between items-center mb-4">
