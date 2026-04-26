@@ -659,15 +659,8 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <img src="/Logo-AllyJen.svg" alt="AllyJen" className="h-24 w-auto" />
             <div className="text-center md:text-right space-y-2">
-              <div className="flex flex-wrap items-center justify-center md:justify-end gap-4 text-xs text-white/40">
-                <a href="mailto:info@allyjen.ie" className="hover:text-white/70 transition-colors">info@allyjen.ie</a>
-                <span>·</span>
-                <Link href="/auth/signin" className="hover:text-white/70 transition-colors">Sign In</Link>
-                <span>·</span>
-                <Link href="/book-demo" className="hover:text-white/70 transition-colors">Book a Demo</Link>
-              </div>
               <p className="text-sm text-white/40">© 2026 AllyJen Solutions Limited. All rights reserved.</p>
-              <p className="text-xs text-white/30">CRO No. 811542 | Limerick, Republic of Ireland</p>
+              <p className="text-xs text-white/30">CRO No. 811542 | Republic of Ireland</p>
             </div>
           </div>
         </Container>
