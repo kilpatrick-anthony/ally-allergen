@@ -1061,9 +1061,6 @@ export default function KioskPage() {
                   >
                     {activeView === 'filters' ? t.browseFullMenu : t.filterByAllergens}
                   </Button>
-                  <Button variant="outline" size="sm" icon={<FileText className="h-4 w-4" />} className="text-white border-white/40 hover:text-white hover:border-white/60" onClick={() => setShowPDFOptions(true)}>
-                    {t.emailMenu}
-                  </Button>
 
                   {/* Language Dropdown */}
                   <div className="relative">
