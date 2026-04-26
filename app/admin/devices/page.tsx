@@ -334,11 +334,11 @@ export default function DeviceMonitoringPage() {
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-gray-600">
                             <div className="flex items-center gap-2">
-                              <MapPin className="h-4 w-4 text-gray-400" />
+                              <MapPin className="h-4 w-4 text-gray-400 flex-shrink-0" />
                               {device.site_slug ? (
                                 <Link
                                   href={`/admin/sites/${device.site_slug}?tab=devices`}
-                                  className="text-[#003842] hover:text-[#42b8ac] font-medium"
+                                  className="leading-none text-[#003842] hover:text-[#42b8ac] font-medium"
                                 >
                                   {device.site_name || 'Open location'}
                                 </Link>
