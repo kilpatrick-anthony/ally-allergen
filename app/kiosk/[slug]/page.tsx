@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { 
   Filter, Search, AlertCircle, Check, X, QrCode, Download, 
-  FileText, Shield, ChefHat, Package, Calendar,
+  FileText, Shield, Package, Calendar,
   Wheat, Fish, Egg, Nut, Leaf, Milk, Carrot, Shell, 
   Circle, Sprout, Shrimp, Cookie, Beaker, ArrowRight, Clock, Home, Table2, Grid3x3,
   ChevronDown, ChevronUp, CheckSquare, Square, RefreshCw
@@ -313,7 +313,6 @@ export default function KioskPage() {
   const t = translations[currentLanguage] as typeof translations.en
   const businessName = business?.name?.trim() || ''
   const kioskDisplayName = business?.kiosk_display_name?.trim() || ''
-  const landingTitle = kioskDisplayName || businessName || 'Welcome'
   const totalActiveFilters = selectedAllergens.length + selectedGlutenTypes.length + selectedTreeNutTypes.length
   
   // Refs for timeout management
@@ -869,20 +868,11 @@ export default function KioskPage() {
               className="h-20 sm:h-24 lg:h-28 xl:h-32 w-auto mx-auto mb-8"
             />
 
-            <h1 className="text-white font-extrabold tracking-tight text-5xl sm:text-6xl lg:text-7xl mb-3">
-              {landingTitle}
-            </h1>
-
-            <p className="text-[#9fe5de] text-xl sm:text-2xl lg:text-3xl font-semibold mb-6">
+            <p className="text-[#9fe5de] text-2xl sm:text-3xl lg:text-4xl font-semibold mb-6 tracking-tight">
               Interactive Allergen Check Guide
             </p>
 
-            <p className="text-white/75 text-base sm:text-lg lg:text-xl max-w-4xl mx-auto mb-10 leading-relaxed">
-              Explore menu items, review allergens, scan a QR code, or email this guide to your phone. If you have a severe allergy, please speak to a team member before ordering.
-            </p>
-
             <div className="mx-auto max-w-2xl rounded-2xl border border-[#42b8ac]/45 bg-[#42b8ac]/15 px-6 py-5">
-              <p className="text-[#9fe5de] text-xs sm:text-sm uppercase tracking-[0.22em] mb-2">Allergen Check Kiosk</p>
               <p className="text-white font-bold text-2xl sm:text-3xl lg:text-4xl mb-1">
                 Click here to begin
               </p>
@@ -890,6 +880,10 @@ export default function KioskPage() {
                 {t.tapToWake || 'Touch anywhere to open the allergen guide'}
               </p>
             </div>
+
+            <p className="text-white/75 text-base sm:text-lg lg:text-xl max-w-4xl mx-auto mt-8 leading-relaxed">
+              Explore menu items, review allergens, scan a QR code, or email this guide to your phone. If you have a severe allergy, please speak to a team member before ordering.
+            </p>
 
             {showScreensaver && (
               <p className="text-white/45 text-sm mt-6">Sleep mode active</p>
@@ -933,9 +927,6 @@ export default function KioskPage() {
                   alt="AllyJen Logo" 
                   className="h-10 sm:h-12 w-auto object-contain"
                 />
-                <div className="p-2.5 sm:p-3 bg-gradient-to-br from-[#003842] to-[#42b8ac] rounded-xl shadow-sm flex-shrink-0">
-                  <ChefHat className="h-6 w-6 sm:h-7 sm:w-7 text-white" />
-                </div>
               </div>
 
               <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:justify-end">
@@ -1151,18 +1142,6 @@ export default function KioskPage() {
                   <p className="text-orange-800 text-sm mb-3 leading-relaxed">
                     {t.severeAllergyWarning}
                   </p>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-3">
-                    <div className="rounded-lg border border-orange-200 bg-white/65 px-3 py-2 text-xs text-orange-900">
-                      <span className="font-semibold">{t.peanuts}</span>
-                    </div>
-                    <div className="rounded-lg border border-orange-200 bg-white/65 px-3 py-2 text-xs text-orange-900">
-                      <span className="font-semibold">{t.treeNuts}</span>
-                    </div>
-                    <div className="rounded-lg border border-orange-200 bg-white/65 px-3 py-2 text-xs text-orange-900">
-                      <span className="font-semibold">{t.dairyGluten}</span>
-                    </div>
-                  </div>
 
                   <details className="group mt-2">
                     <summary className="cursor-pointer list-none inline-flex items-center gap-2 text-sm font-semibold text-orange-900 hover:text-orange-700 transition-colors">
@@ -1851,7 +1830,7 @@ export default function KioskPage() {
 
       {/* EU Compliance Footer */}
       <div className="mt-8 border-t border-gray-200 bg-gray-50 py-5 px-4">
-        <div className="max-w-4xl mx-auto flex items-start gap-3 text-xs text-gray-500">
+          <div className="max-w-4xl mx-auto flex items-start gap-3 text-xs text-gray-500 pr-24 sm:pr-0">
           <Shield className="h-4 w-4 text-gray-400 shrink-0 mt-0.5" />
           <div>
             <span className="font-semibold text-gray-600">Allergen information compliant with EU Regulation No. 1169/2011 (FIC Regulation). </span>
