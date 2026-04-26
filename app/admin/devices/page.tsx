@@ -66,8 +66,7 @@ export default function DeviceMonitoringPage() {
           ? (Date.now() - new Date(d.last_heartbeat).getTime()) / 60000
           : 9999,
         site_name: d.site?.name ?? '',
-                  <p className="text-sm text-gray-500">{t('admin.totalDevices')}</p>
-        site_email: '',
+                site_email: '',
         business_name: '',
         admin_email: '',
         active_alerts: 0,

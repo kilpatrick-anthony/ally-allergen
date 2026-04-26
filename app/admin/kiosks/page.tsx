@@ -6,7 +6,6 @@ import Link from 'next/link'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { 
   Tablet, Wifi, WifiOff, Monitor, Smartphone,
-  const { t } = useTranslation()
   Building, MapPin, Clock, Settings, RefreshCw,
   AlertCircle, ArrowLeft,
   Filter, Search
@@ -31,6 +30,7 @@ interface Device {
 }
 
 export default function AllKiosksPage() {
+  const { t } = useTranslation()
   const [devices, setDevices] = useState<Device[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -42,8 +42,7 @@ export default function AllKiosksPage() {
   }, [])
 
   const loadAllDevices = async () => {
-            <p className="text-gray-600">{t('admin.loading')}</p>
-    try {
+              try {
       const response = await fetch('/api/devices')
       const data = await response.json()
 
