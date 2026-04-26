@@ -21,13 +21,13 @@ export const translations = {
     // Landing Page Tiles
     avoidAllergens: 'Avoid Allergens',
     avoidAllergensDesc: 'Select allergens you want to avoid and we\'ll filter the menu for you',
-    startFiltering: 'Start Filtering →',
+    startFiltering: 'Start Filtering',
     browseFullMenu: 'Browse Full Menu',
     browseFullMenuDesc: 'Search for specific items or browse all menu categories',
     viewMenu: 'View Menu →',
     saveMenuToPhone: 'Save Menu to Phone',
     saveMenuToPhoneDesc: 'Scan QR code to save the allergen guide to your mobile device',
-    showQRCode: 'Show QR Code →',
+    showQRCode: 'Show QR Code',
     
     // Disclaimer
     crossContamination: 'Cross-Contamination Disclaimer',
@@ -425,13 +425,13 @@ export const translations = {
     
     avoidAllergens: 'Seachain Aileargéine',
     avoidAllergensDesc: 'Roghnaigh aileargéine agus scagfimid an biachláir duit',
-    startFiltering: 'Tosaigh ag Scagadh →',
+    startFiltering: 'Tosaigh ag Scagadh',
     browseFullMenu: 'Brabhsáil an Iomlán an Bhiachláir',
     browseFullMenuDesc: 'Cuardaigh ar míreanna sonracha nó brabhsáil na gcatagóirí ar fad',
     viewMenu: 'Féach ar an Biachláir →',
     saveMenuToPhone: 'Sábháil an Biachláir i do Ghuthán',
     saveMenuToPhoneDesc: 'Scan an cód QR chun an treoir aileargéine a shábháil i do ghuthán gluais',
-    showQRCode: 'Taispeáin an Cód QR →',
+    showQRCode: 'Taispeáin an Cód QR',
     
     crossContamination: 'Séanadh Trasphollúcháin',
     disclaimerText: 'Ag OAKBERRY, glacaimid le sábhálacht agus riachtanais díthriachacha ár gcustaiméirí go fíorhúsáil. Cé go ndéanaimid iarracht a chinntiú go bhfuil ár dtáirgí saor ó aileargéine nach bhfuil liostaithe sna comhábhair, bí ar do chompord go bhféadfaidh tras-phollúchán tarlú, toisc go ndéileálann ár saoráid le réimse aileargéine, lena n-áirítear cnónna, glasraí, bainne, glútan agus síolta.',
@@ -761,13 +761,13 @@ export const translations = {
     
     avoidAllergens: 'Evitar Alérgenos',
     avoidAllergensDesc: 'Selecione alérgenos que deseja evitar e filtraremos o menu para você',
-    startFiltering: 'Começar a Filtrar →',
+    startFiltering: 'Começar a Filtrar',
     browseFullMenu: 'Procurar Menu Completo',
     browseFullMenuDesc: 'Procure itens específicos ou navegue por todas as categorias',
     viewMenu: 'Ver Menu →',
     saveMenuToPhone: 'Salvar Menu no Telefone',
     saveMenuToPhoneDesc: 'Digitalize o código QR para salvar o guia de alérgenos no seu dispositivo móvel',
-    showQRCode: 'Mostrar Código QR →',
+    showQRCode: 'Mostrar Código QR',
     
     crossContamination: 'Isenção de Contaminação Cruzada',
     disclaimerText: 'Na OAKBERRY, levamos muito a sério a segurança e as necessidades dietéticas de nossos clientes. Embora nos esforcemos para garantir que nossos produtos sejam livres de alérgenos não listados nos ingredientes, esteja ciente de que a contaminação cruzada pode ocorrer, pois nossas instalações lidam com uma variedade de alérgenos, incluindo amendoim, nozes, laticínios, glúten e sementes.',
@@ -1131,13 +1131,13 @@ export const translations = {
     
     avoidAllergens: 'Éviter les Allergènes',
     avoidAllergensDesc: 'Sélectionnez les allergènes que vous souhaitez éviter et nous filtrerons le menu pour vous',
-    startFiltering: 'Commencer à Filtrer →',
+    startFiltering: 'Commencer à Filtrer',
     browseFullMenu: 'Parcourir le Menu Complet',
     browseFullMenuDesc: 'Recherchez des articles spécifiques ou parcourez toutes les catégories',
     viewMenu: 'Voir le Menu →',
     saveMenuToPhone: 'Enregistrer le Menu sur le Téléphone',
     saveMenuToPhoneDesc: 'Scannez le code QR pour enregistrer le guide des allergènes sur votre appareil mobile',
-    showQRCode: 'Afficher le Code QR →',
+    showQRCode: 'Afficher le Code QR',
     
     crossContamination: 'Clause de Non-Responsabilité - Contamination Croisée',
     disclaimerText: 'Chez OAKBERRY, nous prenons très au sérieux la sécurité et les besoins alimentaires de nos clients. Bien que nous nous efforcions de garantir que nos produits sont exempts d\'allergènes non listés dans les ingrédients, veuillez noter que la contamination croisée peut survenir, car nos installations manipulent une variété d\'allergènes, y compris les cacahuètes, les noix, les produits laitiers, le gluten et les graines.',
@@ -1502,13 +1502,13 @@ export const translations = {
     
     avoidAllergens: 'Evitar Alérgenos',
     avoidAllergensDesc: 'Seleccione los alérgenos que desea evitar y filtraremos el menú para usted',
-    startFiltering: 'Comenzar a Filtrar →',
+    startFiltering: 'Comenzar a Filtrar',
     browseFullMenu: 'Examinar Menú Completo',
     browseFullMenuDesc: 'Busque artículos específicos u hojee todas las categorías',
     viewMenu: 'Ver Menú →',
     saveMenuToPhone: 'Guardar Menú en el Teléfono',
     saveMenuToPhoneDesc: 'Escanee el código QR para guardar la guía de alérgenos en su dispositivo móvil',
-    showQRCode: 'Mostrar Código QR →',
+    showQRCode: 'Mostrar Código QR',
     
     crossContamination: 'Descargo de Responsabilidad - Contaminación Cruzada',
     disclaimerText: 'En OAKBERRY, tomamos muy en serio la seguridad y las necesidades dietéticas de nuestros clientes. Aunque nos esforzamos por garantizar que nuestros productos estén libres de alérgenos no listados en los ingredientes, tenga en cuenta que la contaminación cruzada puede ocurrir, ya que nuestras instalaciones manejan una variedad de alérgenos, incluyendo cacahuetes, nueces, productos lácteos, gluten y semillas.',
@@ -1873,13 +1873,13 @@ export const translations = {
     
     avoidAllergens: 'Allergene Vermeiden',
     avoidAllergensDesc: 'Wählen Sie Allergene aus, die Sie vermeiden möchten, und wir filtern das Menü für Sie',
-    startFiltering: 'Zu Filtern →',
+    startFiltering: 'Zu Filtern',
     browseFullMenu: 'Vollständiges Menü Durchsuchen',
     browseFullMenuDesc: 'Suchen Sie nach bestimmten Artikeln oder durchsuchen Sie alle Kategorien',
     viewMenu: 'Menü anzeigen →',
     saveMenuToPhone: 'Menü auf Telefon Speichern',
     saveMenuToPhoneDesc: 'Scannen Sie den QR-Code, um den Allergenführer auf Ihrem Mobilgerät zu speichern',
-    showQRCode: 'QR-Code Anzeigen →',
+    showQRCode: 'QR-Code Anzeigen',
     
     crossContamination: 'Haftungsausschluss - Kreuzkontamination',
     disclaimerText: 'Bei OAKBERRY nehmen wir die Sicherheit und Ernährungsbedürfnisse unserer Kunden sehr ernst. Obwohl wir uns bemühen, sicherzustellen, dass unsere Produkte frei von Allergenen sind, die nicht in den Zutaten aufgeführt sind, beachten Sie bitte, dass Kreuzkontamination auftreten kann, da unsere Anlagen eine Vielzahl von Allergenen verarbeiten, einschließlich Erdnüsse, Nüsse, Milchprodukte, Gluten und Samen.',

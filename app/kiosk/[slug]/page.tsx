@@ -1181,8 +1181,9 @@ export default function KioskPage() {
                       </div>
                     </div>
                     <div className="mt-auto w-full flex justify-center">
-                      <div className="inline-flex px-4 py-2 bg-[#dc2626] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
+                      <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#dc2626] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
                         {t.startFiltering}
+                        <ArrowRight className="h-4 w-4" />
                       </div>
                     </div>
                   </div>
@@ -1210,8 +1211,9 @@ export default function KioskPage() {
                       </div>
                     </div>
                     <div className="mt-auto w-full flex justify-center">
-                      <div className="inline-flex px-4 py-2 bg-[#047857] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
+                      <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#047857] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
                         View Guide
+                        <ArrowRight className="h-4 w-4" />
                       </div>
                     </div>
                   </div>
