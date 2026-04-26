@@ -25,6 +25,7 @@ interface Device {
   user_agent?: string | null;
   active_pairing_code?: string | null;
   pairing_code_expires_at?: string | null;
+  active_pairing_code_redeemed?: boolean | null;
 }
 
 interface DeviceManagementProps {
@@ -525,6 +526,11 @@ export default function DeviceManagement({
                       </span>
                       {device.active_pairing_code && device.pairing_code_expires_at && (
                         <div className="flex flex-col items-end gap-1">
+                          {device.active_pairing_code_redeemed && (
+                            <span className="text-[11px] font-semibold rounded-full px-2 py-0.5 bg-blue-100 text-blue-700">
+                              Already used
+                            </span>
+                          )}
                           {expiryCountdown && (
                             <span className={`text-[11px] font-semibold rounded-full px-2 py-0.5 flex items-center gap-1 ${
                               expiryCountdown.urgency === 'critical'
@@ -579,6 +585,11 @@ export default function DeviceManagement({
                         <p className="text-xs text-gray-600">
                           Open <span className="font-semibold">allyjen.ie/kiosk/pair</span> on the kiosk and enter this code.
                         </p>
+                        {device.active_pairing_code_redeemed && (
+                          <p className="text-xs text-blue-700">
+                            This code was used successfully and will remain visible until it expires.
+                          </p>
+                        )}
                       </div>
                     ) : (
                       <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3">

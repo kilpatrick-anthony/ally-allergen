@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { AllyAvatar } from '../ally/AllyAvatar'
-import { JenAvatar } from '../ally/JenAvatar'
 import { X, Send, ChevronDown } from 'lucide-react'
 import type { MenuItem } from '@/lib/hooks/useOfflineKioskData'
 
@@ -64,7 +62,6 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
   const [messagesByCoach, setMessagesByCoach] = useState<Record<CoachMode, Message[]>>({ ally: [], jen: [] })
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
-  const [rotationIndex, setRotationIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -74,8 +71,6 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
 
   const messages = messagesByCoach[activeCoach]
   const coachName = activeCoach === 'ally' ? 'Ally' : 'Jen'
-  const closedCoach = COACH_SEQUENCE[rotationIndex % COACH_SEQUENCE.length]
-  const closedLabel = closedCoach === 'ally' ? 'Ask Ally' : 'Ask Jen'
 
   useEffect(() => {
     if (open && inputRef.current) inputRef.current.focus()
@@ -84,16 +79,6 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, loading])
-
-  useEffect(() => {
-    if (open) return
-
-    const interval = window.setInterval(() => {
-      setRotationIndex((prev) => (prev + 1) % COACH_SEQUENCE.length)
-    }, 3500)
-
-    return () => window.clearInterval(interval)
-  }, [open])
 
   async function send(text: string) {
     const trimmed = text.trim()
@@ -169,11 +154,20 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
   const starterQuestions = activeCoach === 'ally' ? STARTERS : JEN_STARTERS
 
   const renderCoachAvatar = (mode: CoachMode, size: number, className = '', thinking = false) => {
-    if (mode === 'ally') {
-      return <AllyAvatar size={size} className={className} thinking={thinking} />
-    }
-
-    return <JenAvatar size={size} className={className} />
+    const src = mode === 'ally' ? '/Ally_9.svg' : '/Jen_2.svg'
+    return (
+      <img
+        src={src}
+        alt={mode === 'ally' ? 'Ally' : 'Jen'}
+        width={size}
+        height={size}
+        className={className}
+        style={{
+          opacity: thinking ? 0.9 : 1,
+          display: 'block',
+        }}
+      />
+    )
   }
 
   return (
@@ -317,12 +311,7 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
 
       {/* Floating button */}
       <button
-        onClick={() => {
-          if (!open) {
-            setActiveCoach(closedCoach)
-          }
-          setOpen((o) => !o)
-        }}
+        onClick={() => setOpen((o) => !o)}
         className="relative flex items-center gap-0 rounded-full shadow-2xl hover:shadow-teal-400/30 hover:scale-[1.03] active:scale-[0.97] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 overflow-visible h-[56px] sm:h-[62px]"
         style={{
           background: open
@@ -330,12 +319,12 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
             : 'linear-gradient(135deg, #003842 0%, #00616e 60%, #42b8ac 100%)',
           paddingRight: open ? '0' : '18px',
         }}
-        aria-label={open ? `Close ${coachName} chat` : `Open ${closedLabel}`}
+        aria-label={open ? `Close ${coachName} chat` : `Open ${activeCoach === 'ally' ? 'Ask Ally' : 'Ask Jen'}`}
       >
         {open ? (
           <>
-            <span className="relative shrink-0 -ml-1 -my-2 sm:-my-3">
-              {renderCoachAvatar(activeCoach, 56, 'rounded-full block ring-2 ring-white/40 sm:w-[78px] sm:h-[78px] w-[56px] h-[56px]')}
+            <span className="relative shrink-0 -ml-1 -my-1 sm:-my-3">
+              {renderCoachAvatar(activeCoach, 78, 'rounded-full block ring-2 ring-white/40 w-[52px] h-[52px] sm:w-[78px] sm:h-[78px]')}
             </span>
             <span className="flex items-center justify-center w-10 h-10 ml-1 mr-1">
               <X size={20} className="text-white" />
@@ -343,11 +332,11 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
           </>
         ) : (
           <>
-            <span className="relative shrink-0 -ml-1 -my-2 sm:-my-3">
-              {renderCoachAvatar(closedCoach, 56, 'rounded-full block ring-2 ring-white/40 sm:w-[78px] sm:h-[78px] w-[56px] h-[56px]')}
+            <span className="relative shrink-0 -ml-1 -my-1 sm:-my-3">
+              {renderCoachAvatar(activeCoach, 78, 'rounded-full block ring-2 ring-white/40 w-[52px] h-[52px] sm:w-[78px] sm:h-[78px]')}
             </span>
-            <span className="block ml-2 pr-1 text-[12px] sm:text-[15px] font-bold text-white tracking-wide min-w-[70px] sm:min-w-[88px] text-left leading-none">
-              {closedLabel}
+            <span className="hidden sm:block ml-2 text-[15px] font-bold text-white tracking-wide">
+              {activeCoach === 'ally' ? 'Ask Ally' : 'Ask Jen'}
             </span>
           </>
         )}

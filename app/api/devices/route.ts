@@ -63,14 +63,13 @@ export async function GET(request: NextRequest) {
     // Attach the latest active (non-redeemed, non-expired) pairing code to each device
     const now = new Date().toISOString()
     const deviceIds = (devices || []).map((d: any) => d.id)
-    let pairingByDevice: Record<string, { code: string; expires_at: string }> = {}
+    let pairingByDevice: Record<string, { code: string; expires_at: string; redeemed: boolean | null }> = {}
 
     if (deviceIds.length > 0) {
       const { data: codes, error: codesError } = await supabase
         .from('device_pairing_codes')
-        .select('device_id, code, expires_at')
+        .select('device_id, code, expires_at, redeemed')
         .in('device_id', deviceIds)
-        .eq('redeemed', false)
         .gt('expires_at', now)
         .order('created_at', { ascending: false })
 
@@ -78,22 +77,29 @@ export async function GET(request: NextRequest) {
         console.warn('Pairing code query with created_at ordering failed, falling back:', codesError.message)
         const { data: fallbackCodes } = await supabase
           .from('device_pairing_codes')
-          .select('device_id, code, expires_at')
+          .select('device_id, code, expires_at, redeemed')
           .in('device_id', deviceIds)
-          .eq('redeemed', false)
           .gt('expires_at', now)
           .order('expires_at', { ascending: false })
 
         for (const row of fallbackCodes ?? []) {
           if (!pairingByDevice[row.device_id]) {
-            pairingByDevice[row.device_id] = { code: row.code, expires_at: row.expires_at }
+            pairingByDevice[row.device_id] = {
+              code: row.code,
+              expires_at: row.expires_at,
+              redeemed: row.redeemed ?? null,
+            }
           }
         }
       } else {
         for (const row of codes ?? []) {
           // Keep only the most recent code per device (already sorted desc)
           if (!pairingByDevice[row.device_id]) {
-            pairingByDevice[row.device_id] = { code: row.code, expires_at: row.expires_at }
+            pairingByDevice[row.device_id] = {
+              code: row.code,
+              expires_at: row.expires_at,
+              redeemed: row.redeemed ?? null,
+            }
           }
         }
       }
@@ -103,6 +109,7 @@ export async function GET(request: NextRequest) {
       ...d,
       active_pairing_code: pairingByDevice[d.id]?.code ?? null,
       pairing_code_expires_at: pairingByDevice[d.id]?.expires_at ?? null,
+      active_pairing_code_redeemed: pairingByDevice[d.id]?.redeemed ?? null,
     }))
 
     return NextResponse.json({ devices: devicesWithCodes })
