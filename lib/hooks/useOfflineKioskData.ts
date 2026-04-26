@@ -46,9 +46,21 @@ export interface MenuItem {
   contains_molluscs?: boolean;
 }
 
+export interface Ingredient {
+  id: string;
+  business_id: string;
+  name: string;
+  description?: string | null;
+  category?: string | null;
+  allergen_warnings?: AllergenWarnings;
+  suppliers?: string[];
+  status?: string;
+}
+
 export interface KioskData {
   business: Business | null;
   menuItems: MenuItem[];
+  ingredients: Ingredient[];
   lastUpdated: number;
 }
 
@@ -59,6 +71,7 @@ export function useOfflineKioskData(slug: string, siteId?: string | null) {
   const [data, setData] = useState<KioskData>({
     business: null,
     menuItems: [],
+    ingredients: [],
     lastUpdated: 0,
   });
   const [loading, setLoading] = useState(true);
@@ -116,6 +129,7 @@ export function useOfflineKioskData(slug: string, siteId?: string | null) {
       const freshData: KioskData = {
         business: payload.business || null,
         menuItems: payload.menuItems || [],
+        ingredients: payload.ingredients || [],
         lastUpdated: Date.now(),
       };
 
@@ -247,6 +261,7 @@ export function useOfflineKioskData(slug: string, siteId?: string | null) {
   return {
     business: data.business,
     menuItems: data.menuItems,
+    ingredients: data.ingredients,
     loading,
     error,
     isOffline,

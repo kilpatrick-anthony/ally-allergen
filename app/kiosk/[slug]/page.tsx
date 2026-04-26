@@ -291,6 +291,7 @@ export default function KioskPage() {
   const {
     business,
     menuItems,
+    ingredients,
     loading,
     error,
     isOffline,
@@ -331,8 +332,6 @@ export default function KioskPage() {
   const [menuViewMode, setMenuViewMode] = useState<'cards' | 'table'>('table')
   const [showScreensaver, setShowScreensaver] = useState(false)
   const [isSmallScreen, setIsSmallScreen] = useState(false)
-  const [pdfViewerUrl, setPdfViewerUrl] = useState<string | null>(null)
-  const [generatingPDFViewer, setGeneratingPDFViewer] = useState(false)
   const [showAllergenGuide, setShowAllergenGuide] = useState(false)
   
   const t = translations[currentLanguage] as typeof translations.en
@@ -387,7 +386,9 @@ export default function KioskPage() {
 
     const startTimer = () => {
       if (screensaverTimerRef.current) clearTimeout(screensaverTimerRef.current)
-      screensaverTimerRef.current = setTimeout(() => setShowScreensaver(true), SCREENSAVER_TIMEOUT)
+      screensaverTimerRef.current = setTimeout(() => {
+        setShowScreensaver(true)
+      }, 45000)
     }
 
     const handleActivity = () => {
@@ -700,6 +701,20 @@ export default function KioskPage() {
            ).join(' ')
   }
 
+  function sortByCategoryAndName(items: MenuItem[]): MenuItem[] {
+    return [...items].sort((a, b) => {
+      const categoryA = getCategoryDisplayName((a.category || 'uncategorized').toLowerCase())
+      const categoryB = getCategoryDisplayName((b.category || 'uncategorized').toLowerCase())
+      if (categoryA !== categoryB) return categoryA.localeCompare(categoryB)
+      return String(a.name || '').localeCompare(String(b.name || ''))
+    })
+  }
+
+  function getOrderedCategories(items: MenuItem[]): string[] {
+    return Array.from(new Set(items.map(item => item.category || 'uncategorized')))
+      .sort((a, b) => getCategoryDisplayName(a).localeCompare(getCategoryDisplayName(b)))
+  }
+
   // Open full allergen guide as inline overlay (no PDF, no auth check)
   const handleOpenAllergenGuide = () => {
     setShowAllergenGuide(true)
@@ -898,8 +913,21 @@ export default function KioskPage() {
         onTouchStart={handleStartKiosk}
       >
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-44 -left-32 w-[560px] h-[560px] rounded-full bg-[#42b8ac]/14 blur-3xl" />
-          <div className="absolute -bottom-44 -right-32 w-[620px] h-[620px] rounded-full bg-[#42b8ac]/10 blur-3xl" />
+          <div
+            className="absolute -top-44 -left-32 w-[560px] h-[560px] rounded-full bg-[#42b8ac]/14 blur-3xl"
+            style={{ animation: 'kioskBlobOne 18s ease-in-out infinite alternate' }}
+          />
+          <div
+            className="absolute -bottom-44 -right-32 w-[620px] h-[620px] rounded-full bg-[#42b8ac]/10 blur-3xl"
+            style={{ animation: 'kioskBlobTwo 22s ease-in-out infinite alternate' }}
+          />
+          <div
+            className="absolute inset-[-20%]"
+            style={{
+              background: 'conic-gradient(from 180deg at 50% 50%, rgba(66,184,172,0.12), rgba(66,184,172,0.02), rgba(66,184,172,0.12))',
+              animation: 'kioskDrift 26s linear infinite',
+            }}
+          />
           <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: 'radial-gradient(circle, #42b8ac 1px, transparent 1px)', backgroundSize: '52px 52px' }} />
         </div>
 
@@ -928,13 +956,44 @@ export default function KioskPage() {
             )}
           </div>
         </div>
+
+        <style jsx>{`
+          @keyframes kioskBlobOne {
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            100% { transform: translate3d(48px, -26px, 0) scale(1.08); }
+          }
+          @keyframes kioskBlobTwo {
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            100% { transform: translate3d(-56px, 24px, 0) scale(1.07); }
+          }
+          @keyframes kioskDrift {
+            0% { transform: rotate(0deg) translate3d(0, 0, 0); }
+            100% { transform: rotate(360deg) translate3d(0, 0, 0); }
+          }
+        `}</style>
       </div>
     )
   }
 
   // ===== MENU DISPLAY =====
-  const filteredItems = filterMenuItems()
-  const categories = Array.from(new Set(menuItems.map(item => item.category)))
+  const filteredItems = sortByCategoryAndName(filterMenuItems())
+  const categories = getOrderedCategories(filteredItems)
+  const sortedMenuItems = sortByCategoryAndName(menuItems)
+  const sortedIngredients = [...(ingredients || [])].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))
+
+  const ingredientGuideRows: MenuItem[] = sortedIngredients.map((ingredient, index) => ({
+    id: `ingredient-${ingredient.id}`,
+    name: ingredient.name,
+    description: ingredient.description || null,
+    price: 0,
+    category: ingredient.category || 'ingredients',
+    display_order: index,
+    business_id: ingredient.business_id,
+    is_active: true,
+    ingredient_names: [],
+    allergen_warnings: ingredient.allergen_warnings,
+  }))
+
   const kioskUrl = typeof window !== 'undefined' ? `${window.location.origin}/kiosk/${slug}` : ''
 
   return (
@@ -1042,13 +1101,25 @@ export default function KioskPage() {
                     size="sm"
                     icon={<Home className="h-4 w-4" />}
                     onClick={() => {
+                      setActiveView('landing')
+                      clearFilters()
+                      setShowInactivityWarning(false)
+                    }}
+                    title="Return to main menu"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
                       setKioskStarted(false)
                       setActiveView('landing')
                       clearFilters()
                       setShowInactivityWarning(false)
                     }}
-                    title="Return to home screen"
-                  />
+                    title="Return to sleep screen"
+                  >
+                    ZZ
+                  </Button>
                 </div>
               </div>
             </div>
@@ -1652,6 +1723,7 @@ export default function KioskPage() {
                   items={filteredItems} 
                   compact={false}
                   showLegend={true}
+                  wrapperClassName="w-full overflow-auto max-h-[calc(100vh-290px)]"
                 />
               ) : (
                 /* Card View */
@@ -1808,49 +1880,40 @@ export default function KioskPage() {
               Close
             </button>
           </div>
-          {/* Table fills remaining height, scrolls both axes */}
-          <div className="flex-1 overflow-auto bg-gray-50 p-4">
-            {menuItems.length > 0 ? (
-              <AllergenTableView
-                items={menuItems}
-                compact={false}
-                showLegend={true}
-                wrapperClassName="w-full overflow-auto"
-              />
-            ) : (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                No menu items available.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+          {/* Guide content */}
+          <div className="flex-1 overflow-auto bg-gray-50 p-4 space-y-5">
+            <Card className="p-4">
+              <h3 className="text-lg font-semibold text-[#003842] mb-3">Menu Items by Sub Menu (A-Z)</h3>
+              {sortedMenuItems.length > 0 ? (
+                <AllergenTableView
+                  items={sortedMenuItems}
+                  compact={false}
+                  showLegend={true}
+                  wrapperClassName="w-full overflow-auto max-h-[calc(100vh-360px)]"
+                  groupByCategory={true}
+                />
+              ) : (
+                <div className="flex items-center justify-center py-8 text-gray-500">
+                  No menu items available.
+                </div>
+              )}
+            </Card>
 
-      {/* Inline PDF Viewer (kept for QR flow) */}
-      {pdfViewerUrl && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-white">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-[#003842] flex-shrink-0">
-            <div className="flex items-center gap-3">
-              <FileText className="h-5 w-5 text-white" />
-              <span className="text-white font-semibold text-sm">Full Allergen Guide</span>
-            </div>
-            <button
-              onClick={() => {
-                URL.revokeObjectURL(pdfViewerUrl)
-                setPdfViewerUrl(null)
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition"
-            >
-              <X className="h-4 w-4" />
-              Close
-            </button>
+            <Card className="p-4">
+              <h3 className="text-lg font-semibold text-[#003842] mb-3">Full Ingredients List (A-Z)</h3>
+              {ingredientGuideRows.length > 0 ? (
+                <AllergenTableView
+                  items={ingredientGuideRows}
+                  compact={false}
+                  showLegend={false}
+                  wrapperClassName="w-full overflow-auto max-h-[calc(100vh-360px)]"
+                  groupByCategory={false}
+                />
+              ) : (
+                <div className="py-6 text-gray-500">No ingredients available.</div>
+              )}
+            </Card>
           </div>
-          <embed
-            src={pdfViewerUrl}
-            type="application/pdf"
-            className="flex-1 w-full"
-            title="Full Allergen Guide PDF"
-          />
         </div>
       )}
 

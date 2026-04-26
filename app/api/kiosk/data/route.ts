@@ -98,9 +98,21 @@ export async function GET(request: NextRequest) {
       ingredient_names: ingredientNamesByMenuItem.get(String(item.id)) || [],
     }))
 
+    const { data: ingredients, error: ingredientsListError } = await supabase
+      .from('ingredients')
+      .select('id, business_id, name, description, category, allergen_warnings, suppliers, status')
+      .eq('business_id', business.id)
+      .neq('status', 'archived')
+      .order('name', { ascending: true })
+
+    if (ingredientsListError) {
+      console.error('Error fetching ingredient list:', ingredientsListError)
+    }
+
     return NextResponse.json({
       business,
       menuItems: menuItemsWithIngredients,
+      ingredients: ingredients || [],
     })
   } catch (error: any) {
     console.error('Unexpected kiosk data error:', error)
