@@ -1419,10 +1419,9 @@ export default function KioskPage() {
                             const allergenDetails = ALLERGENS.filter(allergen => item[allergen.id as keyof MenuItem] === true)
 
                             return (
-                              <Card key={item.id} className="h-full border border-slate-300 bg-gradient-to-br from-white to-slate-50 shadow-sm">
+                              <Card key={item.id} className="h-full border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-md hover:shadow-lg transition-shadow">
                                 <div className="p-6">
                                   <h4 className="text-lg font-semibold text-[#003842]">{item.name}</h4>
-                                  <p className="text-gray-600 text-sm mt-1">€{item.price.toFixed(2)}</p>
                                   {item.description && <p className="text-gray-600 mt-3">{item.description}</p>}
 
                                   {allergenDetails.length > 0 && (
@@ -1589,10 +1588,9 @@ export default function KioskPage() {
                             const allergenDetails = ALLERGENS.filter(allergen => item[allergen.id as keyof MenuItem] === true)
 
                             return (
-                              <Card key={item.id} className="h-full border border-slate-300 bg-gradient-to-br from-white to-slate-50 shadow-sm">
+                              <Card key={item.id} className="h-full border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-md hover:shadow-lg transition-shadow">
                                 <div className="p-6">
                                   <h4 className="text-lg font-semibold text-[#003842]">{item.name}</h4>
-                                  <p className="text-gray-600 text-sm mt-1">€{item.price.toFixed(2)}</p>
                                   {item.description && <p className="text-gray-600 mt-3">{item.description}</p>}
 
                                   {allergenDetails.length > 0 && (
