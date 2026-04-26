@@ -868,19 +868,15 @@ export default function KioskPage() {
               className="h-20 sm:h-24 lg:h-28 xl:h-32 w-auto mx-auto mb-5"
             />
 
-            <p className="text-[#9fe5de] text-2xl sm:text-3xl lg:text-4xl font-semibold mb-4 tracking-tight">
+            <p className="text-[#9fe5de] text-lg sm:text-xl lg:text-2xl font-semibold mb-3 tracking-tight">
               Interactive Allergen Check Guide
             </p>
 
-            <div className="mx-auto mt-2 max-w-xl rounded-2xl border border-[#42b8ac]/45 bg-[#42b8ac]/15 px-5 py-4">
+            <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-[#42b8ac]/45 bg-[#42b8ac]/15 px-5 py-4">
               <p className="text-white font-bold text-xl sm:text-2xl lg:text-3xl mb-0">
                 Click here to begin
               </p>
             </div>
-
-            <p className="text-white/70 text-xs sm:text-sm lg:text-base max-w-4xl mx-auto mt-7 leading-relaxed">
-              Explore menu items, review allergens, scan a QR code, or email this guide to your phone. If you have a severe allergy, please speak to a team member before ordering.
-            </p>
 
             {showScreensaver && (
               <p className="text-white/45 text-sm mt-6">Sleep mode active</p>
