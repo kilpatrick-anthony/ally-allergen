@@ -20,20 +20,12 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  Settings,
-  BarChart3,
-  DollarSign,
-  Eye,
-  UserX,
-  UserCheck,
   Key,
   Lock,
   Download,
-  Upload,
   RefreshCw,
   Zap
 } from 'lucide-react'
-import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -421,60 +413,59 @@ export default function SuperAdminDashboard() {
 
   if (loading) {
     return (
-      <Container>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <div className="relative h-12 w-12 mx-auto mb-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
-              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
-            </div>
-            <p className="text-gray-600">Loading super admin dashboard...</p>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="relative h-12 w-12 mx-auto mb-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
           </div>
+          <p className="text-gray-500 text-sm">Loading...</p>
         </div>
-      </Container>
+      </div>
     )
   }
 
   if (!isSuperAdmin) {
     return (
-      <Container>
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-            <p className="text-gray-600">You don't have permission to access this page.</p>
-          </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <XCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You don't have permission to access this page.</p>
         </div>
-      </Container>
+      </div>
     )
   }
 
+  // Derived stats
+  const now = new Date()
+  const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+  const totalBusinesses = businesses.length
+  const activeCount = businesses.filter(b => b.status === 'active').length
+  const trialCount = businesses.filter(b => b.status === 'trial').length
+  const suspendedCount = businesses.filter(b => b.status === 'suspended').length
+  const estimatedMRR = businesses
+    .filter(b => b.status === 'active')
+    .reduce((sum, b) => sum + (b.revenue || 0), 0)
+  const newThisMonth = businesses.filter(b => new Date(b.createdAt) >= firstOfMonth).length
+
   return (
-    <Container>
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex justify-between items-start">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-gradient-to-br from-purple-400 to-purple-600 dark:from-purple-500 dark:to-gray-700 rounded-lg">
-                <Settings className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Super Admin Dashboard</h1>
-                <p className="text-gray-600 dark:text-gray-300">
-                  Manage businesses, subscriptions, and platform settings
-                </p>
-              </div>
-            </div>
-          </div>
-          <Button
-            variant="primary"
-            icon={<Plus className="h-4 w-4" />}
-            onClick={() => setShowCreateModal(true)}
-          >
-            Add New Business
-          </Button>
+    <>
+      {/* Page heading */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Platform Overview</h1>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            {totalBusinesses} registered business{totalBusinesses !== 1 ? 'es' : ''} &middot; last refreshed just now
+          </p>
         </div>
+        <Button
+          variant="primary"
+          icon={<Plus className="h-4 w-4" />}
+          onClick={() => setShowCreateModal(true)}
+        >
+          Add Business
+        </Button>
       </div>
 
       {actionNotice && (
@@ -519,226 +510,145 @@ export default function SuperAdminDashboard() {
         </Card>
       )}
 
-      {/* Quick Actions */}
-      <div className="mb-8">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center gap-2"
-            onClick={() => setShowCreateModal(true)}
-          >
-            <Plus className="h-6 w-6" />
-            <span className="text-sm">Add Business</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center gap-2"
-            onClick={loadBusinesses}
-            disabled={isLoading}
-          >
-            <RefreshCw className="h-6 w-6" />
-            <span className="text-sm">Refresh Businesses</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center gap-2"
-            onClick={() => {
-              setStatusFilter('trial')
-              setPlanFilter('all')
-              setSearchTerm('')
-            }}
-          >
-            <AlertCircle className="h-6 w-6" />
-            <span className="text-sm">Review Trial Accounts</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center gap-2"
-            onClick={handleExportData}
-          >
-            <Download className="h-6 w-6" />
-            <span className="text-sm">Export Customer List</span>
-          </Button>
-
-          <Button
-            variant="outline"
-            className="h-20 flex flex-col items-center justify-center gap-2 border-[#42b8ac]/50 text-[#42b8ac] hover:bg-[#42b8ac]/5"
-            onClick={() => setShowDemoModal(true)}
-          >
-            <Zap className="h-6 w-6" />
-            <span className="text-sm">Create Demo Account</span>
-          </Button>
-        </div>
+      {/* Stats row */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <Card>
+          <div className="p-5">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Total</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{totalBusinesses}</p>
+            <p className="text-xs text-gray-400 mt-1">businesses</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="p-5">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Active</p>
+            <p className="text-3xl font-bold text-green-600">{activeCount}</p>
+            <p className="text-xs text-gray-400 mt-1">paid subscribers</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="p-5">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">On Trial</p>
+            <p className="text-3xl font-bold text-amber-500">{trialCount}</p>
+            <p className="text-xs text-gray-400 mt-1">{suspendedCount > 0 ? `${suspendedCount} suspended` : 'no suspensions'}</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="p-5">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Est. MRR</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">€{estimatedMRR.toLocaleString()}</p>
+            <p className="text-xs text-gray-400 mt-1">active accounts only</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="p-5">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">New</p>
+            <p className="text-3xl font-bold text-[#42b8ac]">{newThisMonth}</p>
+            <p className="text-xs text-gray-400 mt-1">joined this month</p>
+          </div>
+        </Card>
       </div>
 
-      {/* Search and Filters */}
-      <div className="mb-8">
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div className="flex flex-col sm:flex-row gap-4 flex-1">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
+        <button
+          type="button"
+          className="h-16 flex flex-col items-center justify-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-[#42b8ac]/50 hover:bg-[#42b8ac]/5 transition-colors text-gray-700 dark:text-gray-300 text-sm font-medium"
+          onClick={() => setShowCreateModal(true)}
+        >
+          <Plus className="h-5 w-5" />
+          Add Business
+        </button>
+        <button
+          type="button"
+          className="h-16 flex flex-col items-center justify-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-[#42b8ac]/50 hover:bg-[#42b8ac]/5 transition-colors text-gray-700 dark:text-gray-300 text-sm font-medium"
+          onClick={loadBusinesses}
+          disabled={isLoading}
+        >
+          <RefreshCw className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+          Refresh
+        </button>
+        <button
+          type="button"
+          className="h-16 flex flex-col items-center justify-center gap-1.5 rounded-xl border border-amber-200 dark:border-amber-800/40 bg-white dark:bg-gray-900 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors text-amber-600 text-sm font-medium"
+          onClick={() => { setStatusFilter('trial'); setPlanFilter('all'); setSearchTerm('') }}
+        >
+          <AlertCircle className="h-5 w-5" />
+          View Trials
+        </button>
+        <button
+          type="button"
+          className="h-16 flex flex-col items-center justify-center gap-1.5 rounded-xl border border-[#42b8ac]/40 bg-white dark:bg-gray-900 hover:bg-[#42b8ac]/5 transition-colors text-[#42b8ac] text-sm font-medium"
+          onClick={() => setShowDemoModal(true)}
+        >
+          <Zap className="h-5 w-5" />
+          Create Demo
+        </button>
+        <button
+          type="button"
+          className="h-16 flex flex-col items-center justify-center gap-1.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 hover:bg-gray-50 transition-colors text-gray-700 dark:text-gray-300 text-sm font-medium"
+          onClick={handleExportData}
+        >
+          <Download className="h-5 w-5" />
+          Export CSV
+        </button>
+      </div>
+
+      {/* Search & Filters + table */}
+      <Card className="mb-6">
+        <div className="p-4 border-b border-gray-100 dark:border-gray-800">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search businesses..."
+                placeholder="Search by name or email…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
+                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               />
             </div>
             <div className="flex gap-2">
               <Select
                 value={statusFilter}
-                onChange={setStatusFilter}
+                onChange={(value) => setStatusFilter(value)}
                 options={[
-                  { value: 'all', label: 'All Status' },
+                  { value: 'all', label: 'All Statuses' },
                   { value: 'active', label: 'Active' },
                   { value: 'trial', label: 'Trial' },
-                  { value: 'inactive', label: 'Inactive' }
+                  { value: 'inactive', label: 'Inactive' },
+                  { value: 'suspended', label: 'Suspended' }
                 ]}
-                className="w-32"
               />
               <Select
                 value={planFilter}
-                onChange={setPlanFilter}
+                onChange={(value) => setPlanFilter(value)}
                 options={[
                   { value: 'all', label: 'All Plans' },
                   { value: 'starter', label: 'Starter' },
                   { value: 'pro', label: 'Pro' },
                   { value: 'enterprise', label: 'Enterprise' }
                 ]}
-                className="w-32"
               />
+              {(searchTerm || statusFilter !== 'all' || planFilter !== 'all') && (
+                <button
+                  type="button"
+                  className="px-3 py-2 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50"
+                  onClick={() => { setSearchTerm(''); setStatusFilter('all'); setPlanFilter('all') }}
+                >
+                  Clear
+                </button>
+              )}
             </div>
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              icon={<RefreshCw className="h-4 w-4" />}
-              onClick={() => {
-                setSearchTerm('')
-                setStatusFilter('all')
-                setPlanFilter('all')
-              }}
-            >
-              Clear Filters
-            </Button>
-            <Button
-              variant="outline"
-              icon={<Download className="h-4 w-4" />}
-              onClick={handleExportData}
-            >
-              Export Data
-            </Button>
-          </div>
+          {filteredBusinesses.length !== businesses.length && (
+            <p className="text-xs text-gray-400 mt-2">
+              Showing {filteredBusinesses.length} of {businesses.length} businesses
+            </p>
+          )}
         </div>
-      </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <div className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Businesses</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">{businesses.length}</p>
-              </div>
-              <Building className="h-8 w-8 text-[#42b8ac]" />
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Subscriptions</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                  {businesses.filter(b => b.status === 'active').length}
-                </p>
-              </div>
-              <CheckCircle className="h-8 w-8 text-green-500" />
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Monthly Revenue</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                  ${businesses.reduce((sum, b) => sum + (b.revenue || 0), 0)}
-                </p>
-              </div>
-              <DollarSign className="h-8 w-8 text-green-600" />
-            </div>
-          </div>
-        </Card>
-
-        <Card>
-          <div className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending Setup</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                  {businesses.filter(b => b.status === 'trial' || b.subscriptionStatus === 'past_due').length}
-                </p>
-              </div>
-              <AlertCircle className="h-8 w-8 text-yellow-500" />
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Filters and Search */}
-      <Card className="mb-6">
-        <div className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search businesses..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
-            </div>
-
-            <Select
-              value={statusFilter}
-              onChange={(value) => setStatusFilter(value)}
-              options={[
-                { value: 'all', label: 'All Statuses' },
-                { value: 'active', label: 'Active' },
-                { value: 'trial', label: 'Trial' },
-                { value: 'inactive', label: 'Inactive' },
-                { value: 'suspended', label: 'Suspended' }
-              ]}
-            />
-
-            <Select
-              value={planFilter}
-              onChange={(value) => setPlanFilter(value)}
-              options={[
-                { value: 'all', label: 'All Plans' },
-                { value: 'starter', label: 'Starter' },
-                { value: 'pro', label: 'Pro' },
-                { value: 'enterprise', label: 'Enterprise' }
-              ]}
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* Businesses Table */}
-      <Card>
+        {/* Businesses Table */}
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-gray-800">
@@ -897,7 +807,7 @@ export default function SuperAdminDashboard() {
             <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No businesses found</h3>
             <p className="text-gray-500 dark:text-gray-400">
-              Try adjusting your search or filter criteria.
+              {businesses.length === 0 ? 'No businesses registered yet.' : 'Try adjusting your search or filter criteria.'}
             </p>
           </div>
         )}
@@ -1029,6 +939,6 @@ export default function SuperAdminDashboard() {
           </div>
         </div>
       )}
-    </Container>
+    </>
   )
 }
