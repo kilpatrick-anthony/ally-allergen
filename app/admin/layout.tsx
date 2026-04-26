@@ -69,7 +69,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         const data = await response.json()
         
         if (data.authenticated && data.user) {
-          setUserEmail(data.user.email || '')
           setUserName(data.user.name || data.user.email?.split('@')[0] || 'Admin User')
           const biz = data.user.businessId || null
           setBusinessId(biz)
