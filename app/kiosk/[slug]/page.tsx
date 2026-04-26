@@ -775,8 +775,8 @@ export default function KioskPage() {
           <div className="relative h-12 w-12 mx-auto mb-4">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/25 border-t-[#42b8ac]" />
           </div>
-          <h1 className="text-2xl font-bold mb-2">Loading Kiosk</h1>
-          <p className="text-white/70">Fetching the latest allergen menu...</p>
+          <h1 className="text-2xl font-bold mb-2">{t.loadingKiosk || 'Loading Kiosk'}</h1>
+          <p className="text-white/70">{t.fetchingLatestMenu || 'Fetching the latest allergen menu...'}</p>
         </div>
       </div>
     )
@@ -789,10 +789,10 @@ export default function KioskPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="h-6 w-6 text-red-600 mt-0.5" />
             <div>
-              <h1 className="text-xl font-bold text-gray-900 mb-2">Kiosk Data Unavailable</h1>
+              <h1 className="text-xl font-bold text-gray-900 mb-2">{t.kioskDataUnavailable || 'Kiosk Data Unavailable'}</h1>
               <p className="text-gray-600 mb-4">{error}</p>
               <Button variant="primary" onClick={refresh} icon={<RefreshCw className="h-4 w-4" />}>
-                Retry Loading
+                {t.retryLoading || 'Retry Loading'}
               </Button>
             </div>
           </div>
@@ -897,16 +897,16 @@ export default function KioskPage() {
                 />
 
                 <h2 className="text-white text-2xl sm:text-3xl font-semibold tracking-tight mb-3">
-                  Kiosk Sleeping
+                  {t.kioskSleeping || 'Kiosk Sleeping'}
                 </h2>
 
                 <p className="text-white/70 text-sm sm:text-base mb-8">
-                  Tap anywhere on the screen to wake and continue.
+                  {t.tapToWake || 'Tap anywhere on the screen to wake and continue.'}
                 </p>
 
                 <div className="mx-auto max-w-sm rounded-2xl border border-[#42b8ac]/45 bg-[#42b8ac]/15 px-5 py-4">
-                  <p className="text-[#9fe5de] text-xs uppercase tracking-[0.22em] mb-1">Ready When You Are</p>
-                  <p className="text-white font-semibold text-lg sm:text-xl">Touch screen to begin</p>
+                  <p className="text-[#9fe5de] text-xs uppercase tracking-[0.22em] mb-1">{t.readyWhenYouAre || 'Ready When You Are'}</p>
+                  <p className="text-white font-semibold text-lg sm:text-xl">{t.touchToBegin || 'Touch screen to begin'}</p>
                 </div>
             </div>
           </div>
@@ -922,10 +922,10 @@ export default function KioskPage() {
               className="h-14 sm:h-16 lg:h-20 w-auto mb-8"
             />
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-white mb-3 leading-tight">
-              Serving <span className="text-[#42b8ac]">Confidence</span>
+              {t.servingConfidence || 'Serving Confidence'}
             </h2>
             <p className="text-white/70 text-base md:text-lg max-w-lg mb-8">
-              The complete allergen management solution for Irish and EU food businesses, now tailored to help you browse this menu with confidence.
+              {t.servingConfidenceDesc || 'The complete allergen management solution for Irish and EU food businesses, now tailored to help you browse this menu with confidence.'}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full">
               <div className="rounded-2xl p-5 border border-white/10 bg-white/5 backdrop-blur-sm">
@@ -964,19 +964,19 @@ export default function KioskPage() {
                   <div className="rounded-2xl border border-[#42b8ac]/20 bg-[#f0f9f8] p-5">
                     <div className="flex items-center gap-3 mb-2">
                       <Search className="h-5 w-5 text-[#42b8ac]" />
-                      <h3 className="font-semibold text-[#003842]">Browse the menu</h3>
+                      <h3 className="font-semibold text-[#003842]">{t.browseMenuTile || 'Browse the menu'}</h3>
                     </div>
                     <p className="text-sm text-gray-600">
-                      Search dishes, view allergens, and save the guide to your phone.
+                      {t.browseMenuTileDesc || 'Search dishes, view allergens, and save the guide to your phone.'}
                     </p>
                   </div>
                   <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
                     <div className="flex items-center gap-3 mb-2">
                       <AlertCircle className="h-5 w-5 text-amber-600" />
-                      <h3 className="font-semibold text-[#003842]">Always double-check</h3>
+                      <h3 className="font-semibold text-[#003842]">{t.doubleCheckTitle || 'Always double-check'}</h3>
                     </div>
                     <p className="text-sm text-gray-600">
-                      Please speak to staff if you have a severe allergy or need extra reassurance.
+                      {t.doubleCheckDesc || 'Please speak to staff if you have a severe allergy or need extra reassurance.'}
                     </p>
                   </div>
                 </div>
@@ -986,7 +986,7 @@ export default function KioskPage() {
                     <div>
                       <p className="text-sm uppercase tracking-[0.18em] text-[#8dd8d2] mb-1">Current menu</p>
                       <p className="text-xl font-bold">{menuTitle}</p>
-                      <p className="text-sm text-white/65 mt-1">Use the filter tools after you start if you need to exclude allergens.</p>
+                      <p className="text-sm text-white/65 mt-1">{t.currentMenuHelper || 'Use the filter tools after you start if you need to exclude allergens.'}</p>
                     </div>
                     {businessName && (
                       <div className="inline-flex items-center gap-2 text-sm text-white/70">
@@ -1006,7 +1006,7 @@ export default function KioskPage() {
                 </button>
 
                 <p className="text-center text-sm text-gray-400">
-                  Touch the button to open the full allergen menu.
+                  {t.touchButtonOpenMenu || 'Touch the button to open the full allergen menu.'}
                 </p>
               </div>
             </Card>

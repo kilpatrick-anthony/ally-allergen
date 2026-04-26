@@ -3,6 +3,7 @@
 
 import { useState } from 'react'
 import React from 'react'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 import { 
   HelpCircle, Book, FileText, MessageCircle, 
   Mail, ExternalLink, Search, ChevronRight, Package,
@@ -16,6 +17,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 
 export default function HelpPage() {
+  const { t } = useTranslation()
   const [searchTerm, setSearchTerm] = useState('')
   const [activeCategory, setActiveCategory] = useState('all')
   const [expandedTopic, setExpandedTopic] = useState<number | null>(null)
@@ -268,21 +270,21 @@ export default function HelpPage() {
 
   const quickLinks = [
     {
-      title: 'Documentation',
+      title: t('admin.documentation'),
       description: 'Read detailed documentation',
       icon: Book,
       href: '#help-topics',
       color: 'blue'
     },
     {
-      title: 'Contact Support',
+      title: t('admin.contactSupport'),
       description: 'Get help from our team',
       icon: MessageCircle,
       href: 'mailto:info@allyjen.ie',
       color: 'green'
     },
     {
-      title: 'Email Us',
+      title: t('admin.email'),
       description: 'info@allyjen.ie',
       icon: Mail,
       href: 'mailto:info@allyjen.ie',
@@ -301,15 +303,15 @@ export default function HelpPage() {
                 <HelpCircle className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-[#003842] dark:text-white">Help & Support</h1>
+                <h1 className="text-3xl font-bold text-[#003842] dark:text-white">{t('admin.helpSupport')}</h1>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Learn how to use the AllyJen platform effectively
+                  {t('admin.helpSupportDesc')}
                 </p>
               </div>
             </div>
           </div>
           <Badge variant="primary" icon={Book}>
-            Knowledge Base
+            {t('admin.knowledgeBase')}
           </Badge>
         </div>
       </div>
@@ -363,7 +365,7 @@ export default function HelpPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
               type="text"
-              placeholder="Search help topics..."
+              placeholder={t('admin.searchHelpTopics')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-3 w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-lg bg-white dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
@@ -409,7 +411,7 @@ export default function HelpPage() {
         <Card>
           <div className="text-center py-12">
             <HelpCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No topics found</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('admin.noTopicsFound')}</h3>
             <p className="text-gray-600 dark:text-gray-400">Try adjusting your search or filters</p>
           </div>
         </Card>
@@ -454,7 +456,7 @@ export default function HelpPage() {
                         {topic.description}
                       </p>
                       <div className="flex items-center text-[#42b8ac] text-sm font-medium">
-                        {isExpanded ? 'Close' : 'Learn more'}
+                        {isExpanded ? t('admin.close') : t('admin.learnMore')}
                         <ChevronRight className={`h-4 w-4 ml-1 transition-transform ${isExpanded ? 'rotate-90' : 'group-hover:translate-x-1'}`} />
                       </div>
                     </div>
@@ -488,20 +490,20 @@ export default function HelpPage() {
         <div className="text-center">
           <MessageCircle className="h-12 w-12 text-[#42b8ac] mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-[#003842] dark:text-white mb-2">
-            Need More Help?
+            {t('admin.needMoreHelp')}
           </h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6">
-            Can't find what you're looking for? Our support team is here to help.
+            {t('admin.supportTeamHelp')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a href="mailto:info@allyjen.ie">
               <Button variant="primary" size="lg" icon={<MessageCircle className="h-4 w-4" />}>
-                Contact Support
+                {t('admin.contactSupport')}
               </Button>
             </a>
             <a href="mailto:info@allyjen.ie">
               <Button variant="secondary" size="lg" icon={<Mail className="h-4 w-4" />}>
-                Email Us
+                {t('admin.email')}
               </Button>
             </a>
           </div>

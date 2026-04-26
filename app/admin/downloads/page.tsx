@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import * as Dialog from '@radix-ui/react-dialog'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 import { 
   Download, FileText, Printer, Calendar, Clock,
   CheckCircle, AlertCircle,
@@ -26,6 +27,7 @@ import { generateComplianceReportPDF } from '@/lib/pdf/complianceReportPDF'
 import { generateSiteOverviewReportPDF } from '@/lib/pdf/siteOverviewReportPDF'
 
 export default function DownloadsPage() {
+  const { t } = useTranslation()
   
   const [loading, setLoading] = useState(true)
   const [guideLoading, setGuideLoading] = useState(false)
@@ -467,7 +469,7 @@ export default function DownloadsPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
             <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
           </div>
-          <p className="text-gray-600 dark:text-gray-400">Loading downloads...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('admin.loadingDownloads')}</p>
         </div>
       </div>
     )
@@ -484,9 +486,9 @@ export default function DownloadsPage() {
                 <Download className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Downloads & Reports</h1>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('admin.downloadsReports')}</h1>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Generate and manage allergen reports, guides, and compliance documents
+                  {t('admin.downloadsReportsDesc')}
                 </p>
               </div>
             </div>
@@ -576,8 +578,8 @@ export default function DownloadsPage() {
                 <Shield className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Allergen Guides</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Complete allergen information for customers and staff</p>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('admin.allergenInformation')}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.allergenGuidesDesc')}</p>
               </div>
             </div>
           </div>
@@ -586,7 +588,7 @@ export default function DownloadsPage() {
               <div className="space-y-3">
                 <h3 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
                   <Building className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                  Business-Wide Guide
+                  {t('admin.businessWideGuide')}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300">Complete allergen guide for all menu items and ingredients across your entire business</p>
                 <Button
@@ -598,14 +600,14 @@ export default function DownloadsPage() {
                   disabled={guideLoading}
                   className="justify-start"
                 >
-                  {guideLoading ? 'Generating...' : 'Generate Complete Guide'}
+                  {guideLoading ? t('admin.generating') : t('admin.generateCompleteGuide')}
                 </Button>
               </div>
 
               <div className="space-y-3">
                 <h3 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                  Site-Specific Guide
+                  {t('admin.siteSpecificGuide')}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300">Customised allergen guide for a specific location, including global items plus site-specific menu items</p>
                 <div className="flex gap-2">
@@ -614,7 +616,7 @@ export default function DownloadsPage() {
                     onChange={(event) => setSelectedSiteId(event.target.value)}
                     className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                   >
-                    <option value="">Select site...</option>
+                    <option value="">{t('admin.selectSite')}</option>
                     {sites.map((site) => (
                       <option key={site.id} value={site.id}>
                         {site.name}

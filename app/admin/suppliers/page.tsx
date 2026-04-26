@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 import {
   Truck, Phone, Mail, Globe,
   Plus, Search, Eye, Edit,
@@ -26,6 +27,7 @@ interface Supplier {
 }
 
 export default function SuppliersPage() {
+  const { t } = useTranslation()
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -102,7 +104,7 @@ export default function SuppliersPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
             <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
           </div>
-          <p className="text-gray-600">Loading supplier data...</p>
+          <p className="text-gray-600">{t('admin.loadingSupplierData')}</p>
         </div>
       </div>
     )
@@ -119,9 +121,9 @@ export default function SuppliersPage() {
                 <Truck className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-[#003842] dark:text-white">Supplier Management</h1>
+                <h1 className="text-3xl font-bold text-[#003842] dark:text-white">{t('admin.supplierManagement')}</h1>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Track suppliers, allergen profiles, and manage ingredient sourcing
+                  {t('admin.supplierManagementDesc')}
                 </p>
               </div>
             </div>
@@ -141,25 +143,25 @@ export default function SuppliersPage() {
             <Truck className="h-5 w-5 text-white" />
           </div>
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Total Suppliers</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{t('admin.totalSuppliers')}</p>
             <p className="text-2xl font-bold text-[#003842] dark:text-white">{stats.total}</p>
           </div>
         </div>
         <Link href="/admin/suppliers/new">
           <Button variant="primary" icon={<Plus className="h-4 w-4" />}>
-            Add Supplier
+            {t('admin.addSupplier')}
           </Button>
         </Link>
       </div>
 
       <Card className="mb-8">
         <div className="p-4 md:p-6">
-          <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Search suppliers</label>
+          <label className="text-sm font-medium text-gray-600 dark:text-gray-400">{t('admin.searchSuppliers')}</label>
           <div className="relative mt-2">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Search suppliers by name or contact..."
+              placeholder={t('admin.searchSuppliersPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
@@ -211,7 +213,7 @@ export default function SuppliersPage() {
               <div className="grid grid-cols-1 gap-4 mb-6">
                 <div className="text-center">
                   <div className="text-lg font-semibold text-[#003842] dark:text-white">{supplier.ingredientCount}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">Ingredients</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">{t('admin.ingredients')}</div>
                 </div>
               </div>
 
@@ -224,7 +226,7 @@ export default function SuppliersPage() {
                       size="sm"
                       icon={<Eye className="h-4 w-4" />}
                     >
-                      View
+                      {t('admin.view')}
                     </Button>
                   </Link>
                   <Link href={`/admin/suppliers/${supplier.id}/edit`}>
@@ -233,7 +235,7 @@ export default function SuppliersPage() {
                       size="sm"
                       icon={<Edit className="h-4 w-4" />}
                     >
-                      Edit
+                      {t('admin.edit')}
                     </Button>
                   </Link>
                   <Link href={`/admin/suppliers/${supplier.id}/docs`}>
@@ -242,7 +244,7 @@ export default function SuppliersPage() {
                       size="sm"
                       icon={<FileText className="h-4 w-4" />}
                     >
-                      Docs
+                      {t('admin.docs')}
                     </Button>
                   </Link>
                 </div>
@@ -258,15 +260,15 @@ export default function SuppliersPage() {
           <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <Truck className="h-8 w-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No suppliers found</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('admin.noSuppliersFound')}</h3>
           <p className="text-gray-500 dark:text-gray-400 mb-6">
             {searchTerm
               ? 'Try adjusting your search or filters'
-              : 'Get started by adding your first supplier'}
+              : t('admin.getStartedFirstSupplier')}
           </p>
           <Link href="/admin/suppliers/new">
             <Button variant="primary" icon={<Plus className="h-4 w-4" />}>
-              Add First Supplier
+              {t('admin.addFirstSupplier')}
             </Button>
           </Link>
         </Card>
