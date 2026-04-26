@@ -929,6 +929,18 @@ export default function KioskPage() {
             }}
           />
           <div className="absolute inset-0 opacity-[0.035]" style={{ backgroundImage: 'radial-gradient(circle, #42b8ac 1px, transparent 1px)', backgroundSize: '52px 52px' }} />
+
+          {/* Subtle DVD-style bounce, tuned to rarely align perfectly in corners */}
+          <div className="kioskBounceStage" aria-hidden="true">
+            <div className="kioskBounceX">
+              <div className="kioskBounceY">
+                <div className="kioskBounceBadge">
+                  <span className="kioskBounceDot" />
+                  <span className="kioskBounceText">ALLYJEN</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <AccessibilityPanel />
@@ -969,6 +981,54 @@ export default function KioskPage() {
           @keyframes kioskDrift {
             0% { transform: rotate(0deg) translate3d(0, 0, 0); }
             100% { transform: rotate(360deg) translate3d(0, 0, 0); }
+          }
+          @keyframes kioskBounceX {
+            from { transform: translateX(0); }
+            to { transform: translateX(calc(100vw - 180px)); }
+          }
+          @keyframes kioskBounceY {
+            from { transform: translateY(0); }
+            to { transform: translateY(calc(100vh - 74px)); }
+          }
+          .kioskBounceStage {
+            position: absolute;
+            inset: 0;
+            opacity: 0.68;
+          }
+          .kioskBounceX {
+            width: 180px;
+            animation: kioskBounceX 17s linear infinite alternate;
+            will-change: transform;
+          }
+          .kioskBounceY {
+            width: 180px;
+            animation: kioskBounceY 13s linear infinite alternate;
+            will-change: transform;
+          }
+          .kioskBounceBadge {
+            margin: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(159, 229, 222, 0.35);
+            background: rgba(7, 41, 48, 0.42);
+            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.25);
+            backdrop-filter: blur(2px);
+          }
+          .kioskBounceDot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #42b8ac;
+            box-shadow: 0 0 10px rgba(66, 184, 172, 0.8);
+          }
+          .kioskBounceText {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            color: rgba(207, 246, 241, 0.95);
           }
         `}</style>
       </div>
