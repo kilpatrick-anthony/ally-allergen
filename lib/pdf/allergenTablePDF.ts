@@ -88,6 +88,25 @@ function sortItemsByName(a: MenuItem, b: MenuItem): number {
   return aName.localeCompare(bName) || (a.name || '').toString().localeCompare((b.name || '').toString())
 }
 
+function getIngredientLines(item: MenuItem): string[] {
+  const ingredientNames = Array.isArray((item as any).ingredient_names)
+    ? ((item as any).ingredient_names as string[])
+        .map(name => String(name || '').trim())
+        .filter(Boolean)
+    : []
+
+  if (ingredientNames.length === 0) return []
+
+  const joined = ingredientNames.join(', ')
+  return [`Ingredients: ${joined}`]
+}
+
+function getHeaderTextColor(rgb: [number, number, number]): [number, number, number] {
+  const [r, g, b] = rgb
+  const luminance = 0.299 * r + 0.587 * g + 0.114 * b
+  return luminance > 165 ? [17, 24, 39] : [255, 255, 255]
+}
+
 /**
  * Builds the allergen detail lines that appear beneath the item name.
  * Allergen names are wrapped in ** to signal bold rendering via didParseCell.
@@ -288,10 +307,11 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
 
       const tickMap = new Map<string, AllergenLevel>()
       const tableData = sectionItems.map((item, rowIndex) => {
+        const ingredientLines = getIngredientLines(item)
         const warningLines = buildWarningLines(item)
         const nameCell =
-          warningLines.length > 0
-            ? `${item.name}\n${warningLines.join('\n')}`
+          ingredientLines.length + warningLines.length > 0
+            ? `${item.name}\n${ingredientLines.join('\n')}${ingredientLines.length > 0 && warningLines.length > 0 ? '\n' : ''}${warningLines.join('\n')}`
             : item.name
 
         const row: string[] = [nameCell]
@@ -366,9 +386,11 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
           if (data.section === 'head' && data.column.index > 0) {
             const cell = data.cell
             const text  = headers[data.column.index]
-            doc.setFillColor(...primaryRgb)
+            const allergenColor = hexToRgb(ALLERGENS[data.column.index - 1]?.bgColor)
+            const headerTextColor = getHeaderTextColor(allergenColor)
+            doc.setFillColor(...allergenColor)
             doc.rect(cell.x, cell.y, cell.width, cell.height, 'F')
-            doc.setTextColor(255, 255, 255)
+            doc.setTextColor(...headerTextColor)
             doc.setFontSize(8)
             doc.setFont('helvetica', 'bold')
             doc.saveGraphicsState()
@@ -392,8 +414,13 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
           if (data.section === 'body' && data.column.index === 0) {
             const rawLines = (tableData[data.row.index]?.[0] as string || '').split('\n')
             const markLines = rawLines.filter(l => l.startsWith(WARN_PREFIX))
-            const nameLines = rawLines.filter(l => !l.startsWith(WARN_PREFIX))
-            if (nameLines.length === 0 && markLines.length === 0) return
+            const ingredientLines = rawLines.filter(
+              l => !l.startsWith(WARN_PREFIX) && l.startsWith('Ingredients: ')
+            )
+            const nameLines = rawLines.filter(
+              l => !l.startsWith(WARN_PREFIX) && !l.startsWith('Ingredients: ')
+            )
+            if (nameLines.length === 0 && ingredientLines.length === 0 && markLines.length === 0) return
 
             const cell = data.cell
             const padTop   = 2.5
@@ -417,6 +444,22 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
                 doc.text(wl, cell.x + padLeft, drawY)
                 drawY += lineH
               }
+            }
+
+            if (ingredientLines.length > 0) {
+              doc.setFont('helvetica', 'italic')
+              doc.setFontSize(7)
+              doc.setTextColor(55, 65, 81)
+              for (const line of ingredientLines) {
+                const wrapped = doc.splitTextToSize(line, textWidth)
+                for (const wl of wrapped) {
+                  doc.text(wl, cell.x + padLeft, drawY)
+                  drawY += lineH
+                }
+              }
+              doc.setFont('helvetica', 'normal')
+              doc.setFontSize(7)
+              doc.setTextColor(0, 0, 0)
             }
 
             doc.setFontSize(7)

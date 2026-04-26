@@ -26,6 +26,7 @@ export interface MenuItem {
   display_order: number;
   business_id: string;
   is_active: boolean;
+  ingredient_names?: string[];
   // New allergen warnings system
   allergen_warnings?: AllergenWarnings;
   // Legacy fields (for backward compatibility during migration)

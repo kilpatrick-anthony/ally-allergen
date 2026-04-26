@@ -47,9 +47,60 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to load menu data' }, { status: 500 })
     }
 
+    const menuItemIds = (menuItems || []).map((item: any) => item.id).filter(Boolean)
+    const ingredientNamesByMenuItem = new Map<string, string[]>()
+
+    if (menuItemIds.length > 0) {
+      const { data: menuItemIngredients, error: menuItemIngredientsError } = await supabase
+        .from('menu_item_ingredients')
+        .select('menu_item_id, ingredient_id')
+        .in('menu_item_id', menuItemIds)
+
+      if (menuItemIngredientsError) {
+        console.error('Error fetching menu item ingredient links:', menuItemIngredientsError)
+      } else {
+        const ingredientIds = Array.from(
+          new Set((menuItemIngredients || []).map((row: any) => row.ingredient_id).filter(Boolean))
+        )
+
+        const ingredientNameById = new Map<string, string>()
+        if (ingredientIds.length > 0) {
+          const { data: ingredients, error: ingredientsError } = await supabase
+            .from('ingredients')
+            .select('id, name')
+            .in('id', ingredientIds)
+
+          if (ingredientsError) {
+            console.error('Error fetching ingredient names:', ingredientsError)
+          } else {
+            for (const ingredient of ingredients || []) {
+              ingredientNameById.set(String((ingredient as any).id), String((ingredient as any).name || ''))
+            }
+          }
+        }
+
+        for (const link of menuItemIngredients || []) {
+          const menuItemId = String((link as any).menu_item_id)
+          const ingredientId = String((link as any).ingredient_id)
+          const ingredientName = ingredientNameById.get(ingredientId)
+          if (!ingredientName) continue
+
+          const existing = ingredientNamesByMenuItem.get(menuItemId) || []
+          if (!existing.includes(ingredientName)) {
+            ingredientNamesByMenuItem.set(menuItemId, [...existing, ingredientName])
+          }
+        }
+      }
+    }
+
+    const menuItemsWithIngredients = (menuItems || []).map((item: any) => ({
+      ...item,
+      ingredient_names: ingredientNamesByMenuItem.get(String(item.id)) || [],
+    }))
+
     return NextResponse.json({
       business,
-      menuItems: menuItems || [],
+      menuItems: menuItemsWithIngredients,
     })
   } catch (error: any) {
     console.error('Unexpected kiosk data error:', error)
