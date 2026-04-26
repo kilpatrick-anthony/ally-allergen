@@ -11,6 +11,7 @@ interface AllergenTableViewProps {
   items: MenuItem[]
   compact?: boolean
   showLegend?: boolean
+  showLegendTop?: boolean
   /** Extra classes applied to the outer scrollable wrapper */
   wrapperClassName?: string
   /** Group rows by category headings before rendering */
@@ -23,6 +24,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
   items, 
   compact = false,
   showLegend = true,
+  showLegendTop = false,
   wrapperClassName,
   groupByCategory = true,
   stickyTopOffset = 0,
@@ -183,10 +185,58 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
 
   const stickyTopStyle: React.CSSProperties = { top: stickyTopOffset }
 
+  const Legend = () => (
+    <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+      <h4 className="text-sm font-semibold text-gray-900 mb-3">Legend:</h4>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 bg-red-200 rounded flex items-center justify-center">
+            <Check className="h-4 w-4 text-red-800" />
+          </div>
+          <span className="text-gray-700">Contains</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 bg-orange-200 rounded flex items-center justify-center">
+            <AlertCircle className="h-4 w-4 text-orange-800" />
+          </div>
+          <span className="text-gray-700">May Contain</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 bg-violet-200 rounded flex items-center justify-center">
+            <AlertTriangle className="h-4 w-4 text-violet-800" />
+          </div>
+          <span className="text-gray-700">Not Suitable</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 bg-cyan-200 rounded flex items-center justify-center">
+            <Info className="h-4 w-4 text-cyan-800" />
+          </div>
+          <span className="text-gray-700">Traces</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 bg-amber-200 rounded flex items-center justify-center">
+            <AlertTriangle className="h-4 w-4 text-amber-800" />
+          </div>
+          <span className="text-gray-700">Cross Contamination</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-gray-300 text-xl">—</span>
+          <span className="text-gray-700">Not present</span>
+        </div>
+      </div>
+      <p className="mt-3 text-xs text-gray-600 italic">
+        Note: For items with specific sub-types (e.g., wheat, almonds), the cell will show which specific allergen is present.
+      </p>
+    </div>
+  )
+
   return (
-    <div className={wrapperClassName ?? 'w-full overflow-x-auto overflow-y-visible'}>
-      <table className="w-full border-separate border-spacing-0 bg-white rounded-lg overflow-hidden shadow-sm text-xs">
-        <thead>
+    <div className="space-y-4">
+      {showLegend && showLegendTop && <Legend />}
+
+      <div className={wrapperClassName ?? 'w-full overflow-x-auto overflow-y-visible relative'}>
+      <table className="w-full border-separate border-spacing-0 bg-white rounded-lg shadow-sm text-xs">
+        <thead className="sticky z-50" style={stickyTopStyle}>
           <tr className="bg-[#003842]">
             <th className="text-left p-2 text-white font-semibold border border-gray-300 sticky left-0 bg-[#003842] z-40 min-w-[120px] shadow-[0_2px_0_0_rgba(0,0,0,0.08)]" style={stickyTopStyle}>
               Item Name
@@ -421,50 +471,10 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
           ))}
         </tbody>
       </table>
+      </div>
 
       {showLegend && (
-        <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-          <h4 className="text-sm font-semibold text-gray-900 mb-3">Legend:</h4>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-red-200 rounded flex items-center justify-center">
-                <Check className="h-4 w-4 text-red-800" />
-              </div>
-              <span className="text-gray-700">Contains</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-orange-200 rounded flex items-center justify-center">
-                <AlertCircle className="h-4 w-4 text-orange-800" />
-              </div>
-              <span className="text-gray-700">May Contain</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-violet-200 rounded flex items-center justify-center">
-                <AlertTriangle className="h-4 w-4 text-violet-800" />
-              </div>
-              <span className="text-gray-700">Not Suitable</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-cyan-200 rounded flex items-center justify-center">
-                <Info className="h-4 w-4 text-cyan-800" />
-              </div>
-              <span className="text-gray-700">Traces</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-amber-200 rounded flex items-center justify-center">
-                <AlertTriangle className="h-4 w-4 text-amber-800" />
-              </div>
-              <span className="text-gray-700">Cross Contamination</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-gray-300 text-xl">—</span>
-              <span className="text-gray-700">Not present</span>
-            </div>
-          </div>
-          <p className="mt-3 text-xs text-gray-600 italic">
-            Note: For items with specific sub-types (e.g., wheat, almonds), the cell will show which specific allergen is present.
-          </p>
-        </div>
+        <Legend />
       )}
     </div>
   )

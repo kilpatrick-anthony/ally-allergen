@@ -935,7 +935,11 @@ export default function KioskPage() {
             <div className="kioskBounceX">
               <div className="kioskBounceY">
                 <div className="kioskBounceBadge">
-                  <span className="kioskBounceDot" />
+                  <span className="kioskBounceIconWrap" aria-hidden="true">
+                    <Wheat className="kioskBounceIcon kioskIconOne" />
+                    <Fish className="kioskBounceIcon kioskIconTwo" />
+                    <Nut className="kioskBounceIcon kioskIconThree" />
+                  </span>
                   <span className="kioskBounceText">ALLYJEN</span>
                 </div>
               </div>
@@ -1017,13 +1021,29 @@ export default function KioskPage() {
             box-shadow: 0 6px 22px rgba(0, 0, 0, 0.25);
             backdrop-filter: blur(2px);
           }
-          .kioskBounceDot {
-            width: 8px;
-            height: 8px;
-            border-radius: 999px;
-            background: #42b8ac;
-            box-shadow: 0 0 10px rgba(66, 184, 172, 0.8);
+          .kioskBounceIconWrap {
+            position: relative;
+            width: 12px;
+            height: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
           }
+          .kioskBounceIcon {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            color: #42b8ac;
+            opacity: 0;
+            transform-origin: center;
+          }
+          @keyframes kioskIconCycle {
+            0%, 28% { opacity: 1; transform: rotate(0deg) scale(1); }
+            33%, 100% { opacity: 0; transform: rotate(120deg) scale(0.88); }
+          }
+          .kioskIconOne { animation: kioskIconCycle 6.2s linear infinite; }
+          .kioskIconTwo { animation: kioskIconCycle 6.2s linear infinite 2.06s; }
+          .kioskIconThree { animation: kioskIconCycle 6.2s linear infinite 4.12s; }
           .kioskBounceText {
             font-size: 11px;
             font-weight: 700;
@@ -1115,11 +1135,12 @@ export default function KioskPage() {
                     variant="outline"
                     size="sm"
                     icon={<Filter className="h-4 w-4" />}
+                    className="text-white border-white/40 hover:text-white hover:border-white/60"
                     onClick={() => setActiveView(activeView === 'filters' ? 'menu' : 'filters')}
                   >
                     {activeView === 'filters' ? t.browseFullMenu : t.filterByAllergens}
                   </Button>
-                  <Button variant="outline" size="sm" icon={<FileText className="h-4 w-4" />} onClick={() => setShowPDFOptions(true)}>
+                  <Button variant="outline" size="sm" icon={<FileText className="h-4 w-4" />} className="text-white border-white/40 hover:text-white hover:border-white/60" onClick={() => setShowPDFOptions(true)}>
                     {t.emailMenu}
                   </Button>
 
@@ -1128,6 +1149,7 @@ export default function KioskPage() {
                     <Button
                       variant="outline"
                       size="sm"
+                      className="text-white border-white/40 hover:text-white hover:border-white/60"
                       onClick={() => setShowLanguageMenu(!showLanguageMenu)}
                     >
                       <span className="font-semibold">{t.abbr}</span>
@@ -1160,6 +1182,7 @@ export default function KioskPage() {
                     variant="outline"
                     size="sm"
                     icon={<Home className="h-4 w-4" />}
+                    className="text-white border-white/40 hover:text-white hover:border-white/60"
                     onClick={() => {
                       setActiveView('landing')
                       clearFilters()
@@ -1170,6 +1193,7 @@ export default function KioskPage() {
                   <Button
                     variant="outline"
                     size="sm"
+                    className="text-white border-white/40 hover:text-white hover:border-white/60"
                     onClick={() => {
                       setKioskStarted(false)
                       setActiveView('landing')
@@ -1178,7 +1202,7 @@ export default function KioskPage() {
                     }}
                     title="Return to sleep screen"
                   >
-                    ZZ
+                    ZZZ
                   </Button>
                 </div>
               </div>
@@ -1789,8 +1813,9 @@ export default function KioskPage() {
                     items={filteredItems} 
                     compact={false}
                     showLegend={true}
+                    showLegendTop={true}
                     wrapperClassName="w-full max-h-[68vh] overflow-auto rounded-lg"
-                    stickyTopOffset={0}
+                    stickyTopOffset={2}
                   />
                 </div>
               ) : (
@@ -1962,9 +1987,10 @@ export default function KioskPage() {
                   items={sortedMenuItems}
                   compact={false}
                   showLegend={true}
+                  showLegendTop={true}
                   wrapperClassName="w-full max-h-[58vh] overflow-auto rounded-lg"
                   groupByCategory={true}
-                  stickyTopOffset={0}
+                  stickyTopOffset={2}
                 />
               ) : (
                 <div className="flex items-center justify-center py-8 text-gray-500">
@@ -1984,10 +2010,11 @@ export default function KioskPage() {
                 <AllergenTableView
                   items={ingredientGuideRows}
                   compact={false}
-                  showLegend={false}
+                  showLegend={true}
+                  showLegendTop={true}
                   wrapperClassName="w-full max-h-[58vh] overflow-auto rounded-lg"
                   groupByCategory={false}
-                  stickyTopOffset={0}
+                  stickyTopOffset={2}
                 />
               ) : (
                 <div className="py-6 text-gray-500">No ingredients available.</div>
