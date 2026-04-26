@@ -481,7 +481,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
       </table>
       </div>
 
-      {showLegend && (
+      {showLegend && !showLegendTop && (
         <Legend />
       )}
     </div>

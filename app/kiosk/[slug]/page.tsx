@@ -1162,7 +1162,7 @@ export default function KioskPage() {
         {activeView === 'landing' && (
           <>
             {/* Quick Action Tiles */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
               {/* Search by Allergen Tile */}
               <button
                 onClick={() => setActiveView('filters')}
@@ -1186,35 +1186,6 @@ export default function KioskPage() {
                     <div className="mt-auto w-full flex justify-center">
                       <div className="inline-flex px-4 py-2 bg-[#dc2626] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
                         {t.startFiltering}
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </button>
-
-              {/* Search Menu Tile */}
-              <button
-                onClick={() => setActiveView('menu')}
-                className="group text-left transition-transform hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0284c7] rounded-3xl"
-              >
-                <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#eef7ff] via-[#e3f2ff] to-[#d5ebff] border border-[#b8d8f3] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
-                  <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
-                  <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#0ea5e9]/10 group-hover:scale-110 transition-transform" />
-                  <div className="flex flex-col h-full">
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="p-3.5 bg-gradient-to-br from-[#0284c7] to-[#0ea5e9] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
-                        <Search className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl sm:text-2xl font-bold text-[#0c4a6e] mb-2 tracking-tight leading-tight">{t.browseFullMenu}</h3>
-                        <p className="text-[#0e7490] text-sm sm:text-[15px] leading-relaxed">
-                          {t.browseFullMenuDesc}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-auto w-full flex justify-center">
-                      <div className="inline-flex px-4 py-2 bg-[#0284c7] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
-                        {t.viewMenu}
                       </div>
                     </div>
                   </div>
@@ -1266,7 +1237,7 @@ export default function KioskPage() {
                       <div>
                         <h3 className="text-xl sm:text-2xl font-bold text-[#064e3b] mb-2 tracking-tight leading-tight">Full Allergen Guide</h3>
                         <p className="text-[#065f46] text-sm sm:text-[15px] leading-relaxed">
-                          View the complete allergen table for all menu items on screen.
+                          View the complete allergen table for all menu items and ingredients on screen.
                         </p>
                       </div>
                     </div>
