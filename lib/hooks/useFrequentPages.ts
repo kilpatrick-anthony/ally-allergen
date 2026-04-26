@@ -99,22 +99,43 @@ const DEFAULT_HREFS = [
   '/admin/analytics',
 ]
 
+const MIN_VISITS_FOR_DYNAMIC = 3
+
 /** localStorage key for page visit counts for a given business */
 function storageKey(businessId: string) {
   return `ally_freq_${businessId}`
 }
 
+/**
+ * Normalize nested admin routes to their parent section for tracking.
+ * Example: /admin/ingredients/new -> /admin/ingredients
+ */
+function normalizeAdminPath(path: string): string | null {
+  if (!path.startsWith('/admin')) return null
+  if (path === '/admin') return '/admin'
+
+  const exact = ALL_ADMIN_PAGES.find((p) => p.href === path)
+  if (exact) return exact.href
+
+  const candidates = ALL_ADMIN_PAGES
+    .map((p) => p.href)
+    .filter((href) => href !== '/admin' && path.startsWith(`${href}/`))
+    .sort((a, b) => b.length - a.length)
+
+  return candidates[0] ?? null
+}
+
 /** Increment the visit count for a given path */
 export function trackAdminPageVisit(path: string, businessId: string | null) {
   if (!businessId || typeof window === 'undefined') return
-  // Only track known admin pages (skip the dashboard itself to keep tiles meaningful)
-  const known = ALL_ADMIN_PAGES.find(p => p.href === path)
-  if (!known || path === '/admin') return
+  // Track known admin pages and nested sub-routes under their parent section.
+  const normalizedPath = normalizeAdminPath(path)
+  if (!normalizedPath || normalizedPath === '/admin') return
 
   try {
     const raw = localStorage.getItem(storageKey(businessId))
     const counts: Record<string, number> = raw ? JSON.parse(raw) : {}
-    counts[path] = (counts[path] ?? 0) + 1
+    counts[normalizedPath] = (counts[normalizedPath] ?? 0) + 1
     localStorage.setItem(storageKey(businessId), JSON.stringify(counts))
   } catch {
     // localStorage unavailable — silently ignore
@@ -138,8 +159,8 @@ export function getFrequentPages(businessId: string | null, count = 4): AdminPag
     const counts: Record<string, number> = JSON.parse(raw)
     const totalVisits = Object.values(counts).reduce((a, b) => a + b, 0)
 
-    // Use defaults until we have enough signal (10+ tracked visits)
-    if (totalVisits < 10) {
+    // Use defaults until we have enough signal.
+    if (totalVisits < MIN_VISITS_FOR_DYNAMIC) {
       return DEFAULT_HREFS.slice(0, count).map(h => pageMap.get(h)!)
     }
 

@@ -127,7 +127,8 @@ export function JenCoach() {
     const trimmed = text.trim()
     if (!trimmed || previewLoading) return
 
-    setPreviewMessages((prev) => [...prev, { role: 'user', text: trimmed }])
+    const history = [...previewMessages, { role: 'user' as const, text: trimmed }]
+    setPreviewMessages(history)
     setPreviewInput('')
 
     const fontReply = handleFontRequest(trimmed)
@@ -142,7 +143,15 @@ export function JenCoach() {
       const res = await fetch('/api/ally-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: trimmed, menuItems, businessName: '' }),
+        body: JSON.stringify({
+          message: trimmed,
+          menuItems,
+          businessName: 'Admin Portal',
+          _source: 'admin-coach',
+          _coach: 'ally',
+          pagePath: pathname,
+          chatHistory: history,
+        }),
       })
       const data = await res.json()
       setPreviewMessages((prev) => [
@@ -163,7 +172,8 @@ export function JenCoach() {
     const trimmed = text.trim()
     if (!trimmed || chatLoading) return
 
-    setChatMessages((prev) => [...prev, { role: 'user', text: trimmed }])
+    const history = [...chatMessages, { role: 'user' as const, text: trimmed }]
+    setChatMessages(history)
     setChatInput('')
 
     const fontReply = handleFontRequest(trimmed)
@@ -181,9 +191,13 @@ export function JenCoach() {
         body: JSON.stringify({
           message: trimmed,
           menuItems: [],
-          businessName: 'EU Food Safety (Regulation 1169/2011)',
+          businessName: 'Admin Portal',
           // Overriding with a compliance-focused context
           _jenMode: true,
+          _source: 'admin-coach',
+          _coach: 'jen',
+          pagePath: pathname,
+          chatHistory: history,
         }),
       })
       const data = await res.json()

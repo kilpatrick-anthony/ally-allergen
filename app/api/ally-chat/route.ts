@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { sendMail } from '@/lib/email'
 
 // ── Rate limiting ─────────────────────────────────────────────────────────────
 // Simple in-memory store: tracks request counts per IP within a rolling window.
@@ -25,6 +26,23 @@ function isRateLimited(ip: string): boolean {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const MAX_MESSAGE_LENGTH = 500
+const MAX_HISTORY_ITEMS = 24
+const MAX_HISTORY_ITEM_LENGTH = 500
+const ESCALATION_COOLDOWN_MS = 5 * 60 * 1000
+
+// Simple in-memory cooldown to prevent escalation email spam per IP.
+const escalationCooldownMap = new Map<string, number>()
+
+// Detect explicit requests to speak with a real person in admin coach chat.
+const HUMAN_ESCALATION_PATTERNS = [
+  /speak\s+to\s+(a\s+)?(real\s+)?person/i,
+  /talk\s+to\s+(a\s+)?human/i,
+  /contact\s+anthony/i,
+  /message\s+anthony/i,
+  /dm\s+anthony/i,
+  /human\s+support/i,
+  /real\s+support/i,
+]
 
 // Deny-list: common jailbreak / prompt-injection patterns.
 // Checked against the raw user message before it reaches the model.
@@ -47,17 +65,111 @@ interface MenuItem {
   dietary?: string[]
 }
 
+interface ChatTurn {
+  role: string
+  text: string
+}
+
 interface RequestBody {
   message: string
   menuItems: MenuItem[]
   businessName?: string
   _jenMode?: boolean
+  _source?: 'admin-coach' | 'kiosk' | 'unknown'
+  _coach?: 'ally' | 'jen'
+  pagePath?: string
+  chatHistory?: ChatTurn[]
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function sanitiseText(text: string): string {
   // Strip null bytes and control characters (except newlines/tabs)
   return text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '').trim()
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+function normalizeHistory(input: unknown): ChatTurn[] {
+  if (!Array.isArray(input)) return []
+
+  return input
+    .filter((item): item is ChatTurn => !!item && typeof item === 'object')
+    .map((item) => ({
+      role: sanitiseText(String(item.role ?? 'unknown')).slice(0, 20),
+      text: sanitiseText(String(item.text ?? '')).slice(0, MAX_HISTORY_ITEM_LENGTH),
+    }))
+    .filter((item) => item.text.length > 0)
+    .slice(-MAX_HISTORY_ITEMS)
+}
+
+function shouldEscalateToHuman(message: string): boolean {
+  return HUMAN_ESCALATION_PATTERNS.some((pattern) => pattern.test(message))
+}
+
+function canSendEscalationNow(ip: string): boolean {
+  const now = Date.now()
+  const last = escalationCooldownMap.get(ip)
+  if (last && now - last < ESCALATION_COOLDOWN_MS) return false
+  escalationCooldownMap.set(ip, now)
+  return true
+}
+
+async function sendEscalationEmail(params: {
+  to: string
+  coach: 'ally' | 'jen'
+  pagePath: string
+  businessName: string
+  latestQuestion: string
+  history: ChatTurn[]
+  ip: string
+}) {
+  const submittedAt = new Date().toLocaleString('en-IE', { timeZone: 'Europe/Dublin' })
+
+  const textHistory = params.history.length
+    ? params.history
+        .map((turn, idx) => `${idx + 1}. ${turn.role.toUpperCase()}: ${turn.text}`)
+        .join('\n')
+    : 'No prior chat history provided.'
+
+  const htmlHistory = params.history.length
+    ? params.history
+        .map(
+          (turn, idx) =>
+            `<li><strong>${idx + 1}. ${escapeHtml(turn.role.toUpperCase())}:</strong> ${escapeHtml(turn.text)}</li>`
+        )
+        .join('')
+    : '<li>No prior chat history provided.</li>'
+
+  await sendMail({
+    to: params.to,
+    subject: `[Coach Escalation] ${params.coach.toUpperCase()} requested human support`,
+    text:
+      `A user requested human support from ${params.coach.toUpperCase()} in the admin coach chat.\n\n` +
+      `Latest question:\n${params.latestQuestion}\n\n` +
+      `Page: ${params.pagePath}\n` +
+      `Business: ${params.businessName}\n` +
+      `IP: ${params.ip}\n` +
+      `Submitted at: ${submittedAt}\n\n` +
+      `Chat history:\n${textHistory}`,
+    html: `
+      <h2>Coach Escalation Request</h2>
+      <p><strong>Coach:</strong> ${escapeHtml(params.coach.toUpperCase())}</p>
+      <p><strong>Latest question:</strong><br>${escapeHtml(params.latestQuestion)}</p>
+      <p><strong>Page:</strong> ${escapeHtml(params.pagePath)}</p>
+      <p><strong>Business:</strong> ${escapeHtml(params.businessName)}</p>
+      <p><strong>IP:</strong> ${escapeHtml(params.ip)}</p>
+      <p><strong>Submitted at:</strong> ${escapeHtml(submittedAt)}</p>
+      <h3>Chat history</h3>
+      <ol>${htmlHistory}</ol>
+    `,
+  })
 }
 
 function buildMenuContext(items: MenuItem[]): string {
@@ -154,14 +266,6 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const apiKey = process.env.OPENAI_API_KEY
-  if (!apiKey) {
-    return NextResponse.json(
-      { reply: "I'm not fully connected right now — please ask a staff member for allergen information." },
-      { status: 200 }
-    )
-  }
-
   let body: RequestBody
   try {
     body = await req.json()
@@ -169,7 +273,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
 
-  const { message, menuItems = [], businessName = 'this restaurant', _jenMode = false } = body
+  const {
+    message,
+    menuItems = [],
+    businessName = 'this restaurant',
+    _jenMode = false,
+    _source = 'unknown',
+    _coach = _jenMode ? 'jen' : 'ally',
+    pagePath = 'unknown',
+    chatHistory = [],
+  } = body
 
   // Input validation + sanitisation
   if (!message || typeof message !== 'string') {
@@ -197,6 +310,61 @@ export async function POST(req: NextRequest) {
         { status: 200 }
       )
     }
+  }
+
+  // Human escalation flow for admin coach only.
+  if (_source === 'admin-coach' && shouldEscalateToHuman(sanitised)) {
+    const recipient = process.env.SUPER_ADMIN_EMAIL || 'anthony@allyjen.ie'
+    const normalizedHistory = normalizeHistory(chatHistory)
+
+    if (!canSendEscalationNow(ip)) {
+      return NextResponse.json(
+        {
+          reply:
+            "I can absolutely help you contact Anthony. Please send him a DM and he will get back to you soon. I already sent your recent context, so there is no need to resend it right now.",
+        },
+        { status: 200 }
+      )
+    }
+
+    try {
+      await sendEscalationEmail({
+        to: recipient,
+        coach: _coach,
+        pagePath: sanitiseText(String(pagePath || 'unknown')).slice(0, 120),
+        businessName: sanitiseText(String(businessName || 'unknown')).slice(0, 100),
+        latestQuestion: sanitised,
+        history: normalizedHistory.length
+          ? normalizedHistory
+          : [{ role: 'user', text: sanitised }],
+        ip,
+      })
+    } catch (error) {
+      console.error('[ally-chat] escalation email error:', error)
+      return NextResponse.json(
+        {
+          reply:
+            "Please send Anthony a DM and he will get back to you. I could not forward the email automatically this time.",
+        },
+        { status: 200 }
+      )
+    }
+
+    return NextResponse.json(
+      {
+        reply:
+          "Of course. Please send Anthony a DM and he will get back to you shortly. I have also emailed him your question and the recent chat history automatically.",
+      },
+      { status: 200 }
+    )
+  }
+
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) {
+    return NextResponse.json(
+      { reply: "I'm not fully connected right now — please ask a staff member for allergen information." },
+      { status: 200 }
+    )
   }
 
   const menuContext   = buildMenuContext(Array.isArray(menuItems) ? menuItems : [])

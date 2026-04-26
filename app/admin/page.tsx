@@ -41,6 +41,20 @@ export default function AdminDashboard() {
   useEffect(() => {
     const checkForData = async () => {
       try {
+        // Super admins should land in the super-admin portal, not onboarding/admin.
+        const sessionRes = await fetch('/api/auth/session')
+        const session = sessionRes.ok ? await sessionRes.json() : null
+        const isSuperAdmin = Boolean(
+          session?.authenticated &&
+          (session?.user?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL ||
+            session?.user?.role === 'super_admin')
+        )
+
+        if (isSuperAdmin) {
+          router.replace('/super-admin')
+          return
+        }
+
         // Check if user has any data
         const [ingredientsRes, menuItemsRes, datasheetsRes, suppliersRes, sitesRes] = await Promise.all([
           fetch('/api/ingredients?limit=1'),
