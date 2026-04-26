@@ -1724,6 +1724,7 @@ export default function KioskPage() {
                   compact={false}
                   showLegend={true}
                   wrapperClassName="w-full overflow-auto max-h-[calc(100vh-290px)]"
+                  stickyTopOffset={-1}
                 />
               ) : (
                 /* Card View */
@@ -1891,6 +1892,7 @@ export default function KioskPage() {
                   showLegend={true}
                   wrapperClassName="w-full overflow-auto max-h-[calc(100vh-360px)]"
                   groupByCategory={true}
+                  stickyTopOffset={-1}
                 />
               ) : (
                 <div className="flex items-center justify-center py-8 text-gray-500">
@@ -1908,6 +1910,7 @@ export default function KioskPage() {
                   showLegend={false}
                   wrapperClassName="w-full overflow-auto max-h-[calc(100vh-360px)]"
                   groupByCategory={false}
+                  stickyTopOffset={-1}
                 />
               ) : (
                 <div className="py-6 text-gray-500">No ingredients available.</div>

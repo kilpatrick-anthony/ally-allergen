@@ -15,6 +15,8 @@ interface AllergenTableViewProps {
   wrapperClassName?: string
   /** Group rows by category headings before rendering */
   groupByCategory?: boolean
+  /** Pixel offset for sticky column headers */
+  stickyTopOffset?: number
 }
 
 const AllergenTableView: React.FC<AllergenTableViewProps> = ({ 
@@ -23,6 +25,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
   showLegend = true,
   wrapperClassName,
   groupByCategory = true,
+  stickyTopOffset = 0,
 }) => {
   // Expand ingredients with multiple suppliers into separate rows
   const expandedItems = items.flatMap(item => {
@@ -178,12 +181,14 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
     return count + 1
   }, 0)
 
+  const stickyTopStyle = { top: stickyTopOffset }
+
   return (
     <div className={wrapperClassName ?? 'w-full overflow-auto'} style={!wrapperClassName ? { maxHeight: 'calc(100vh - 260px)' } : undefined}>
       <table className="w-full border-collapse bg-white rounded-lg overflow-hidden shadow-sm text-xs">
         <thead>
           <tr className="bg-[#003842]">
-            <th className="text-left p-2 text-white font-semibold border border-gray-300 sticky top-0 left-0 bg-[#003842] z-40 min-w-[120px]">
+            <th className="text-left p-2 text-white font-semibold border border-gray-300 sticky left-0 bg-[#003842] z-40 min-w-[120px]" style={stickyTopStyle}>
               Item Name
             </th>
             {ALLERGENS.map(allergen => {
@@ -194,7 +199,8 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                 return (
                   <React.Fragment key={allergen.id}>
                     <th 
-                      className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[60px] sticky top-0 bg-[#003842] z-30"
+                      className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[60px] sticky bg-[#003842] z-30"
+                      style={stickyTopStyle}
                       title={allergen.name}
                     >
                       <div className="flex flex-col items-center gap-0.5">
@@ -206,7 +212,8 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                     {GLUTEN_TYPES.map(glutenType => (
                       <th 
                         key={`${allergen.id}-${glutenType.key}`}
-                        className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[50px] bg-[#f59e0b] bg-opacity-80 sticky top-0 z-30"
+                        className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[50px] bg-[#f59e0b] bg-opacity-80 sticky z-30"
+                        style={stickyTopStyle}
                         title={glutenType.name}
                       >
                         <div className="flex flex-col items-center gap-0.5">
@@ -224,7 +231,8 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                 return (
                   <React.Fragment key={allergen.id}>
                     <th 
-                      className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[60px] sticky top-0 bg-[#003842] z-30"
+                      className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[60px] sticky bg-[#003842] z-30"
+                      style={stickyTopStyle}
                       title={allergen.name}
                     >
                       <div className="flex flex-col items-center gap-0.5">
@@ -236,7 +244,8 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                     {TREE_NUT_TYPES.map(nutType => (
                       <th 
                         key={`${allergen.id}-${nutType.key}`}
-                        className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[50px] bg-[#b45309] bg-opacity-80 sticky top-0 z-30"
+                        className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[50px] bg-[#b45309] bg-opacity-80 sticky z-30"
+                        style={stickyTopStyle}
                         title={nutType.name}
                       >
                         <div className="flex flex-col items-center gap-0.5">
@@ -253,7 +262,8 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
               return (
                 <th 
                   key={allergen.id} 
-                  className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[60px] sticky top-0 bg-[#003842] z-30"
+                  className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[60px] sticky bg-[#003842] z-30"
+                  style={stickyTopStyle}
                   title={allergen.name}
                 >
                   <div className="flex flex-col items-center gap-0.5">
