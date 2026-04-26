@@ -705,12 +705,12 @@ export default function SettingsPage() {
                   onChange={(e) => setSettings({...settings, defaultLanguage: e.target.value})}
                   className="w-full text-sm border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
-                  <option value="en">🇬🇧 English</option>
-                  <option value="fr">🇫🇷 Français</option>
-                  <option value="de">🇩🇪 Deutsch</option>
-                  <option value="es">🇪🇸 Español</option>
-                  <option value="ga">🇮🇪 Gaeilge</option>
-                  <option value="pt">🇵🇹 Português</option>
+                  <option value="en">🇬🇧 English (Default)</option>
+                  <option value="ga">🇮🇪 Irish</option>
+                  <option value="pt">🇵🇹 Portuguese</option>
+                  <option value="fr">🇫🇷 French</option>
+                  <option value="es">🇪🇸 Spanish</option>
+                  <option value="de">🇩🇪 German</option>
                 </select>
               </div>
             </div>
