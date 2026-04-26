@@ -55,8 +55,14 @@ export default function KioskPairPage() {
 
       // Brief success flash, then redirect
       setTimeout(() => {
+        const kioskTarget = data.kiosk_target || data.business_slug || data.business_id
+        if (!kioskTarget) {
+          setStatus('error')
+          setErrorMsg('Paired, but kiosk destination is missing. Please regenerate and try again.')
+          return
+        }
         router.replace(
-          `/kiosk/${data.business_slug}?site_id=${data.site_id}`
+          `/kiosk/${kioskTarget}?site_id=${data.site_id}`
         )
       }, 1200)
     } catch {

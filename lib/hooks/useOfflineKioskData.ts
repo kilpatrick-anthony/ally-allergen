@@ -55,6 +55,9 @@ export interface KioskData {
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes - configurable
 const STORAGE_KEY_PREFIX = 'kiosk_data_';
 
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export function useOfflineKioskData(slug: string) {
   const [data, setData] = useState<KioskData>({
     business: null,
@@ -99,16 +102,19 @@ export function useOfflineKioskData(slug: string) {
   // Fetch fresh data from Supabase
   const fetchFreshData = useCallback(async (): Promise<KioskData | null> => {
     const supabase = createClient();
+    const isBusinessId = UUID_PATTERN.test(slug);
     
     try {
       console.log('🌐 [Network] Fetching fresh data for:', slug);
       
       // Fetch business data
-      const { data: businessData, error: businessError } = await supabase
+      const businessQuery = supabase
         .from('businesses')
-        .select('*')
-        .eq('slug', slug)
-        .single();
+        .select('*');
+
+      const { data: businessData, error: businessError } = isBusinessId
+        ? await businessQuery.eq('id', slug).single()
+        : await businessQuery.eq('slug', slug).single();
 
       if (businessError) throw businessError;
 

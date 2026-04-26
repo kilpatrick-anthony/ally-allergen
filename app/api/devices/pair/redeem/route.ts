@@ -75,11 +75,13 @@ export async function POST(request: NextRequest) {
 
     const device = Array.isArray(record.device) ? record.device[0] : record.device
     const business = Array.isArray(record.business) ? record.business[0] : record.business
+    const kioskTarget = business?.slug || record.business_id
 
     return NextResponse.json({
       site_id: record.site_id,
       business_id: record.business_id,
       business_slug: business?.slug ?? null,
+      kiosk_target: kioskTarget,
       device_id: record.device_id,
       device_name: device?.device_name ?? null,
       device_type: device?.device_type ?? 'kiosk',
