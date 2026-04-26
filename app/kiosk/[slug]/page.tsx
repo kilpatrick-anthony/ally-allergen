@@ -328,7 +328,7 @@ export default function KioskPage() {
     (typeof window !== 'undefined' ? localStorage.getItem('defaultLanguage') as LanguageCode || 'en' : 'en') as LanguageCode
   )
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
-  const [menuViewMode, setMenuViewMode] = useState<'cards' | 'table'>('cards')
+  const [menuViewMode, setMenuViewMode] = useState<'cards' | 'table'>('table')
   const [showScreensaver, setShowScreensaver] = useState(false)
   const [isSmallScreen, setIsSmallScreen] = useState(false)
   const [pdfViewerUrl, setPdfViewerUrl] = useState<string | null>(null)
@@ -366,7 +366,7 @@ export default function KioskPage() {
       const small = window.innerWidth < 1024
       setIsSmallScreen(small)
       if (small) {
-        setMenuViewMode('cards')
+        setMenuViewMode('table')
       }
     }
 
@@ -704,17 +704,16 @@ export default function KioskPage() {
     if (!business || !menuItems.length) return
     setGeneratingPDFViewer(true)
     try {
-      const url = await generateAllergenTablePDF({
+      const dataUri = await generateAllergenTablePDF({
         business,
         items: menuItems,
         title: 'Complete Allergen Information Guide',
         showLegend: true,
         outputMode: 'bloburl',
       })
-      if (url) {
-        // Revoke any previous blob URL to free memory
+      if (dataUri) {
         if (pdfViewerUrl) URL.revokeObjectURL(pdfViewerUrl)
-        setPdfViewerUrl(url as string)
+        setPdfViewerUrl(dataUri as string)
         await trackDownload(slug, 'inline_view', siteIdParam)
       }
     } catch (error) {
@@ -936,8 +935,8 @@ export default function KioskPage() {
               Interactive Allergen Check Guide
             </p>
 
-            <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-[#42b8ac]/45 bg-[#42b8ac]/15 px-5 py-4">
-              <p className="text-white font-bold text-xl sm:text-2xl lg:text-3xl mb-0">
+            <div className="mx-auto mt-14 max-w-lg rounded-2xl border border-[#42b8ac]/45 bg-[#42b8ac]/15 px-4 py-3">
+              <p className="text-white font-bold text-lg sm:text-xl lg:text-2xl mb-0">
                 Click here to begin
               </p>
             </div>
@@ -1829,9 +1828,10 @@ export default function KioskPage() {
               Close
             </button>
           </div>
-          <iframe
+          <embed
             src={pdfViewerUrl}
-            className="flex-1 w-full border-none"
+            type="application/pdf"
+            className="flex-1 w-full"
             title="Full Allergen Guide PDF"
           />
         </div>
