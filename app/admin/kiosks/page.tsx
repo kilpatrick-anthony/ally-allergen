@@ -57,7 +57,7 @@ export default function AllKiosksPage() {
     } finally {
       setLoading(false)
     }
-            {t('admin.backToSites')}
+  }
 
   const getDeviceIcon = (type: Device['device_type']) => {
     switch (type) {
@@ -67,9 +67,8 @@ export default function AllKiosksPage() {
       case 'display': return Monitor
     }
   }
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{t('admin.allKiosksDevices')}</h1>
   const getTimeSince = (dateString?: string | null) => {
-                    {t('admin.allKiosksDevicesDesc')}
+    if (!dateString) return 'Never'
     const date = new Date(dateString)
     const seconds = Math.floor((Date.now() - date.getTime()) / 1000)
     
@@ -105,9 +104,9 @@ export default function AllKiosksPage() {
             <div className="relative h-12 w-12 mx-auto mb-4">
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
               <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
-              <option value="all">{t('admin.allStatus')}</option>
-              <option value="online">{t('admin.online')}</option>
-              <option value="offline">{t('admin.offline')}</option>
+            </div>
+            <p className="text-gray-600">{t('admin.loading')}</p>
+          </div>
         </div>
       </Container>
     )
@@ -123,21 +122,19 @@ export default function AllKiosksPage() {
             className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Back to Sites
+            {t('admin.backToSites')}
           </Link>
           
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('admin.noData')}</h3>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-gradient-to-br from-teal-400 to-teal-600 dark:from-teal-500 dark:to-gray-700 rounded-lg flex-shrink-0">
-                  <Tablet className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">All Kiosks & Devices</h1>
-                  <p className="text-gray-600">
-                    Manage all devices across all locations
-                  </p>
-                </div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 bg-gradient-to-br from-teal-400 to-teal-600 dark:from-teal-500 dark:to-gray-700 rounded-lg flex-shrink-0">
+                <Tablet className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{t('admin.allKiosksDevices')}</h1>
+                <p className="text-gray-600">
+                  {t('admin.allKiosksDevicesDesc')}
+                </p>
               </div>
             </div>
             <Button

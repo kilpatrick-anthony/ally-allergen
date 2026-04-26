@@ -116,7 +116,7 @@ export default function DeviceMonitoringPage() {
   }
 
   const getDeviceIcon = (type: string) => {
-                <p className="text-gray-500">{t('admin.noData')}</p>
+    switch (type) {
       case 'tablet': return Tablet
       case 'mobile': return Smartphone
       default: return Monitor

@@ -310,7 +310,7 @@ export default function KioskPage() {
   const [showScreensaver, setShowScreensaver] = useState(false)
   const [isSmallScreen, setIsSmallScreen] = useState(false)
   
-  const t = translations[currentLanguage]
+  const t = translations[currentLanguage] as typeof translations.en
   const businessName = business?.name?.trim() || ''
   const kioskDisplayName = business?.kiosk_display_name?.trim() || ''
   const landingTitle = kioskDisplayName || businessName || 'Welcome'
