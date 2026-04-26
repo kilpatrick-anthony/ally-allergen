@@ -3,6 +3,7 @@
 
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 import { 
   Wifi, WifiOff, Monitor, Clock, AlertCircle, CheckCircle,
   RefreshCw, MapPin, Calendar, Activity, Smartphone, Tablet,
@@ -40,6 +41,7 @@ interface Stats {
 }
 
 export default function DeviceMonitoringPage() {
+  const { t } = useTranslation()
   const [devices, setDevices] = useState<Device[]>([])
   const [stats, setStats] = useState<Stats>({ total: 0, online: 0, offline: 0, alerts: 0 })
   const [loading, setLoading] = useState(true)
@@ -55,7 +57,7 @@ export default function DeviceMonitoringPage() {
       const response = await fetch('/api/devices')
       const data = await response.json()
 
-      if (!response.ok) throw new Error(data.error || 'Failed to fetch devices')
+      if (!response.ok) throw new Error(data.error || t('admin.failedToDownload'))
 
       const list: Device[] = (data.devices || []).map((d: any) => ({
         ...d,
@@ -64,7 +66,7 @@ export default function DeviceMonitoringPage() {
           ? (Date.now() - new Date(d.last_heartbeat).getTime()) / 60000
           : 9999,
         site_name: d.site?.name ?? '',
-        site_slug: d.site?.slug ?? '',
+                  <p className="text-sm text-gray-500">{t('admin.totalDevices')}</p>
         site_email: '',
         business_name: '',
         admin_email: '',
@@ -83,7 +85,7 @@ export default function DeviceMonitoringPage() {
 
       setStats({ total, online, offline, alerts })
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load devices')
+      setError(err instanceof Error ? err.message : t('admin.failedToDownload'))
     } finally {
       setRefreshing(false)
       setLoading(false)
@@ -115,7 +117,7 @@ export default function DeviceMonitoringPage() {
   }
 
   const getDeviceIcon = (type: string) => {
-    switch (type) {
+                <p className="text-gray-500">{t('admin.noData')}</p>
       case 'tablet': return Tablet
       case 'mobile': return Smartphone
       default: return Monitor
@@ -144,9 +146,9 @@ export default function DeviceMonitoringPage() {
         {/* Header */}
         <div className="flex flex-wrap justify-between items-start gap-3">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Device Monitoring</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('admin.deviceMonitoring')}</h1>
             <p className="text-gray-600 mt-2">
-              Track kiosk device status and receive offline alerts
+              {t('admin.deviceMonitoringDesc')}
             </p>
             <p className="text-sm text-gray-500 mt-1">
               Need to add a device? Set it up from Sites so it can be assigned to a location.
@@ -158,7 +160,7 @@ export default function DeviceMonitoringPage() {
               className="inline-flex items-center justify-center rounded-lg bg-[#42b8ac] px-4 py-2.5 text-sm font-medium text-white transition-all duration-300 hover:bg-[#36948a]"
             >
               <Plus className="h-4 w-4 mr-2" />
-              Add Device by Location
+              {t('admin.addLocation')}
             </Link>
             <Button
               onClick={fetchDevices}
@@ -190,7 +192,7 @@ export default function DeviceMonitoringPage() {
             <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Total Devices</p>
+                  <p className="text-sm text-gray-500">{t('admin.totalDevices')}</p>
                   <p className="text-3xl font-bold text-gray-900 mt-2">{stats.total}</p>
                 </div>
                 <Monitor className="h-10 w-10 text-gray-400" />
@@ -226,7 +228,7 @@ export default function DeviceMonitoringPage() {
             <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Active Alerts</p>
+                  <p className="text-sm text-gray-500">{t('admin.activeAlerts')}</p>
                   <p className="text-3xl font-bold text-amber-600 mt-2">{stats.alerts}</p>
                 </div>
                 <AlertCircle className="h-10 w-10 text-amber-400" />
@@ -273,7 +275,7 @@ export default function DeviceMonitoringPage() {
             <Card>
               <div className="p-12 text-center">
                 <Monitor className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No devices found</p>
+                <p className="text-gray-500">{t('admin.noData')}</p>
                 <p className="text-sm text-gray-400 mt-2">
                   Devices will appear here once kiosks are accessed
                 </p>

@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import * as Dialog from '@radix-ui/react-dialog'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 import { 
   BarChart3, TrendingUp, Eye,
   Download, Package, ChefHat, Building, Calendar,
@@ -18,6 +19,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 
 export default function AnalyticsPage() {
+  const { t } = useTranslation()
   type DateRange = { from?: Date; to?: Date }
 
   const [loading, setLoading] = useState(true)
@@ -174,9 +176,9 @@ export default function AnalyticsPage() {
                 <BarChart3 className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-[#003842] dark:text-white">Analytics Dashboard</h1>
+                <h1 className="text-3xl font-bold text-[#003842] dark:text-white">{t('admin.analyticsDashboard')}</h1>
                 <p className="text-gray-600 dark:text-gray-300">
-                  Track usage, engagement, and compliance across your allergen platform
+                  {t('admin.analyticsDashboardDesc')}
                 </p>
               </div>
             </div>
@@ -198,7 +200,7 @@ export default function AnalyticsPage() {
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Time Range
+                {t('admin.timeRange')}
               </span>
               {(Object.keys(presetConfig) as Array<keyof typeof presetConfig>).map((preset) => (
                 <button
@@ -233,7 +235,7 @@ export default function AnalyticsPage() {
                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border-transparent'
                     }`}
                   >
-                    Custom Range
+                    {t('admin.filter')}
                   </button>
                 </Dialog.Trigger>
                 <Dialog.Portal>
@@ -319,20 +321,20 @@ export default function AnalyticsPage() {
               size="sm"
               icon={<Filter className="h-4 w-4" />}
             >
-              Filters
+              {t('admin.filter')}
             </Button>
             <Button
               variant="ghost"
               size="sm"
               icon={<RefreshCw className="h-4 w-4" />}
             >
-              Refresh
+              {t('admin.refresh')}
             </Button>
             <Button
               variant="primary"
               icon={<Download className="h-4 w-4" />}
             >
-              Export Report
+              {t('admin.export')}
             </Button>
           </div>
         </div>

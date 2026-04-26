@@ -4,6 +4,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useNotification } from '@/lib/hooks/useNotification'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 import { Plus, Search, Trash2, Edit, ChefHat, FilterIcon, ChevronDown, SortAsc, SortDesc, Grid, List, Package, MapPin, Eye, Building } from 'lucide-react'
 
 import { Container } from '@/components/layout/Container'
@@ -32,6 +33,7 @@ interface SiteOption {
 }
 
 export default function MenuBuilderPage() {
+    const { t } = useTranslation()
   const { showNotification } = useNotification()
   const [loading, setLoading] = useState(true)
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
@@ -186,7 +188,7 @@ export default function MenuBuilderPage() {
           <div className="relative h-12 w-12 mx-auto mb-4">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
           </div>
-          <p className="text-gray-600 dark:text-gray-400">Loading menu builder...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('admin.loading')}</p>
         </div>
       </div>
     )
@@ -202,7 +204,8 @@ export default function MenuBuilderPage() {
           </div>
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Menu Builder</h1>
-            <p className="text-gray-600 dark:text-gray-300">Create and manage menu items with allergen tracking</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('admin.menuBuilder')}</h1>
+            <p className="text-gray-600 dark:text-gray-300">{t('admin.menuBuilderDesc')}</p>
           </div>
         </div>
       </div>
@@ -213,7 +216,7 @@ export default function MenuBuilderPage() {
           <Card className="hover:shadow-lg transition-all hover:border-emerald-500 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-emerald-600 group cursor-pointer p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">Add New</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">{t('admin.addNew')}</p>
                 <p className="text-2xl font-bold text-[#003842] dark:text-[#42b8ac] mt-1 group-hover:text-white transition-colors">+</p>
               </div>
               <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-emerald-600 transition-all">
@@ -221,7 +224,7 @@ export default function MenuBuilderPage() {
               </div>
             </div>
             <div className="mt-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">Create new menu item</div>
+                <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.createMenu')}</div>
             </div>
           </Card>
         </Link>
@@ -280,7 +283,7 @@ export default function MenuBuilderPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search menu items..."
+                placeholder={t('admin.searchMenuItems')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"

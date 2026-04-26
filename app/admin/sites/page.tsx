@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 import { 
   Building, MapPin, Users, Globe, Phone, Mail,
   Calendar, CheckCircle, XCircle, AlertCircle,
@@ -32,6 +33,7 @@ interface SiteView {
 }
 
 export default function SitesPage() {
+    const { t } = useTranslation()
   const [sites, setSites] = useState<SiteView[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -158,9 +160,8 @@ export default function SitesPage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Site Management</h1>
-                <p className="text-gray-600 dark:text-gray-300">
-                  Manage your restaurant locations and kiosk deployments
-                </p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('admin.siteManagement')}</h1>
+                <p className="text-gray-600 dark:text-gray-300">{t('admin.siteManagementDesc')}</p>
               </div>
             </div>
           </div>
@@ -181,7 +182,7 @@ export default function SitesPage() {
           <Card className="hover:shadow-lg transition-all hover:border-amber-500 hover:bg-gradient-to-br hover:from-amber-500 hover:to-amber-600 group cursor-pointer">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Add New Site</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.addNewSite')}</p>
                 <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">+</p>
               </div>
               <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-amber-600 transition-all">
@@ -189,7 +190,7 @@ export default function SitesPage() {
               </div>
             </div>
             <div className="mt-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">Create new location →</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.createNewLocation')} →</div>
             </div>
           </Card>
         </Link>
@@ -197,7 +198,7 @@ export default function SitesPage() {
         <Card className="hover:shadow-lg transition-all hover:border-[#42b8ac] hover:bg-gradient-to-br hover:from-[#42b8ac] hover:to-[#36948a] group cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Total Sites</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.totalSites')}</p>
               <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">{stats.total}</p>
             </div>
             <div className="p-3 bg-gradient-to-br from-[#42b8ac] to-[#36948a] rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-[#42b8ac] transition-all">
@@ -250,7 +251,7 @@ export default function SitesPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search sites..."
+                placeholder={t('admin.search') + ' ' + t('admin.sites').toLowerCase() + '...'}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"

@@ -811,18 +811,18 @@ export default function KioskPage() {
           </div>
 
           <h2 className="text-2xl font-bold text-white mb-2">
-            Still there?
+            {t.inactivityWarning}
           </h2>
 
           <p className="text-[#8dd8d2] mb-6">
-            Returning to home screen in:
+            {t.noActivityDetected}
           </p>
 
           <div className="mb-8">
             <div className="text-6xl font-bold text-[#42b8ac] font-mono tabular-nums">
               {String(remainingSeconds).padStart(2, '0')}
             </div>
-            <p className="text-sm text-white/40 mt-2">Tap anywhere to continue</p>
+            <p className="text-sm text-white/40 mt-2">{t.tapAnywhereToContinue}</p>
           </div>
 
           <div className="w-full bg-white/10 rounded-full h-1.5 mb-8 overflow-hidden">
@@ -839,7 +839,7 @@ export default function KioskPage() {
             fullWidth
             onClick={handleDismissWarning}
           >
-            Continue Using Kiosk
+            {t.continueUsingKiosk}
           </Button>
         </div>
       </div>
@@ -1001,7 +1001,7 @@ export default function KioskPage() {
                   onClick={handleStartKiosk}
                   className="w-full inline-flex items-center justify-center gap-3 px-8 py-5 bg-[#42b8ac] hover:bg-[#36948a] text-white rounded-2xl font-bold text-xl shadow-[0_0_40px_rgba(66,184,172,0.2)] hover:shadow-[0_0_60px_rgba(66,184,172,0.35)] transition-all duration-300 group"
                 >
-                  <span>Get Started</span>
+                  <span>{t.startBrowsing}</span>
                   <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
                 </button>
 
@@ -1070,7 +1070,7 @@ export default function KioskPage() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search menu items..."
+                    placeholder={t.searchMenuItems}
                     style={{
                       borderColor: 'rgba(66, 184, 172, 0.35)',
                       color: 'white',
@@ -1094,7 +1094,7 @@ export default function KioskPage() {
                     icon={<Filter className="h-4 w-4" />}
                     onClick={() => setActiveView(activeView === 'filters' ? 'menu' : 'filters')}
                   >
-                    {activeView === 'filters' ? 'Browse Menu' : 'Filter Allergens'}
+                    {activeView === 'filters' ? t.browseFullMenu : t.filterByAllergens}
                   </Button>
                   <Button variant="outline" size="sm" icon={<FileText className="h-4 w-4" />} onClick={() => setShowPDFOptions(true)}>
                     {t.emailMenu}

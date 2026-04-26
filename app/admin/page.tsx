@@ -160,7 +160,7 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-2 mb-4">
             <Star className="h-4 w-4 text-[#42b8ac]" />
             <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Frequently Used
+              {t('admin.frequentlyUsed')}
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -188,7 +188,7 @@ export default function AdminDashboard() {
             })}
           </div>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 ml-1">
-            These tiles update automatically based on the pages you visit most
+            {t('admin.frequentlyUsedHint')}
           </p>
         </div>
       </Container>
@@ -238,13 +238,13 @@ export default function AdminDashboard() {
                   <Badge variant="info" size="sm">Step 1</Badge>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  Add Your First Location
+                  {t('admin.addFirstLocation')}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 flex-grow">
-                  Create a site so you can pair your first kiosk device.
+                  {t('admin.addFirstLocationDesc')}
                 </p>
                 <div className="flex items-center justify-center text-[#42b8ac] font-medium mt-auto">
-                  Add Location
+                  {t('admin.addLocation')}
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </div>
               </div>
@@ -262,13 +262,13 @@ export default function AdminDashboard() {
                   <Badge variant="info" size="sm">Step 2</Badge>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  Pair Your First Device
+                  {t('admin.pairFirstDevice')}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 flex-grow">
-                  Generate a setup code and link your kiosk to the location.
+                  {t('admin.pairFirstDeviceDesc')}
                 </p>
                 <div className="flex items-center justify-center text-[#42b8ac] font-medium mt-auto">
-                  Open Device Monitoring
+                  {t('admin.openDeviceMonitoring')}
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </div>
               </div>
@@ -286,13 +286,13 @@ export default function AdminDashboard() {
                   <Badge variant="info" size="sm">Step 3</Badge>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  Build Your Menu
+                  {t('admin.buildYourMenu')}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 flex-grow">
-                  Add ingredients and publish menu items with allergen data.
+                  {t('admin.buildYourMenuDesc')}
                 </p>
                 <div className="flex items-center justify-center text-[#42b8ac] font-medium mt-auto">
-                  Open Menu Builder
+                  {t('admin.openMenuBuilder')}
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </div>
               </div>
@@ -306,7 +306,7 @@ export default function AdminDashboard() {
         <div className="flex items-center gap-2 mb-4">
           <Star className="h-4 w-4 text-[#42b8ac]" />
           <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-            Frequently Used
+            {t('admin.frequentlyUsed')}
           </h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -334,7 +334,7 @@ export default function AdminDashboard() {
           })}
         </div>
         <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 ml-1">
-          These tiles update automatically based on the pages you visit most
+          {t('admin.frequentlyUsedHint')}
         </p>
       </div>
     </Container>

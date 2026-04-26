@@ -68,6 +68,10 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
+  const language = typeof window !== 'undefined'
+    ? (localStorage.getItem('defaultLanguage') || 'en')
+    : 'en'
+
   const messages = messagesByCoach[activeCoach]
   const coachName = activeCoach === 'ally' ? 'Ally' : 'Jen'
   const closedCoach = COACH_SEQUENCE[rotationIndex % COACH_SEQUENCE.length]
@@ -118,12 +122,13 @@ export function AllyChat({ menuItems, businessName = '' }: AllyChatProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(
           activeCoach === 'ally'
-            ? { message: trimmed, menuItems, businessName }
+            ? { message: trimmed, menuItems, businessName, language }
             : {
                 message: trimmed,
                 menuItems: [],
                 businessName: 'EU Food Safety (Regulation 1169/2011)',
                 _jenMode: true,
+                language,
               }
         ),
       })

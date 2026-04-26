@@ -3,8 +3,10 @@
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 import { 
   Tablet, Wifi, WifiOff, Monitor, Smartphone,
+  const { t } = useTranslation()
   Building, MapPin, Clock, Settings, RefreshCw,
   AlertCircle, ArrowLeft,
   Filter, Search
@@ -40,7 +42,7 @@ export default function AllKiosksPage() {
   }, [])
 
   const loadAllDevices = async () => {
-    setLoading(true)
+            <p className="text-gray-600">{t('admin.loading')}</p>
     try {
       const response = await fetch('/api/devices')
       const data = await response.json()
@@ -56,7 +58,7 @@ export default function AllKiosksPage() {
     } finally {
       setLoading(false)
     }
-  }
+            {t('admin.backToSites')}
 
   const getDeviceIcon = (type: Device['device_type']) => {
     switch (type) {
@@ -66,9 +68,9 @@ export default function AllKiosksPage() {
       case 'display': return Monitor
     }
   }
-
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">{t('admin.allKiosksDevices')}</h1>
   const getTimeSince = (dateString?: string | null) => {
-    if (!dateString) return 'Never'
+                    {t('admin.allKiosksDevicesDesc')}
     const date = new Date(dateString)
     const seconds = Math.floor((Date.now() - date.getTime()) / 1000)
     
@@ -104,9 +106,9 @@ export default function AllKiosksPage() {
             <div className="relative h-12 w-12 mx-auto mb-4">
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
               <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
-            </div>
-            <p className="text-gray-600">Loading devices...</p>
-          </div>
+              <option value="all">{t('admin.allStatus')}</option>
+              <option value="online">{t('admin.online')}</option>
+              <option value="offline">{t('admin.offline')}</option>
         </div>
       </Container>
     )
@@ -126,7 +128,7 @@ export default function AllKiosksPage() {
           </Link>
           
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('admin.noData')}</h3>
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2 bg-gradient-to-br from-teal-400 to-teal-600 dark:from-teal-500 dark:to-gray-700 rounded-lg flex-shrink-0">
                   <Tablet className="h-6 w-6 text-white" />
@@ -145,7 +147,7 @@ export default function AllKiosksPage() {
               onClick={loadAllDevices}
               className="self-start flex-shrink-0"
             >
-              Refresh
+              {t('admin.refresh')}
             </Button>
           </div>
         </div>
@@ -211,7 +213,7 @@ export default function AllKiosksPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Search devices or sites..."
+                  placeholder={t('admin.search') + ' ' + t('admin.devices').toLowerCase() + '...'}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"

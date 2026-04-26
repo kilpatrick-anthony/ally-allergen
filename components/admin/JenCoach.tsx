@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { usePathname } from 'next/navigation'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 import { JenAvatar } from '../ally/JenAvatar'
 import { X, ChevronDown, Send } from 'lucide-react'
 
@@ -59,6 +60,7 @@ function handleFontRequest(text: string): string | null {
 
 export function JenCoach() {
   const pathname = usePathname()
+  const { language } = useTranslation()
   const [coachMode, setCoachMode] = useState<'ally' | 'jen'>(() => resolveCoachMode(pathname))
 
   // Re-resolve on every navigation so neutral pages alternate properly
@@ -151,6 +153,7 @@ export function JenCoach() {
           _coach: 'ally',
           pagePath: pathname,
           chatHistory: history,
+          language,
         }),
       })
       const data = await res.json()
@@ -198,6 +201,7 @@ export function JenCoach() {
           _coach: 'jen',
           pagePath: pathname,
           chatHistory: history,
+          language,
         }),
       })
       const data = await res.json()

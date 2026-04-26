@@ -79,6 +79,7 @@ interface RequestBody {
   _coach?: 'ally' | 'jen'
   pagePath?: string
   chatHistory?: ChatTurn[]
+  language?: string
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -203,9 +204,22 @@ function buildMenuContext(items: MenuItem[]): string {
     .join('\n\n')
 }
 
-function buildSystemPrompt(jenMode: boolean, businessName: string, menuContext: string): string {
+// Maps BCP-47 language codes to full language names for AI instruction.
+const LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
+  ga: 'Irish (Gaeilge)',
+  pt: 'Portuguese',
+  fr: 'French',
+  es: 'Spanish',
+  de: 'German',
+}
+
+function buildSystemPrompt(jenMode: boolean, businessName: string, menuContext: string, language?: string): string {
+  const languageInstruction = language && language !== 'en' && LANGUAGE_NAMES[language]
+    ? `\n\nIMPORTANT: The user has selected ${LANGUAGE_NAMES[language]} as their language. Please respond entirely in ${LANGUAGE_NAMES[language]}.`
+    : ''
   if (jenMode) {
-    return `You are Jen, a compliance and food safety expert for food businesses operating under EU law.
+    return `You are Jen, a compliance and food safety expert for food businesses operating under EU law.${languageInstruction}
 You work for AllyJen, a food allergen management platform.
 
 YOUR EXPERTISE:
@@ -230,7 +244,7 @@ RULES:
 - Decline to answer any questions unrelated to food safety, allergens, or compliance.`
   }
 
-  return `You are Ally, a friendly and knowledgeable food allergy assistant for ${businessName}.
+  return `You are Ally, a friendly and knowledgeable food allergy assistant for ${businessName}.${languageInstruction}
 Your job is to help customers with food allergies and dietary requirements find dishes they can safely enjoy.
 
 MENU DATA (current):
@@ -282,6 +296,7 @@ export async function POST(req: NextRequest) {
     _coach = _jenMode ? 'jen' : 'ally',
     pagePath = 'unknown',
     chatHistory = [],
+    language,
   } = body
 
   // Input validation + sanitisation
@@ -368,7 +383,8 @@ export async function POST(req: NextRequest) {
   }
 
   const menuContext   = buildMenuContext(Array.isArray(menuItems) ? menuItems : [])
-  const systemPrompt  = buildSystemPrompt(Boolean(_jenMode), String(businessName).slice(0, 100), menuContext)
+  const sanitisedLanguage = typeof language === 'string' ? language.slice(0, 10).replace(/[^a-z-]/gi, '') : undefined
+  const systemPrompt  = buildSystemPrompt(Boolean(_jenMode), String(businessName).slice(0, 100), menuContext, sanitisedLanguage)
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

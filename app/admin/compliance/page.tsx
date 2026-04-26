@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle2, Clock, Filter, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 interface ComplianceItem {
   id: string;
@@ -25,6 +26,7 @@ interface ComplianceSummary {
 
 export default function ComplianceDashboard() {
   const [summary, setSummary] = useState<ComplianceSummary | null>(null);
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'error' | 'warning' | 'compliant'>('all');
   const [selectedType, setSelectedType] = useState<'all' | 'ingredient' | 'menu_item'>('all');
@@ -85,19 +87,19 @@ export default function ComplianceDashboard() {
       case 'compliant':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium">
-            <CheckCircle2 size={14} /> Compliant
+            <CheckCircle2 size={14} /> {t('admin.compliant')}
           </span>
         );
       case 'warning':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-medium">
-            <Clock size={14} /> Review Due Soon
+            <Clock size={14} /> {t('admin.reviewDueSoon')}
           </span>
         );
       case 'error':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-medium">
-            <AlertCircle size={14} /> Not Compliant
+            <AlertCircle size={14} /> {t('admin.notCompliant')}
           </span>
         );
       default:
@@ -131,7 +133,8 @@ export default function ComplianceDashboard() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-slate-900">Compliance Dashboard</h1>
-              <p className="text-slate-600 mt-1">Track and manage ingredient and menu item compliance</p>
+              <h1 className="text-3xl font-bold text-slate-900">{t('admin.complianceDashboard')}</h1>
+              <p className="text-slate-600 mt-1">{t('admin.complianceDashboardDesc')}</p>
             </div>
             <button
               onClick={handleRefresh}
@@ -139,7 +142,7 @@ export default function ComplianceDashboard() {
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
             >
               <RefreshCw size={18} className={refreshing ? 'animate-spin' : ''} />
-              Refresh
+              {t('admin.refresh')}
             </button>
           </div>
         </div>
@@ -210,7 +213,7 @@ export default function ComplianceDashboard() {
             <div className="flex-1">
               <label className="block text-sm font-medium text-slate-700 mb-2">
                 <Filter size={16} className="inline mr-2" />
-                Status Filter
+                {t('admin.filter')}
               </label>
               <select
                 value={filter}
@@ -218,9 +221,10 @@ export default function ComplianceDashboard() {
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="all">All Statuses</option>
-                <option value="error">Not Compliant (Errors)</option>
-                <option value="warning">Review Due Soon (Warnings)</option>
-                <option value="compliant">Compliant</option>
+                <option value="all">{t('admin.allStatus')}</option>
+                <option value="error">{t('admin.notCompliant')}</option>
+                <option value="warning">{t('admin.reviewDueSoon')}</option>
+                <option value="compliant">{t('admin.compliant')}</option>
               </select>
             </div>
 
@@ -246,7 +250,7 @@ export default function ComplianceDashboard() {
           <div className="text-center py-12">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg">
               <RefreshCw size={18} className="animate-spin" />
-              Loading compliance data...
+              {t('admin.loading')}
             </div>
           </div>
         ) : allFiltered.length === 0 ? (
