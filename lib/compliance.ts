@@ -123,10 +123,7 @@ export function checkMenuItemCompliance(menuItem: {
 
   // Check if all ingredients are compliant
   const ingredients = menuItem.ingredients || [];
-  if (ingredients.length === 0) {
-    reasons.push('No ingredients selected for this menu item');
-    status = 'error';
-  } else {
+  if (ingredients.length > 0) {
     const nonCompliantIngredients = ingredients.filter((ing: any) => {
       // Handle both string IDs and objects with id property
       const ingId = typeof ing === 'string' ? ing : ing.id;
