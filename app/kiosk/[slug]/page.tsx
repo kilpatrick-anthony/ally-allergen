@@ -264,6 +264,7 @@ export default function KioskPage() {
   const searchParams = useSearchParams()
   const slug = params.slug as string
   const siteIdParam = searchParams.get('site_id')
+  const pdfAutoDownload = searchParams.get('pdf')
   
   // Use offline-enabled data hook
   const {
@@ -379,6 +380,14 @@ export default function KioskPage() {
       events.forEach(e => document.removeEventListener(e, handleActivity, true))
     }
   }, [kioskStarted])
+
+  // Auto-trigger PDF download when ?pdf=1 param is present (QR code scan from kiosk)
+  useEffect(() => {
+    if (pdfAutoDownload === '1' && !loading && menuItems.length > 0 && business) {
+      handleGeneratePDF(false)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pdfAutoDownload, loading, menuItems.length])
 
   // ===== INACTIVITY TIMER SETUP =====
   useEffect(() => {
@@ -1044,13 +1053,13 @@ export default function KioskPage() {
         {activeView === 'landing' && (
           <>
             {/* Quick Action Tiles */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
               {/* Search by Allergen Tile */}
               <button
                 onClick={() => setActiveView('filters')}
                 className="group text-left transition-transform hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#dc2626] rounded-3xl"
               >
-                <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#fff5f4] via-[#ffeceb] to-[#ffdeda] border border-[#f5c8c2] shadow-md hover:shadow-xl transition-all h-full min-h-[240px] sm:min-h-[255px]">
+                <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#fff5f4] via-[#ffeceb] to-[#ffdeda] border border-[#f5c8c2] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
                   <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
                   <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#ef4444]/10 group-hover:scale-110 transition-transform" />
                   <div className="flex items-start gap-4 h-full">
@@ -1075,7 +1084,7 @@ export default function KioskPage() {
                 onClick={() => setActiveView('menu')}
                 className="group text-left transition-transform hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0284c7] rounded-3xl"
               >
-                <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#eef7ff] via-[#e3f2ff] to-[#d5ebff] border border-[#b8d8f3] shadow-md hover:shadow-xl transition-all h-full min-h-[240px] sm:min-h-[255px]">
+                <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#eef7ff] via-[#e3f2ff] to-[#d5ebff] border border-[#b8d8f3] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
                   <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
                   <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#0ea5e9]/10 group-hover:scale-110 transition-transform" />
                   <div className="flex items-start gap-4 h-full">
@@ -1100,7 +1109,7 @@ export default function KioskPage() {
                 onClick={() => setShowQRCode(true)}
                 className="group text-left transition-transform hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7e22ce] rounded-3xl"
               >
-                <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#f7f0ff] via-[#f1e6ff] to-[#e8d6ff] border border-[#d4b9f2] shadow-md hover:shadow-xl transition-all h-full min-h-[240px] sm:min-h-[255px]">
+                <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#f7f0ff] via-[#f1e6ff] to-[#e8d6ff] border border-[#d4b9f2] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
                   <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
                   <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#9333ea]/10 group-hover:scale-110 transition-transform" />
                   <div className="flex items-start gap-4 h-full">
@@ -1686,15 +1695,15 @@ export default function KioskPage() {
           <Card className="max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-[#003842]">Scan to Save Menu</h3>
+                <h3 className="text-lg font-semibold text-[#003842]">Scan to Download Allergen Guide PDF</h3>
                 <button onClick={() => setShowQRCode(false)} className="text-gray-400 hover:text-gray-600">
                   <X className="h-5 w-5" />
                 </button>
               </div>
               <div className="flex justify-center p-4 bg-white rounded-lg border border-gray-200">
-                <QRCodeSVG id="qr-code-svg" value={kioskUrl} size={256} level="H" bgColor="#FFFFFF" fgColor="#003842" />
+                <QRCodeSVG id="qr-code-svg" value={kioskUrl + '?pdf=1' + (siteIdParam ? '&site_id=' + siteIdParam : '')} size={256} level="H" bgColor="#FFFFFF" fgColor="#003842" />
               </div>
-              <p className="text-sm text-gray-600 text-center mt-4">Scan with your phone camera to save this allergen menu</p>
+              <p className="text-sm text-gray-600 text-center mt-4">Scan with your phone camera — the full allergen guide PDF will download automatically</p>
               <div className="mt-6 flex gap-3 justify-center">
                 <Button variant="primary" icon={<Download className="h-4 w-4" />} onClick={downloadQRCode}>
                   Download QR
