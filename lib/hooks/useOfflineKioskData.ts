@@ -2,7 +2,6 @@
 // Custom hook for fetching and caching kiosk data with offline support
 
 import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import type { AllergenWarnings } from '@/types/allergen';
 
 export interface Business {
@@ -55,10 +54,7 @@ export interface KioskData {
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes - configurable
 const STORAGE_KEY_PREFIX = 'kiosk_data_';
 
-const UUID_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-export function useOfflineKioskData(slug: string) {
+export function useOfflineKioskData(slug: string, siteId?: string | null) {
   const [data, setData] = useState<KioskData>({
     business: null,
     menuItems: [],
@@ -101,36 +97,24 @@ export function useOfflineKioskData(slug: string) {
 
   // Fetch fresh data from Supabase
   const fetchFreshData = useCallback(async (): Promise<KioskData | null> => {
-    const supabase = createClient();
-    const isBusinessId = UUID_PATTERN.test(slug);
-    
     try {
-      console.log('🌐 [Network] Fetching fresh data for:', slug);
-      
-      // Fetch business data
-      const businessQuery = supabase
-        .from('businesses')
-        .select('*');
+      console.log('🌐 [Network] Fetching fresh kiosk data for:', slug, 'site:', siteId || 'none');
 
-      const { data: businessData, error: businessError } = isBusinessId
-        ? await businessQuery.eq('id', slug).single()
-        : await businessQuery.eq('slug', slug).single();
+      const params = new URLSearchParams({ target: slug });
+      if (siteId) {
+        params.set('site_id', siteId);
+      }
 
-      if (businessError) throw businessError;
+      const response = await fetch(`/api/kiosk/data?${params.toString()}`);
+      const payload = await response.json();
 
-      // Fetch menu items
-      const { data: menuData, error: menuError } = await supabase
-        .from('menu_items')
-        .select('*')
-        .eq('business_id', businessData.id)
-        .eq('is_active', true)
-        .order('display_order');
-
-      if (menuError) throw menuError;
+      if (!response.ok) {
+        throw new Error(payload.error || 'Failed to fetch kiosk data');
+      }
 
       const freshData: KioskData = {
-        business: businessData,
-        menuItems: menuData || [],
+        business: payload.business || null,
+        menuItems: payload.menuItems || [],
         lastUpdated: Date.now(),
       };
 
@@ -140,7 +124,7 @@ export function useOfflineKioskData(slug: string) {
       console.error('❌ [Network] Error fetching fresh data:', error);
       return null;
     }
-  }, [slug]);
+  }, [slug, siteId]);
 
   // Main data loading logic
   const loadData = useCallback(async () => {

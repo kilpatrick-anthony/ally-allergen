@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     let pairingByDevice: Record<string, { code: string; expires_at: string }> = {}
 
     if (deviceIds.length > 0) {
-      const { data: codes } = await supabase
+      const { data: codes, error: codesError } = await supabase
         .from('device_pairing_codes')
         .select('device_id, code, expires_at')
         .in('device_id', deviceIds)
@@ -74,10 +74,27 @@ export async function GET(request: NextRequest) {
         .gt('expires_at', now)
         .order('created_at', { ascending: false })
 
-      for (const row of codes ?? []) {
-        // Keep only the most recent code per device (already sorted desc)
-        if (!pairingByDevice[row.device_id]) {
-          pairingByDevice[row.device_id] = { code: row.code, expires_at: row.expires_at }
+      if (codesError) {
+        console.warn('Pairing code query with created_at ordering failed, falling back:', codesError.message)
+        const { data: fallbackCodes } = await supabase
+          .from('device_pairing_codes')
+          .select('device_id, code, expires_at')
+          .in('device_id', deviceIds)
+          .eq('redeemed', false)
+          .gt('expires_at', now)
+          .order('expires_at', { ascending: false })
+
+        for (const row of fallbackCodes ?? []) {
+          if (!pairingByDevice[row.device_id]) {
+            pairingByDevice[row.device_id] = { code: row.code, expires_at: row.expires_at }
+          }
+        }
+      } else {
+        for (const row of codes ?? []) {
+          // Keep only the most recent code per device (already sorted desc)
+          if (!pairingByDevice[row.device_id]) {
+            pairingByDevice[row.device_id] = { code: row.code, expires_at: row.expires_at }
+          }
         }
       }
     }

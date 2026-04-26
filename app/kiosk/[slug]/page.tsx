@@ -275,7 +275,7 @@ export default function KioskPage() {
     isStale,
     lastUpdated,
     refresh,
-  } = useOfflineKioskData(slug)
+  } = useOfflineKioskData(slug, siteIdParam)
 
   // Send periodic heartbeats to track device status
   useDeviceHeartbeat({
