@@ -92,8 +92,30 @@ const countPdfDownloads = async (
     console.warn('PDF download events query error:', error.message)
     return 0
   }
-  
-  return count || 0
+
+  let kioskDownloadCount = 0
+  try {
+    let kioskQuery = supabase
+      .from('kiosk_analytics_events')
+      .select('id', { count: 'exact', head: true })
+      .eq('business_id', businessId)
+      .eq('event_type', 'download')
+      .gte('created_at', start.toISOString())
+      .lt('created_at', end.toISOString())
+
+    if (siteId) {
+      kioskQuery = kioskQuery.eq('site_id', siteId)
+    }
+
+    const { count: kioskCount, error: kioskError } = await kioskQuery
+    if (!kioskError) {
+      kioskDownloadCount = kioskCount || 0
+    }
+  } catch {
+    kioskDownloadCount = 0
+  }
+
+  return (count || 0) + kioskDownloadCount
 }
 
 const countKioskInteractions = async (
@@ -103,24 +125,153 @@ const countKioskInteractions = async (
   start: Date,
   end: Date
 ) => {
-  // Count active kiosk devices
-  let query = supabase
+  let deviceQuery = supabase
     .from('kiosk_devices')
-    .select('id', { count: 'exact', head: true })
+    .select('id')
     .eq('business_id', businessId)
 
   if (siteId) {
-    query = query.eq('site_id', siteId)
+    deviceQuery = deviceQuery.eq('site_id', siteId)
   }
 
-  const { count, error } = await query
+  const { data: devices, error: devicesError } = await deviceQuery
 
-  if (error) {
-    console.warn('Kiosk devices query error:', error.message)
+  if (devicesError) {
+    console.warn('Kiosk devices query error:', devicesError.message)
     return 0
   }
 
-  return count || 0
+  const deviceIds = (devices || []).map(d => d.id)
+  if (deviceIds.length === 0) return 0
+
+  const { data: heartbeats, error: hbError } = await supabase
+    .from('device_heartbeats')
+    .select('device_id')
+    .in('device_id', deviceIds)
+    .gte('timestamp', start.toISOString())
+    .lt('timestamp', end.toISOString())
+
+  if (hbError) {
+    console.warn('Kiosk heartbeat query error:', hbError.message)
+    return 0
+  }
+
+  return new Set((heartbeats || []).map((row: any) => row.device_id)).size
+}
+
+type KioskAnalyticsEvent = {
+  event_type: string
+  search_query: string | null
+  created_at: string
+}
+
+const getKioskEvents = async (
+  supabase: ReturnType<typeof createServiceClient>,
+  businessId: string,
+  siteId: string | null,
+  start: Date,
+  end: Date,
+  eventTypes: string[]
+): Promise<KioskAnalyticsEvent[]> => {
+  try {
+    let query = supabase
+      .from('kiosk_analytics_events')
+      .select('event_type, search_query, created_at')
+      .eq('business_id', businessId)
+      .in('event_type', eventTypes)
+      .gte('created_at', start.toISOString())
+      .lt('created_at', end.toISOString())
+
+    if (siteId) {
+      query = query.eq('site_id', siteId)
+    }
+
+    const { data, error } = await query
+    if (error) {
+      console.warn('Kiosk analytics events query error:', error.message)
+      return []
+    }
+
+    return (data || []) as KioskAnalyticsEvent[]
+  } catch {
+    return []
+  }
+}
+
+const dayKey = (value: Date) => value.toISOString().slice(0, 10)
+
+const buildTrends = (events: KioskAnalyticsEvent[]) => {
+  const now = new Date()
+  const days: Array<{ key: string; label: string }> = []
+  for (let i = 6; i >= 0; i -= 1) {
+    const date = new Date(now)
+    date.setDate(now.getDate() - i)
+    days.push({
+      key: dayKey(date),
+      label: date.toLocaleDateString('en-US', { weekday: 'short' })
+    })
+  }
+
+  const buckets = new Map<string, { views: number; searches: number }>()
+  for (const day of days) {
+    buckets.set(day.key, { views: 0, searches: 0 })
+  }
+
+  for (const event of events) {
+    const key = event.created_at.slice(0, 10)
+    const bucket = buckets.get(key)
+    if (!bucket) continue
+
+    if (event.event_type === 'page_view') bucket.views += 1
+    if (event.event_type === 'search') bucket.searches += 1
+  }
+
+  return days.map(day => ({
+    day: day.label,
+    views: buckets.get(day.key)?.views || 0,
+    searches: buckets.get(day.key)?.searches || 0
+  }))
+}
+
+const titleCase = (value: string) =>
+  value
+    .trim()
+    .replace(/\s+/g, ' ')
+    .split(' ')
+    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ')
+
+const buildTopIngredients = (current: KioskAnalyticsEvent[], previous: KioskAnalyticsEvent[]) => {
+  const currentCounts = new Map<string, number>()
+  const previousCounts = new Map<string, number>()
+
+  const ingest = (events: KioskAnalyticsEvent[], map: Map<string, number>) => {
+    for (const event of events) {
+      if (event.event_type !== 'search') continue
+      const query = (event.search_query || '').trim().toLowerCase()
+      if (!query) continue
+      map.set(query, (map.get(query) || 0) + 1)
+    }
+  }
+
+  ingest(current, currentCounts)
+  ingest(previous, previousCounts)
+
+  return Array.from(currentCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([query, count]) => {
+      const prev = previousCounts.get(query) || 0
+      const delta = percentChange(count, prev)
+      const rounded = Math.round(delta * 10) / 10
+      const withSign = `${rounded >= 0 ? '+' : ''}${rounded}%`
+
+      return {
+        name: titleCase(query),
+        searches: count,
+        change: withSign
+      }
+    })
 }
 
 const countActiveMenuItems = async (
@@ -246,7 +397,9 @@ export async function GET(request: NextRequest) {
       activeMenuItemsCurrent,
       activeMenuItemsPrevious,
       activeMenuIngredientsCurrent,
-      activeMenuIngredientsPrevious
+      activeMenuIngredientsPrevious,
+      kioskEventsCurrent,
+      kioskEventsPrevious
     ] = await Promise.all([
       countPdfDownloads(supabase, businessId, siteId, currentStart, currentEnd),
       countPdfDownloads(supabase, businessId, siteId, previousStart, previousEnd),
@@ -255,8 +408,13 @@ export async function GET(request: NextRequest) {
       countActiveMenuItems(supabase, businessId, siteId, currentStart, currentEnd),
       countActiveMenuItems(supabase, businessId, siteId, previousStart, previousEnd),
       countActiveMenuIngredients(supabase, businessId, siteId, currentStart, currentEnd),
-      countActiveMenuIngredients(supabase, businessId, siteId, previousStart, previousEnd)
+      countActiveMenuIngredients(supabase, businessId, siteId, previousStart, previousEnd),
+      getKioskEvents(supabase, businessId, siteId, currentStart, currentEnd, ['page_view', 'search']),
+      getKioskEvents(supabase, businessId, siteId, previousStart, previousEnd, ['search'])
     ])
+
+    const trends = buildTrends(kioskEventsCurrent)
+    const topIngredients = buildTopIngredients(kioskEventsCurrent, kioskEventsPrevious)
 
     return NextResponse.json({
       overview: {
@@ -271,8 +429,8 @@ export async function GET(request: NextRequest) {
         activeMenuIngredients: percentChange(activeMenuIngredientsCurrent, activeMenuIngredientsPrevious),
         activeMenuItems: percentChange(activeMenuItemsCurrent, activeMenuItemsPrevious)
       },
-      trends: [],
-      topIngredients: [],
+      trends,
+      topIngredients,
       topMenus: []
     })
   } catch (error: any) {

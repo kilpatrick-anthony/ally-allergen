@@ -33,28 +33,49 @@ import { AllyChat } from '@/components/kiosk/AllyChat'
 import { useDeviceHeartbeat } from '@/lib/hooks/useDeviceHeartbeat'
 
 // ===== TRACKING FUNCTIONS =====
-async function trackPageView(slug: string) {
-  console.log('📊 [Dev] Track page view for:', slug)
+async function sendKioskAnalyticsEvent(payload: {
+  slug: string
+  siteId?: string | null
+  eventType: 'page_view' | 'search' | 'filter' | 'time_on_page' | 'download' | 'qr_scan'
+  searchQuery?: string
+  selectedAllergens?: string[]
+  downloadType?: string
+  scanSource?: string
+  timeOnPage?: number
+}) {
+  try {
+    await fetch('/api/analytics/kiosk-event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+  } catch {
+    // Analytics should never block kiosk interactions
+  }
 }
 
-async function trackQRScan(slug: string, scanSource: string) {
-  console.log('📊 [Dev] Track QR scan for:', slug, 'source:', scanSource)
+async function trackPageView(slug: string, siteId?: string | null) {
+  await sendKioskAnalyticsEvent({ slug, siteId, eventType: 'page_view' })
 }
 
-async function trackDownload(slug: string, downloadType: string) {
-  console.log('📊 [Dev] Track download for:', slug, 'type:', downloadType)
+async function trackQRScan(slug: string, scanSource: string, siteId?: string | null) {
+  await sendKioskAnalyticsEvent({ slug, siteId, eventType: 'qr_scan', scanSource })
 }
 
-async function trackFilterUsage(slug: string, selectedAllergens: string[]) {
-  console.log('📊 [Dev] Track filter usage for:', slug, 'allergens:', selectedAllergens)
+async function trackDownload(slug: string, downloadType: string, siteId?: string | null) {
+  await sendKioskAnalyticsEvent({ slug, siteId, eventType: 'download', downloadType })
 }
 
-async function trackSearch(slug: string, searchQuery: string) {
-  console.log('📊 [Dev] Track search for:', slug, 'query:', searchQuery)
+async function trackFilterUsage(slug: string, selectedAllergens: string[], siteId?: string | null) {
+  await sendKioskAnalyticsEvent({ slug, siteId, eventType: 'filter', selectedAllergens })
 }
 
-async function trackTimeOnPage(slug: string, timeOnPage: number) {
-  console.log('📊 [Dev] Track time on page for:', slug, 'time:', timeOnPage, 'seconds')
+async function trackSearch(slug: string, searchQuery: string, siteId?: string | null) {
+  await sendKioskAnalyticsEvent({ slug, siteId, eventType: 'search', searchQuery })
+}
+
+async function trackTimeOnPage(slug: string, timeOnPage: number, siteId?: string | null) {
+  await sendKioskAnalyticsEvent({ slug, siteId, eventType: 'time_on_page', timeOnPage })
 }
 
 // ===== CONSTANTS =====
@@ -494,35 +515,41 @@ export default function KioskPage() {
   // Track page view on load
   useEffect(() => {
     if (slug) {
-      trackPageView(slug)
+      trackPageView(slug, siteIdParam)
     }
-  }, [slug])
+  }, [slug, siteIdParam])
 
   // Track search queries
   useEffect(() => {
     if (searchQuery) {
       const timeoutId = setTimeout(() => {
-        trackSearch(slug, searchQuery)
+        trackSearch(slug, searchQuery, siteIdParam)
       }, 500)
       
       return () => clearTimeout(timeoutId)
     }
-  }, [searchQuery, slug])
+  }, [searchQuery, slug, siteIdParam])
 
   // Track filter usage
   useEffect(() => {
     if (selectedAllergens.length > 0) {
-      trackFilterUsage(slug, selectedAllergens)
+      trackFilterUsage(slug, selectedAllergens, siteIdParam)
     }
-  }, [selectedAllergens, slug])
+  }, [selectedAllergens, slug, siteIdParam])
+
+  useEffect(() => {
+    if (showQRCode) {
+      trackQRScan(slug, 'kiosk_modal', siteIdParam)
+    }
+  }, [showQRCode, slug, siteIdParam])
 
   // Track time on page when leaving
   useEffect(() => {
     return () => {
       const timeOnPage = Math.floor((Date.now() - pageLoadTime.current) / 1000)
-      trackTimeOnPage(slug, timeOnPage)
+      trackTimeOnPage(slug, timeOnPage, siteIdParam)
     }
-  }, [slug])
+  }, [slug, siteIdParam])
 
   // Scroll to top when view changes
   useEffect(() => {
@@ -705,7 +732,7 @@ export default function KioskPage() {
         showLegend: true
       })
       
-      await trackDownload(slug, includeFilters ? 'filtered_pdf' : 'full_pdf')
+      await trackDownload(slug, includeFilters ? 'filtered_pdf' : 'full_pdf', siteIdParam)
     } catch (error) {
       console.error('Error generating PDF:', error)
       alert('Sorry, there was an error generating the PDF. Please try again.')
