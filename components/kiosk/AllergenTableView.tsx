@@ -11,12 +11,15 @@ interface AllergenTableViewProps {
   items: MenuItem[]
   compact?: boolean
   showLegend?: boolean
+  /** Extra classes applied to the outer scrollable wrapper */
+  wrapperClassName?: string
 }
 
 const AllergenTableView: React.FC<AllergenTableViewProps> = ({ 
   items, 
   compact = false,
-  showLegend = true 
+  showLegend = true,
+  wrapperClassName,
 }) => {
   // Expand ingredients with multiple suppliers into separate rows
   const expandedItems = items.flatMap(item => {
@@ -137,9 +140,9 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
   }
 
   return (
-    <div className="w-full overflow-x-auto">
+    <div className={wrapperClassName ?? 'w-full overflow-auto'} style={!wrapperClassName ? { maxHeight: 'calc(100vh - 260px)' } : undefined}>
       <table className="w-full border-collapse bg-white rounded-lg overflow-hidden shadow-sm text-xs">
-        <thead>
+        <thead className="sticky top-0 z-20">
           <tr className="bg-[#003842]">
             <th className="text-left p-2 text-white font-semibold border border-gray-300 sticky left-0 bg-[#003842] z-10 min-w-[120px]">
               Item Name

@@ -333,6 +333,7 @@ export default function KioskPage() {
   const [isSmallScreen, setIsSmallScreen] = useState(false)
   const [pdfViewerUrl, setPdfViewerUrl] = useState<string | null>(null)
   const [generatingPDFViewer, setGeneratingPDFViewer] = useState(false)
+  const [showAllergenGuide, setShowAllergenGuide] = useState(false)
   
   const t = translations[currentLanguage] as typeof translations.en
   const businessName = business?.name?.trim() || ''
@@ -699,29 +700,10 @@ export default function KioskPage() {
            ).join(' ')
   }
 
-  // Open allergen guide PDF inline in browser (no auth check needed)
-  const handleViewPDF = async () => {
-    if (!business || !menuItems.length) return
-    setGeneratingPDFViewer(true)
-    try {
-      const dataUri = await generateAllergenTablePDF({
-        business,
-        items: menuItems,
-        title: 'Complete Allergen Information Guide',
-        showLegend: true,
-        outputMode: 'bloburl',
-      })
-      if (dataUri) {
-        if (pdfViewerUrl) URL.revokeObjectURL(pdfViewerUrl)
-        setPdfViewerUrl(dataUri as string)
-        await trackDownload(slug, 'inline_view', siteIdParam)
-      }
-    } catch (error) {
-      console.error('Error generating PDF for viewer:', error)
-      alert('Sorry, there was an error loading the allergen guide. Please try again.')
-    } finally {
-      setGeneratingPDFViewer(false)
-    }
+  // Open full allergen guide as inline overlay (no PDF, no auth check)
+  const handleOpenAllergenGuide = () => {
+    setShowAllergenGuide(true)
+    trackDownload(slug, 'inline_guide_view', siteIdParam)
   }
 
   // Handle PDF generation with table format
@@ -1021,10 +1003,7 @@ export default function KioskPage() {
                   <Button variant="outline" size="sm" icon={<FileText className="h-4 w-4" />} onClick={() => setShowPDFOptions(true)}>
                     {t.emailMenu}
                   </Button>
-                  <Button variant="outline" size="sm" icon={<QrCode className="h-4 w-4" />} onClick={() => setShowQRCode(true)}>
-                    {t.qrCodeButton}
-                  </Button>
-                  
+
                   {/* Language Dropdown */}
                   <div className="relative">
                     <Button
@@ -1129,7 +1108,7 @@ export default function KioskPage() {
                       </div>
                     </div>
                     <div className="mt-auto w-full flex justify-center">
-                      <div className="inline-flex px-5 py-2.5 bg-[#dc2626] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
+                      <div className="inline-flex px-4 py-2 bg-[#dc2626] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
                         {t.startFiltering}
                       </div>
                     </div>
@@ -1158,7 +1137,7 @@ export default function KioskPage() {
                       </div>
                     </div>
                     <div className="mt-auto w-full flex justify-center">
-                      <div className="inline-flex px-5 py-2.5 bg-[#0284c7] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
+                      <div className="inline-flex px-4 py-2 bg-[#0284c7] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
                         {t.viewMenu}
                       </div>
                     </div>
@@ -1187,7 +1166,7 @@ export default function KioskPage() {
                       </div>
                     </div>
                     <div className="mt-auto w-full flex justify-center">
-                      <div className="inline-flex px-5 py-2.5 bg-[#7e22ce] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
+                      <div className="inline-flex px-4 py-2 bg-[#7e22ce] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
                         {t.showQRCode}
                       </div>
                     </div>
@@ -1195,9 +1174,9 @@ export default function KioskPage() {
                 </Card>
               </button>
 
-              {/* Full Allergen Guide PDF Tile */}
+              {/* Full Allergen Guide Tile */}
               <button
-                onClick={handleViewPDF}
+                onClick={handleOpenAllergenGuide}
                 className="group text-left transition-transform hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#047857] rounded-3xl"
               >
                 <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#ecfdf5] via-[#d1fae5] to-[#a7f3d0] border border-[#6ee7b7] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
@@ -1211,13 +1190,13 @@ export default function KioskPage() {
                       <div>
                         <h3 className="text-xl sm:text-2xl font-bold text-[#064e3b] mb-2 tracking-tight leading-tight">Full Allergen Guide</h3>
                         <p className="text-[#065f46] text-sm sm:text-[15px] leading-relaxed">
-                          View the complete allergen guide for all menu items directly on screen.
+                          View the complete allergen table for all menu items on screen.
                         </p>
                       </div>
                     </div>
                     <div className="mt-auto w-full flex justify-center">
-                      <div className="inline-flex px-5 py-2.5 bg-[#047857] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
-                        {generatingPDFViewer ? 'Loading…' : 'View Guide'}
+                      <div className="inline-flex px-4 py-2 bg-[#047857] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
+                        View Guide
                       </div>
                     </div>
                   </div>
@@ -1809,7 +1788,45 @@ export default function KioskPage() {
         </div>
       )}
 
-      {/* Inline PDF Viewer */}
+      {/* Full Allergen Guide Overlay */}
+      {showAllergenGuide && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-[#003842]">
+          {/* Header matches kiosk nav style */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[#42b8ac]/20 flex-shrink-0">
+            <div className="flex items-center gap-4">
+              <img src={ADMIN_WORDMARK_SRC} alt="AllyJen" className="h-8 w-auto" />
+              <div className="h-6 w-px bg-white/20" />
+              <span className="text-white font-semibold text-base">
+                {business?.name} — Full Allergen Guide
+              </span>
+            </div>
+            <button
+              onClick={() => setShowAllergenGuide(false)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition"
+            >
+              <X className="h-4 w-4" />
+              Close
+            </button>
+          </div>
+          {/* Table fills remaining height, scrolls both axes */}
+          <div className="flex-1 overflow-auto bg-gray-50 p-4">
+            {menuItems.length > 0 ? (
+              <AllergenTableView
+                items={menuItems}
+                compact={false}
+                showLegend={true}
+                wrapperClassName="w-full overflow-auto"
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-gray-500">
+                No menu items available.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Inline PDF Viewer (kept for QR flow) */}
       {pdfViewerUrl && (
         <div className="fixed inset-0 z-50 flex flex-col bg-white">
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-[#003842] flex-shrink-0">
