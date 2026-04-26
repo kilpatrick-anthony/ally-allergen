@@ -7,7 +7,7 @@ import { useTranslation } from '@/lib/hooks/useTranslation'
 import { 
   Wifi, WifiOff, Monitor, Clock, AlertCircle, CheckCircle,
   RefreshCw, MapPin, Calendar, Activity, Smartphone, Tablet,
-  Bell, Plus
+  Bell, Plus, Copy, ExternalLink, Check
 } from 'lucide-react'
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
@@ -22,9 +22,12 @@ interface Device {
   is_online: boolean
   last_heartbeat: string
   site_name: string
+  site_id: string
   site_slug: string
   site_email: string
   business_name: string
+  business_id: string
+  business_slug: string
   admin_email: string
   minutes_since_heartbeat: number
   active_alerts: number
@@ -48,6 +51,7 @@ export default function DeviceMonitoringPage() {
   const [filter, setFilter] = useState<'all' | 'online' | 'offline'>('all')
   const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [copiedKioskFor, setCopiedKioskFor] = useState<string | null>(null)
 
   const fetchDevices = async () => {
     try {
@@ -65,9 +69,13 @@ export default function DeviceMonitoringPage() {
         minutes_since_heartbeat: d.last_heartbeat
           ? (Date.now() - new Date(d.last_heartbeat).getTime()) / 60000
           : 9999,
-        site_name: d.site?.name ?? '',
-                site_email: '',
+        site_name: d.site?.name ?? d.site_name ?? '',
+        site_slug: d.site?.slug ?? d.site_slug ?? '',
+        site_id: d.site_id ?? '',
+        site_email: '',
         business_name: '',
+        business_id: d.business_id ?? '',
+        business_slug: d.business?.slug ?? '',
         admin_email: '',
         active_alerts: 0,
         total_sessions: 0,
@@ -121,6 +129,21 @@ export default function DeviceMonitoringPage() {
       case 'mobile': return Smartphone
       default: return Monitor
     }
+  }
+
+  const getKioskUrl = (device: Device) => {
+    const kioskTarget = (device.business_slug || '').trim() || device.business_id
+    if (!kioskTarget || !device.site_id) return null
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    const params = new URLSearchParams({ site_id: device.site_id })
+    const path = `/kiosk/${kioskTarget}?${params.toString()}`
+    return origin ? `${origin}${path}` : path
+  }
+
+  const copyKioskUrl = async (deviceId: string, url: string) => {
+    await navigator.clipboard.writeText(url)
+    setCopiedKioskFor(deviceId)
+    setTimeout(() => setCopiedKioskFor(null), 2000)
   }
 
   if (loading) {
@@ -292,6 +315,7 @@ export default function DeviceMonitoringPage() {
               const DeviceIcon = getDeviceIcon(device.device_type)
               const isOffline = !device.is_online
               const isStale = device.minutes_since_heartbeat > 3
+              const kioskUrl = getKioskUrl(device)
 
               return (
                 <Card key={device.id}>
@@ -362,6 +386,33 @@ export default function DeviceMonitoringPage() {
                         <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
                         <span>Since {new Date(device.first_seen).toLocaleDateString()}</span>
                       </div>
+
+                      {kioskUrl && (
+                        <div className="sm:col-span-2 rounded-lg border border-[#42b8ac]/30 bg-[#f0faf9] p-2.5 mt-1">
+                          <p className="text-[11px] font-semibold text-[#003842] uppercase tracking-wide mb-1">Kiosk URL</p>
+                          <p className="text-xs text-gray-700 break-all leading-relaxed mb-2">{kioskUrl}</p>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => copyKioskUrl(device.id, kioskUrl)}
+                              className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-white transition-colors"
+                            >
+                              {copiedKioskFor === device.id
+                                ? <Check className="h-3.5 w-3.5 mr-1.5 text-green-600" />
+                                : <Copy className="h-3.5 w-3.5 mr-1.5" />}
+                              {copiedKioskFor === device.id ? 'Copied' : 'Copy URL'}
+                            </button>
+                            <a
+                              href={kioskUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-white transition-colors"
+                            >
+                              <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+                              Open
+                            </a>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* ── Stale warning ── */}

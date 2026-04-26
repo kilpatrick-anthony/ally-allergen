@@ -6,7 +6,7 @@ import {
   Tablet, Wifi, WifiOff, Monitor, Smartphone,
   Plus, Trash2, RefreshCw, X,
   AlertCircle, Copy, Check,
-  Power, Clock
+  Power, Clock, ExternalLink
 } from 'lucide-react';
 import { Card } from '@/components/layout/Card';
 import { Button } from '@/components/ui/Button';
@@ -26,6 +26,15 @@ interface Device {
   active_pairing_code?: string | null;
   pairing_code_expires_at?: string | null;
   active_pairing_code_redeemed?: boolean | null;
+  site?: {
+    id: string;
+    name: string;
+    slug: string;
+    city?: string | null;
+  } | null;
+  business?: {
+    slug?: string | null;
+  } | null;
 }
 
 interface DeviceManagementProps {
@@ -48,6 +57,7 @@ export default function DeviceManagement({
   const [codeCopied, setCodeCopied] = useState(false);
   const [regeneratingFor, setRegeneratingFor] = useState<string | null>(null);
   const [cardCopied, setCardCopied] = useState<string | null>(null);
+  const [kioskUrlCopied, setKioskUrlCopied] = useState<string | null>(null);
   const [nowMs, setNowMs] = useState(Date.now());
 
   useEffect(() => {
@@ -174,6 +184,26 @@ export default function DeviceManagement({
       console.error('Error removing device:', error)
     }
   };
+
+  const getKioskPath = (device: Device) => {
+    const kioskTarget = device.business?.slug?.trim() || device.business_id
+    if (!kioskTarget || !device.site_id) return null
+    const params = new URLSearchParams({ site_id: device.site_id })
+    return `/kiosk/${kioskTarget}?${params.toString()}`
+  }
+
+  const getKioskUrl = (device: Device) => {
+    const path = getKioskPath(device)
+    if (!path) return null
+    const origin = typeof window !== 'undefined' ? window.location.origin : ''
+    return origin ? `${origin}${path}` : path
+  }
+
+  const copyKioskUrl = async (deviceId: string, url: string) => {
+    await navigator.clipboard.writeText(url)
+    setKioskUrlCopied(deviceId)
+    setTimeout(() => setKioskUrlCopied(null), 2000)
+  }
 
   const toggleDeviceStatus = async (deviceId: string) => {
     const current = devices.find(d => d.id === deviceId)
@@ -475,6 +505,7 @@ export default function DeviceManagement({
           {devices.map((device) => {
             const DeviceIcon = getDeviceIcon(device.device_type);
             const expiryCountdown = getExpiryCountdown(device.pairing_code_expires_at);
+            const kioskUrl = getKioskUrl(device)
             
             return (
               <Card key={device.id} className="hover:shadow-lg transition-shadow">
@@ -615,6 +646,34 @@ export default function DeviceManagement({
 
                   {/* Device Info */}
                   <div className="space-y-2 text-sm">
+                    {kioskUrl && (
+                      <div className="rounded-lg border border-[#42b8ac]/30 bg-[#f0faf9] p-2.5 space-y-2">
+                        <p className="text-xs font-semibold text-[#003842] uppercase tracking-wide">Kiosk URL</p>
+                        <p className="text-xs text-gray-700 break-all leading-relaxed">{kioskUrl}</p>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => copyKioskUrl(device.id, kioskUrl)}
+                            className="flex-1"
+                          >
+                            {kioskUrlCopied === device.id
+                              ? <Check className="h-4 w-4 mr-2 text-green-600" />
+                              : <Copy className="h-4 w-4 mr-2" />}
+                            {kioskUrlCopied === device.id ? 'Copied' : 'Copy URL'}
+                          </Button>
+                          <a
+                            href={kioskUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex flex-1 items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                          >
+                            <ExternalLink className="h-4 w-4 mr-2" />
+                            Open
+                          </a>
+                        </div>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="text-gray-600">Type:</span>
                       <span className="font-medium text-gray-900 capitalize">

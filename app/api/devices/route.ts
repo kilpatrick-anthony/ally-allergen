@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('devices')
-      .select('*, site:sites(id, name, slug, city)')
+      .select('*, site:sites(id, name, slug, city), business:businesses(slug)')
       .eq('business_id', businessId)
       .order('created_at', { ascending: false })
 
