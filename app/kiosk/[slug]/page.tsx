@@ -1162,7 +1162,7 @@ export default function KioskPage() {
         {activeView === 'landing' && (
           <>
             {/* Quick Action Tiles */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
               {/* Search by Allergen Tile */}
               <button
                 onClick={() => setActiveView('filters')}
@@ -1186,6 +1186,35 @@ export default function KioskPage() {
                     <div className="mt-auto w-full flex justify-center">
                       <div className="inline-flex px-4 py-2 bg-[#dc2626] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
                         {t.startFiltering}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </button>
+
+              {/* Full Allergen Guide Tile */}
+              <button
+                onClick={handleOpenAllergenGuide}
+                className="group text-left transition-transform hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#047857] rounded-3xl"
+              >
+                <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#ecfdf5] via-[#d1fae5] to-[#a7f3d0] border border-[#6ee7b7] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
+                  <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
+                  <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#059669]/10 group-hover:scale-110 transition-transform" />
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="p-3.5 bg-gradient-to-br from-[#047857] to-[#059669] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
+                        <FileText className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-xl sm:text-2xl font-bold text-[#064e3b] mb-2 tracking-tight leading-tight">Full Allergen Guide</h3>
+                        <p className="text-[#065f46] text-sm sm:text-[15px] leading-relaxed">
+                          View the complete allergen table for all menu items and ingredients on screen.
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-auto w-full flex justify-center">
+                      <div className="inline-flex px-4 py-2 bg-[#047857] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
+                        View Guide
                       </div>
                     </div>
                   </div>
@@ -1221,29 +1250,29 @@ export default function KioskPage() {
                 </Card>
               </button>
 
-              {/* Full Allergen Guide Tile */}
+              {/* Email Guide Tile */}
               <button
-                onClick={handleOpenAllergenGuide}
-                className="group text-left transition-transform hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#047857] rounded-3xl"
+                onClick={() => setShowPDFOptions(true)}
+                className="group text-left transition-transform hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0f4f4a] rounded-3xl"
               >
-                <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#ecfdf5] via-[#d1fae5] to-[#a7f3d0] border border-[#6ee7b7] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
+                <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#e8f7f5] via-[#d6f0ec] to-[#bde8e1] border border-[#8ccfc7] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
                   <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
-                  <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#059669]/10 group-hover:scale-110 transition-transform" />
+                  <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#0f766e]/10 group-hover:scale-110 transition-transform" />
                   <div className="flex flex-col h-full">
                     <div className="flex items-start gap-4 mb-4">
-                      <div className="p-3.5 bg-gradient-to-br from-[#047857] to-[#059669] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
+                      <div className="p-3.5 bg-gradient-to-br from-[#0f4f4a] to-[#0f766e] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
                         <FileText className="h-6 w-6 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-xl sm:text-2xl font-bold text-[#064e3b] mb-2 tracking-tight leading-tight">Full Allergen Guide</h3>
-                        <p className="text-[#065f46] text-sm sm:text-[15px] leading-relaxed">
-                          View the complete allergen table for all menu items and ingredients on screen.
+                        <h3 className="text-xl sm:text-2xl font-bold text-[#134e4a] mb-2 tracking-tight leading-tight">Email Allergen Guide</h3>
+                        <p className="text-[#115e59] text-sm sm:text-[15px] leading-relaxed">
+                          Send the full allergen guide to your email so you can review it on your phone.
                         </p>
                       </div>
                     </div>
                     <div className="mt-auto w-full flex justify-center">
-                      <div className="inline-flex px-4 py-2 bg-[#047857] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
-                        View Guide
+                      <div className="inline-flex px-4 py-2 bg-[#0f4f4a] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
+                        Email Guide
                       </div>
                     </div>
                   </div>
@@ -1935,43 +1964,6 @@ export default function KioskPage() {
               </div>
 
               <div className="space-y-4">
-                {/* Download section */}
-                <Button 
-                  variant="primary" 
-                  className="w-full justify-start h-auto py-4" 
-                  onClick={async () => {
-                    await handleGeneratePDF(false)
-                    setShowPDFOptions(false)
-                  }}
-                  disabled={generatingPDF || sendingEmail}
-                >
-                  <FileText className="h-5 w-5 text-white mr-3" />
-                  <div className="text-left flex-1">
-                    <div className="font-semibold">Download Full Menu (Table Format)</div>
-                    <div className="text-sm opacity-90">Complete allergen information for all {menuItems.length} items</div>
-                  </div>
-                </Button>
-
-                {totalActiveFilters > 0 && (
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start h-auto py-4" 
-                    onClick={async () => {
-                      await handleGeneratePDF(true)
-                      setShowPDFOptions(false)
-                    }}
-                    disabled={generatingPDF || sendingEmail}
-                  >
-                    <Filter className="h-5 w-5 text-[#42b8ac] mr-3" />
-                    <div className="text-left flex-1">
-                      <div className="font-semibold text-gray-900">Download Filtered Menu</div>
-                      <div className="text-sm text-gray-600">
-                        {filteredItems.length} items after {totalActiveFilters} active filter(s)
-                      </div>
-                    </div>
-                  </Button>
-                )}
-
                 <div className="border-t border-gray-200 pt-4">
                   {emailSent ? (
                     <div className="text-center py-4">
@@ -2001,7 +1993,7 @@ export default function KioskPage() {
                           disabled={sendingEmail}
                         />
                         <button
-                          onClick={() => handleEmailMenu(totalActiveFilters > 0)}
+                          onClick={() => handleEmailMenu(false)}
                           disabled={sendingEmail || !emailInput.trim()}
                           className="bg-[#42b8ac] text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-[#389e93] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
