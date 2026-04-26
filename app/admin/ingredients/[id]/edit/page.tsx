@@ -33,6 +33,7 @@ export default function EditIngredientPage() {
   const [existingDatasheets, setExistingDatasheets] = useState<any[]>([])
   const [compliance, setCompliance] = useState<any>(null)
   const [loadingCompliance, setLoadingCompliance] = useState(false)
+  const [datasheetsTouched, setDatasheetsTouched] = useState(false)
   
   const [ingredient, setIngredient] = useState({
     name: '',
@@ -61,6 +62,9 @@ export default function EditIngredientPage() {
   })
 
   const [newSupplier, setNewSupplier] = useState('')
+  const [selectedSupplier, setSelectedSupplier] = useState('')
+  const [availableSuppliers, setAvailableSuppliers] = useState<string[]>([])
+  const [loadingSuppliers, setLoadingSuppliers] = useState(false)
   const [customCertInput, setCustomCertInput] = useState('')
   const [showCustomCertInput, setShowCustomCertInput] = useState(false)
 
@@ -102,6 +106,43 @@ export default function EditIngredientPage() {
   ]
 
   useEffect(() => {
+    const fetchSuppliers = async () => {
+      try {
+        setLoadingSuppliers(true)
+
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 5000)
+
+        const response = await fetch('/api/suppliers', {
+          signal: controller.signal
+        })
+        clearTimeout(timeoutId)
+
+        const data = await parseJsonSafely(response)
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch suppliers')
+        }
+
+        const names = (data.suppliers || [])
+          .map((supplier: any) => supplier.name)
+          .filter((name: string) => typeof name === 'string' && name.trim() !== '')
+          .map((name: string) => name.trim())
+
+        const uniqueNames = (Array.from(new Set(names)) as string[]).sort((a, b) => a.localeCompare(b))
+        setAvailableSuppliers(uniqueNames)
+      } catch (error: any) {
+        console.error('Error fetching suppliers:', error)
+        setAvailableSuppliers([])
+      } finally {
+        setLoadingSuppliers(false)
+      }
+    }
+
+    fetchSuppliers()
+  }, [])
+
+  useEffect(() => {
     const fetchIngredient = async () => {
       try {
         setLoading(true)
@@ -131,6 +172,8 @@ export default function EditIngredientPage() {
         const datasheetsData = await parseJsonSafely(datasheetsResponse)
         if (datasheetsResponse.ok) {
           setExistingDatasheets(datasheetsData.datasheets || [])
+          setDatasheets(datasheetsData.datasheets || [])
+          setDatasheetsTouched(false)
         }
       } catch (error: any) {
         console.error('Error fetching ingredient:', error)
@@ -229,11 +272,36 @@ export default function EditIngredientPage() {
         throw new Error(data.error || 'Failed to update ingredient')
       }
 
+      const currentDatasheets = datasheetsTouched ? datasheets : existingDatasheets
+      const currentDatasheetIds = new Set(
+        currentDatasheets
+          .map((datasheet: any) => datasheet.id)
+          .filter((id: any): id is string => typeof id === 'string' && id.length > 0)
+      )
+      const removedDatasheetIds = existingDatasheets
+        .map((datasheet: any) => datasheet.id)
+        .filter((id: any): id is string => typeof id === 'string' && id.length > 0)
+        .filter((id: string) => !currentDatasheetIds.has(id))
+
+      if (removedDatasheetIds.length > 0) {
+        const deleteResults = await Promise.all(
+          removedDatasheetIds.map(async (id: string) => {
+            const deleteResponse = await fetch(`/api/datasheets/${id}`, { method: 'DELETE' })
+            if (!deleteResponse.ok) {
+              const errorData = await parseJsonSafely(deleteResponse)
+              throw new Error(errorData.error || 'Failed to delete datasheet')
+            }
+            return id
+          })
+        )
+        console.log('🗑️ Deleted datasheets:', deleteResults.length)
+      }
+
       // Upload only new datasheets that include a File object
-      if (datasheets.length > 0) {
-        console.log('📤 Uploading', datasheets.length, 'datasheets...')
+      if (currentDatasheets.length > 0) {
+        console.log('📤 Uploading', currentDatasheets.length, 'datasheets...')
         
-        const uploadPromises = datasheets.map(async (datasheet) => {
+        const uploadPromises = currentDatasheets.map(async (datasheet) => {
           if (!datasheet.file) return
           
           const fileName = datasheet.file_name || datasheet.file?.name || 'datasheet'
@@ -272,14 +340,28 @@ export default function EditIngredientPage() {
     }
   }
 
-  const addSupplier = () => {
-    if (newSupplier.trim() && !ingredient.suppliers.includes(newSupplier.trim())) {
+  const addSupplierByName = (supplierName: string) => {
+    const trimmed = supplierName.trim()
+    if (trimmed && !ingredient.suppliers.includes(trimmed)) {
       setIngredient(prev => ({
         ...prev,
-        suppliers: [...prev.suppliers, newSupplier.trim()]
+        suppliers: [...prev.suppliers, trimmed]
       }))
-      setNewSupplier('')
     }
+  }
+
+  const addSupplier = () => {
+    if (!newSupplier.trim()) {
+      return
+    }
+
+    addSupplierByName(newSupplier)
+    setNewSupplier('')
+  }
+
+  const handleDatasheetsChange = (files: any[]) => {
+    setDatasheets(files)
+    setDatasheetsTouched(true)
   }
 
   const removeSupplier = (supplier: string) => {
@@ -522,6 +604,31 @@ export default function EditIngredientPage() {
             <h2 className="text-xl font-semibold text-[#003842] mb-4">Suppliers</h2>
             
             <div className="space-y-4">
+              <div>
+                <select
+                  value={selectedSupplier}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    if (val) {
+                      addSupplierByName(val)
+                      setSelectedSupplier('')
+                    }
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
+                >
+                  <option value="">
+                    {loadingSuppliers ? 'Loading suppliers...' : 'Select existing supplier'}
+                  </option>
+                  {availableSuppliers.map((supplier) => (
+                    <option key={supplier} value={supplier}>
+                      {supplier}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <p className="text-xs text-gray-500">Or create a new supplier:</p>
+
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -562,7 +669,7 @@ export default function EditIngredientPage() {
             <h2 className="text-xl font-semibold text-[#003842] mb-4">Product Datasheets</h2>
             <DatasheetUploader 
               existingDatasheets={existingDatasheets}
-              onFilesChange={setDatasheets}
+              onFilesChange={handleDatasheetsChange}
               entityType="ingredient"
             />
           </Card>

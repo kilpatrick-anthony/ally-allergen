@@ -63,6 +63,7 @@ export default function EditMenuItemPage() {
   const [showIngredientSelector, setShowIngredientSelector] = useState(false)
   const [datasheets, setDatasheets] = useState<any[]>([])
   const [existingDatasheets, setExistingDatasheets] = useState<any[]>([])
+  const [datasheetsTouched, setDatasheetsTouched] = useState(false)
   const [showScan, setShowScan] = useState(false)
   const [customDietaryInput, setCustomDietaryInput] = useState('')
   const [showCustomDietaryInput, setShowCustomDietaryInput] = useState(false)
@@ -185,6 +186,8 @@ export default function EditMenuItemPage() {
         const data = await response.json()
         if (response.ok && data.datasheets) {
           setExistingDatasheets(data.datasheets)
+          setDatasheets(data.datasheets)
+          setDatasheetsTouched(false)
         }
       } catch (error) {
         console.error('Error fetching existing datasheets:', error)
@@ -370,11 +373,35 @@ export default function EditMenuItemPage() {
         throw new Error(data.error || 'Failed to save menu item')
       }
 
+      const currentDatasheets = datasheetsTouched ? datasheets : existingDatasheets
+      const currentDatasheetIds = new Set(
+        currentDatasheets
+          .map((datasheet: any) => datasheet.id)
+          .filter((id: any): id is string => typeof id === 'string' && id.length > 0)
+      )
+      const removedDatasheetIds = existingDatasheets
+        .map((datasheet: any) => datasheet.id)
+        .filter((id: any): id is string => typeof id === 'string' && id.length > 0)
+        .filter((id: string) => !currentDatasheetIds.has(id))
+
+      if (removedDatasheetIds.length > 0) {
+        setSaveMessage('Deleting removed datasheets...')
+        await Promise.all(
+          removedDatasheetIds.map(async (id: string) => {
+            const deleteResponse = await fetch(`/api/datasheets/${id}`, { method: 'DELETE' })
+            if (!deleteResponse.ok) {
+              const deleteData = await deleteResponse.json()
+              throw new Error(deleteData.error || 'Failed to delete datasheet')
+            }
+          })
+        )
+      }
+
       // Upload datasheets if any
-      if (datasheets.length > 0) {
+      if (currentDatasheets.length > 0) {
         try {
           setSaveMessage('Uploading datasheets...')
-          const uploadPromises = datasheets
+          const uploadPromises = currentDatasheets
             .filter((datasheet) => datasheet.file)
             .map(async (datasheet) => {
               const fileName = datasheet.file_name || datasheet.file?.name || 'datasheet'
@@ -426,6 +453,11 @@ export default function EditMenuItemPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleDatasheetsChange = (files: any[]) => {
+    setDatasheets(files)
+    setDatasheetsTouched(true)
   }
 
   if (loading || !menuItem) {
@@ -814,7 +846,7 @@ export default function EditMenuItemPage() {
               <DatasheetUploader
                 entityType="menu_item"
                 existingDatasheets={existingDatasheets}
-                onFilesChange={setDatasheets}
+                onFilesChange={handleDatasheetsChange}
                 maxFiles={5}
                 compact={false}
               />

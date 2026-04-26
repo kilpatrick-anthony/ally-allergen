@@ -42,8 +42,39 @@ export default function DatasheetUploader({
   const [files, setFiles] = useState<DatasheetFile[]>(existingDatasheets ?? [])
   const [dragActive, setDragActive] = useState(false)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [availableSuppliers, setAvailableSuppliers] = useState<string[]>([])
+  const [loadingSuppliers, setLoadingSuppliers] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const hasExistingDatasheetsProp = existingDatasheets !== undefined
+
+  useEffect(() => {
+    const fetchSuppliers = async () => {
+      try {
+        setLoadingSuppliers(true)
+        const response = await fetch('/api/suppliers')
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to fetch suppliers')
+        }
+
+        const names = (data.suppliers || [])
+          .map((supplier: any) => supplier.name)
+          .filter((name: string) => typeof name === 'string' && name.trim() !== '')
+          .map((name: string) => name.trim())
+
+        const uniqueNames = (Array.from(new Set(names)) as string[]).sort((a, b) => a.localeCompare(b))
+        setAvailableSuppliers(uniqueNames)
+      } catch (error) {
+        console.error('Error fetching suppliers:', error)
+        setAvailableSuppliers([])
+      } finally {
+        setLoadingSuppliers(false)
+      }
+    }
+
+    fetchSuppliers()
+  }, [])
 
   useEffect(() => {
     const isSameList = (nextFiles: DatasheetFile[], currentFiles: DatasheetFile[]) => {
@@ -335,12 +366,30 @@ export default function DatasheetUploader({
                               <label className="block text-xs font-medium text-gray-700 mb-1">
                                 Supplier Name
                               </label>
+                              <select
+                                defaultValue=""
+                                onChange={(e) => {
+                                  if (e.target.value) {
+                                    updateFileMetadata(index, { supplier_name: e.target.value })
+                                  }
+                                }}
+                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent mb-2"
+                              >
+                                <option value="">
+                                  {loadingSuppliers ? 'Loading suppliers...' : 'Select existing supplier'}
+                                </option>
+                                {availableSuppliers.map((supplier) => (
+                                  <option key={supplier} value={supplier}>
+                                    {supplier}
+                                  </option>
+                                ))}
+                              </select>
                               <input
                                 type="text"
                                 value={file.supplier_name || ''}
                                 onChange={(e) => updateFileMetadata(index, { supplier_name: e.target.value })}
                                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                placeholder="e.g., Supplier A"
+                                placeholder="Or type new supplier name"
                               />
                             </div>
                             <div>
