@@ -865,23 +865,20 @@ export default function KioskPage() {
             <img
               src={ADMIN_WORDMARK_SRC}
               alt="AllyJen"
-              className="h-20 sm:h-24 lg:h-28 xl:h-32 w-auto mx-auto mb-8"
+              className="h-20 sm:h-24 lg:h-28 xl:h-32 w-auto mx-auto mb-5"
             />
 
-            <p className="text-[#9fe5de] text-2xl sm:text-3xl lg:text-4xl font-semibold mb-6 tracking-tight">
+            <p className="text-[#9fe5de] text-2xl sm:text-3xl lg:text-4xl font-semibold mb-4 tracking-tight">
               Interactive Allergen Check Guide
             </p>
 
-            <div className="mx-auto max-w-2xl rounded-2xl border border-[#42b8ac]/45 bg-[#42b8ac]/15 px-6 py-5">
-              <p className="text-white font-bold text-2xl sm:text-3xl lg:text-4xl mb-1">
+            <div className="mx-auto mt-2 max-w-xl rounded-2xl border border-[#42b8ac]/45 bg-[#42b8ac]/15 px-5 py-4">
+              <p className="text-white font-bold text-xl sm:text-2xl lg:text-3xl mb-0">
                 Click here to begin
-              </p>
-              <p className="text-white/75 text-sm sm:text-base lg:text-lg">
-                {t.tapToWake || 'Touch anywhere to open the allergen guide'}
               </p>
             </div>
 
-            <p className="text-white/75 text-base sm:text-lg lg:text-xl max-w-4xl mx-auto mt-8 leading-relaxed">
+            <p className="text-white/70 text-xs sm:text-sm lg:text-base max-w-4xl mx-auto mt-7 leading-relaxed">
               Explore menu items, review allergens, scan a QR code, or email this guide to your phone. If you have a severe allergy, please speak to a team member before ordering.
             </p>
 
