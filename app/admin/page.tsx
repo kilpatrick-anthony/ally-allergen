@@ -192,7 +192,6 @@ export default function AdminDashboard() {
         <div className="absolute top-1/2 right-1/4 w-32 h-32 rounded-full bg-[#42b8ac]/10 pointer-events-none" />
         <div className="relative z-10 flex flex-col sm:flex-row items-center justify-between gap-6 px-8 py-10">
           <div className="text-center sm:text-left">
-            <p className="text-[#42b8ac] text-xs font-bold uppercase tracking-widest mb-2">AllyJen</p>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-2">{t('admin.welcomeToAllyJen')}</h1>
             <p className="text-white/70 text-sm sm:text-base max-w-md">{t('admin.welcomeSubtitle')}</p>
           </div>

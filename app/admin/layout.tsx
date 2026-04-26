@@ -180,7 +180,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
           {/* Navigation - discreet scrollbar appears only on interaction */}
           <div className="relative flex-1 min-h-0 group/nav">
-            <div className="h-full overflow-y-auto px-3 pb-4 -mt-2 [&::-webkit-scrollbar]:w-[3px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-transparent [&::-webkit-scrollbar-thumb]:transition-colors [&::-webkit-scrollbar-thumb]:duration-200 group-hover/nav:[&::-webkit-scrollbar-thumb]:bg-white/20 focus-within:[&::-webkit-scrollbar-thumb]:bg-white/20 active:[&::-webkit-scrollbar-thumb]:bg-white/20">
+            <div className="admin-nav-scroll h-full overflow-y-auto px-3 pb-4 -mt-2">
               <Navigation />
             </div>
           </div>
@@ -201,9 +201,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <button
               type="button"
               onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-rose-100 bg-rose-900/30 hover:bg-rose-800/45 border border-rose-300/25 rounded-lg transition-colors backdrop-blur-sm"
+              className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-[#003842] bg-white/95 hover:bg-white active:bg-rose-600 active:text-white border border-white/80 active:border-rose-500 rounded-lg transition-colors backdrop-blur-sm"
             >
-              <LogOut className="h-4 w-4" />
+              <LogOut className="h-3.5 w-3.5" />
               {t('admin.logout')}
             </button>
           </div>
