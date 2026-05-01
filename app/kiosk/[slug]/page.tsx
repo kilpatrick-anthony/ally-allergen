@@ -336,6 +336,7 @@ export default function KioskPage() {
     (typeof window !== 'undefined' ? localStorage.getItem('defaultLanguage') as LanguageCode || 'en' : 'en') as LanguageCode
   )
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [menuViewMode, setMenuViewMode] = useState<'cards' | 'table'>('table')
   const [showScreensaver, setShowScreensaver] = useState(false)
   const [isSmallScreen, setIsSmallScreen] = useState(false)
@@ -1031,61 +1032,124 @@ export default function KioskPage() {
               </div>
             )}
 
-            {/* 3-column grid: [left buttons] [logo centre] [right buttons] — works at all screen widths */}
-            <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
-              {/* Left slot — filter button on mobile/tablet, empty on desktop */}
-              <div className="flex items-center gap-2 lg:hidden">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  icon={<Filter className="h-4 w-4" />}
-                  className="text-white border-white/40 hover:text-white hover:border-white/60"
-                  onClick={() => setActiveView(activeView === 'filters' ? 'menu' : 'filters')}
-                />
+            {/* ── Mobile header (< md): hamburger left · logo centre · nothing right ── */}
+            <div className="flex items-center justify-between md:hidden">
+              {/* Hamburger */}
+              <button
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                className="p-2 rounded-lg border border-white/40 text-white hover:bg-white/10 transition"
+                aria-label="Open menu"
+              >
+                {showMobileMenu ? (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                ) : (
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                )}
+              </button>
+
+              {/* Logo centred */}
+              <img src={ADMIN_WORDMARK_SRC} alt="AllyJen Logo" className="h-10 w-auto object-contain" />
+
+              {/* Right spacer — same width as hamburger so logo stays centred */}
+              <div className="w-9" />
+            </div>
+
+            {/* Mobile dropdown menu */}
+            {showMobileMenu && (
+              <div className="md:hidden mt-3 rounded-xl border border-white/20 bg-[#004f5e] p-4 flex flex-col gap-3">
+                {/* Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" style={{ color: 'rgba(66,184,172,0.7)' }} />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => { setSearchQuery(e.target.value); if (e.target.value) { setActiveView('menu'); setShowMobileMenu(false) } }}
+                    placeholder={t.searchMenuItems}
+                    style={{ borderColor: 'rgba(66,184,172,0.35)', color: 'white' }}
+                    onFocus={(e) => { e.target.style.borderColor = '#42b8ac'; e.target.style.boxShadow = '0 0 0 3px rgba(66,184,172,0.15)' }}
+                    onBlur={(e) => { e.target.style.borderColor = 'rgba(66,184,172,0.35)'; e.target.style.boxShadow = 'none' }}
+                    className="w-full pl-9 pr-4 py-2 rounded-lg border-2 bg-white/10 placeholder-white/30 text-sm font-medium focus:outline-none transition-colors"
+                  />
+                </div>
+
+                {/* Filter allergens */}
+                <button
+                  onClick={() => { setActiveView(activeView === 'filters' ? 'menu' : 'filters'); setShowMobileMenu(false) }}
+                  className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-white/30 text-white hover:bg-white/10 transition text-sm font-medium"
+                >
+                  <Filter className="h-4 w-4 shrink-0" />
+                  {activeView === 'filters' ? t.browseFullMenu : t.filterByAllergens}
+                </button>
+
+                {/* Language */}
+                <div>
+                  <button
+                    onClick={() => setShowLanguageMenu(!showLanguageMenu)}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg border border-white/30 text-white hover:bg-white/10 transition text-sm font-medium"
+                  >
+                    <span className="text-base">{t.flag}</span>
+                    <span>{t.name}</span>
+                    <svg className="h-4 w-4 ml-auto" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                  </button>
+                  {showLanguageMenu && (
+                    <div className="mt-1 rounded-lg border border-white/20 bg-[#003842] overflow-hidden">
+                      {(Object.entries(translations) as [LanguageCode, any][]).map(([code, lang]) => (
+                        <button
+                          key={code}
+                          onClick={() => { setCurrentLanguage(code); setShowLanguageMenu(false); setShowMobileMenu(false); localStorage.setItem('defaultLanguage', code); window.dispatchEvent(new CustomEvent('languageChange', { detail: code })) }}
+                          className={`w-full text-left px-4 py-2.5 flex items-center gap-3 text-sm text-white hover:bg-white/10 transition ${currentLanguage === code ? 'bg-white/10 font-semibold' : ''}`}
+                        >
+                          <span className="text-base">{lang.flag}</span>
+                          <span>{lang.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Home */}
+                <button
+                  onClick={() => { setActiveView('landing'); clearFilters(); setShowInactivityWarning(false); setShowMobileMenu(false) }}
+                  className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-white/30 text-white hover:bg-white/10 transition text-sm font-medium"
+                >
+                  <Home className="h-4 w-4 shrink-0" />
+                  Home
+                </button>
               </div>
+            )}
+
+            {/* ── Desktop header (≥ md): logo left · buttons right ── */}
+            <div className="hidden md:grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
               {/* Left slot on desktop — empty spacer */}
-              <div className="hidden lg:block" />
+              <div />
 
-              {/* Logo — always centred in the middle column */}
+              {/* Logo centred */}
               <div className="flex items-center justify-center">
-                <img 
-                  src={ADMIN_WORDMARK_SRC}
-                  alt="AllyJen Logo" 
-                  className="h-10 sm:h-12 w-auto object-contain"
-                />
+                <img src={ADMIN_WORDMARK_SRC} alt="AllyJen Logo" className="h-12 w-auto object-contain" />
               </div>
 
-              {/* Right slot — all action buttons, right-aligned */}
+              {/* Right slot — all action buttons */}
               <div className="flex flex-wrap items-center gap-2 sm:gap-3 justify-end">
-                <div className="relative hidden md:block">
+                <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none" style={{ color: 'rgba(66, 184, 172, 0.6)' }} />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => { setSearchQuery(e.target.value); if (e.target.value) setActiveView('menu') }}
                     placeholder={t.searchMenuItems}
-                    style={{
-                      borderColor: 'rgba(66, 184, 172, 0.35)',
-                      color: 'white',
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#42b8ac'
-                      e.target.style.boxShadow = '0 0 0 3px rgba(66, 184, 172, 0.15)'
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(66, 184, 172, 0.35)'
-                      e.target.style.boxShadow = 'none'
-                    }}
+                    style={{ borderColor: 'rgba(66, 184, 172, 0.35)', color: 'white' }}
+                    onFocus={(e) => { e.target.style.borderColor = '#42b8ac'; e.target.style.boxShadow = '0 0 0 3px rgba(66, 184, 172, 0.15)' }}
+                    onBlur={(e) => { e.target.style.borderColor = 'rgba(66, 184, 172, 0.35)'; e.target.style.boxShadow = 'none' }}
                     className="pl-10 pr-4 py-1.5 rounded-lg border-2 bg-white/10 placeholder-white/30 w-64 transition-colors focus:outline-none font-sans font-medium text-sm"
                   />
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     icon={<Filter className="h-4 w-4" />}
-                    className="hidden lg:inline-flex text-white border-white/40 hover:text-white hover:border-white/60"
+                    className="text-white border-white/40 hover:text-white hover:border-white/60"
                     onClick={() => setActiveView(activeView === 'filters' ? 'menu' : 'filters')}
                   >
                     {activeView === 'filters' ? t.browseFullMenu : t.filterByAllergens}
@@ -1109,7 +1173,6 @@ export default function KioskPage() {
                             onClick={() => {
                               setCurrentLanguage(code)
                               setShowLanguageMenu(false)
-                              // Save to localStorage and notify other components
                               localStorage.setItem('defaultLanguage', code)
                               window.dispatchEvent(new CustomEvent('languageChange', { detail: code }))
                             }}
@@ -1124,59 +1187,25 @@ export default function KioskPage() {
                       </div>
                     )}
                   </div>
-                  
+
                   <Button
                     variant="outline"
                     size="sm"
                     icon={<Home className="h-4 w-4" />}
                     className="text-white border-white/40 hover:text-white hover:border-white/60"
-                    onClick={() => {
-                      setActiveView('landing')
-                      clearFilters()
-                      setShowInactivityWarning(false)
-                    }}
+                    onClick={() => { setActiveView('landing'); clearFilters(); setShowInactivityWarning(false) }}
                     title="Return to main menu"
                   />
                   <Button
                     variant="outline"
                     size="sm"
-                    className="hidden sm:inline-flex text-white border-white/40 hover:text-white hover:border-white/60"
-                    onClick={() => {
-                      setKioskStarted(false)
-                      setActiveView('landing')
-                      clearFilters()
-                      setShowInactivityWarning(false)
-                    }}
+                    className="text-white border-white/40 hover:text-white hover:border-white/60"
+                    onClick={() => { setKioskStarted(false); setActiveView('landing'); clearFilters(); setShowInactivityWarning(false) }}
                     title="Return to sleep screen"
                   >
                     Kiosk
                   </Button>
                 </div>
-              </div>
-            </div>
-
-            <div className="mt-4 md:hidden">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none" style={{ color: 'rgba(66, 184, 172, 0.6)' }} />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => { setSearchQuery(e.target.value); if (e.target.value) setActiveView('menu') }}
-                  placeholder="Search menu items..."
-                  style={{
-                    borderColor: 'rgba(66, 184, 172, 0.35)',
-                    color: 'white',
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#42b8ac'
-                    e.target.style.boxShadow = '0 0 0 3px rgba(66, 184, 172, 0.15)'
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = 'rgba(66, 184, 172, 0.35)'
-                    e.target.style.boxShadow = 'none'
-                  }}
-                  className="pl-10 pr-4 py-1.5 rounded-lg border-2 bg-white/10 placeholder-white/30 w-full transition-colors focus:outline-none font-sans font-medium text-sm"
-                />
               </div>
             </div>
           </div>
