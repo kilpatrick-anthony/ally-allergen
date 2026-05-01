@@ -286,6 +286,13 @@ export default function KioskPage() {
   const slug = params.slug as string
   const siteIdParam = searchParams.get('site_id')
   const pdfAutoDownload = searchParams.get('pdf')
+
+  // Persist slug so the PWA start_url (/kiosk) can redirect back here
+  useEffect(() => {
+    if (slug && typeof window !== 'undefined') {
+      localStorage.setItem('allyjen_kiosk_slug', slug)
+    }
+  }, [slug])
   
   // Use offline-enabled data hook
   const {
