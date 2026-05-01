@@ -1661,9 +1661,9 @@ export default function KioskPage() {
               <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Allergen-Free Options</p>
+                    <p className="text-sm text-gray-600">Items Available</p>
                     <p className="text-2xl font-bold text-[#003842]">
-                      {menuItems.filter(item => getAllergensForItem(item).length === 0).length}
+                      {filteredItems.length}
                     </p>
                   </div>
                   <div className="p-3 bg-green-100 rounded-lg">
@@ -1840,9 +1840,9 @@ export default function KioskPage() {
               <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Allergen-Free Options</p>
+                    <p className="text-sm text-gray-600">Items Available</p>
                     <p className="text-2xl font-bold text-[#003842]">
-                      {menuItems.filter(item => getAllergensForItem(item).length === 0).length}
+                      {filteredItems.length}
                     </p>
                   </div>
                   <div className="p-3 bg-green-100 rounded-lg">
