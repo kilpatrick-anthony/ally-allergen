@@ -2086,15 +2086,15 @@ export default function KioskPage() {
       {/* EU Compliance Footer */}
       <div className="mt-8 border-t border-gray-200 bg-gray-50 py-5 px-4">
           <div className="max-w-4xl mx-auto flex items-start justify-center gap-3 text-xs text-gray-500 text-center">
-          {/* EU Flag icon */}
-          <svg className="h-4 w-4 shrink-0 mt-0.5" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="EU flag">
-            <circle cx="10" cy="10" r="10" fill="#003399"/>
-            {/* 12 gold stars arranged in a circle */}
+          {/* EU Flag icon — rectangular */}
+          <svg className="h-4 w-6 shrink-0 mt-0.5 rounded-[1px]" viewBox="0 0 18 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="EU flag">
+            <rect width="18" height="12" fill="#003399"/>
+            {/* 12 gold stars in a circle, radius ~3.5 units, centred at 9,6 */}
             {Array.from({ length: 12 }).map((_, i) => {
               const angle = (i * 30 - 90) * (Math.PI / 180)
-              const cx = 10 + 6.5 * Math.cos(angle)
-              const cy = 10 + 6.5 * Math.sin(angle)
-              return <polygon key={i} points="0,-1.1 0.26,-0.36 1.05,-0.36 0.42,0.14 0.65,0.9 0,0.44 -0.65,0.9 -0.42,0.14 -1.05,-0.36 -0.26,-0.36" transform={`translate(${cx},${cy}) scale(0.95)`} fill="#FFCC00"/>
+              const cx = 9 + 3.5 * Math.cos(angle)
+              const cy = 6 + 3.5 * Math.sin(angle)
+              return <polygon key={i} points="0,-0.9 0.21,-0.29 0.86,-0.29 0.35,0.11 0.53,0.74 0,0.36 -0.53,0.74 -0.35,0.11 -0.86,-0.29 -0.21,-0.29" transform={`translate(${cx},${cy})`} fill="#FFCC00"/>
             })}
           </svg>
           <div>
@@ -2108,15 +2108,7 @@ export default function KioskPage() {
       <footer className="bg-[#003842] border-t border-[#42b8ac]/20 py-5 px-6">
         <div className="max-w-6xl mx-auto flex flex-col items-center gap-2 text-center">
           <p className="text-white/55 text-xs">
-            © {new Date().getFullYear()} AllyJen Solutions Limited. CRO No. 811542 | Republic of Ireland |{' '}
-            <a
-              href="https://allyjen.ie"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#42b8ac] hover:text-white transition-colors"
-            >
-              AllyJen.ie
-            </a>
+            © {new Date().getFullYear()} AllyJen Solutions Limited. CRO No. 811542 | Republic of Ireland | AllyJen.ie
           </p>
           <img src={ADMIN_WORDMARK_SRC} alt="AllyJen" className="h-5 w-auto opacity-70" />
         </div>
