@@ -1,12 +1,12 @@
 {
   "name": "AllyJen Kiosk",
-  "short_name": "Ally Kiosk",
+  "short_name": "AllyJen Kiosk",
   "description": "Offline-capable allergen information kiosk for restaurants",
   "start_url": "/kiosk",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#42b8ac",
-  "orientation": "portrait",
+  "orientation": "landscape",
   "icons": [
     {
       "src": "/icon-192.png",
