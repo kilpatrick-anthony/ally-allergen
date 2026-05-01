@@ -1232,7 +1232,7 @@ export default function KioskPage() {
                       <div className="p-3.5 bg-gradient-to-br from-[#dc2626] to-[#ef4444] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
                         <Filter className="h-6 w-6 text-white" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <h3 className="text-xl sm:text-2xl font-bold text-[#7f1d1d] mb-2 tracking-tight leading-tight">{t.avoidAllergens}</h3>
                         <p className="text-[#991b1b] text-sm sm:text-[15px] leading-relaxed">
                           {t.avoidAllergensDesc}
@@ -1262,7 +1262,7 @@ export default function KioskPage() {
                       <div className="p-3.5 bg-gradient-to-br from-[#047857] to-[#059669] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
                         <FileText className="h-6 w-6 text-white" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <h3 className="text-xl sm:text-2xl font-bold text-[#064e3b] mb-2 tracking-tight leading-tight">{t.fullAllergenGuide}</h3>
                         <p className="text-[#065f46] text-sm sm:text-[15px] leading-relaxed">
                           {t.fullAllergenGuideDesc}
@@ -1292,7 +1292,7 @@ export default function KioskPage() {
                       <div className="p-3.5 bg-gradient-to-br from-[#7e22ce] to-[#a855f7] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
                         <QrCode className="h-6 w-6 text-white" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <h3 className="text-xl sm:text-2xl font-bold text-[#581c87] mb-2 tracking-tight leading-tight">{t.saveMenuToPhone}</h3>
                         <p className="text-[#6b21a8] text-sm sm:text-[15px] leading-relaxed">
                           {t.saveMenuToPhoneDesc}
@@ -1322,7 +1322,7 @@ export default function KioskPage() {
                       <div className="p-3.5 bg-gradient-to-br from-[#0f4f4a] to-[#0f766e] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
                         <FileText className="h-6 w-6 text-white" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <h3 className="text-xl sm:text-2xl font-bold text-[#134e4a] mb-2 tracking-tight leading-tight">{t.emailAllergenGuide}</h3>
                         <p className="text-[#115e59] text-sm sm:text-[15px] leading-relaxed">
                           {t.emailAllergenGuideDesc}
