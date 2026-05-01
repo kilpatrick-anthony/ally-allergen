@@ -12,6 +12,7 @@ export interface Business {
   primary_color: string | null;
   secondary_color: string | null;
   kiosk_display_name: string | null;
+  kiosk_disclaimer?: string | null;
   address?: string;
   phone?: string;
   website?: string;

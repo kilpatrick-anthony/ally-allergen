@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     const businessQuery = supabase
       .from('businesses')
-      .select('id, name, slug, logo_url, primary_color, secondary_color, kiosk_display_name, address, phone, website')
+      .select('id, name, slug, logo_url, primary_color, secondary_color, kiosk_display_name, address, phone, website, settings')
 
     const { data: business, error: businessError } = isBusinessId
       ? await businessQuery.eq('id', target).single()
@@ -109,8 +109,12 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching ingredient list:', ingredientsListError)
     }
 
+    const { settings: _bizSettings, ...businessWithoutSettings } = business as any
     return NextResponse.json({
-      business,
+      business: {
+        ...businessWithoutSettings,
+        kiosk_disclaimer: (business as any).settings?.kioskDisclaimer ?? null,
+      },
       menuItems: menuItemsWithIngredients,
       ingredients: ingredients || [],
     })

@@ -34,7 +34,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Business ID required' }, { status: 400 })
     }
     const body = await request.json()
-    const { name, contactEmail, sessionTimeout, businessAddress, businessCity, businessPostalCode, businessCountry, businessPhone, primaryColor, secondaryColor } = body
+    const { name, contactEmail, sessionTimeout, businessAddress, businessCity, businessPostalCode, businessCountry, businessPhone, primaryColor, secondaryColor, kioskDisclaimer } = body
     const supabase = createServiceClient()
     
     // First, get current business settings
@@ -53,6 +53,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       sessionTimeout: sessionTimeout || '15 minutes',
       ...(primaryColor && { primaryColor }),
       ...(secondaryColor && { secondaryColor }),
+      ...(kioskDisclaimer !== undefined && { kioskDisclaimer }),
       address: {
         street: businessAddress || '',
         city: businessCity || '',

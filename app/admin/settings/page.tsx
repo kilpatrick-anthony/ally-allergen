@@ -43,6 +43,7 @@ export default function SettingsPage() {
     defaultLanguage: typeof window !== 'undefined' ? localStorage.getItem('defaultLanguage') || 'en' : 'en',
     darkMode: typeof window !== 'undefined' ? localStorage.getItem('darkMode') === 'true' : false,
     dateFormat: typeof window !== 'undefined' ? localStorage.getItem('dateFormat') || 'DD/MM/YYYY' : 'DD/MM/YYYY',
+    kioskDisclaimer: '',
     // Branding
     primaryColor: '#003842',
     secondaryColor: '#42b8ac',
@@ -423,6 +424,7 @@ export default function SettingsPage() {
               logoUrl: businessData?.settings?.logoUrl ?? prev.logoUrl,
               primaryColor: businessData?.settings?.primaryColor ?? prev.primaryColor,
               secondaryColor: businessData?.settings?.secondaryColor ?? prev.secondaryColor,
+              kioskDisclaimer: businessData?.settings?.kioskDisclaimer ?? '',
               twoFactorAuth: twoFactorEnabled
             }));
           } else {
@@ -516,7 +518,8 @@ export default function SettingsPage() {
           businessPhone: settings.businessPhone,
           sessionTimeout: settings.sessionTimeout,
           primaryColor: settings.primaryColor,
-          secondaryColor: settings.secondaryColor
+          secondaryColor: settings.secondaryColor,
+          kioskDisclaimer: settings.kioskDisclaimer
         })
       })
       if (!res.ok) {
@@ -533,7 +536,8 @@ export default function SettingsPage() {
           businessName: businessData?.name ?? prev.businessName,
           sessionTimeout: businessData?.sessionTimeout ?? prev.sessionTimeout,
           primaryColor: businessData?.settings?.primaryColor ?? prev.primaryColor,
-          secondaryColor: businessData?.settings?.secondaryColor ?? prev.secondaryColor
+          secondaryColor: businessData?.settings?.secondaryColor ?? prev.secondaryColor,
+          kioskDisclaimer: businessData?.settings?.kioskDisclaimer ?? prev.kioskDisclaimer,
         }))
       }
       setHasUnsavedChanges(false)
@@ -567,6 +571,7 @@ export default function SettingsPage() {
       defaultLanguage: 'en',
       darkMode: false,
       dateFormat: 'DD/MM/YYYY',
+      kioskDisclaimer: '',
       // Branding
       primaryColor: '#003842',
       secondaryColor: '#42b8ac',
@@ -846,6 +851,31 @@ export default function SettingsPage() {
                       </select>
                     </div>
                   </div>
+                </div>
+              </Card>
+
+              {/* Kiosk Disclaimer */}
+              <Card>
+                <div className="p-6 border-b border-gray-200 dark:border-gray-600">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Kiosk Disclaimer</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    Custom cross-contamination or allergen disclaimer shown to customers on your kiosk screen. Leave blank to use the default AllyJen message.
+                  </p>
+                </div>
+                <div className="p-6">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Disclaimer Text
+                  </label>
+                  <textarea
+                    value={settings.kioskDisclaimer}
+                    onChange={(e) => setSettings({...settings, kioskDisclaimer: e.target.value})}
+                    rows={5}
+                    className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-teal-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm resize-y"
+                    placeholder="e.g., At Acme Café, we take allergen safety seriously. While we strive to keep our products free from undeclared allergens, please be aware that cross-contamination may occur in our kitchen..."
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    This replaces the disclaimer text in the orange warning section at the bottom of your kiosk.
+                  </p>
                 </div>
               </Card>
             </div>

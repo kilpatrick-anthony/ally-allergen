@@ -1310,7 +1310,7 @@ export default function KioskPage() {
                 <div className="flex-1">
                   <h2 className="text-lg font-bold text-orange-900 mb-3">{t.crossContamination}</h2>
                   <p className="text-orange-800 text-sm mb-2 leading-relaxed">
-                    {t.disclaimerText}
+                    {business?.kiosk_disclaimer || t.disclaimerText}
                   </p>
                   <p className="text-orange-800 text-sm mb-3 leading-relaxed">
                     {t.severeAllergyWarning}
