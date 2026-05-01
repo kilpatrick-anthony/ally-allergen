@@ -1031,9 +1031,9 @@ export default function KioskPage() {
               </div>
             )}
 
-            {/* Mobile: filter-left / logo-centre / buttons-right. Desktop: logo-left / buttons-right */}
-            <div className="relative flex items-center justify-between gap-2">
-              {/* Left slot — empty on desktop (logo sits naturally left); on mobile holds the filter button */}
+            {/* 3-column grid: [left buttons] [logo centre] [right buttons] — works at all screen widths */}
+            <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+              {/* Left slot — filter button on mobile/tablet, empty on desktop */}
               <div className="flex items-center gap-2 lg:hidden">
                 <Button
                   variant="outline"
@@ -1043,9 +1043,11 @@ export default function KioskPage() {
                   onClick={() => setActiveView(activeView === 'filters' ? 'menu' : 'filters')}
                 />
               </div>
+              {/* Left slot on desktop — empty spacer */}
+              <div className="hidden lg:block" />
 
-              {/* Logo — centred on mobile, left-aligned on desktop */}
-              <div className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0 lg:flex lg:items-center lg:gap-3 lg:min-w-0">
+              {/* Logo — always centred in the middle column */}
+              <div className="flex items-center justify-center">
                 <img 
                   src={ADMIN_WORDMARK_SRC}
                   alt="AllyJen Logo" 
@@ -1053,8 +1055,8 @@ export default function KioskPage() {
                 />
               </div>
 
-              {/* Right slot — all action buttons */}
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3 justify-end ml-auto lg:ml-0">
+              {/* Right slot — all action buttons, right-aligned */}
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 justify-end">
                 <div className="relative hidden md:block">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none" style={{ color: 'rgba(66, 184, 172, 0.6)' }} />
                   <input
@@ -1138,7 +1140,7 @@ export default function KioskPage() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-white border-white/40 hover:text-white hover:border-white/60"
+                    className="hidden sm:inline-flex text-white border-white/40 hover:text-white hover:border-white/60"
                     onClick={() => {
                       setKioskStarted(false)
                       setActiveView('landing')
@@ -2055,7 +2057,7 @@ export default function KioskPage() {
 
       {/* EU Compliance Footer */}
       <div className="mt-8 border-t border-gray-200 bg-gray-50 py-5 px-4">
-          <div className="max-w-4xl mx-auto flex items-start gap-3 text-xs text-gray-500 pr-24 sm:pr-0">
+          <div className="max-w-4xl mx-auto flex items-start justify-center gap-3 text-xs text-gray-500 text-center">
           <Shield className="h-4 w-4 text-gray-400 shrink-0 mt-0.5" />
           <div>
             <span className="font-semibold text-gray-600">Allergen information compliant with EU Regulation No. 1169/2011 (FIC Regulation). </span>
