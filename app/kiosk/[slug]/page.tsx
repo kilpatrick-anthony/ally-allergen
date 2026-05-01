@@ -648,11 +648,16 @@ export default function KioskPage() {
         return false
       }
       
-      // Check regular allergens
+      // Check regular allergens — supports both legacy boolean fields and new allergen_warnings JSONB
       if (selectedAllergens.length > 0) {
-        const hasSelectedAllergen = selectedAllergens.some(allergenId => 
-          item[allergenId as keyof MenuItem] === true
-        )
+        const hasSelectedAllergen = selectedAllergens.some(allergenId => {
+          // Legacy: contains_milk, contains_eggs, etc.
+          if (item[allergenId as keyof MenuItem] === true) return true
+          // New allergen_warnings system: strip 'contains_' prefix to get key, e.g. 'milk'
+          const warningKey = allergenId.replace(/^contains_/, '')
+          const warningLevel = (item.allergen_warnings as Record<string, string> | undefined)?.[warningKey]
+          return warningLevel && warningLevel !== 'none'
+        })
         if (hasSelectedAllergen) {
           return false
         }
@@ -949,7 +954,7 @@ export default function KioskPage() {
               className="mx-auto mt-28 max-w-lg rounded-2xl border border-[#42b8ac]/45 bg-[#42b8ac]/15 px-6 py-4 cursor-pointer hover:bg-[#42b8ac]/25 transition-colors block w-full"
             >
               <p className="text-white font-bold text-lg sm:text-xl lg:text-2xl mb-0">
-                Click here to begin
+                {t.clickHereToBegin}
               </p>
             </button>
 
@@ -1019,8 +1024,21 @@ export default function KioskPage() {
               </div>
             )}
 
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-center gap-3 min-w-0">
+            {/* Mobile: filter-left / logo-centre / buttons-right. Desktop: logo-left / buttons-right */}
+            <div className="relative flex items-center justify-between gap-2">
+              {/* Left slot — empty on desktop (logo sits naturally left); on mobile holds the filter button */}
+              <div className="flex items-center gap-2 lg:hidden">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  icon={<Filter className="h-4 w-4" />}
+                  className="text-white border-white/40 hover:text-white hover:border-white/60"
+                  onClick={() => setActiveView(activeView === 'filters' ? 'menu' : 'filters')}
+                />
+              </div>
+
+              {/* Logo — centred on mobile, left-aligned on desktop */}
+              <div className="absolute left-1/2 -translate-x-1/2 lg:static lg:translate-x-0 lg:flex lg:items-center lg:gap-3 lg:min-w-0">
                 <img 
                   src={ADMIN_WORDMARK_SRC}
                   alt="AllyJen Logo" 
@@ -1028,7 +1046,8 @@ export default function KioskPage() {
                 />
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3 lg:justify-end">
+              {/* Right slot — all action buttons */}
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 justify-end ml-auto lg:ml-0">
                 <div className="relative hidden md:block">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 pointer-events-none" style={{ color: 'rgba(66, 184, 172, 0.6)' }} />
                   <input
@@ -1057,7 +1076,7 @@ export default function KioskPage() {
                     variant="outline"
                     size="sm"
                     icon={<Filter className="h-4 w-4" />}
-                    className="text-white border-white/40 hover:text-white hover:border-white/60"
+                    className="hidden lg:inline-flex text-white border-white/40 hover:text-white hover:border-white/60"
                     onClick={() => setActiveView(activeView === 'filters' ? 'menu' : 'filters')}
                   >
                     {activeView === 'filters' ? t.browseFullMenu : t.filterByAllergens}
@@ -1205,15 +1224,15 @@ export default function KioskPage() {
                         <FileText className="h-6 w-6 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-xl sm:text-2xl font-bold text-[#064e3b] mb-2 tracking-tight leading-tight">Full Allergen Guide</h3>
+                        <h3 className="text-xl sm:text-2xl font-bold text-[#064e3b] mb-2 tracking-tight leading-tight">{t.fullAllergenGuide}</h3>
                         <p className="text-[#065f46] text-sm sm:text-[15px] leading-relaxed">
-                          View the complete allergen table for all menu items and ingredients on screen.
+                          {t.fullAllergenGuideDesc}
                         </p>
                       </div>
                     </div>
                     <div className="mt-auto w-full flex justify-center">
                       <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#047857] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
-                        View Guide
+                        {t.viewGuide}
                         <ArrowRight className="h-4 w-4" />
                       </div>
                     </div>
@@ -1265,15 +1284,15 @@ export default function KioskPage() {
                         <FileText className="h-6 w-6 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-xl sm:text-2xl font-bold text-[#134e4a] mb-2 tracking-tight leading-tight">Email Allergen Guide</h3>
+                        <h3 className="text-xl sm:text-2xl font-bold text-[#134e4a] mb-2 tracking-tight leading-tight">{t.emailAllergenGuide}</h3>
                         <p className="text-[#115e59] text-sm sm:text-[15px] leading-relaxed">
-                          Send the full allergen guide to your email so you can review it on any device or computer.
+                          {t.emailAllergenGuideDesc}
                         </p>
                       </div>
                     </div>
                     <div className="mt-auto w-full flex justify-center">
                       <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0f4f4a] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
-                        Email Guide
+                        {t.emailGuide}
                         <ArrowRight className="h-4 w-4" />
                       </div>
                     </div>
@@ -1900,11 +1919,11 @@ export default function KioskPage() {
           <div className="flex-1 overflow-auto bg-gray-50 p-4 space-y-5">
             <Card className="p-4">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-lg font-semibold text-[#003842]">Menu Items by Sub Menu (A-Z)</h3>
+                <h3 className="text-lg font-semibold text-[#003842]">{t.menuItemsBySubMenu}</h3>
                 <div className="inline-flex items-center gap-2 rounded-lg border border-[#42b8ac]/30 bg-[#e8f7f5] px-3 py-1.5 text-[11px] text-[#0f4f4a] font-medium">
-                  <span>↔ Swipe allergens</span>
+                  <span>{t.swipeHint}</span>
                   <span className="text-[#42b8ac]">|</span>
-                  <span>↕ Scroll rows</span>
+                  <span>{t.scrollHint}</span>
                 </div>
               </div>
               {sortedMenuItems.length > 0 ? (
@@ -1927,11 +1946,11 @@ export default function KioskPage() {
 
             <Card className="p-4">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-                <h3 className="text-lg font-semibold text-[#003842]">Full Ingredients List (A-Z)</h3>
+                <h3 className="text-lg font-semibold text-[#003842]">{t.fullIngredientsList}</h3>
                 <div className="inline-flex items-center gap-2 rounded-lg border border-[#42b8ac]/30 bg-[#e8f7f5] px-3 py-1.5 text-[11px] text-[#0f4f4a] font-medium">
-                  <span>↔ Swipe allergens</span>
+                  <span>{t.swipeHint}</span>
                   <span className="text-[#42b8ac]">|</span>
-                  <span>↕ Scroll rows</span>
+                  <span>{t.scrollHint}</span>
                 </div>
               </div>
               {ingredientGuideRows.length > 0 ? (
@@ -1959,7 +1978,7 @@ export default function KioskPage() {
           <Card className="max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-[#003842]">Get Your Allergen Guide</h3>
+                <h3 className="text-lg font-semibold text-[#003842]">{t.getYourAllergenGuide}</h3>
                 <button onClick={() => { setShowPDFOptions(false); setShowEmailInput(false); setEmailInput(''); setEmailSent(false); setEmailError(''); }} className="text-gray-400 hover:text-gray-600">
                   <X className="h-5 w-5" />
                 </button>
@@ -1970,20 +1989,20 @@ export default function KioskPage() {
                   {emailSent ? (
                     <div className="text-center py-4">
                       <div className="text-2xl mb-2">✅</div>
-                      <p className="font-semibold text-[#003842]">Email sent!</p>
-                      <p className="text-sm text-gray-500 mt-1">Check your inbox for the allergen guide PDF.</p>
+                      <p className="font-semibold text-[#003842]">{t.emailSent}</p>
+                      <p className="text-sm text-gray-500 mt-1">{t.emailSentDesc}</p>
                       <button
                         onClick={() => { setEmailSent(false); setEmailInput(''); }}
                         className="mt-3 text-sm text-[#42b8ac] underline"
                       >
-                        Send to a different address
+                        {t.sendToAnotherAddress}
                       </button>
                     </div>
                   ) : (
                     <>
-                      <p className="text-sm font-medium text-gray-700 mb-2">📧 Email me this guide</p>
+                      <p className="text-sm font-medium text-gray-700 mb-2">{t.emailMeThisGuide}</p>
                       <p className="text-xs text-gray-500 mb-3">
-                        We&apos;ll send the allergen PDF straight to your inbox — handy to keep on your phone.
+                        {t.emailGuideDesc}
                       </p>
                       <div className="flex gap-2">
                         <input

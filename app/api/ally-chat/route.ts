@@ -176,14 +176,48 @@ async function sendEscalationEmail(params: {
 function buildMenuContext(items: MenuItem[]): string {
   if (!items.length) return 'No menu items are currently available.'
 
+  // Legacy allergen key mapping: field name → display label
+  const LEGACY_ALLERGEN_KEYS: Record<string, string> = {
+    contains_cereals_gluten: 'cereals_gluten',
+    contains_crustaceans: 'crustaceans',
+    contains_eggs: 'eggs',
+    contains_fish: 'fish',
+    contains_peanuts: 'peanuts',
+    contains_soybeans: 'soybeans',
+    contains_milk: 'milk',
+    contains_nuts: 'nuts',
+    contains_celery: 'celery',
+    contains_mustard: 'mustard',
+    contains_sesame: 'sesame',
+    contains_sulphites: 'sulphites',
+    contains_lupin: 'lupin',
+    contains_molluscs: 'molluscs',
+  }
+
   return items
     .map((item) => {
-      const allergens = Object.entries(item.allergen_warnings ?? {})
+      // Prefer new allergen_warnings; fall back to legacy boolean fields
+      const warnings = item.allergen_warnings ?? {}
+      const hasNewWarnings = Object.keys(warnings).length > 0
+
+      let allergenEntries: [string, string][] = []
+
+      if (hasNewWarnings) {
+        allergenEntries = Object.entries(warnings)
+      } else {
+        // Build from legacy contains_* boolean fields
+        for (const [legacyKey, displayKey] of Object.entries(LEGACY_ALLERGEN_KEYS)) {
+          const val = (item as unknown as Record<string, unknown>)[legacyKey]
+          if (val === true) allergenEntries.push([displayKey, 'contains'])
+        }
+      }
+
+      const allergens = allergenEntries
         .filter(([, level]) => level !== 'none')
         .map(([allergen, level]) => `${allergen}:${level}`)
         .join(', ')
 
-      const safe = Object.entries(item.allergen_warnings ?? {})
+      const safe = allergenEntries
         .filter(([, level]) => level === 'none')
         .map(([a]) => a)
         .join(', ')
