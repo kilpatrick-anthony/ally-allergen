@@ -1201,7 +1201,7 @@ export default function KioskPage() {
                     variant="outline"
                     size="sm"
                     className="text-white border-white/40 hover:text-white hover:border-white/60"
-                    onClick={() => { setKioskStarted(false); setActiveView('landing'); clearFilters(); setShowInactivityWarning(false) }}
+                    onClick={() => { setKioskStarted(false); setActiveView('landing'); clearFilters(); setShowInactivityWarning(false); setCurrentLanguage('en') }}
                     title="Return to sleep screen"
                   >
                     Kiosk
