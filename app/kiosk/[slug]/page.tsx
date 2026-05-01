@@ -511,6 +511,7 @@ export default function KioskPage() {
     setActiveView('menu')
     setShowInactivityWarning(false)
     setRemainingSeconds(0)
+    setCurrentLanguage('en')
     
     // Clear any selections
     setSelectedAllergens([])
@@ -1221,7 +1222,7 @@ export default function KioskPage() {
               {/* Search by Allergen Tile */}
               <button
                 onClick={() => setActiveView('filters')}
-                className="group text-left transition-transform hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#dc2626] rounded-3xl"
+                className="group text-left flex flex-col h-full transition-transform md:hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#dc2626] rounded-3xl"
               >
                 <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#fff5f4] via-[#ffeceb] to-[#ffdeda] border border-[#f5c8c2] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
                   <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
@@ -1251,7 +1252,7 @@ export default function KioskPage() {
               {/* Full Allergen Guide Tile */}
               <button
                 onClick={handleOpenAllergenGuide}
-                className="group text-left transition-transform hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#047857] rounded-3xl"
+                className="group text-left flex flex-col h-full transition-transform md:hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#047857] rounded-3xl"
               >
                 <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#ecfdf5] via-[#d1fae5] to-[#a7f3d0] border border-[#6ee7b7] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
                   <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
@@ -1281,7 +1282,7 @@ export default function KioskPage() {
               {/* QR Code Download Tile */}
               <button
                 onClick={() => setShowQRCode(true)}
-                className="group text-left transition-transform hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7e22ce] rounded-3xl"
+                className="group text-left flex flex-col h-full transition-transform md:hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7e22ce] rounded-3xl"
               >
                 <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#f7f0ff] via-[#f1e6ff] to-[#e8d6ff] border border-[#d4b9f2] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
                   <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
@@ -1311,7 +1312,7 @@ export default function KioskPage() {
               {/* Email Guide Tile */}
               <button
                 onClick={() => setShowPDFOptions(true)}
-                className="group text-left transition-transform hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0f4f4a] rounded-3xl"
+                className="group text-left flex flex-col h-full transition-transform md:hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0f4f4a] rounded-3xl"
               >
                 <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#e8f7f5] via-[#d6f0ec] to-[#bde8e1] border border-[#8ccfc7] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
                   <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
