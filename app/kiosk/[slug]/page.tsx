@@ -1113,7 +1113,7 @@ export default function KioskPage() {
                   className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-white/30 text-white hover:bg-white/10 transition text-sm font-medium"
                 >
                   <Home className="h-4 w-4 shrink-0" />
-                  Home
+                  {t.homeButton}
                 </button>
               </div>
             )}
@@ -1612,11 +1612,11 @@ export default function KioskPage() {
               {filteredItems.length === 0 ? (
                 <Card className="text-center py-12">
                   <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No items match your filters</h3>
-                  <p className="text-gray-600 mb-4">Try adjusting your filters or search term</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t.noItemsMatch}</h3>
+                  <p className="text-gray-600 mb-4">{t.tryAdjustingFilters}</p>
                     {totalActiveFilters > 0 && (
                     <Button variant="primary" onClick={clearFilters} className="mx-auto">
-                      Clear Allergen Filters
+                      {t.clearAllergenFilters}
                     </Button>
                   )}
                 </Card>
@@ -1680,7 +1680,7 @@ export default function KioskPage() {
               <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Total Menu Items</p>
+                    <p className="text-sm text-gray-600">{t.totalMenuItems}</p>
                     <p className="text-2xl font-bold text-[#003842]">{menuItems.length}</p>
                   </div>
                   <div className="p-3 bg-[#f0f9f8] rounded-lg">
@@ -1692,7 +1692,7 @@ export default function KioskPage() {
               <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Items Available</p>
+                    <p className="text-sm text-gray-600">{t.itemsAvailable}</p>
                     <p className="text-2xl font-bold text-[#003842]">
                       {filteredItems.length}
                     </p>
@@ -1706,7 +1706,7 @@ export default function KioskPage() {
               <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Current Filters</p>
+                    <p className="text-sm text-gray-600">{t.currentFilters}</p>
                       <p className="text-2xl font-bold text-[#003842]">{totalActiveFilters}</p>
                   </div>
                   <div className="p-3 bg-amber-100 rounded-lg">
@@ -1723,7 +1723,7 @@ export default function KioskPage() {
                 className="inline-flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-gray-900 font-medium rounded-lg hover:bg-gray-100 transition"
               >
                 <ArrowRight className="h-4 w-4 rotate-180" />
-                Back to Menu
+                {t.backToMenu}
               </button>
             </div>
           </>
@@ -1748,12 +1748,12 @@ export default function KioskPage() {
                     }`}
                   >
                     <Grid3x3 className="h-4 w-4" />
-                    <span className="text-sm font-medium">Cards</span>
+                    <span className="text-sm font-medium">{t.cardsView}</span>
                   </button>
                   <button
                     onClick={() => setMenuViewMode('table')}
                     disabled={isSmallScreen}
-                    title={isSmallScreen ? 'Table view is available on larger screens' : 'Show table view'}
+                    title={isSmallScreen ? t.tableViewDisabled : 'Show table view'}
                     className={`flex items-center gap-2 px-4 py-2 rounded-md transition ${
                       menuViewMode === 'table'
                         ? 'bg-white text-[#003842] shadow-sm'
@@ -1761,23 +1761,23 @@ export default function KioskPage() {
                     }`}
                   >
                     <Table2 className="h-4 w-4" />
-                    <span className="text-sm font-medium">Table</span>
+                    <span className="text-sm font-medium">{t.tableView}</span>
                   </button>
                 </div>
               </div>
 
               {isSmallScreen && (
-                <p className="text-xs text-gray-500 -mt-3 mb-4">Table view is disabled on smaller screens for readability.</p>
+                <p className="text-xs text-gray-500 -mt-3 mb-4">{t.tableViewDisabled}</p>
               )}
 
               {filteredItems.length === 0 ? (
                 <Card className="text-center py-12">
                   <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No items match your filters</h3>
-                  <p className="text-gray-600 mb-4">Try adjusting your filters or search term</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{t.noItemsMatch}</h3>
+                  <p className="text-gray-600 mb-4">{t.tryAdjustingFilters}</p>
                     {totalActiveFilters > 0 && (
                     <Button variant="primary" onClick={clearFilters} className="mx-auto">
-                      Clear Allergen Filters
+                      {t.clearAllergenFilters}
                     </Button>
                   )}
                 </Card>
@@ -1785,7 +1785,7 @@ export default function KioskPage() {
                 /* Table View */
                 <div className="space-y-3">
                   <div className="inline-flex items-center gap-3 rounded-lg border border-[#42b8ac]/30 bg-[#e8f7f5] px-3 py-2 text-xs text-[#0f4f4a] font-medium">
-                    <span>↔ Swipe left/right for more allergens</span>
+                    <span>{t.swipeLeftHint}</span>
                     <span className="text-[#42b8ac]">|</span>
                     <span>↕ Scroll inside table for more rows</span>
                   </div>
@@ -1859,7 +1859,7 @@ export default function KioskPage() {
               <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Total Menu Items</p>
+                    <p className="text-sm text-gray-600">{t.totalMenuItems}</p>
                     <p className="text-2xl font-bold text-[#003842]">{menuItems.length}</p>
                   </div>
                   <div className="p-3 bg-[#f0f9f8] rounded-lg">
@@ -1871,7 +1871,7 @@ export default function KioskPage() {
               <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Items Available</p>
+                    <p className="text-sm text-gray-600">{t.itemsAvailable}</p>
                     <p className="text-2xl font-bold text-[#003842]">
                       {filteredItems.length}
                     </p>
@@ -1885,7 +1885,7 @@ export default function KioskPage() {
               <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600">Current Filters</p>
+                    <p className="text-sm text-gray-600">{t.currentFilters}</p>
                       <p className="text-2xl font-bold text-[#003842]">{totalActiveFilters}</p>
                   </div>
                   <div className="p-3 bg-amber-100 rounded-lg">
@@ -1902,7 +1902,7 @@ export default function KioskPage() {
                 className="inline-flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-gray-900 font-medium rounded-lg hover:bg-gray-100 transition"
               >
                 <ArrowRight className="h-4 w-4 rotate-180" />
-                Back to Menu
+                {t.backToMenu}
               </button>
             </div>
           </>
@@ -1936,25 +1936,23 @@ export default function KioskPage() {
       {/* Full Allergen Guide Overlay */}
       {showAllergenGuide && (
         <div className="fixed inset-0 z-50 flex flex-col bg-[#003842]">
-          {/* Header matches kiosk nav style */}
+          {/* Header — logo + close only */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-[#42b8ac]/20 flex-shrink-0">
-            <div className="flex items-center gap-4">
-              <img src={ADMIN_WORDMARK_SRC} alt="AllyJen" className="h-8 w-auto" />
-              <div className="h-6 w-px bg-white/20" />
-              <span className="text-white font-semibold text-base">
-                {business?.name} — Full Allergen Guide
-              </span>
-            </div>
+            <img src={ADMIN_WORDMARK_SRC} alt="AllyJen" className="h-8 w-auto" />
             <button
               onClick={() => setShowAllergenGuide(false)}
               className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition"
             >
               <X className="h-4 w-4" />
-              Close
+              {t.close}
             </button>
           </div>
           {/* Guide content */}
           <div className="flex-1 overflow-auto bg-gray-50 p-4 space-y-5">
+            {/* Title */}
+            <h2 className="text-xl font-bold text-[#003842]">
+              {business?.name} — {t.fullAllergenGuideFor}
+            </h2>
             <Card className="p-4">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <h3 className="text-lg font-semibold text-[#003842]">{t.menuItemsBySubMenu}</h3>
@@ -1977,7 +1975,7 @@ export default function KioskPage() {
                 />
               ) : (
                 <div className="flex items-center justify-center py-8 text-gray-500">
-                  No menu items available.
+                  {t.noMenuItemsAvailable}
                 </div>
               )}
             </Card>
@@ -2003,7 +2001,7 @@ export default function KioskPage() {
                   stickyTopOffset={2}
                 />
               ) : (
-                <div className="py-6 text-gray-500">No ingredients available.</div>
+                <div className="py-6 text-gray-500">{t.noIngredientsAvailable}</div>
               )}
             </Card>
           </div>
@@ -2089,10 +2087,8 @@ export default function KioskPage() {
           <div className="max-w-4xl mx-auto flex items-start justify-center gap-3 text-xs text-gray-500 text-center">
           <Shield className="h-4 w-4 text-gray-400 shrink-0 mt-0.5" />
           <div>
-            <span className="font-semibold text-gray-600">Allergen information compliant with EU Regulation No. 1169/2011 (FIC Regulation). </span>
-            Where an ingredient is sourced from multiple suppliers, the allergen declaration shown reflects the
-            <strong> most severe risk level</strong> across all supplier profiles, as required by law.
-            Always inform staff of any allergy before ordering. For severe allergies, ask to speak with a manager.
+            <span className="font-semibold text-gray-600">{t.euFooterCompliance} </span>
+            {t.euFooterBody}
           </div>
         </div>
       </div>

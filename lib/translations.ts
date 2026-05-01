@@ -107,7 +107,20 @@ export const translations = {
     noActivityDetected: 'No activity detected. This kiosk will return to the home screen in:',
     tapAnywhereToContinue: 'Tap anywhere to continue',
     continueUsingKiosk: 'Continue Using Kiosk',
-    
+
+    // UI labels (used in page, must be translated)
+    itemsAvailable: 'Items Available',
+    cardsView: 'Cards',
+    tableView: 'Table',
+    tableViewDisabled: 'Table view is disabled on smaller screens for readability.',
+    swipeLeftHint: '↔ Swipe left/right for more allergens',
+    noMenuItemsAvailable: 'No menu items available.',
+    noIngredientsAvailable: 'No ingredients available.',
+    homeButton: 'Home',
+    euFooterCompliance: 'Allergen information compliant with EU Regulation No. 1169/2011 (FIC Regulation).',
+    euFooterBody: 'Where an ingredient is sourced from multiple suppliers, the allergen declaration shown reflects the most severe risk level across all supplier profiles, as required by law. Always inform staff of any allergy before ordering. For severe allergies, ask to speak with a manager.',
+    fullAllergenGuideFor: 'Full Allergen Guide',
+
     // Header
     allergenGuideTitle: 'OAKBERRY Allergen Guide',
     allergenInformationDesc: 'Allergen Information',
@@ -520,6 +533,19 @@ export const translations = {
     noActivityDetected: 'Níl aon ghníomhaíocht bhraistint. Fillfidh an kiosc ar an scáileán baile in:',
     tapAnywhereToContinue: 'Tapaigh in áit ar bith chun leanúint ar aghaidh',
     continueUsingKiosk: 'Lean ar Úsáid an Kiosc',
+
+    // UI labels
+    itemsAvailable: 'Míreanna ar Fáil',
+    cardsView: 'Cártaí',
+    tableView: 'Tábla',
+    tableViewDisabled: 'Tá amharc tábla díchumasaithe ar scáileáin níos lú.',
+    swipeLeftHint: '↔ Swipe clé/deas le haghaidh tuilleadh aileargéiní',
+    noMenuItemsAvailable: 'Níl aon mhíreanna biachláir ar fáil.',
+    noIngredientsAvailable: 'Níl aon chomhábhair ar fáil.',
+    homeButton: 'Baile',
+    euFooterCompliance: 'Faisnéis aileargéine comhlíontach le Rialachán AE Uimh. 1169/2011 (Rialachán FIC).',
+    euFooterBody: 'Nuair a sholáthraíonn iomadú soláthróirí comhábhar, léiríonn an dearbhú aileargéine an leibhéal riosca is déine thar gach próifíl soláthróra, mar a cheanglaíonn an dlí. Cuir foireann ar an eolas faoi aon aléirge roimh ordú. Le haghaidh aileargéiní tromchúiseacha, iarr labhairt le bainisteoir.',
+    fullAllergenGuideFor: 'Treoir Iomlán Aileargéine',
     
     allergenGuideTitle: 'Treoir Aileargéine OAKBERRY',
     allergenInformationDesc: 'Faisnéis Aileargéine',
@@ -874,6 +900,19 @@ export const translations = {
     noActivityDetected: 'Nenhuma atividade detectada. Este quiosque retornará à tela inicial em:',
     tapAnywhereToContinue: 'Toque em qualquer lugar para continuar',
     continueUsingKiosk: 'Continuar Usando o Quiosque',
+
+    // UI labels
+    itemsAvailable: 'Itens Disponíveis',
+    cardsView: 'Cartões',
+    tableView: 'Tabela',
+    tableViewDisabled: 'A visualização em tabela está desativada em telas menores.',
+    swipeLeftHint: '↔ Deslize esquerda/direita para mais alergênios',
+    noMenuItemsAvailable: 'Nenhum item de menu disponível.',
+    noIngredientsAvailable: 'Nenhum ingrediente disponível.',
+    homeButton: 'Início',
+    euFooterCompliance: 'Informações sobre alergênios em conformidade com o Regulamento UE n.º 1169/2011 (Regulamento FIC).',
+    euFooterBody: 'Quando um ingrediente é proveniente de múltiplos fornecedores, a declaração de alergênios apresentada reflete o nível de risco mais grave em todos os perfis de fornecedores, conforme exigido por lei. Informe sempre a equipe sobre qualquer alergia antes de pedir. Para alergias graves, peça para falar com um gerente.',
+    fullAllergenGuideFor: 'Guia Completo de Alergênios',
     
     allergenGuideTitle: 'Guia de Alérgenos OAKBERRY',
     allergenInformationDesc: 'Informações de Alérgenos',
@@ -1262,6 +1301,19 @@ export const translations = {
     noActivityDetected: 'Aucune activité détectée. Ce kiosque retournera à l\'écran d\'accueil dans:',
     tapAnywhereToContinue: 'Appuyez n\'importe où pour continuer',
     continueUsingKiosk: 'Continuer à Utiliser le Kiosque',
+
+    // UI labels
+    itemsAvailable: 'Articles Disponibles',
+    cardsView: 'Cartes',
+    tableView: 'Tableau',
+    tableViewDisabled: 'La vue tableau est désactivée sur les petits écrans.',
+    swipeLeftHint: '↔ Faites glisser gauche/droite pour plus d\'allergènes',
+    noMenuItemsAvailable: 'Aucun article de menu disponible.',
+    noIngredientsAvailable: 'Aucun ingrédient disponible.',
+    homeButton: 'Accueil',
+    euFooterCompliance: 'Informations sur les allergènes conformes au Règlement UE n° 1169/2011 (Règlement FIC).',
+    euFooterBody: 'Lorsqu\'un ingrédient provient de plusieurs fournisseurs, la déclaration d\'allergènes indiquée reflète le niveau de risque le plus élevé parmi tous les profils de fournisseurs, comme exigé par la loi. Informez toujours le personnel de toute allergie avant de commander. Pour les allergies sévères, demandez à parler à un responsable.',
+    fullAllergenGuideFor: 'Guide Complet des Allergènes',
     
     allergenGuideTitle: 'Guide des Allergènes OAKBERRY',
     allergenInformationDesc: 'Informations sur les Allergènes',
@@ -1650,6 +1702,19 @@ export const translations = {
     noActivityDetected: 'Sin actividad detectada. Este quiosco volverá a la pantalla de inicio en:',
     tapAnywhereToContinue: 'Toque en cualquier lugar para continuar',
     continueUsingKiosk: 'Continuar Usando el Quiosco',
+
+    // UI labels
+    itemsAvailable: 'Artículos Disponibles',
+    cardsView: 'Tarjetas',
+    tableView: 'Tabla',
+    tableViewDisabled: 'La vista de tabla está desactivada en pantallas más pequeñas.',
+    swipeLeftHint: '↔ Deslice izquierda/derecha para más alérgenos',
+    noMenuItemsAvailable: 'No hay artículos de menú disponibles.',
+    noIngredientsAvailable: 'No hay ingredientes disponibles.',
+    homeButton: 'Inicio',
+    euFooterCompliance: 'Información sobre alérgenos conforme al Reglamento UE n.º 1169/2011 (Reglamento FIC).',
+    euFooterBody: 'Cuando un ingrediente proviene de varios proveedores, la declaración de alérgenos mostrada refleja el nivel de riesgo más grave entre todos los perfiles de proveedores, según lo exige la ley. Informe siempre al personal sobre cualquier alergia antes de pedir. Para alergias graves, pida hablar con un encargado.',
+    fullAllergenGuideFor: 'Guía Completa de Alérgenos',
     
     allergenGuideTitle: 'Guía de Alérgenos OAKBERRY',
     allergenInformationDesc: 'Información de Alérgenos',
@@ -2038,6 +2103,19 @@ export const translations = {
     noActivityDetected: 'Keine Aktivität erkannt. Dieses Kiosk kehrt in folgender Zeit zur Startseite zurück:',
     tapAnywhereToContinue: 'Tippen Sie überall an, um fortzufahren',
     continueUsingKiosk: 'Kiosk Weiter Verwenden',
+
+    // UI labels
+    itemsAvailable: 'Verfügbare Artikel',
+    cardsView: 'Karten',
+    tableView: 'Tabelle',
+    tableViewDisabled: 'Tabellenansicht ist auf kleineren Bildschirmen deaktiviert.',
+    swipeLeftHint: '↔ Links/rechts wischen für weitere Allergene',
+    noMenuItemsAvailable: 'Keine Menüpunkte verfügbar.',
+    noIngredientsAvailable: 'Keine Zutaten verfügbar.',
+    homeButton: 'Startseite',
+    euFooterCompliance: 'Allergeninformationen gemäß EU-Verordnung Nr. 1169/2011 (LIV-Verordnung).',
+    euFooterBody: 'Wenn eine Zutat von mehreren Lieferanten bezogen wird, spiegelt die angezeigte Allergendeklaration das schwerwiegendste Risikoniveau aller Lieferantenprofile wider, wie gesetzlich vorgeschrieben. Informieren Sie das Personal stets über Allergien vor der Bestellung. Bei schweren Allergien bitten Sie um ein Gespräch mit dem Manager.',
+    fullAllergenGuideFor: 'Vollständiger Allergenführer',
     
     allergenGuideTitle: 'OAKBERRY-Allergenführer',
     allergenInformationDesc: 'Allergeninformationen',
