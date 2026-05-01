@@ -25,9 +25,9 @@ export const translations = {
     browseFullMenu: 'Browse Full Menu',
     browseFullMenuDesc: 'Search for specific items or browse all menu categories',
     viewMenu: 'View Menu →',
-    saveMenuToPhone: 'Save Menu to Phone',
-    saveMenuToPhoneDesc: 'Scan QR code to save the allergen guide to your mobile device',
-    showQRCode: 'Show QR Code',
+    saveMenuToPhone: 'Use AllyJen on Your Phone',
+    saveMenuToPhoneDesc: 'Scan the QR code to open AllyJen on your phone and browse this allergen menu yourself',
+    showQRCode: 'Open on Phone',
     fullAllergenGuide: 'Full Allergen Guide',
     fullAllergenGuideDesc: 'View the complete allergen table for all menu items and ingredients on screen.',
     viewGuide: 'View Guide',
@@ -83,8 +83,8 @@ export const translations = {
     currentFilters: 'Current Filters',
     
     // QR Code Modal
-    scanToSaveMenu: 'Scan to Save Menu',
-    scanWithPhoneCamera: 'Scan with your phone camera to save this allergen menu',
+    scanToSaveMenu: 'Use AllyJen on Your Phone',
+    scanWithPhoneCamera: 'Scan with your phone camera to open AllyJen for this business on your mobile device',
     downloadQR: 'Download QR',
     close: 'Close',
     

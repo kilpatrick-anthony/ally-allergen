@@ -1053,7 +1053,7 @@ export default function KioskPage() {
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => { setSearchQuery(e.target.value); if (e.target.value) setActiveView('menu') }}
                     placeholder={t.searchMenuItems}
                     style={{
                       borderColor: 'rgba(66, 184, 172, 0.35)',
@@ -1152,7 +1152,7 @@ export default function KioskPage() {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => { setSearchQuery(e.target.value); if (e.target.value) setActiveView('menu') }}
                   placeholder="Search menu items..."
                   style={{
                     borderColor: 'rgba(66, 184, 172, 0.35)',
@@ -1876,15 +1876,15 @@ export default function KioskPage() {
           <Card className="max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-[#003842]">Scan to Download Allergen Guide PDF</h3>
+                <h3 className="text-lg font-semibold text-[#003842]">Use AllyJen on Your Phone</h3>
                 <button onClick={() => setShowQRCode(false)} className="text-gray-400 hover:text-gray-600">
                   <X className="h-5 w-5" />
                 </button>
               </div>
               <div className="flex justify-center p-4 bg-white rounded-lg border border-gray-200">
-                <QRCodeSVG id="qr-code-svg" value={kioskUrl + '?pdf=1' + (siteIdParam ? '&site_id=' + siteIdParam : '')} size={256} level="H" bgColor="#FFFFFF" fgColor="#003842" />
+                <QRCodeSVG id="qr-code-svg" value={kioskUrl + (siteIdParam ? '?site_id=' + siteIdParam : '')} size={256} level="H" bgColor="#FFFFFF" fgColor="#003842" />
               </div>
-              <p className="text-sm text-gray-600 text-center mt-4">Scan with your phone camera — the full allergen guide PDF will download automatically</p>
+              <p className="text-sm text-gray-600 text-center mt-4">Scan with your phone camera to open AllyJen for this business on your mobile device</p>
               <div className="mt-6 flex justify-center">
                 <Button variant="ghost" onClick={() => setShowQRCode(false)}>
                   Close

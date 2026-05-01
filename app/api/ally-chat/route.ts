@@ -469,7 +469,7 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const apiKey = process.env.OPENAI_API_KEY
+  const apiKey = process.env.GROQ_API_KEY
   if (!apiKey) {
     return NextResponse.json(
       {
@@ -488,14 +488,14 @@ export async function POST(req: NextRequest) {
   const systemPrompt  = buildSystemPrompt(Boolean(_jenMode), String(businessName).slice(0, 100), menuContext, sanitisedLanguage)
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'llama-3.1-8b-instant',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user',   content: sanitised },
@@ -507,7 +507,7 @@ export async function POST(req: NextRequest) {
 
     if (!response.ok) {
       const err = await response.text()
-      console.error('[ally-chat] OpenAI error:', err)
+      console.error('[ally-chat] Groq error:', err)
       return NextResponse.json(
         { reply: "Sorry, I'm having trouble connecting right now. Please ask a staff member for allergen details." },
         { status: 200 }
