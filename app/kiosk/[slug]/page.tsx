@@ -2093,6 +2093,24 @@ export default function KioskPage() {
           </div>
         </div>
       </div>
+
+      {/* Site Footer */}
+      <footer className="bg-[#003842] border-t border-[#42b8ac]/20 py-4 px-6">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+          <img src={ADMIN_WORDMARK_SRC} alt="AllyJen" className="h-6 w-auto" />
+          <p className="text-white/55 text-xs text-center">
+            © {new Date().getFullYear()} AllyJen Solutions Limited. CRO No. 811542 | Republic of Ireland
+          </p>
+          <a
+            href="https://allyjen.ie"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#42b8ac] hover:text-white text-xs font-medium transition-colors"
+          >
+            allyjen.ie
+          </a>
+        </div>
+      </footer>
     </div>
   )
 }
