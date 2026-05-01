@@ -1063,7 +1063,7 @@ export default function KioskPage() {
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => { setSearchQuery(e.target.value); if (e.target.value) { setActiveView('menu'); setShowMobileMenu(false) } }}
+                    onChange={(e) => { setSearchQuery(e.target.value); if (e.target.value) setActiveView('menu') }}
                     placeholder={t.searchMenuItems}
                     style={{ borderColor: 'rgba(66,184,172,0.35)', color: 'white' }}
                     onFocus={(e) => { e.target.style.borderColor = '#42b8ac'; e.target.style.boxShadow = '0 0 0 3px rgba(66,184,172,0.15)' }}
