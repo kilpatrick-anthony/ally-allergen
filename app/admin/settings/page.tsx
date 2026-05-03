@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { 
   Settings, Save, Shield, Users, Globe,
-  Palette, Database, Key, CreditCard, Mail,
+  Palette, Database, Key, Mail,
   Building, Download, Lock, ChevronRight,
   CheckCircle, AlertCircle, Trash2,
   Upload, Copy, Eye, EyeOff, Plus, Sparkles,
@@ -67,8 +67,6 @@ export default function SettingsPage() {
     menuAuditEnabled: true,
     supplierAuditEnabled: true,
     // Integrations
-    stripeConnected: false,
-    paymentMethods: [],
     // Billing
     plan: 'Free Trial',
     nextBilling: '',
@@ -419,7 +417,6 @@ export default function SettingsPage() {
               businessPostalCode: businessData?.settings?.address?.postalCode ?? '',
               businessCountry: businessData?.settings?.address?.country ?? '',
               businessPhone: businessData?.settings?.address?.phone ?? '',
-              stripeConnected: businessData?.settings?.stripeConnected ?? false,
               sessionTimeout: businessData?.sessionTimeout ?? prev.sessionTimeout,
               logoUrl: businessData?.settings?.logoUrl ?? prev.logoUrl,
               primaryColor: businessData?.settings?.primaryColor ?? prev.primaryColor,
@@ -454,7 +451,7 @@ export default function SettingsPage() {
     fetchDefaults();
     // Set active tab from URL parameter if present
     const tab = searchParams.get('tab')
-    if (tab && ['general', 'branding', 'security', 'notifications', 'billing'].includes(tab)) {
+    if (tab && ['general', 'branding', 'security', 'notifications'].includes(tab)) {
       setActiveTab(tab)
     }
 
@@ -463,8 +460,6 @@ export default function SettingsPage() {
     const error = searchParams.get('error')
     if (success === 'stripe_connected') {
       showNotification('Stripe account connected successfully!', 'success')
-      // Refresh the page to update the connection status
-      window.location.href = '/admin/settings?tab=billing'
     } else if (error) {
       const errorMessages: { [key: string]: string } = {
         stripe_connection_failed: 'Failed to connect Stripe account. Please try again.',
@@ -644,7 +639,7 @@ export default function SettingsPage() {
     { id: 'branding', label: t('admin.branding'), icon: Palette },
     { id: 'security', label: t('admin.security'), icon: Shield },
     { id: 'accessibility', label: 'Accessibility', icon: Eye },
-    { id: 'billing', label: 'Billing', icon: CreditCard }
+
   ]
 
   return (
@@ -1330,184 +1325,10 @@ export default function SettingsPage() {
               </Card>
             </div>
           )}
-
-          {/* Billing Settings - UPDATED WITH STRIPE INTEGRATION */}
-          {activeTab === 'billing' && (
-            <div className="space-y-6">
-              <Card>
-                <div className="p-6 border-b dark:border-gray-700">
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Billing & Subscription</h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Manage your subscription and payment methods</p>
-                </div>
-                <div className="p-6">
-                  <div className="grid grid-cols-1 gap-6">
-                    {/* Stripe Account Connection */}
-                    <Card>
-                      <div className="p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Stripe Account</h3>
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                                <CreditCard className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                              </div>
-                              <div>
-                                <div className="font-medium text-gray-900 dark:text-white">Stripe Payment Processing</div>
-                                <div className="text-sm text-gray-500 dark:text-gray-400">
-                                  {settings.stripeConnected ? 'Connected - Ready to accept payments' : 'Not connected - Connect to start accepting payments'}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {settings.stripeConnected ? (
-                                <Badge variant="success">Connected</Badge>
-                              ) : (
-                                <Badge variant="warning">Not Connected</Badge>
-                              )}
-                              <Button 
-                                variant={settings.stripeConnected ? "outline" : "primary"}
-                                size="sm"
-                                onClick={() => {
-                                  if (settings.stripeConnected) {
-                                    // Handle disconnect
-                                    setSettings({...settings, stripeConnected: false})
-                                  } else {
-                                    // Handle connect - redirect to Stripe OAuth
-                                    window.open('/api/stripe/connect', '_blank')
-                                  }
-                                }}
-                              >
-                                {settings.stripeConnected ? 'Disconnect' : 'Connect Stripe'}
-                              </Button>
-                            </div>
-                          </div>
-                          {!settings.stripeConnected && (
-                            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                              <div className="flex">
-                                <AlertCircle className="h-5 w-5 text-blue-400" />
-                                <div className="ml-3">
-                                  <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                                    Connect your Stripe account to start collecting payments
-                                  </h4>
-                                  <div className="mt-2 text-sm text-blue-700 dark:text-blue-300">
-                                    <p>Once connected, you'll be able to:</p>
-                                    <ul className="list-disc list-inside mt-1 space-y-1">
-                                      <li>Accept monthly subscriptions from businesses</li>
-                                      <li>Process payments automatically</li>
-                                      <li>Manage customer billing</li>
-                                      <li>View payment history and analytics</li>
-                                    </ul>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </Card>
-
-                    {/* Payment Methods for Business Owner */}
-                    <Card>
-                      <div className="p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Your Payment Methods</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                          These are the payment methods associated with your account for billing purposes.
-                        </p>
-                        <div className="space-y-4">
-                          {settings.paymentMethods && settings.paymentMethods.length > 0 ? (
-                            settings.paymentMethods.map((method: any, index: number) => (
-                              <div key={index} className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700">
-                                <div className="flex items-center gap-3">
-                                  <div className="p-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                                    <CreditCard className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                                  </div>
-                                  <div>
-                                    <div className="font-medium text-gray-900 dark:text-white">
-                                      {method.brand?.toUpperCase()} •••• {method.last4}
-                                    </div>
-                                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                                      Expires {method.expMonth}/{method.expYear}
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  {method.isDefault && <Badge variant="success">Default</Badge>}
-                                  <Button variant="ghost" size="sm" icon={<Trash2 className="h-4 w-4" />}>
-                                    Remove
-                                  </Button>
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                              <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                              <p>No payment methods added yet</p>
-                            </div>
-                          )}
-                          <Button variant="outline" icon={<Plus className="h-4 w-4" />} fullWidth>
-                            Add Payment Method
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-
-                    {/* Customer Subscriptions (for app owners) */}
-                    <Card>
-                      <div className="p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Customer Subscriptions</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                          Manage subscriptions from businesses using your platform.
-                        </p>
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between p-4 border rounded-lg dark:border-gray-700">
-                            <div>
-                              <div className="font-medium text-gray-900 dark:text-white">Active Subscriptions</div>
-                              <div className="text-sm text-gray-500 dark:text-gray-400">
-                                {settings.stripeConnected ? '12 businesses currently subscribed' : 'Connect Stripe to view subscriptions'}
-                              </div>
-                            </div>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              disabled={!settings.stripeConnected}
-                              onClick={() => {
-                                // In a real implementation, this would open a subscription management dashboard
-                                showNotification('Subscription management dashboard would open here', 'info')
-                              }}
-                            >
-                              Manage Subscriptions
-                            </Button>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                            <div className="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                              <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                                {settings.stripeConnected ? '12' : '0'}
-                              </div>
-                              <div className="text-gray-500 dark:text-gray-400">Active</div>
-                            </div>
-                            <div className="text-center p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                              <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                                {settings.stripeConnected ? '3' : '0'}
-                              </div>
-                              <div className="text-gray-500 dark:text-gray-400">Trial</div>
-                            </div>
-                            <div className="text-center p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                              <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                                {settings.stripeConnected ? '1' : '0'}
-                              </div>
-                              <div className="text-gray-500 dark:text-gray-400">Past Due</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  </div>
-                </div>
-              </Card>
-            </div>
-          )}
         </div>
       </div>
+
+      <ChangePasswordModal isOpen={showChangePassword} onClose={() => setShowChangePassword(false)} />
 
       <ChangePasswordModal isOpen={showChangePassword} onClose={() => setShowChangePassword(false)} />
       <TwoFactorModal 
