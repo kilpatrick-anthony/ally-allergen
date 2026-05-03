@@ -26,6 +26,7 @@ export default function ViewMenuItemPage() {
   const [menuItem, setMenuItem] = useState<any>(null)
   const [ingredients, setIngredients] = useState<any[]>([])
   const [datasheets, setDatasheets] = useState<any[]>([])
+  const [ingredientDatasheets, setIngredientDatasheets] = useState<any[]>([])
   const [loadingDatasheets, setLoadingDatasheets] = useState(true)
 
   const certificationOptions = [
@@ -75,6 +76,15 @@ export default function ViewMenuItemPage() {
         
         if (datasheetsResponse.ok) {
           setDatasheets(datasheetsData.datasheets || [])
+        }
+
+        // Fetch ingredient datasheets
+        if (data.menuItem.ingredients && data.menuItem.ingredients.length > 0) {
+          const ingDatasheetsResponse = await fetch(`/api/datasheets?ingredientIds=${data.menuItem.ingredients.join(',')}`)
+          const ingDatasheetsData = await ingDatasheetsResponse.json()
+          if (ingDatasheetsResponse.ok) {
+            setIngredientDatasheets(ingDatasheetsData.datasheets || [])
+          }
         }
         
       } catch (error: any) {
@@ -459,18 +469,71 @@ export default function ViewMenuItemPage() {
                 ))}
               </div>
             )}
+
+            {/* Ingredient datasheets */}
+            {ingredientDatasheets.length > 0 && (
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <h3 className="text-sm font-semibold text-gray-600 mb-3">From Linked Ingredients</h3>
+                <div className="space-y-3">
+                  {ingredientDatasheets.map((datasheet: any) => {
+                    const ingredient = ingredients.find((ing: any) => ing.id === datasheet.ingredient_id)
+                    return (
+                      <div
+                        key={datasheet.id}
+                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <div className="p-2 bg-purple-100 rounded-lg">
+                            <FileText className="h-5 w-5 text-purple-600" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-gray-900 truncate">
+                              {datasheet.file_name}
+                            </p>
+                            <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
+                              {ingredient && <span className="text-purple-600">{ingredient.name}</span>}
+                              {ingredient && <span>•</span>}
+                              <span>{(datasheet.file_size / 1024 / 1024).toFixed(2)} MB</span>
+                              {datasheet.supplier_name && (
+                                <>
+                                  <span>•</span>
+                                  <span>{datasheet.supplier_name}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={datasheet.file_path}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                            title="View/Download"
+                          >
+                            <ExternalLink className="h-4 w-4 text-gray-600" />
+                          </a>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </Card>
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Dietary Attributes */}
-          {menuItem.dietary && menuItem.dietary.length > 0 && (
-            <Card>
-              <h2 className="text-xl font-semibold text-[#003842] mb-4">Dietary Attributes</h2>
-              
-              <div className="space-y-2">
-                {menuItem.dietary.map((dietary: string, index: number) => {
+          <Card>
+            <h2 className="text-xl font-semibold text-[#003842] mb-4">Dietary Attributes</h2>
+            
+            <div className="space-y-2">
+              {(!menuItem.dietary || menuItem.dietary.length === 0) ? (
+                <p className="text-sm text-gray-500">No dietary attributes set</p>
+              ) : (
+                menuItem.dietary.map((dietary: string, index: number) => {
                   const certData = certificationOptions.find(c => c.name === dietary)
                   
                   if (certData) {
@@ -499,10 +562,10 @@ export default function ViewMenuItemPage() {
                       <span className="font-medium text-gray-700">{dietary}</span>
                     </div>
                   )
-                })}
-              </div>
-            </Card>
-          )}
+                })
+              )}
+            </div>
+          </Card>
 
           {/* Metadata */}
           <Card>

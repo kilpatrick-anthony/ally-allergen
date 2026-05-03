@@ -224,6 +224,13 @@ export default function ViewIngredientPage() {
                 </div>
               )}
 
+              {ingredient.category && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Category</label>
+                  <p className="text-gray-900 mt-1">{ingredient.category}</p>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                 <div>
                   <label className="text-sm font-medium text-gray-500">Status</label>
@@ -443,12 +450,14 @@ export default function ViewIngredientPage() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Dietary Attributes */}
-          {ingredient.certifications && ingredient.certifications.length > 0 && (
-            <Card>
-              <h2 className="text-xl font-semibold text-[#003842] mb-4">Dietary Attributes</h2>
-              
-              <div className="space-y-2">
-                {ingredient.certifications.map((cert: string, index: number) => {
+          <Card>
+            <h2 className="text-xl font-semibold text-[#003842] mb-4">Dietary Attributes</h2>
+            
+            <div className="space-y-2">
+              {(!ingredient.certifications || ingredient.certifications.length === 0) ? (
+                <p className="text-sm text-gray-500">No dietary attributes set</p>
+              ) : (
+                ingredient.certifications.map((cert: string, index: number) => {
                   const certData = certificationOptions.find(c => c.name === cert)
                   
                   if (certData) {
@@ -477,10 +486,10 @@ export default function ViewIngredientPage() {
                       <span className="font-medium text-gray-700">{cert}</span>
                     </div>
                   )
-                })}
-              </div>
-            </Card>
-          )}
+                })
+              )}
+            </div>
+          </Card>
 
           {/* Metadata */}
           <Card>

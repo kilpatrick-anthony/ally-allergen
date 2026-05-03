@@ -654,6 +654,56 @@ export default function EditMenuItemPage() {
               />
             </Card>
 
+            {/* Selected Ingredients */}
+            <Card className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Selected Ingredients
+                </label>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {menuItem.ingredients.length} selected
+                </span>
+              </div>
+
+              <div className="min-h-[100px] border border-gray-300 dark:border-gray-600 rounded-lg p-4 mb-4 bg-gray-50 dark:bg-gray-800">
+                {menuItem.ingredients.length === 0 ? (
+                  <div className="text-center text-gray-500 dark:text-gray-400 py-4">
+                    No ingredients selected
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {menuItem.ingredients.map(ingredientId => {
+                      const ingredient = ingredients.find(i => i.id === ingredientId)
+                      return ingredient ? (
+                        <div
+                          key={ingredient.id}
+                          className="flex items-center gap-2 bg-white dark:bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600"
+                        >
+                          <span className="text-sm text-gray-800 dark:text-gray-200">{ingredient.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleIngredientSelect(ingredient.id)}
+                            className="text-gray-500 dark:text-gray-400 hover:text-red-600"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : null
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <Button
+                onClick={() => setShowIngredientSelector(true)}
+                variant="outline"
+                icon={<Plus className="h-4 w-4" />}
+                fullWidth
+              >
+                {menuItem.ingredients.length === 0 ? 'Add Ingredients' : 'Add More Ingredients'}
+              </Button>
+            </Card>
+
             {/* Dietary Attributes */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
@@ -783,56 +833,6 @@ export default function EditMenuItemPage() {
                 value={menuItem.allergen_warnings}
                 onChange={(warnings) => setMenuItem({ ...menuItem, allergen_warnings: warnings })}
               />
-            </Card>
-
-            {/* Selected Ingredients */}
-            <Card className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Selected Ingredients
-                </label>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {menuItem.ingredients.length} selected
-                </span>
-              </div>
-
-              <div className="min-h-[100px] border border-gray-300 dark:border-gray-600 rounded-lg p-4 mb-4 bg-gray-50 dark:bg-gray-800">
-                {menuItem.ingredients.length === 0 ? (
-                  <div className="text-center text-gray-500 dark:text-gray-400 py-4">
-                    No ingredients selected
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {menuItem.ingredients.map(ingredientId => {
-                      const ingredient = ingredients.find(i => i.id === ingredientId)
-                      return ingredient ? (
-                        <div
-                          key={ingredient.id}
-                          className="flex items-center gap-2 bg-white dark:bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600"
-                        >
-                          <span className="text-sm text-gray-800 dark:text-gray-200">{ingredient.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleIngredientSelect(ingredient.id)}
-                            className="text-gray-500 dark:text-gray-400 hover:text-red-600"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ) : null
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <Button
-                onClick={() => setShowIngredientSelector(true)}
-                variant="outline"
-                icon={<Plus className="h-4 w-4" />}
-                fullWidth
-              >
-                {menuItem.ingredients.length === 0 ? 'Add Ingredients' : 'Add More Ingredients'}
-              </Button>
             </Card>
 
             {/* Datasheets */}
