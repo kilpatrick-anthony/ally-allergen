@@ -1,36 +1,51 @@
 // app/api/device-heartbeat/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/client'
+import { createServiceClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient()
+    const supabase = createServiceClient()
     
-    // This endpoint handles heartbeats sent via sendBeacon during page unload
     const body = await request.json()
-    const { device_id, going_offline } = body
+    const { device_id, paired_device_id, going_offline } = body
 
-    if (!device_id) {
-      return NextResponse.json({ error: 'Device ID required' }, { status: 400 })
+    const now = new Date().toISOString()
+
+    // Update the paired device record in the `devices` table (admin-facing).
+    // This is the primary heartbeat path for properly paired kiosk tablets.
+    if (paired_device_id && typeof paired_device_id === 'string') {
+      await supabase
+        .from('devices')
+        .update({
+          status: going_offline ? 'offline' : 'online',
+          last_heartbeat: now,
+          updated_at: now,
+        })
+        .eq('id', paired_device_id)
     }
 
-    // Get device
-    const { data: device } = await supabase
-      .from('kiosk_devices')
-      .select('id')
-      .eq('device_id', device_id)
-      .single()
-
-    if (device && going_offline) {
-      // Update last heartbeat but don't mark as offline yet
-      // The scheduled function will handle that
-      await supabase
+    // Also maintain the legacy kiosk_devices table if a fingerprint device_id is present.
+    if (device_id && typeof device_id === 'string') {
+      const { data: device } = await supabase
         .from('kiosk_devices')
-        .update({
-          last_heartbeat: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .select('id')
         .eq('device_id', device_id)
+        .single()
+
+      if (device) {
+        await supabase
+          .from('kiosk_devices')
+          .update({
+            is_online: !going_offline,
+            last_heartbeat: now,
+            updated_at: now,
+          })
+          .eq('device_id', device_id)
+      }
+    }
+
+    if (!paired_device_id && !device_id) {
+      return NextResponse.json({ error: 'Device ID required' }, { status: 400 })
     }
 
     return NextResponse.json({ success: true })

@@ -89,6 +89,24 @@ export function useDeviceHeartbeat(options: HeartbeatOptions = {}) {
     try {
       const deviceId = getDeviceId()
       const deviceInfo = getDeviceInfo()
+
+      // If this tablet was properly paired, update the `devices` table via the
+      // server-side API route (uses the service client, bypasses RLS).
+      const pairedDeviceId = typeof window !== 'undefined'
+        ? localStorage.getItem('ally_paired_device_id')
+        : null
+
+      if (pairedDeviceId) {
+        await fetch('/api/device-heartbeat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ device_id: deviceId, paired_device_id: pairedDeviceId }),
+        })
+        console.log('📡 Heartbeat sent (paired):', pairedDeviceId)
+        return
+      }
+
+      // Fallback: update legacy kiosk_devices table directly for unpaired kiosks.
       const supabase = createClient()
 
       // Check if device exists
@@ -178,9 +196,12 @@ export function useDeviceHeartbeat(options: HeartbeatOptions = {}) {
     const handleBeforeUnload = () => {
       // Use sendBeacon for reliable delivery during page unload
       const deviceId = getDeviceId()
+      const pairedDeviceId = typeof window !== 'undefined'
+        ? localStorage.getItem('ally_paired_device_id')
+        : null
       if (navigator.sendBeacon) {
         const blob = new Blob(
-          [JSON.stringify({ device_id: deviceId, going_offline: true })],
+          [JSON.stringify({ device_id: deviceId, paired_device_id: pairedDeviceId, going_offline: true })],
           { type: 'application/json' }
         )
         navigator.sendBeacon('/api/device-heartbeat', blob)
