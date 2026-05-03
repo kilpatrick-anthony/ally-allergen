@@ -1133,6 +1133,8 @@ export default function KioskPage() {
     is_active: true,
     ingredient_names: [],
     allergen_warnings: ingredient.allergen_warnings,
+    suppliers: ingredient.suppliers || [],
+    combined_allergens: ingredient.allergen_warnings ? [ingredient.allergen_warnings] : [],
   }))
 
   const kioskUrl = typeof window !== 'undefined' ? `${window.location.origin}/kiosk/${slug}` : ''
