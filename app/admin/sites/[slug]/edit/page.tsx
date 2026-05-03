@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
-  Building, MapPin, Phone, Mail, ArrowLeft, Save, X, AlertCircle, Loader2, Trash2
+  Building, MapPin, Phone, Mail, ArrowLeft, Save, X, AlertCircle, Loader2, Trash2, Clock
 } from 'lucide-react'
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
@@ -16,9 +16,20 @@ export default function EditSitePage() {
   const router = useRouter()
   const slug = params.slug as string
   
+  const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
+  type Day = typeof DAYS[number]
+  type DayHours = { open: string; close: string; closed: boolean }
+  type OpeningHours = Record<Day, DayHours>
+
+  const DEFAULT_HOURS: OpeningHours = Object.fromEntries(
+    DAYS.map(d => [d, { open: '09:00', close: '22:00', closed: false }])
+  ) as OpeningHours
+
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [openingHoursEnabled, setOpeningHoursEnabled] = useState(false)
+  const [openingHours, setOpeningHours] = useState<OpeningHours>(DEFAULT_HOURS)
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -65,6 +76,11 @@ export default function EditSitePage() {
         email: data.site.email || '',
         status: data.site.is_active ? 'active' : 'inactive'
       })
+
+      if (data.site.opening_hours) {
+        setOpeningHoursEnabled(true)
+        setOpeningHours({ ...DEFAULT_HOURS, ...data.site.opening_hours })
+      }
     } catch (err) {
       console.error('Error loading site:', err)
       setError('Failed to load site data')
@@ -92,7 +108,8 @@ export default function EditSitePage() {
           eircode: formData.eircode,
           phone: formData.phone,
           email: formData.email,
-          is_active: formData.status === 'active'
+          is_active: formData.status === 'active',
+          opening_hours: openingHoursEnabled ? openingHours : null,
         })
       })
 
@@ -353,6 +370,86 @@ export default function EditSitePage() {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Opening Hours */}
+              <div className="pt-6 border-t border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <Clock className="w-5 h-5 mr-2" />
+                    Kiosk Opening Hours
+                  </h2>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <span className="text-sm text-gray-600">
+                      {openingHoursEnabled ? 'Enabled' : 'Disabled'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setOpeningHoursEnabled(v => !v)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        openingHoursEnabled ? 'bg-[#42b8ac]' : 'bg-gray-300'
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                          openingHoursEnabled ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </label>
+                </div>
+
+                {openingHoursEnabled ? (
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-500 mb-3">
+                      The kiosk will show a "We&apos;re closed" screen outside these hours. Leave a day as closed if you do not open that day.
+                    </p>
+                    {DAYS.map(day => (
+                      <div key={day} className="flex items-center gap-3">
+                        <span className="w-24 text-sm font-medium text-gray-700 capitalize">{day}</span>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={openingHours[day].closed}
+                            onChange={(e) => setOpeningHours(prev => ({
+                              ...prev,
+                              [day]: { ...prev[day], closed: e.target.checked }
+                            }))}
+                            className="rounded border-gray-300 text-[#42b8ac] focus:ring-[#42b8ac]"
+                          />
+                          <span className="text-sm text-gray-600">Closed</span>
+                        </label>
+                        {!openingHours[day].closed && (
+                          <>
+                            <input
+                              type="time"
+                              value={openingHours[day].open}
+                              onChange={(e) => setOpeningHours(prev => ({
+                                ...prev,
+                                [day]: { ...prev[day], open: e.target.value }
+                              }))}
+                              className="px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
+                            />
+                            <span className="text-sm text-gray-500">to</span>
+                            <input
+                              type="time"
+                              value={openingHours[day].close}
+                              onChange={(e) => setOpeningHours(prev => ({
+                                ...prev,
+                                [day]: { ...prev[day], close: e.target.value }
+                              }))}
+                              className="px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
+                            />
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    When disabled, the kiosk runs 24/7 with no sleep mode.
+                  </p>
+                )}
               </div>
             </div>
 

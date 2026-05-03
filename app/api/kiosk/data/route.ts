@@ -110,10 +110,23 @@ export async function GET(request: NextRequest) {
     }
 
     const { settings: _bizSettings, ...businessWithoutSettings } = business as any
+
+    // Fetch site opening_hours if a siteId was provided
+    let siteOpeningHours: Record<string, unknown> | null = null
+    if (siteId) {
+      const { data: siteRow } = await supabase
+        .from('sites')
+        .select('opening_hours')
+        .eq('id', siteId)
+        .single()
+      siteOpeningHours = (siteRow as any)?.opening_hours ?? null
+    }
+
     return NextResponse.json({
       business: {
         ...businessWithoutSettings,
         kiosk_disclaimer: (business as any).settings?.kioskDisclaimer ?? null,
+        opening_hours: siteOpeningHours,
       },
       menuItems: menuItemsWithIngredients,
       ingredients: ingredients || [],

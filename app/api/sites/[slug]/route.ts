@@ -125,6 +125,7 @@ export async function PUT(
         phone: body.phone || null,
         email: body.email || null,
         is_active: typeof body.is_active === 'boolean' ? body.is_active : true,
+        opening_hours: body.opening_hours !== undefined ? body.opening_hours : undefined,
         updated_at: new Date().toISOString()
       })
       .eq('slug', slug)
