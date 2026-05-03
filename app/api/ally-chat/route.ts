@@ -272,6 +272,7 @@ ALLYJEN ADMIN PORTAL GUIDE:
 - Menu Builder: /admin/menu-builder — add, edit, or delete menu items. Each item has a name, description, category, and allergen toggles for all 14 EU allergens.
 - Ingredients: /admin/ingredients — manage individual ingredients and their allergen data.
 - Sites: /admin/sites — manage multiple locations. Each site can have site-specific menu items in addition to global ones.
+- Kiosk Opening Hours: in Sites → Edit Site, scroll to "Kiosk Opening Hours" to configure a per-day schedule. When enabled, kiosks display a closed/sleep screen outside operating hours showing the next open time. Staff can bypass it with 5 rapid taps for a 30-minute override.
 - Devices: /admin/devices — pair and manage kiosk devices. Use the setup code to link a tablet or screen.
 - Analytics: /admin/analytics — view kiosk usage, search trends, and filter activity.
 - Downloads: /admin/downloads — generate and download allergen PDF reports and site overview reports.
@@ -314,6 +315,7 @@ ALLYJEN ADMIN PORTAL GUIDE:
 - Ingredients: /admin/ingredients — manage individual ingredients and link allergens to them. Items in the menu builder can reference these ingredients.
 - Devices: /admin/devices — pair and manage kiosk screens. Click "Add Device" → copy the setup code → enter it on the kiosk screen.
 - Sites: /admin/sites — manage multiple business locations. Each site can have its own menu items in addition to global ones.
+- Kiosk Opening Hours: in Sites → Edit Site, scroll to "Kiosk Opening Hours" to configure a per-day schedule. When enabled, kiosks display a closed/sleep screen outside operating hours showing the next open time. Staff can bypass it with 5 rapid taps for a 30-minute override.
 - Analytics: /admin/analytics — view kiosk usage, search trends, and allergen filter activity.
 - Downloads: /admin/downloads — generate and download allergen PDF reports.
 - Dashboard: /admin — overview and quick links to all features.
