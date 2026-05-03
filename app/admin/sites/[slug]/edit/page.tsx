@@ -114,7 +114,8 @@ export default function EditSitePage() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to update site')
+        const errData = await response.json().catch(() => ({}))
+        throw new Error(errData.error || 'Failed to update site')
       }
 
       // Redirect to the site's detail page
