@@ -113,6 +113,7 @@ export function useDeviceHeartbeat(options: HeartbeatOptions = {}) {
       if (!enabled || !siteId) return
 
       // Fallback: update legacy kiosk_devices table directly for unpaired kiosks.
+      const deviceInfo = getDeviceInfo()
       const supabase = createClient()
 
       // Check if device exists
