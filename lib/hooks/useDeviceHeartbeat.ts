@@ -84,27 +84,33 @@ export function useDeviceHeartbeat(options: HeartbeatOptions = {}) {
 
   // Send heartbeat
   const sendHeartbeat = async () => {
-    if (!enabled || !siteId) return
-
     try {
       const deviceId = getDeviceId()
-      const deviceInfo = getDeviceInfo()
 
       // If this tablet was properly paired, update the `devices` table via the
       // server-side API route (uses the service client, bypasses RLS).
+      // This path does NOT need siteId or business to be loaded.
       const pairedDeviceId = typeof window !== 'undefined'
         ? localStorage.getItem('ally_paired_device_id')
         : null
 
       if (pairedDeviceId) {
-        await fetch('/api/device-heartbeat', {
+        const res = await fetch('/api/device-heartbeat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ device_id: deviceId, paired_device_id: pairedDeviceId }),
         })
-        console.log('📡 Heartbeat sent (paired):', pairedDeviceId)
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}))
+          console.error('❌ Heartbeat API error:', res.status, body)
+        } else {
+          console.log('📡 Heartbeat sent (paired):', pairedDeviceId)
+        }
         return
       }
+
+      // Unpaired kiosk path — requires siteId
+      if (!enabled || !siteId) return
 
       // Fallback: update legacy kiosk_devices table directly for unpaired kiosks.
       const supabase = createClient()
@@ -176,9 +182,7 @@ export function useDeviceHeartbeat(options: HeartbeatOptions = {}) {
   }
 
   useEffect(() => {
-    if (!enabled || !siteId) return
-
-    // Send initial heartbeat
+    // Send initial heartbeat immediately (works for both paired and unpaired)
     sendHeartbeat()
 
     // Set up interval

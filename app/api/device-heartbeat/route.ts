@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     // Update the paired device record in the `devices` table (admin-facing).
     // This is the primary heartbeat path for properly paired kiosk tablets.
     if (paired_device_id && typeof paired_device_id === 'string') {
-      await supabase
+      const { error: devErr } = await supabase
         .from('devices')
         .update({
           status: going_offline ? 'offline' : 'online',
@@ -22,6 +22,11 @@ export async function POST(request: NextRequest) {
           updated_at: now,
         })
         .eq('id', paired_device_id)
+
+      if (devErr) {
+        console.error('[device-heartbeat] devices update error:', devErr)
+        return NextResponse.json({ error: devErr.message }, { status: 500 })
+      }
     }
 
     // Also maintain the legacy kiosk_devices table if a fingerprint device_id is present.
