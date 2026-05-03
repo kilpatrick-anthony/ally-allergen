@@ -1091,10 +1091,6 @@ export default function KioskPage() {
                 {t.clickHereToBegin}
               </p>
             </button>
-
-            {showScreensaver && (
-              <p className="text-white/45 text-sm mt-6">Sleep mode active</p>
-            )}
           </div>
         </div>
 
