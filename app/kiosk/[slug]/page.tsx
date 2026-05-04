@@ -569,6 +569,9 @@ export default function KioskPage() {
     // Clear any selections
     setSelectedAllergens([])
     setSearchQuery('')
+
+    // Reset accessibility settings to defaults
+    window.dispatchEvent(new CustomEvent('kiosk:reset'))
   }
 
   // ===== DISMISS WARNING =====
@@ -1324,7 +1327,7 @@ export default function KioskPage() {
                     variant="outline"
                     size="sm"
                     className="text-white border-white/40 hover:text-white hover:border-white/60"
-                    onClick={() => { setKioskStarted(false); setActiveView('landing'); clearFilters(); setShowInactivityWarning(false); setCurrentLanguage('en') }}
+                    onClick={() => { setKioskStarted(false); setActiveView('landing'); clearFilters(); setShowInactivityWarning(false); setCurrentLanguage('en'); window.dispatchEvent(new CustomEvent('kiosk:reset')) }}
                     title="Return to sleep screen"
                   >
                     Kiosk

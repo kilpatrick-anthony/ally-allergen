@@ -74,6 +74,13 @@ export default function AccessibilityPanel() {
     };
   }, []);
 
+  // Reset to defaults when kiosk returns to home/sleep screen
+  useEffect(() => {
+    const handleKioskReset = () => resetSettings();
+    window.addEventListener('kiosk:reset', handleKioskReset);
+    return () => window.removeEventListener('kiosk:reset', handleKioskReset);
+  }, []);
+
   // Apply settings to document
   const applySettings = (newSettings: Partial<AccessibilitySettings>) => {
     const updated = { ...settings, ...newSettings };
