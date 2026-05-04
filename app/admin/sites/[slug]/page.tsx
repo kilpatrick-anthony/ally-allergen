@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Building, MapPin, Phone, Mail, Loader2, Tablet, Edit, ChefHat, Search, Trash2, Clock } from 'lucide-react';
+import { Building, MapPin, Phone, Mail, Loader2, Tablet, Edit, ChefHat, Search, Trash2 } from 'lucide-react';
 import DeviceManagement from '@/components/admin/DeviceManagement';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -252,46 +252,6 @@ export default function SiteKioskPage() {
             )}
           </div>
 
-          {/* Opening Hours Tile */}
-          <div className="max-w-4xl mx-auto mt-3 sm:mt-6">
-            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-teal-100 rounded-lg">
-                    <Clock className="h-5 w-5 text-[#42b8ac]" />
-                  </div>
-                  <h3 className="text-base font-semibold text-gray-900">Opening Hours</h3>
-                </div>
-                <Link href={`/admin/sites/${slug}/edit`} className="text-xs text-[#42b8ac] hover:underline">
-                  Edit
-                </Link>
-              </div>
-              {site.opening_hours ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                  {(['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const).map((day) => {
-                    const hours = site.opening_hours[day]
-                    return (
-                      <div key={day} className="flex flex-col">
-                        <span className="text-xs font-medium text-gray-500 capitalize mb-0.5">{day.slice(0,3)}</span>
-                        {hours?.closed ? (
-                          <span className="text-xs text-red-500">Closed</span>
-                        ) : (
-                          <span className="text-xs text-gray-700">{hours?.open} – {hours?.close}</span>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
-              ) : (
-                <p className="text-sm text-gray-400">
-                  No opening hours configured.{' '}
-                  <Link href={`/admin/sites/${slug}/edit`} className="text-[#42b8ac] hover:underline">
-                    Set them up
-                  </Link>
-                </p>
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Tabs */}

@@ -339,11 +339,6 @@ export default function KioskPage() {
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [menuViewMode, setMenuViewMode] = useState<'cards' | 'table'>('table')
   const [showScreensaver, setShowScreensaver] = useState(false)
-  const [isKioskClosed, setIsKioskClosed] = useState(false)
-  const [closedOverrideTaps, setClosedOverrideTaps] = useState(0)
-  const [closedOverrideActive, setClosedOverrideActive] = useState(false)
-  const closedOverrideTapTimer = useRef<NodeJS.Timeout | null>(null)
-  const closedOverrideTimer = useRef<NodeJS.Timeout | null>(null)
   const [isSmallScreen, setIsSmallScreen] = useState(false)
   const [showAllergenGuide, setShowAllergenGuide] = useState(false)
   
@@ -359,54 +354,6 @@ export default function KioskPage() {
   const lastActivityRef = useRef<number>(Date.now())
   const pageLoadTime = useRef(Date.now())
   const screensaverTimerRef = useRef<NodeJS.Timeout | null>(null)
-
-  // ─── Opening hours / sleep mode ───────────────────────────────────────────
-  const checkIfKioskClosed = () => {
-    const hours = (business as any)?.opening_hours
-    if (!hours) { setIsKioskClosed(false); return }
-
-    const now = new Date()
-    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-    const todayKey = dayNames[now.getDay()]
-    const todayHours = hours[todayKey]
-
-    if (!todayHours) { setIsKioskClosed(false); return }
-    if (todayHours.closed) { setIsKioskClosed(true); return }
-
-    const [openH, openM] = (todayHours.open || '00:00').split(':').map(Number)
-    const [closeH, closeM] = (todayHours.close || '23:59').split(':').map(Number)
-    const nowMinutes = now.getHours() * 60 + now.getMinutes()
-    const openMinutes = openH * 60 + openM
-    const closeMinutes = closeH * 60 + closeM
-
-    setIsKioskClosed(nowMinutes < openMinutes || nowMinutes >= closeMinutes)
-  }
-
-  useEffect(() => {
-    if (!business) return
-    checkIfKioskClosed()
-    const interval = setInterval(checkIfKioskClosed, 60000)
-    return () => clearInterval(interval)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [business])
-
-  const handleClosedScreenTap = () => {
-    if (closedOverrideTapTimer.current) clearTimeout(closedOverrideTapTimer.current)
-    const nextCount = closedOverrideTaps + 1
-    setClosedOverrideTaps(nextCount)
-    closedOverrideTapTimer.current = setTimeout(() => setClosedOverrideTaps(0), 2000)
-    if (nextCount >= 5) {
-      setClosedOverrideTaps(0)
-      setClosedOverrideActive(true)
-      if (closedOverrideTimer.current) clearTimeout(closedOverrideTimer.current)
-      // Override expires after 30 minutes then re-checks
-      closedOverrideTimer.current = setTimeout(() => {
-        setClosedOverrideActive(false)
-        checkIfKioskClosed()
-      }, 30 * 60 * 1000)
-    }
-  }
-  // ─────────────────────────────────────────────────────────────────────────
 
   // Listen for language changes from admin settings
   useEffect(() => {
@@ -971,78 +918,6 @@ export default function KioskPage() {
                 {t.retryLoading || 'Retry Loading'}
               </Button>
             </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // ===== CLOSED / SLEEP SCREEN =====
-  if (isKioskClosed && !closedOverrideActive) {
-    const hours = (business as any)?.opening_hours
-    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-    const todayKey = dayNames[new Date().getDay()]
-    const todayHours = hours?.[todayKey]
-    const opensAt = todayHours && !todayHours.closed ? todayHours.open : null
-
-    // Find next open day
-    let nextOpenDay: string | null = null
-    let nextOpenTime: string | null = null
-    if (hours) {
-      for (let i = 1; i <= 7; i++) {
-        const checkDay = dayNames[(new Date().getDay() + i) % 7]
-        const checkHours = hours[checkDay]
-        if (checkHours && !checkHours.closed) {
-          nextOpenDay = checkDay.charAt(0).toUpperCase() + checkDay.slice(1)
-          nextOpenTime = checkHours.open
-          break
-        }
-      }
-    }
-
-    return (
-      <div
-        className="min-h-screen bg-[#001a20] flex flex-col items-center justify-center text-white relative overflow-hidden"
-        data-context="kiosk"
-        onClick={handleClosedScreenTap}
-      >
-        {/* Background blobs */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-44 -left-32 w-[560px] h-[560px] rounded-full bg-[#42b8ac]/8 blur-3xl" />
-          <div className="absolute -bottom-44 -right-32 w-[620px] h-[620px] rounded-full bg-[#42b8ac]/6 blur-3xl" />
-        </div>
-
-        <div className="relative z-10 text-center px-8 max-w-lg">
-          <div className="p-5 bg-[#42b8ac]/10 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center border border-[#42b8ac]/20">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-[#42b8ac]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 3v1m0 16v1M4.22 4.22l.707.707m12.02 12.02.707.707M3 12h1m16 0h1M4.927 19.073l.707-.707M18.364 5.636l-.707.707M12 7a5 5 0 100 10 5 5 0 000-10z" />
-            </svg>
-          </div>
-
-          <h1 className="text-3xl sm:text-4xl font-bold mb-2">
-            {businessName || 'We\'re Closed'}
-          </h1>
-
-          <p className="text-[#42b8ac] text-xl font-semibold mb-6">
-            We&apos;re closed right now
-          </p>
-
-          {opensAt && (
-            <p className="text-white/60 text-base mb-2">
-              We open today at <span className="text-white font-medium">{opensAt}</span>
-            </p>
-          )}
-          {!opensAt && nextOpenDay && nextOpenTime && (
-            <p className="text-white/60 text-base mb-2">
-              Next open: <span className="text-white font-medium">{nextOpenDay} at {nextOpenTime}</span>
-            </p>
-          )}
-
-          <div className="mt-8 text-[12px] text-white/20">
-            {/* Hidden tap hint for staff — tap 5× to unlock */}
-            {closedOverrideTaps > 0 && (
-              <p>{5 - closedOverrideTaps} more tap{5 - closedOverrideTaps !== 1 ? 's' : ''} to unlock</p>
-            )}
           </div>
         </div>
       </div>

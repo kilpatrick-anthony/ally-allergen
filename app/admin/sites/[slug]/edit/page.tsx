@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { 
-  Building, MapPin, Phone, Mail, ArrowLeft, Save, X, AlertCircle, Loader2, Trash2, Clock
+  Building, MapPin, Phone, Mail, ArrowLeft, Save, X, AlertCircle, Loader2, Trash2
 } from 'lucide-react'
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
@@ -16,20 +16,9 @@ export default function EditSitePage() {
   const router = useRouter()
   const slug = params.slug as string
   
-  const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
-  type Day = typeof DAYS[number]
-  type DayHours = { open: string; close: string; closed: boolean }
-  type OpeningHours = Record<Day, DayHours>
-
-  const DEFAULT_HOURS: OpeningHours = Object.fromEntries(
-    DAYS.map(d => [d, { open: '09:00', close: '22:00', closed: false }])
-  ) as OpeningHours
-
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [openingHoursEnabled, setOpeningHoursEnabled] = useState(false)
-  const [openingHours, setOpeningHours] = useState<OpeningHours>(DEFAULT_HOURS)
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -77,10 +66,6 @@ export default function EditSitePage() {
         status: data.site.is_active ? 'active' : 'inactive'
       })
 
-      if (data.site.opening_hours) {
-        setOpeningHoursEnabled(true)
-        setOpeningHours({ ...DEFAULT_HOURS, ...data.site.opening_hours })
-      }
     } catch (err) {
       console.error('Error loading site:', err)
       setError('Failed to load site data')
@@ -109,7 +94,6 @@ export default function EditSitePage() {
           phone: formData.phone,
           email: formData.email,
           is_active: formData.status === 'active',
-          opening_hours: openingHoursEnabled ? openingHours : null,
         })
       })
 
