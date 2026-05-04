@@ -883,11 +883,60 @@ export default function KioskPage() {
     }
   }
 
+  // Screen Wake Lock — keep screen on while kiosk is active
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null)
+
+  const requestWakeLock = async () => {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLockRef.current = await (navigator as any).wakeLock.request('screen')
+        wakeLockRef.current?.addEventListener('release', () => {
+          // Re-acquire if still running (e.g. tab became visible again)
+          if (kioskStartedRef.current) requestWakeLock()
+        })
+      }
+    } catch {
+      // Wake lock not supported or denied — non-fatal
+    }
+  }
+
+  const kioskStartedRef = useRef(false)
+
+  // Release wake lock when kiosk stops
+  useEffect(() => {
+    kioskStartedRef.current = kioskStarted
+    if (!kioskStarted && wakeLockRef.current) {
+      wakeLockRef.current.release().catch(() => {})
+      wakeLockRef.current = null
+    }
+  }, [kioskStarted])
+
+  // Re-acquire wake lock when tab becomes visible again
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible' && kioskStartedRef.current) {
+        requestWakeLock()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [])
+
   // Track when user starts the kiosk
   const handleStartKiosk = () => {
     setKioskStarted(true)
     setActiveView('landing')
     trackKioskInteraction(slug, 'home_screen_start')
+
+    // Enter fullscreen (requires user gesture — this click satisfies it)
+    const el = document.documentElement
+    if (el.requestFullscreen) {
+      el.requestFullscreen().catch(() => {})
+    } else if ((el as any).webkitRequestFullscreen) {
+      ;(el as any).webkitRequestFullscreen()
+    }
+
+    requestWakeLock()
   }
 
   // Helper function for tracking
