@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const supabase = createServiceClient()
     
     const body = await request.json()
-    const { device_id, paired_device_id, going_offline } = body
+    const { device_id, paired_device_id, going_offline, site_id, business_id, page_url, device_info, user_agent } = body
 
     const now = new Date().toISOString()
 
@@ -38,14 +38,58 @@ export async function POST(request: NextRequest) {
         .single()
 
       if (device) {
+        // Update existing record
         await supabase
           .from('kiosk_devices')
           .update({
             is_online: !going_offline,
             last_heartbeat: now,
             updated_at: now,
+            ...(device_info ? { device_info } : {}),
+            ...(user_agent ? { user_agent } : {}),
           })
           .eq('device_id', device_id)
+
+        // Log heartbeat
+        if (!going_offline && page_url) {
+          await supabase
+            .from('device_heartbeats')
+            .insert({
+              device_id: device.id,
+              timestamp: now,
+              page_url: String(page_url).slice(0, 500),
+            })
+        }
+      } else if (site_id && typeof site_id === 'string' && !going_offline) {
+        // Create new unpaired device record — happens on first heartbeat from a
+        // WebView-based kiosk (e.g. FreeKiosk) where localStorage pairing is absent.
+        const { data: newDevice } = await supabase
+          .from('kiosk_devices')
+          .insert({
+            device_id,
+            site_id,
+            ...(business_id ? { business_id } : {}),
+            device_name: `Kiosk ${device_id.slice(-8)}`,
+            device_type: 'kiosk',
+            is_online: true,
+            last_heartbeat: now,
+            first_seen: now,
+            updated_at: now,
+            ...(device_info ? { device_info } : {}),
+            ...(user_agent ? { user_agent } : {}),
+          })
+          .select('id')
+          .single()
+
+        if (newDevice && page_url) {
+          await supabase
+            .from('device_heartbeats')
+            .insert({
+              device_id: newDevice.id,
+              timestamp: now,
+              page_url: String(page_url).slice(0, 500),
+            })
+        }
       }
     }
 

@@ -2,7 +2,6 @@
 // Hook to send periodic heartbeats from kiosk devices
 
 import { useEffect, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 interface HeartbeatOptions {
   siteId?: string
@@ -109,74 +108,30 @@ export function useDeviceHeartbeat(options: HeartbeatOptions = {}) {
         return
       }
 
-      // Unpaired kiosk path — requires siteId
+      // Unpaired kiosk path — send via server API (service client bypasses RLS).
+      // This works in WebView-based kiosk containers (e.g. FreeKiosk) where the
+      // browser-side Supabase client has no auth session.
       if (!enabled || !siteId) return
 
-      // Fallback: update legacy kiosk_devices table directly for unpaired kiosks.
       const deviceInfo = getDeviceInfo()
-      const supabase = createClient()
-
-      // Check if device exists
-      const { data: existing } = await supabase
-        .from('kiosk_devices')
-        .select('id')
-        .eq('device_id', deviceId)
-        .single()
-
-      if (existing) {
-        // Update existing device
-        await supabase
-          .from('kiosk_devices')
-          .update({
-            is_online: true,
-            last_heartbeat: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            device_info: deviceInfo,
-            user_agent: navigator.userAgent,
-            ip_address: null // Will be set by server
-          })
-          .eq('device_id', deviceId)
-
-        // Log heartbeat
-        await supabase
-          .from('device_heartbeats')
-          .insert({
-            device_id: existing.id,
-            timestamp: new Date().toISOString(),
-            page_url: window.location.href
-          })
+      const res = await fetch('/api/device-heartbeat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          device_id: deviceId,
+          site_id: siteId,
+          business_id: businessId,
+          page_url: window.location.href,
+          device_info: deviceInfo,
+          user_agent: navigator.userAgent,
+        }),
+      })
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        console.error('❌ Heartbeat API error:', res.status, body)
       } else {
-        // Create new device
-        const { data: newDevice } = await supabase
-          .from('kiosk_devices')
-          .insert({
-            device_id: deviceId,
-            site_id: siteId,
-            business_id: businessId,
-            device_name: `Kiosk ${deviceId.slice(-8)}`,
-            device_type: 'kiosk',
-            user_agent: navigator.userAgent,
-            is_online: true,
-            last_heartbeat: new Date().toISOString(),
-            first_seen: new Date().toISOString(),
-            device_info: deviceInfo
-          })
-          .select('id')
-          .single()
-
-        if (newDevice) {
-          // Log first heartbeat
-          await supabase
-            .from('device_heartbeats')
-            .insert({
-              device_id: newDevice.id,
-              timestamp: new Date().toISOString(),
-              page_url: window.location.href
-            })
-        }
+        console.log('📡 Heartbeat sent (unpaired):', deviceId)
       }
-
-      console.log('📡 Heartbeat sent:', deviceId)
     } catch (error) {
       console.error('❌ Heartbeat error:', error)
     }
@@ -199,17 +154,24 @@ export function useDeviceHeartbeat(options: HeartbeatOptions = {}) {
 
     // Send heartbeat on beforeunload (going offline)
     const handleBeforeUnload = () => {
-      // Use sendBeacon for reliable delivery during page unload
+      // Use sendBeacon for reliable delivery during page unload.
+      // Fall back to keepalive fetch for WebViews (e.g. FreeKiosk / React Native)
+      // that don't support sendBeacon.
       const deviceId = getDeviceId()
       const pairedDeviceId = typeof window !== 'undefined'
         ? localStorage.getItem('ally_paired_device_id')
         : null
+      const payload = JSON.stringify({ device_id: deviceId, paired_device_id: pairedDeviceId, going_offline: true })
       if (navigator.sendBeacon) {
-        const blob = new Blob(
-          [JSON.stringify({ device_id: deviceId, paired_device_id: pairedDeviceId, going_offline: true })],
-          { type: 'application/json' }
-        )
+        const blob = new Blob([payload], { type: 'application/json' })
         navigator.sendBeacon('/api/device-heartbeat', blob)
+      } else {
+        fetch('/api/device-heartbeat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload,
+          keepalive: true,
+        }).catch(() => {})
       }
     }
     window.addEventListener('beforeunload', handleBeforeUnload)
