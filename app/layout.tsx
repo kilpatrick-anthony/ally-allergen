@@ -134,7 +134,7 @@ export default function RootLayout({
       <head>
         <link rel="preload" href="/Home%20Image.svg" as="image" type="image/svg+xml" />
         <link rel="icon" type="image/svg+xml" href="/Logo-AllyJen.svg" />
-        <meta name="theme-color" content="#42b8ac" />
+        <meta name="theme-color" content="#003842" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <script

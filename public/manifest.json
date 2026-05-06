@@ -5,7 +5,7 @@
   "start_url": "/kiosk",
   "display": "fullscreen",
   "background_color": "#ffffff",
-  "theme_color": "#42b8ac",
+  "theme_color": "#003842",
   "orientation": "landscape",
   "icons": [
     {
