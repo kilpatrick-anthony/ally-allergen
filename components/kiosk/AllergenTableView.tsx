@@ -266,22 +266,18 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
     <div className="space-y-4">
       {showLegend && showLegendTop && <Legend />}
 
-      <div ref={scrollRef} className={wrapperClassName ?? 'w-full overflow-x-auto overflow-y-visible relative'}>
       {showScrollHint && (
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 z-50 flex items-center justify-end pr-2"
-          style={{
-            background: 'linear-gradient(to right, transparent, rgba(0,56,66,0.45))',
-          }}
-        >
-          <div className="flex flex-col items-center gap-0.5 animate-pulse">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white/80 drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+        <div className="flex justify-end" aria-hidden="true">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#003842] text-white/80 text-xs font-medium shadow-sm select-none pointer-events-none">
+            Scroll
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
-          </div>
+          </span>
         </div>
       )}
+
+      <div ref={scrollRef} className={wrapperClassName ?? 'w-full overflow-x-auto overflow-y-visible relative'}>
       <table className="w-full border-separate border-spacing-0 bg-white rounded-lg shadow-sm text-xs">
         <thead className="sticky z-50" style={stickyTopStyle}>
           <tr className="bg-[#003842]">
