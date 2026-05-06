@@ -268,11 +268,18 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
 
       {showScrollHint && (
         <div className="flex justify-end" aria-hidden="true">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#003842] text-white/80 text-xs font-medium shadow-sm select-none pointer-events-none">
-            Scroll
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
+          <span className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full border border-[#42b8ac]/30 bg-[#e8f7f5] text-[#0f4f4a] text-xs font-medium shadow-sm select-none pointer-events-none">
+            {/* Left/right swipe */}
+            <span className="inline-flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+            </span>
+            <span className="text-[#42b8ac]">/</span>
+            {/* Up/down scroll */}
+            <span className="inline-flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+            </span>
           </span>
         </div>
       )}

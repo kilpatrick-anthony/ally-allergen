@@ -1995,13 +1995,8 @@ export default function KioskPage() {
               {business?.name} — {t.fullAllergenGuideFor}
             </h2>
             <Card className="p-4">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div className="mb-3">
                 <h3 className="text-lg font-semibold text-[#003842]">{t.menuItemsBySubMenu}</h3>
-                <div className="inline-flex items-center gap-2 rounded-lg border border-[#42b8ac]/30 bg-[#e8f7f5] px-3 py-1.5 text-[11px] text-[#0f4f4a] font-medium">
-                  <span>{t.swipeHint}</span>
-                  <span className="text-[#42b8ac]">|</span>
-                  <span>{t.scrollHint}</span>
-                </div>
               </div>
               {sortedMenuItems.length > 0 ? (
                 <AllergenTableView
@@ -2022,13 +2017,8 @@ export default function KioskPage() {
             </Card>
 
             <Card className="p-4">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div className="mb-3">
                 <h3 className="text-lg font-semibold text-[#003842]">{t.fullIngredientsList}</h3>
-                <div className="inline-flex items-center gap-2 rounded-lg border border-[#42b8ac]/30 bg-[#e8f7f5] px-3 py-1.5 text-[11px] text-[#0f4f4a] font-medium">
-                  <span>{t.swipeHint}</span>
-                  <span className="text-[#42b8ac]">|</span>
-                  <span>{t.scrollHint}</span>
-                </div>
               </div>
               {ingredientGuideRows.length > 0 ? (
                 <AllergenTableView
