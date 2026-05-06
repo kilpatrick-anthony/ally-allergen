@@ -355,6 +355,42 @@ export default function KioskPage() {
   const pageLoadTime = useRef(Date.now())
   const screensaverTimerRef = useRef<NodeJS.Timeout | null>(null)
 
+  // ── Auto-refresh on new deployment ─────────────────────────────────────────
+  // Poll /api/version every 5 minutes. If the deployment ID changes it means
+  // the app has been updated. We only reload when the kiosk is idle (start
+  // screen not yet started, or after inactivity has reset it back) so we never
+  // interrupt a customer mid-session.
+  useEffect(() => {
+    let deploymentVersion: string | null = null
+
+    const checkVersion = async () => {
+      try {
+        const res = await fetch('/api/version', { cache: 'no-store' })
+        if (!res.ok) return
+        const data = await res.json()
+        const incoming = String(data.version ?? '')
+        if (!incoming || incoming === 'dev') return // skip in local dev
+
+        if (deploymentVersion === null) {
+          // First fetch — store as baseline, don't reload
+          deploymentVersion = incoming
+          return
+        }
+
+        if (incoming !== deploymentVersion && !kioskStartedRef.current) {
+          // New deployment detected AND kiosk is idle — safe to reload
+          window.location.reload()
+        }
+      } catch {
+        // Network error — silently ignore, try again next interval
+      }
+    }
+
+    checkVersion()
+    const interval = setInterval(checkVersion, 5 * 60 * 1000) // every 5 minutes
+    return () => clearInterval(interval)
+  }, [])
+
   // Listen for language changes from admin settings
   useEffect(() => {
     const handleLanguageChange = (event: CustomEvent<LanguageCode>) => {
