@@ -974,40 +974,39 @@ export default function KioskPage() {
     return (
       <div
         className="min-h-screen relative overflow-hidden"
-        style={{ background: 'linear-gradient(145deg, #42b8ac 0%, #2fa89c 50%, #1e9085 100%)' }}
+        style={{ background: 'linear-gradient(145deg, #42b8ac 0%, #1a6e8a 55%, #001a20 100%)' }}
         data-context="kiosk"
       >
-        {/* Decorative white blobs for depth */}
+        {/* Decorative blobs for depth */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div
-            className="absolute -top-44 -left-32 w-[560px] h-[560px] rounded-full bg-white/20 blur-3xl"
+            className="absolute -top-44 -left-32 w-[560px] h-[560px] rounded-full bg-[#42b8ac]/30 blur-3xl"
             style={{ animation: 'kioskBlobOne 18s ease-in-out infinite alternate' }}
           />
           <div
-            className="absolute -bottom-44 -right-32 w-[620px] h-[620px] rounded-full bg-white/15 blur-3xl"
+            className="absolute -bottom-44 -right-32 w-[620px] h-[620px] rounded-full bg-white/10 blur-3xl"
             style={{ animation: 'kioskBlobTwo 22s ease-in-out infinite alternate' }}
           />
-          <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '52px 52px' }} />
+          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '52px 52px' }} />
         </div>
 
         <AccessibilityPanel />
 
         <div className="relative z-10 min-h-screen flex items-center justify-center px-8 py-12 lg:px-16">
-          <div className="w-full max-w-6xl rounded-3xl bg-white shadow-2xl p-8 sm:p-12 lg:p-16 text-center">
+          <div className="w-full max-w-6xl rounded-3xl border border-white/20 bg-white/10 backdrop-blur-md shadow-2xl p-8 sm:p-12 lg:p-16 text-center">
             <img
               src={ADMIN_WORDMARK_SRC}
               alt="AllyJen"
               className="h-20 sm:h-24 lg:h-28 xl:h-32 w-auto mx-auto mb-5"
             />
 
-            <p className="text-[#2a9d91] text-lg sm:text-xl lg:text-2xl font-semibold mb-3 tracking-tight">
-              Interactive Allergen Check Guide
+            <p className="text-white/90 text-lg sm:text-xl lg:text-2xl font-semibold mb-3 tracking-tight">
+              Interactive Allergen Guide
             </p>
 
             <button
               onClick={handleStartKiosk}
-              className="mx-auto mt-28 max-w-lg rounded-2xl px-6 py-5 cursor-pointer block w-full transition-all active:scale-[0.98]"
-              style={{ background: 'linear-gradient(135deg, #42b8ac 0%, #2a9d91 100%)' }}
+              className="mx-auto mt-28 max-w-lg rounded-2xl px-6 py-5 cursor-pointer block w-full transition-all active:scale-[0.98] border border-white/30 bg-white/15 hover:bg-white/25 backdrop-blur-sm"
             >
               <p className="text-white font-bold text-lg sm:text-xl lg:text-2xl mb-0 drop-shadow-sm">
                 {t.clickHereToBegin}
