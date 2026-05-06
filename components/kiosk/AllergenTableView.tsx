@@ -1,7 +1,7 @@
 // components/kiosk/AllergenTableView.tsx
 'use client'
 
-import React from 'react'
+import React, { useRef, useState, useEffect, useCallback } from 'react'
 import { Check, AlertCircle, AlertTriangle, Info } from 'lucide-react'
 import { ALLERGENS, getAllergensForItem, type AllergenInfo } from '@/lib/allergens'
 import { AllergenWarnings, getAllergenLevelText, getAllergenSeverity, formatSubtypes, GLUTEN_TYPES, TREE_NUT_TYPES, type GlutenType, type TreeNutType, type AllergenLevel } from '@/types/allergen'
@@ -193,6 +193,30 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
 
   const stickyTopStyle: React.CSSProperties = { top: stickyTopOffset }
 
+  // Scroll hint: show right-edge arrow when there's more content to scroll horizontally
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [showScrollHint, setShowScrollHint] = useState(false)
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const hasMore = el.scrollWidth > el.clientWidth + el.scrollLeft + 4
+    setShowScrollHint(hasMore)
+  }, [])
+
+  useEffect(() => {
+    checkScroll()
+    const el = scrollRef.current
+    if (!el) return
+    el.addEventListener('scroll', checkScroll, { passive: true })
+    const ro = new ResizeObserver(checkScroll)
+    ro.observe(el)
+    return () => {
+      el.removeEventListener('scroll', checkScroll)
+      ro.disconnect()
+    }
+  }, [checkScroll, items])
+
   const Legend = () => (
     <div className={`bg-gray-50 rounded-lg border border-gray-200 ${compactLegend ? 'p-2.5' : 'p-4'}`}>
       <h4 className={`font-semibold text-gray-900 ${compactLegend ? 'text-xs mb-2' : 'text-sm mb-3'}`}>Legend:</h4>
@@ -242,7 +266,22 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
     <div className="space-y-4">
       {showLegend && showLegendTop && <Legend />}
 
-      <div className={wrapperClassName ?? 'w-full overflow-x-auto overflow-y-visible relative'}>
+      <div ref={scrollRef} className={wrapperClassName ?? 'w-full overflow-x-auto overflow-y-visible relative'}>
+      {showScrollHint && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute right-0 top-0 bottom-0 w-16 z-50 flex items-center justify-end pr-2"
+          style={{
+            background: 'linear-gradient(to right, transparent, rgba(0,56,66,0.45))',
+          }}
+        >
+          <div className="flex flex-col items-center gap-0.5 animate-pulse">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-white/80 drop-shadow" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </div>
+      )}
       <table className="w-full border-separate border-spacing-0 bg-white rounded-lg shadow-sm text-xs">
         <thead className="sticky z-50" style={stickyTopStyle}>
           <tr className="bg-[#003842]">
