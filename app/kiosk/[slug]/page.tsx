@@ -1000,7 +1000,7 @@ export default function KioskPage() {
               className="h-20 sm:h-24 lg:h-28 xl:h-32 w-auto mx-auto mb-5"
             />
 
-            <p className="text-white/90 text-lg sm:text-xl lg:text-2xl font-semibold mb-3 tracking-tight">
+            <p className="text-white/90 text-xl sm:text-2xl lg:text-3xl font-semibold mb-3 tracking-tight">
               Interactive Allergen Guide
             </p>
 
@@ -1057,7 +1057,7 @@ export default function KioskPage() {
       {showInactivityWarning && <InactivityWarning />}
 
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-[#003842] shadow-lg border-b border-[#42b8ac]/20">
+      <header className="sticky top-0 z-40 bg-[#003842] shadow-lg">
         <Container>
           <div className="py-4">
             {/* Offline Indicator */}
