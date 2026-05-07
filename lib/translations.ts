@@ -34,7 +34,7 @@ export const translations = {
     emailAllergenGuide: 'Email Allergen Guide',
     emailAllergenGuideDesc: 'Send the full allergen guide to your email so you can review it on any device or computer.',
     emailGuide: 'Email Guide',
-    clickHereToBegin: 'Click here to begin',
+    clickHereToBegin: 'Get Started',
     getYourAllergenGuide: 'Get Your Allergen Guide',
     emailMeThisGuide: '📧 Email me this guide',
     emailGuideDesc: "We'll send the allergen PDF straight to your inbox — handy to keep on any device.",
