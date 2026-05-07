@@ -15,23 +15,32 @@ function UpdatePasswordContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
+  // formReady gates the spinner vs form — once true it never goes back to false,
+  // so clearing the error in handleSubmit can't re-trigger the spinner.
+  const [formReady, setFormReady] = useState(false)
   const [sessionReady, setSessionReady] = useState(false)
   const router = useRouter()
   const supabaseRef = useRef(createClient())
 
-  // With PKCE flow, Supabase redirects here with ?code=... in the URL.
-  // We exchange that code client-side (the browser that initiated the flow
-  // has the code_verifier), which fires PASSWORD_RECOVERY / SIGNED_IN.
-  // Fallback: if arriving via a server-side callback that already set a session,
-  // getSession() will return it directly.
   useEffect(() => {
     const supabase = supabaseRef.current
     let settled = false
 
-    const finish = () => { settled = true; setSessionReady(true) }
-    const fail   = () => { if (!settled) { settled = true; setError('Invalid or expired reset link. Please request a new one.') } }
+    const finish = () => {
+      if (settled) return
+      settled = true
+      setSessionReady(true)
+      setFormReady(true)
+    }
+    const fail = () => {
+      if (settled) return
+      settled = true
+      setError('Invalid or expired reset link. Please request a new one.')
+      setFormReady(true)
+    }
 
-    // Listen for auth events (PASSWORD_RECOVERY fires after code exchange)
+    // onAuthStateChange catches PASSWORD_RECOVERY fired by either our manual
+    // exchangeCodeForSession call below, or by detectSessionInUrl auto-exchange.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (settled) return
       if (
@@ -42,22 +51,25 @@ function UpdatePasswordContent() {
       }
     })
 
-    const code = new URLSearchParams(window.location.search).get('code')
+    // detectSessionInUrl (enabled in the client) may have already exchanged the
+    // code before this effect runs. Check getSession() first; only attempt a
+    // manual exchange if no session exists yet.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session && !settled) {
+        finish()
+        return
+      }
 
-    if (code) {
-      // Remove code from URL so it can't be replayed
-      window.history.replaceState(null, '', window.location.pathname)
-      supabase.auth.exchangeCodeForSession(code)
-        .then(({ error: err }) => { if (err) fail() })
-        .catch(fail)
-    } else {
-      // No code — check if a session was already set (e.g. server-side callback)
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session && !settled) finish()
-      })
-    }
+      const code = new URLSearchParams(window.location.search).get('code')
+      if (code) {
+        window.history.replaceState(null, '', window.location.pathname)
+        supabase.auth.exchangeCodeForSession(code)
+          .then(({ error: err }) => { if (err && !settled) fail() })
+          .catch(() => { if (!settled) fail() })
+      }
+      // If no code and no session, the timeout below will call fail().
+    })
 
-    // Safety-net timeout
     const timer = setTimeout(fail, 10000)
 
     return () => {
@@ -69,6 +81,11 @@ function UpdatePasswordContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+
+    if (!sessionReady) {
+      setError('Session expired. Please request a new password reset link.')
+      return
+    }
 
     if (password !== confirm) {
       setError('Passwords do not match.')
@@ -133,7 +150,7 @@ function UpdatePasswordContent() {
                   <p className="text-gray-500 text-sm">Redirecting you to sign in…</p>
                 </div>
               </div>
-            ) : !sessionReady && !error ? (
+            ) : !formReady ? (
               <div className="flex flex-col items-center justify-center py-8 gap-3">
                 <div className="relative h-10 w-10">
                   <div className="absolute inset-0 rounded-full border-4 border-[#003842]/20"></div>
