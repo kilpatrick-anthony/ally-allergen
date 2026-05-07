@@ -1,8 +1,7 @@
 // app/auth/update-password/page.tsx
 'use client'
 
-import { useState, useEffect, Suspense, useRef } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, CheckCircle } from 'lucide-react'
@@ -15,86 +14,45 @@ function UpdatePasswordContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
-  // formReady gates the spinner vs form — once true it never goes back to false,
-  // so clearing the error in handleSubmit can't re-trigger the spinner.
   const [formReady, setFormReady] = useState(false)
-  const [sessionReady, setSessionReady] = useState(false)
+  // Hold the raw access token from the URL hash — used directly in the REST call.
+  // We never touch Supabase's client session to avoid the navigator.locks race.
+  const [accessToken, setAccessToken] = useState<string | null>(null)
   const router = useRouter()
-  // Use createClient from @supabase/supabase-js directly.
-  // @supabase/ssr createBrowserClient hardcodes flowType:'pkce' + detectSessionInUrl:true
-  // which acquires the auth lock on init and races with our manual setSession() call,
-  // causing "signal is aborted without reason". createClient with detectSessionInUrl:false
-  // means we fully control when/how the session is established — no lock conflict.
-  const supabaseRef = useRef(
-    createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { auth: { flowType: 'implicit', detectSessionInUrl: false, persistSession: true } }
-    )
-  )
 
   useEffect(() => {
-    const supabase = supabaseRef.current
-    let settled = false
-
-    const finish = () => {
-      if (settled) return
-      settled = true
-      setSessionReady(true)
-      setFormReady(true)
-    }
-    const fail = (msg?: string) => {
-      if (settled) return
-      settled = true
-      setError(msg ?? 'Invalid or expired reset link. Please request a new one.')
-      setFormReady(true)
-    }
-
+    // Parse #access_token=...&type=recovery from the URL hash directly.
+    // We do NOT call supabase.auth.setSession() — that acquires a navigator.locks
+    // lock which conflicts with the shared client in the layout, causing
+    // "signal is aborted without reason". Instead we store the raw token and
+    // call the Supabase REST API directly when the user submits.
     const hash = window.location.hash
     if (hash && hash.includes('access_token')) {
       const params = new URLSearchParams(hash.substring(1))
-      const accessToken = params.get('access_token')
-      const refreshToken = params.get('refresh_token') ?? ''
+      const token = params.get('access_token')
       const type = params.get('type')
-      // Clear the hash so tokens aren't exposed in the URL
       window.history.replaceState(null, '', window.location.pathname)
-      if (accessToken && type === 'recovery') {
-        supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-          .then(({ data, error: err }) => {
-            if (!settled) {
-              if (err) fail(err.message)
-              else if (data.session) finish()
-              else fail('Could not establish session. Please request a new reset link.')
-            }
-          })
-          .catch((e: unknown) => { if (!settled) fail(e instanceof Error ? e.message : undefined) })
+      if (token && type === 'recovery') {
+        setAccessToken(token)
+        setFormReady(true)
       } else {
-        fail()
+        setError('Invalid reset link. Please request a new one.')
+        setFormReady(true)
       }
     } else {
-      // No hash — check for an existing session (e.g. page refresh after link was used)
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!settled) {
-          if (session) finish()
-          else fail()
-        }
-      })
+      setError('No reset token found. Please request a new password reset link.')
+      setFormReady(true)
     }
-
-    const timer = setTimeout(() => fail('Reset link timed out. Please request a new one.'), 15000)
-
-    return () => clearTimeout(timer)
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
-    if (!sessionReady) {
-      setError('Session expired. Please request a new password reset link.')
+    if (!accessToken) {
+      setError('Reset token missing. Please request a new password reset link.')
       return
     }
-
     if (password !== confirm) {
       setError('Passwords do not match.')
       return
@@ -106,19 +64,25 @@ function UpdatePasswordContent() {
 
     setLoading(true)
     try {
-      const { error: updateError } = await Promise.race([
-        supabaseRef.current.auth.updateUser({ password }),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Request timed out. Please try again.')), 30000)
-        ),
-      ])
-      if (updateError) {
-        setError(updateError.message)
-        setLoading(false)
-      } else {
-        setDone(true)
-        setTimeout(() => router.push('/auth/signin'), 3000)
+      // Call the Supabase REST API directly — no client session, no lock acquisition.
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/user`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+            'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+          },
+          body: JSON.stringify({ password }),
+        }
+      )
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.msg ?? data.message ?? data.error_description ?? 'Failed to update password.')
       }
+      setDone(true)
+      setTimeout(() => router.push('/auth/signin'), 3000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
       setLoading(false)
