@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createBrowserClient } from '@supabase/ssr'
 import Link from 'next/link'
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react'
 import { Card } from '@/components/layout/Card'
@@ -13,7 +13,16 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
-  const supabaseRef = useRef(createClient())
+  // Use implicit flow so the reset email contains #access_token=...&type=recovery
+  // (hash-based) rather than ?code= (PKCE). This avoids the PKCE code_verifier
+  // dependency which is unreliable across browser sessions and email clients.
+  const supabaseRef = useRef(
+    createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { flowType: 'implicit' } }
+    )
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

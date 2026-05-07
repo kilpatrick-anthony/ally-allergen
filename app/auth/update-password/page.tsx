@@ -20,13 +20,13 @@ function UpdatePasswordContent() {
   const [formReady, setFormReady] = useState(false)
   const [sessionReady, setSessionReady] = useState(false)
   const router = useRouter()
-  // Use a dedicated client with detectSessionInUrl:false so the shared client's
-  // auto-exchange doesn't consume the ?code= before our useEffect can read it.
+  // Use implicit flow to match reset-password. Session is set directly via
+  // setSession() using the #access_token from the URL hash — no PKCE verifier needed.
   const supabaseRef = useRef(
     createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { auth: { detectSessionInUrl: false, persistSession: true, autoRefreshToken: true, flowType: 'pkce' } }
+      { auth: { flowType: 'implicit', detectSessionInUrl: false } }
     )
   )
 
@@ -51,32 +51,34 @@ function UpdatePasswordContent() {
     // exchangeCodeForSession call below, or by detectSessionInUrl auto-exchange.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (settled) return
-      if (
-        event === 'PASSWORD_RECOVERY' ||
-        ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session)
-      ) {
+      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
         finish()
       }
     })
 
-    // detectSessionInUrl (enabled in the client) may have already exchanged the
-    // code before this effect runs. Check getSession() first; only attempt a
-    // manual exchange if no session exists yet.
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session && !settled) {
-        finish()
-        return
-      }
-
-      const code = new URLSearchParams(window.location.search).get('code')
-      if (code) {
-        window.history.replaceState(null, '', window.location.pathname)
-        supabase.auth.exchangeCodeForSession(code)
+    // With implicit flow, Supabase puts the recovery token in the URL hash:
+    // #access_token=...&refresh_token=...&type=recovery
+    const hash = window.location.hash
+    if (hash && hash.includes('access_token')) {
+      const params = new URLSearchParams(hash.substring(1))
+      const accessToken = params.get('access_token')
+      const refreshToken = params.get('refresh_token') ?? ''
+      const type = params.get('type')
+      // Clear the hash so tokens aren't exposed in the URL
+      window.history.replaceState(null, '', window.location.pathname)
+      if (accessToken && type === 'recovery') {
+        supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
           .then(({ error: err }) => { if (err && !settled) fail() })
           .catch(() => { if (!settled) fail() })
+      } else if (!settled) {
+        fail()
       }
-      // If no code and no session, the timeout below will call fail().
-    })
+    } else {
+      // Fallback: check for an already-active session (e.g. page refresh)
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session && !settled) finish()
+      })
+    }
 
     const timer = setTimeout(fail, 10000)
 
