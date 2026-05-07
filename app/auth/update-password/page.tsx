@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useEffect, Suspense, useRef } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, CheckCircle } from 'lucide-react'
@@ -20,16 +20,16 @@ function UpdatePasswordContent() {
   const [formReady, setFormReady] = useState(false)
   const [sessionReady, setSessionReady] = useState(false)
   const router = useRouter()
-  // Use @supabase/supabase-js directly (NOT @supabase/ssr createBrowserClient).
-  // @supabase/ssr v0.8+ hardcodes flowType: 'pkce' in createBrowserClient regardless
-  // of options — making implicit flow impossible via that path. Using createClient
-  // from supabase-js respects flowType: 'implicit', so the reset email sends
-  // #access_token=...&type=recovery in the hash (no PKCE verifier needed).
+  // Use createBrowserClient (SSR, cookie-based storage) so that:
+  // - PKCE ?code= links (old emails, same browser) are auto-exchanged via
+  //   detectSessionInUrl:true (hardcoded by @supabase/ssr) using the cookie verifier.
+  // - Implicit #access_token= links (new emails) are handled manually in useEffect.
+  // isSingleton:false ensures a fresh client per page load (no shared module state).
   const supabaseRef = useRef(
-    createClient(
+    createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { auth: { flowType: 'implicit', detectSessionInUrl: false } }
+      { isSingleton: false }
     )
   )
 
@@ -43,10 +43,10 @@ function UpdatePasswordContent() {
       setSessionReady(true)
       setFormReady(true)
     }
-    const fail = () => {
+    const fail = (msg?: string) => {
       if (settled) return
       settled = true
-      setError('Invalid or expired reset link. Please request a new one.')
+      setError(msg ?? 'Invalid or expired reset link. Please request a new one.')
       setFormReady(true)
     }
 
@@ -71,8 +71,8 @@ function UpdatePasswordContent() {
       window.history.replaceState(null, '', window.location.pathname)
       if (accessToken && type === 'recovery') {
         supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-          .then(({ error: err }) => { if (err && !settled) fail() })
-          .catch(() => { if (!settled) fail() })
+          .then(({ error: err }) => { if (err && !settled) fail(err.message) })
+          .catch((e: unknown) => { if (!settled) fail(e instanceof Error ? e.message : undefined) })
       } else if (!settled) {
         fail()
       }
