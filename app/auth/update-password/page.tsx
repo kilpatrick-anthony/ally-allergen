@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useEffect, Suspense, useRef } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, CheckCircle } from 'lucide-react'
@@ -20,16 +20,16 @@ function UpdatePasswordContent() {
   const [formReady, setFormReady] = useState(false)
   const [sessionReady, setSessionReady] = useState(false)
   const router = useRouter()
-  // Use createBrowserClient (SSR, cookie-based storage) so that:
-  // - PKCE ?code= links (old emails, same browser) are auto-exchanged via
-  //   detectSessionInUrl:true (hardcoded by @supabase/ssr) using the cookie verifier.
-  // - Implicit #access_token= links (new emails) are handled manually in useEffect.
-  // isSingleton:false ensures a fresh client per page load (no shared module state).
+  // Use createClient from @supabase/supabase-js directly.
+  // @supabase/ssr createBrowserClient hardcodes flowType:'pkce' + detectSessionInUrl:true
+  // which acquires the auth lock on init and races with our manual setSession() call,
+  // causing "signal is aborted without reason". createClient with detectSessionInUrl:false
+  // means we fully control when/how the session is established — no lock conflict.
   const supabaseRef = useRef(
-    createBrowserClient(
+    createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      { isSingleton: false }
+      { auth: { flowType: 'implicit', detectSessionInUrl: false, persistSession: true } }
     )
   )
 
@@ -50,17 +50,6 @@ function UpdatePasswordContent() {
       setFormReady(true)
     }
 
-    // onAuthStateChange catches PASSWORD_RECOVERY fired by either our manual
-    // exchangeCodeForSession call below, or by detectSessionInUrl auto-exchange.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (settled) return
-      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
-        finish()
-      }
-    })
-
-    // With implicit flow, Supabase puts the recovery token in the URL hash:
-    // #access_token=...&refresh_token=...&type=recovery
     const hash = window.location.hash
     if (hash && hash.includes('access_token')) {
       const params = new URLSearchParams(hash.substring(1))
@@ -71,24 +60,30 @@ function UpdatePasswordContent() {
       window.history.replaceState(null, '', window.location.pathname)
       if (accessToken && type === 'recovery') {
         supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-          .then(({ error: err }) => { if (err && !settled) fail(err.message) })
+          .then(({ data, error: err }) => {
+            if (!settled) {
+              if (err) fail(err.message)
+              else if (data.session) finish()
+              else fail('Could not establish session. Please request a new reset link.')
+            }
+          })
           .catch((e: unknown) => { if (!settled) fail(e instanceof Error ? e.message : undefined) })
-      } else if (!settled) {
+      } else {
         fail()
       }
     } else {
-      // Fallback: check for an already-active session (e.g. page refresh)
+      // No hash — check for an existing session (e.g. page refresh after link was used)
       supabase.auth.getSession().then(({ data: { session } }) => {
-        if (session && !settled) finish()
+        if (!settled) {
+          if (session) finish()
+          else fail()
+        }
       })
     }
 
-    const timer = setTimeout(fail, 10000)
+    const timer = setTimeout(() => fail('Reset link timed out. Please request a new one.'), 15000)
 
-    return () => {
-      subscription.unsubscribe()
-      clearTimeout(timer)
-    }
+    return () => clearTimeout(timer)
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
