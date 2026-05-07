@@ -19,42 +19,40 @@ function UpdatePasswordContent() {
   const router = useRouter()
   const supabaseRef = useRef(createClient())
 
-  // Exchange the recovery token from the URL hash for a Supabase session
+  // Wait for Supabase to signal that the recovery session is ready.
+  // With PKCE flow the callback route exchanges the code and redirects here
+  // with an active session already set — onAuthStateChange fires PASSWORD_RECOVERY.
   useEffect(() => {
-    const exchangeToken = async () => {
-      const supabase = supabaseRef.current
-      // Supabase puts the recovery token in the URL hash: #access_token=...&type=recovery
-      const hash = window.location.hash
-      if (hash && hash.includes('access_token')) {
-        const params = new URLSearchParams(hash.substring(1))
-        const accessToken = params.get('access_token')
-        const refreshToken = params.get('refresh_token') || ''
-        const type = params.get('type')
+    const supabase = supabaseRef.current
+    const settled = { current: false }
 
-        if (accessToken && type === 'recovery') {
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          })
-          if (error) {
-            setError('Invalid or expired reset link. Please request a new one.')
-            return
-          }
-          // Clear the hash from the URL so tokens aren't exposed
-          window.history.replaceState(null, '', window.location.pathname)
-          setSessionReady(true)
-          return
-        }
-      }
-      // No token in hash — check if there's already an active session (e.g. page refresh)
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (settled.current) return
+      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
+        settled.current = true
         setSessionReady(true)
-      } else {
+      }
+    })
+
+    // Fallback: session may already be active by the time the listener is registered
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session && !settled.current) {
+        settled.current = true
+        setSessionReady(true)
+      }
+    })
+
+    // If nothing resolves after 8 s the link is invalid/expired
+    const timer = setTimeout(() => {
+      if (!settled.current) {
         setError('Invalid or expired reset link. Please request a new one.')
       }
+    }, 8000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timer)
     }
-    exchangeToken()
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
