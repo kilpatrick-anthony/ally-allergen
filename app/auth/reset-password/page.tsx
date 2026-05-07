@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react'
 import { Card } from '@/components/layout/Card'
@@ -13,11 +13,12 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
-  // Use implicit flow so the reset email contains #access_token=...&type=recovery
-  // (hash-based) rather than ?code= (PKCE). This avoids the PKCE code_verifier
-  // dependency which is unreliable across browser sessions and email clients.
+  // Use @supabase/supabase-js directly (NOT @supabase/ssr createBrowserClient) so that
+  // flowType: 'implicit' is actually respected. @supabase/ssr v0.8+ hardcodes flowType: 'pkce'
+  // and ignores any options we pass, which would send a ?code= link requiring a PKCE verifier
+  // cookie — broken when the link is opened in a different browser or device.
   const supabaseRef = useRef(
-    createBrowserClient(
+    createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       { auth: { flowType: 'implicit' } }

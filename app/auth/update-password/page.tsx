@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useEffect, Suspense, useRef } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
+import { createClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, CheckCircle } from 'lucide-react'
@@ -20,10 +20,13 @@ function UpdatePasswordContent() {
   const [formReady, setFormReady] = useState(false)
   const [sessionReady, setSessionReady] = useState(false)
   const router = useRouter()
-  // Use implicit flow to match reset-password. Session is set directly via
-  // setSession() using the #access_token from the URL hash — no PKCE verifier needed.
+  // Use @supabase/supabase-js directly (NOT @supabase/ssr createBrowserClient).
+  // @supabase/ssr v0.8+ hardcodes flowType: 'pkce' in createBrowserClient regardless
+  // of options — making implicit flow impossible via that path. Using createClient
+  // from supabase-js respects flowType: 'implicit', so the reset email sends
+  // #access_token=...&type=recovery in the hash (no PKCE verifier needed).
   const supabaseRef = useRef(
-    createBrowserClient(
+    createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       { auth: { flowType: 'implicit', detectSessionInUrl: false } }
@@ -108,7 +111,12 @@ function UpdatePasswordContent() {
 
     setLoading(true)
     try {
-      const { error: updateError } = await supabaseRef.current.auth.updateUser({ password })
+      const { error: updateError } = await Promise.race([
+        supabaseRef.current.auth.updateUser({ password }),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Request timed out. Please try again.')), 30000)
+        ),
+      ])
       if (updateError) {
         setError(updateError.message)
         setLoading(false)
