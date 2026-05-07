@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useEffect, Suspense, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, CheckCircle } from 'lucide-react'
@@ -20,7 +20,15 @@ function UpdatePasswordContent() {
   const [formReady, setFormReady] = useState(false)
   const [sessionReady, setSessionReady] = useState(false)
   const router = useRouter()
-  const supabaseRef = useRef(createClient())
+  // Use a dedicated client with detectSessionInUrl:false so the shared client's
+  // auto-exchange doesn't consume the ?code= before our useEffect can read it.
+  const supabaseRef = useRef(
+    createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      { auth: { detectSessionInUrl: false, persistSession: true, autoRefreshToken: true, flowType: 'pkce' } }
+    )
+  )
 
   useEffect(() => {
     const supabase = supabaseRef.current
