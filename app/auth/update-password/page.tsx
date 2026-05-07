@@ -19,35 +19,46 @@ function UpdatePasswordContent() {
   const router = useRouter()
   const supabaseRef = useRef(createClient())
 
-  // Wait for Supabase to signal that the recovery session is ready.
-  // With PKCE flow the callback route exchanges the code and redirects here
-  // with an active session already set — onAuthStateChange fires PASSWORD_RECOVERY.
+  // With PKCE flow, Supabase redirects here with ?code=... in the URL.
+  // We exchange that code client-side (the browser that initiated the flow
+  // has the code_verifier), which fires PASSWORD_RECOVERY / SIGNED_IN.
+  // Fallback: if arriving via a server-side callback that already set a session,
+  // getSession() will return it directly.
   useEffect(() => {
     const supabase = supabaseRef.current
-    const settled = { current: false }
+    let settled = false
 
+    const finish = () => { settled = true; setSessionReady(true) }
+    const fail   = () => { if (!settled) { settled = true; setError('Invalid or expired reset link. Please request a new one.') } }
+
+    // Listen for auth events (PASSWORD_RECOVERY fires after code exchange)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (settled.current) return
-      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
-        settled.current = true
-        setSessionReady(true)
+      if (settled) return
+      if (
+        event === 'PASSWORD_RECOVERY' ||
+        ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session)
+      ) {
+        finish()
       }
     })
 
-    // Fallback: session may already be active by the time the listener is registered
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session && !settled.current) {
-        settled.current = true
-        setSessionReady(true)
-      }
-    })
+    const code = new URLSearchParams(window.location.search).get('code')
 
-    // If nothing resolves after 8 s the link is invalid/expired
-    const timer = setTimeout(() => {
-      if (!settled.current) {
-        setError('Invalid or expired reset link. Please request a new one.')
-      }
-    }, 8000)
+    if (code) {
+      // Remove code from URL so it can't be replayed
+      window.history.replaceState(null, '', window.location.pathname)
+      supabase.auth.exchangeCodeForSession(code)
+        .then(({ error: err }) => { if (err) fail() })
+        .catch(fail)
+    } else {
+      // No code — check if a session was already set (e.g. server-side callback)
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session && !settled) finish()
+      })
+    }
+
+    // Safety-net timeout
+    const timer = setTimeout(fail, 10000)
 
     return () => {
       subscription.unsubscribe()
