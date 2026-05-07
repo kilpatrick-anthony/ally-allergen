@@ -107,14 +107,18 @@ function UpdatePasswordContent() {
     }
 
     setLoading(true)
-    const { error } = await supabaseRef.current.auth.updateUser({ password })
-
-    if (error) {
-      setError(error.message)
+    try {
+      const { error: updateError } = await supabaseRef.current.auth.updateUser({ password })
+      if (updateError) {
+        setError(updateError.message)
+        setLoading(false)
+      } else {
+        setDone(true)
+        setTimeout(() => router.push('/auth/signin'), 3000)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
       setLoading(false)
-    } else {
-      setDone(true)
-      setTimeout(() => router.push('/auth/signin'), 3000)
     }
   }
 
