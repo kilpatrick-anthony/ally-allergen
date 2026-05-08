@@ -1332,7 +1332,7 @@ export default function KioskPage() {
                         <Filter className="h-6 w-6 text-white" />
                       </div>
                       <div className="min-w-0 break-words">
-                        <h3 className="text-xl sm:text-2xl font-bold text-[#7f1d1d] mb-2 tracking-tight leading-tight">{t.avoidAllergens}</h3>
+                        <h3 className="text-base sm:text-lg font-bold text-[#7f1d1d] mb-2 tracking-tight leading-tight hyphens-auto">{t.avoidAllergens}</h3>
                         <p className="text-[#991b1b] text-sm sm:text-[15px] leading-relaxed">
                           {t.avoidAllergensDesc}
                         </p>
@@ -1362,7 +1362,7 @@ export default function KioskPage() {
                         <FileText className="h-6 w-6 text-white" />
                       </div>
                       <div className="min-w-0 break-words">
-                        <h3 className="text-xl sm:text-2xl font-bold text-[#064e3b] mb-2 tracking-tight leading-tight">{t.fullAllergenGuide}</h3>
+                        <h3 className="text-base sm:text-lg font-bold text-[#064e3b] mb-2 tracking-tight leading-tight hyphens-auto">{t.fullAllergenGuide}</h3>
                         <p className="text-[#065f46] text-sm sm:text-[15px] leading-relaxed">
                           {t.fullAllergenGuideDesc}
                         </p>
@@ -1392,7 +1392,7 @@ export default function KioskPage() {
                         <QrCode className="h-6 w-6 text-white" />
                       </div>
                       <div className="min-w-0 break-words">
-                        <h3 className="text-xl sm:text-2xl font-bold text-[#581c87] mb-2 tracking-tight leading-tight">{t.saveMenuToPhone}</h3>
+                        <h3 className="text-base sm:text-lg font-bold text-[#581c87] mb-2 tracking-tight leading-tight hyphens-auto">{t.saveMenuToPhone}</h3>
                         <p className="text-[#6b21a8] text-sm sm:text-[15px] leading-relaxed">
                           {t.saveMenuToPhoneDesc}
                         </p>
@@ -1422,7 +1422,7 @@ export default function KioskPage() {
                         <FileText className="h-6 w-6 text-white" />
                       </div>
                       <div className="min-w-0 break-words">
-                        <h3 className="text-xl sm:text-2xl font-bold text-[#134e4a] mb-2 tracking-tight leading-tight">{t.emailAllergenGuide}</h3>
+                        <h3 className="text-base sm:text-lg font-bold text-[#134e4a] mb-2 tracking-tight leading-tight hyphens-auto">{t.emailAllergenGuide}</h3>
                         <p className="text-[#115e59] text-sm sm:text-[15px] leading-relaxed">
                           {t.emailAllergenGuideDesc}
                         </p>

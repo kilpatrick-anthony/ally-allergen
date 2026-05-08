@@ -344,19 +344,18 @@ export default function AccessibilityPanel() {
                     Accessibility Settings
                   </h2>
                 </div>
-              <p className="text-gray-600 text-sm"> 
-              {showDefaultsNotice && (
-                <div className="mt-3 p-2 rounded bg-yellow-50 border border-yellow-100 text-yellow-800 text-sm flex items-center justify-between gap-3">
-                  <div>Accessibility defaults updated — <strong>highlight links</strong> are now OFF by default.</div>
-                  <div className="flex gap-2">
-                    <Button size="sm" onClick={applyNewDefaults}>Apply new defaults</Button>
-                    <Button size="sm" variant="ghost" onClick={dismissDefaultsNotice}>Dismiss</Button>
-                  </div>
+              <p className="text-gray-600 text-sm">
+              Customise your viewing experience for better accessibility
+            </p>
+            {showDefaultsNotice && (
+              <div className="mt-3 p-2 rounded bg-yellow-50 border border-yellow-100 text-yellow-800 text-sm flex items-center justify-between gap-3">
+                <div>Accessibility defaults updated — <strong>highlight links</strong> are now OFF by default.</div>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={applyNewDefaults}>Apply new defaults</Button>
+                  <Button size="sm" variant="ghost" onClick={dismissDefaultsNotice}>Dismiss</Button>
                 </div>
-              )}
-                Customise your viewing experience for better accessibility
-                {/* Trigger redeploy: another trivial change */}
-              </p>
+              </div>
+            )}
             </div>
 
             {/* Settings content */}
