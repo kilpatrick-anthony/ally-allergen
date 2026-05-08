@@ -798,11 +798,12 @@ export default function KioskPage() {
         return
       }
       
-      const itemsToInclude = includeFilters ? filteredItems : menuItems
+      const menuItemsToInclude = (includeFilters ? filteredItems : menuItems).map(i => ({ ...i, itemType: 'menu_item' as const }))
+      const allItemsToInclude = [...menuItemsToInclude, ...ingredientGuideRows.map(i => ({ ...i, itemType: 'ingredient' as const }))]
       
       await generateAllergenTablePDF({
         business: business,
-        items: itemsToInclude,
+        items: allItemsToInclude,
           title: includeFilters && totalActiveFilters > 0 
             ? `Allergen Guide (${totalActiveFilters} active filter${totalActiveFilters > 1 ? 's' : ''})`
           : 'Complete Allergen Information Guide',
@@ -829,11 +830,12 @@ export default function KioskPage() {
     setSendingEmail(true)
     setEmailError('')
     try {
-      const itemsToInclude = includeFilters ? filteredItems : menuItems
+      const menuItemsToEmail = (includeFilters ? filteredItems : menuItems).map(i => ({ ...i, itemType: 'menu_item' as const }))
+      const allItemsToEmail = [...menuItemsToEmail, ...ingredientGuideRows.map(i => ({ ...i, itemType: 'ingredient' as const }))]
       // Generate PDF as base64 in the browser, then POST to server for mailing
       const pdfBase64 = await generateAllergenTablePDF({
         business,
-        items: itemsToInclude,
+        items: allItemsToEmail,
         title: includeFilters && totalActiveFilters > 0
           ? `Allergen Guide (${totalActiveFilters} active filter${totalActiveFilters > 1 ? 's' : ''})`
           : 'Complete Allergen Information Guide',
@@ -2077,7 +2079,8 @@ export default function KioskPage() {
 
       {/* PDF / Email Options Modal */}
       {showPDFOptions && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 overflow-y-auto z-50">
+          <div className="flex min-h-full items-center justify-center p-4">
           <Card className="max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
@@ -2112,6 +2115,7 @@ export default function KioskPage() {
                           type="email"
                           value={emailInput}
                           onChange={e => { setEmailInput(e.target.value); setEmailError(''); }}
+                          onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 300)}
                           placeholder="your@email.com"
                           className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#42b8ac]"
                           disabled={sendingEmail}
@@ -2142,6 +2146,7 @@ export default function KioskPage() {
               )}
             </div>
           </Card>
+          </div>
         </div>
       )}
       </Container>
