@@ -341,6 +341,7 @@ export default function KioskPage() {
   const [showScreensaver, setShowScreensaver] = useState(false)
   const [isSmallScreen, setIsSmallScreen] = useState(false)
   const [showAllergenGuide, setShowAllergenGuide] = useState(false)
+  const [keyboardOffset, setKeyboardOffset] = useState(0)
   
   const t = translations[currentLanguage] as typeof translations.en
   const businessName = business?.name?.trim() || ''
@@ -354,6 +355,22 @@ export default function KioskPage() {
   const lastActivityRef = useRef<number>(Date.now())
   const pageLoadTime = useRef(Date.now())
   const screensaverTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // ── Visual Viewport / keyboard offset ───────────────────────────────────────
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const update = () => {
+      const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop)
+      setKeyboardOffset(offset)
+    }
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => {
+      vv.removeEventListener('resize', update)
+      vv.removeEventListener('scroll', update)
+    }
+  }, [])
 
   // ── Auto-refresh on new deployment ─────────────────────────────────────────
   // Poll /api/version every 5 minutes. If the deployment ID changes it means
@@ -2079,8 +2096,10 @@ export default function KioskPage() {
 
       {/* PDF / Email Options Modal */}
       {showPDFOptions && (
-        <div className="fixed inset-0 bg-black/50 overflow-y-auto z-50">
-          <div className="flex min-h-full items-center justify-center p-4">
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 transition-[padding] duration-150"
+          style={{ paddingBottom: `${keyboardOffset + 16}px` }}
+        >
           <Card className="max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
@@ -2146,7 +2165,6 @@ export default function KioskPage() {
               )}
             </div>
           </Card>
-          </div>
         </div>
       )}
       </Container>
