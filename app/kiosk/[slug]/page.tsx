@@ -924,20 +924,23 @@ export default function KioskPage() {
     return () => document.removeEventListener('visibilitychange', handleVisibility)
   }, [])
 
-  // Track when user starts the kiosk
-  const handleStartKiosk = () => {
-    setKioskStarted(true)
-    setActiveView('landing')
-    trackKioskInteraction(slug, 'home_screen_start')
-
-    // Enter fullscreen (requires user gesture — this click satisfies it)
+  // Request fullscreen — must be called from a user gesture handler
+  const enterFullscreen = () => {
     const el = document.documentElement
+    if (document.fullscreenElement) return // already fullscreen
     if (el.requestFullscreen) {
       el.requestFullscreen().catch(() => {})
     } else if ((el as any).webkitRequestFullscreen) {
       ;(el as any).webkitRequestFullscreen()
     }
+  }
 
+  // Track when user starts the kiosk
+  const handleStartKiosk = () => {
+    setKioskStarted(true)
+    setActiveView('landing')
+    trackKioskInteraction(slug, 'home_screen_start')
+    enterFullscreen()
     requestWakeLock()
   }
 
@@ -1031,6 +1034,7 @@ export default function KioskPage() {
         className="min-h-screen relative overflow-hidden"
         style={{ background: 'linear-gradient(145deg, #42b8ac 0%, #1a6e8a 55%, #001a20 100%)' }}
         data-context="kiosk"
+        onClick={enterFullscreen}
       >
         {/* Decorative blobs for depth */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
