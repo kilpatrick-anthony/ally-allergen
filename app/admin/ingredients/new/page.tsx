@@ -580,9 +580,10 @@ export default function NewIngredientPage() {
 
               {/* Supplier */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Supplier
                 </label>
+                <p className="text-xs text-gray-500 mb-2">Add one or more suppliers for this ingredient. Each supplier can have its own allergen and dietary profile — the worst-case allergen data across all suppliers is used for reports and the kiosk.</p>
                 <div className="mb-3">
                   <select
                     value={selectedSupplier}

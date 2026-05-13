@@ -641,7 +641,8 @@ export default function EditIngredientPage() {
 
           {/* Suppliers */}
           <Card>
-            <h2 className="text-xl font-semibold text-[#003842] mb-4">Suppliers</h2>
+            <h2 className="text-xl font-semibold text-[#003842] mb-1">Suppliers</h2>
+            <p className="text-sm text-gray-500 mb-4">Add one or more suppliers for this ingredient. Each supplier can have its own allergen and dietary profile — the worst-case allergen data across all suppliers is used for reports and the kiosk.</p>
             
             <div className="space-y-4">
               <div>
