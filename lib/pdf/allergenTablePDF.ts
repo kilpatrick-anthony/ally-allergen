@@ -535,9 +535,12 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
     const expandedIngredientItems: MenuItem[] = ingredientItems
       .flatMap(item => {
         const supplierList: string[] = (item as any).suppliers ?? []
+        const supplierProfiles: Record<string, { allergen_warnings?: any }> = (item as any).supplier_profiles || {}
         if (supplierList.length === 0) return [item]
         return supplierList.map(supplier => ({
           ...item,
+          // Use per-supplier allergen profile if available, else fall back to worst-case
+          allergen_warnings: supplierProfiles[supplier]?.allergen_warnings || item.allergen_warnings,
           name: `${item.name}\nSupplier: ${supplier}`,
         }))
       })

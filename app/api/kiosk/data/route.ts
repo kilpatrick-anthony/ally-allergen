@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
 
     const { data: ingredients, error: ingredientsListError } = await supabase
       .from('ingredients')
-      .select('id, business_id, name, description, category, allergen_warnings, suppliers, status')
+      .select('id, business_id, name, description, category, allergen_warnings, suppliers, supplier_profiles, status')
       .eq('business_id', business.id)
       .neq('status', 'archived')
       .order('name', { ascending: true })

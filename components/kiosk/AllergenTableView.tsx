@@ -35,11 +35,14 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
   const expandedItems = items.flatMap(item => {
     const isIngredient = (item as any).combined_allergens && Array.isArray((item as any).combined_allergens)
     const suppliers = (item as any).suppliers || []
+    const supplierProfiles: Record<string, { allergen_warnings?: any }> = (item as any).supplier_profiles || {}
     
     // If it's an ingredient with multiple suppliers, create separate rows
     if (isIngredient && suppliers.length > 1) {
       return suppliers.map((supplier: string) => ({
         ...item,
+        // Use per-supplier allergen profile if available, else fall back to ingredient-level worst-case
+        allergen_warnings: supplierProfiles[supplier]?.allergen_warnings || item.allergen_warnings,
         displayName: `${item.name} (${supplier})`,
         supplier: supplier
       }))

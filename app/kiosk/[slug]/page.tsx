@@ -1132,6 +1132,7 @@ export default function KioskPage() {
     ingredient_names: [],
     allergen_warnings: ingredient.allergen_warnings,
     suppliers: ingredient.suppliers || [],
+    supplier_profiles: ingredient.supplier_profiles || {},
     combined_allergens: ingredient.allergen_warnings ? [ingredient.allergen_warnings] : [],
   }))
 
