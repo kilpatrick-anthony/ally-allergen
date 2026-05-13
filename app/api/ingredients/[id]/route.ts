@@ -131,7 +131,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { name, description, category, allergen_warnings, suppliers, certifications, preferred_review_months } = body
+    const { name, description, category, allergen_warnings, suppliers, certifications, preferred_review_months, supplier_profiles } = body
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
@@ -152,6 +152,17 @@ export async function PUT(
 
     await upsertSuppliers(supabase, userBusiness.business_id, suppliers || [], userId)
 
+    // If per-supplier profiles are provided, compute effective allergen/cert values from them.
+    // Allergens: worst-case union across all suppliers (safest for food safety)
+    // Certifications: strict intersection across all suppliers (only certify if all suppliers comply)
+    const profiles = supplier_profiles ? Object.values(supplier_profiles as Record<string, { allergen_warnings: any; certifications: string[] }>) : []
+    const effectiveAllergens = profiles.length > 0
+      ? computeWorstCaseAllergens(profiles.map(p => p.allergen_warnings).filter(Boolean) as Parameters<typeof computeWorstCaseAllergens>[0])
+      : (allergen_warnings || {})
+    const effectiveCertifications = profiles.length > 0
+      ? profiles.map(p => p.certifications || []).reduce((acc, certs) => acc.filter(c => certs.includes(c)))
+      : (certifications || [])
+
     // Update ingredient
     const { data: ingredient, error } = await supabase
       .from('ingredients')
@@ -159,9 +170,10 @@ export async function PUT(
         name,
         description: description || '',
         category: category || '',
-        allergen_warnings: allergen_warnings || {},
+        allergen_warnings: effectiveAllergens,
         suppliers: suppliers || [],
-        certifications: certifications || [],
+        certifications: effectiveCertifications,
+        supplier_profiles: supplier_profiles || {},
         preferred_review_months: preferred_review_months || 3,
         updated_at: new Date().toISOString()
       })

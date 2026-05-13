@@ -7,7 +7,8 @@ import Link from 'next/link'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { 
   Package, ArrowLeft, Save, X, AlertCircle, Plus, Trash2,
-  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck, ScanLine
+  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck, ScanLine,
+  ChevronDown, ChevronRight, Info
 } from 'lucide-react'
 
 import { Container } from '@/components/layout/Container'
@@ -18,6 +19,12 @@ import AllergenWarningSelector from '@/components/admin/AllergenWarningSelector'
 import DatasheetUploader from '@/components/admin/DatasheetUploader'
 import { LabelScanModal } from '@/components/admin/LabelScanModal'
 import type { AllergenWarnings } from '@/types/allergen'
+import { computeWorstCaseAllergens } from '@/types/allergen'
+
+type SupplierProfile = {
+  allergen_warnings: AllergenWarnings
+  certifications: string[]
+}
 
 export default function NewIngredientPage() {
   const { showNotification } = useNotification()
@@ -56,6 +63,16 @@ export default function NewIngredientPage() {
   const [loadingSuppliers, setLoadingSuppliers] = useState(false)
   const [customCertInput, setCustomCertInput] = useState('')
   const [showCustomCertInput, setShowCustomCertInput] = useState(false)
+
+  // Per-supplier profiles
+  const defaultAllergenWarnings: AllergenWarnings = {
+    cereals_gluten: 'none', crustaceans: 'none', eggs: 'none', fish: 'none',
+    peanuts: 'none', soybeans: 'none', milk: 'none', nuts: 'none',
+    celery: 'none', mustard: 'none', sesame: 'none', sulphites: 'none',
+    lupin: 'none', molluscs: 'none'
+  }
+  const [supplierProfiles, setSupplierProfiles] = useState<Record<string, SupplierProfile>>({})
+  const [expandedSuppliers, setExpandedSuppliers] = useState<Set<string>>(new Set())
 
   const parseJsonSafely = async (response: Response) => {
     const contentType = response.headers.get('content-type') || ''
@@ -179,7 +196,7 @@ export default function NewIngredientPage() {
       const response = await fetch('/api/ingredients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ingredient)
+        body: JSON.stringify({ ...ingredient, supplier_profiles: supplierProfiles })
       })
 
       const result = await parseJsonSafely(response)
@@ -241,6 +258,7 @@ export default function NewIngredientPage() {
         ...ingredient,
         suppliers: [...ingredient.suppliers, trimmed]
       })
+      setExpandedSuppliers(prev => { const next = new Set(prev); next.add(trimmed); return next })
     }
   }
 
@@ -257,6 +275,24 @@ export default function NewIngredientPage() {
       ...ingredient,
       suppliers: ingredient.suppliers.filter(s => s !== supplier)
     })
+    setSupplierProfiles(prev => { const { [supplier]: _, ...rest } = prev; return rest })
+    setExpandedSuppliers(prev => { const next = new Set(prev); next.delete(supplier); return next })
+  }
+
+  const toggleSupplierExpanded = (name: string) => {
+    setExpandedSuppliers(prev => {
+      const next = new Set(prev)
+      if (next.has(name)) next.delete(name)
+      else next.add(name)
+      return next
+    })
+  }
+
+  const updateSupplierProfile = (name: string, updates: Partial<SupplierProfile>) => {
+    setSupplierProfiles(prev => ({
+      ...prev,
+      [name]: { ...(prev[name] || { allergen_warnings: { ...defaultAllergenWarnings }, certifications: [] }), ...updates }
+    }))
   }
 
   const toggleCertification = (cert: string) => {
@@ -589,20 +625,75 @@ export default function NewIngredientPage() {
                 </div>
                 
                 {ingredient.suppliers.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="space-y-2 mt-2">
                     {ingredient.suppliers.map(supplier => (
-                      <div
-                        key={supplier}
-                        className="flex items-center gap-2 bg-gray-100 px-3 py-1.5 rounded-lg"
-                      >
-                        <span className="text-sm text-gray-800">{supplier}</span>
-                        <button
-                          type="button"
-                          onClick={() => removeSupplier(supplier)}
-                          className="text-gray-500 hover:text-red-600"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
+                      <div key={supplier} className="border border-gray-200 rounded-lg overflow-hidden">
+                        <div className="flex items-center justify-between p-3 bg-gray-50">
+                          <span className="font-medium text-gray-800">{supplier}</span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleSupplierExpanded(supplier)}
+                              className="flex items-center gap-1 text-xs text-[#42b8ac] hover:text-[#003842] transition-colors"
+                            >
+                              {expandedSuppliers.has(supplier)
+                                ? <><ChevronDown className="h-4 w-4" /><span>Hide profile</span></>
+                                : <><ChevronRight className="h-4 w-4" /><span>Set allergens &amp; certs</span></>}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeSupplier(supplier)}
+                              className="text-gray-500 hover:text-red-600"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        </div>
+                        {expandedSuppliers.has(supplier) && (
+                          <div className="p-4 border-t border-gray-200 space-y-5">
+                            <div>
+                              <h4 className="text-sm font-semibold text-gray-700 mb-3">Allergens for {supplier}</h4>
+                              <AllergenWarningSelector
+                                value={supplierProfiles[supplier]?.allergen_warnings || { ...defaultAllergenWarnings }}
+                                onChange={(warnings) => updateSupplierProfile(supplier, { allergen_warnings: warnings })}
+                              />
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-semibold text-gray-700 mb-3">Dietary certifications for {supplier}</h4>
+                              <div className="space-y-2">
+                                {certificationOptions.map((cert) => {
+                                  const Icon = cert.icon
+                                  const isSelected = (supplierProfiles[supplier]?.certifications || []).includes(cert.name)
+                                  return (
+                                    <button
+                                      key={cert.name}
+                                      type="button"
+                                      onClick={() => {
+                                        const current = supplierProfiles[supplier]?.certifications || []
+                                        updateSupplierProfile(supplier, {
+                                          certifications: isSelected
+                                            ? current.filter(c => c !== cert.name)
+                                            : [...current, cert.name]
+                                        })
+                                      }}
+                                      className={`w-full flex items-center gap-3 p-2.5 rounded-lg border-2 transition-all text-sm ${
+                                        isSelected ? 'border-current shadow-sm' : 'border-gray-200 hover:border-gray-300'
+                                      }`}
+                                      style={{
+                                        borderColor: isSelected ? cert.color : undefined,
+                                        backgroundColor: isSelected ? `${cert.color}15` : undefined,
+                                        color: isSelected ? cert.color : '#6b7280'
+                                      }}
+                                    >
+                                      {React.createElement(Icon as React.ComponentType<{className: string}>, { className: 'h-4 w-4' })}
+                                      <span className="font-medium">{cert.name}</span>
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -627,6 +718,12 @@ export default function NewIngredientPage() {
           </div>
 
           <div className="p-6">
+            {ingredient.suppliers.some(s => supplierProfiles[s]) && (
+              <div className="mb-4 p-3 bg-teal-50 border border-teal-200 rounded-lg flex items-start gap-2 text-sm text-teal-800">
+                <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span>Per-supplier allergen profiles are configured above. The effective allergen profile below is computed as the worst-case across all suppliers and will be saved automatically.</span>
+              </div>
+            )}
             <AllergenWarningSelector
               value={ingredient.allergen_warnings}
               onChange={(warnings) => setIngredient({...ingredient, allergen_warnings: warnings})}

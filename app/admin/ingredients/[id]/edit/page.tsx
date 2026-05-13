@@ -7,7 +7,8 @@ import Link from 'next/link'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { 
   Package, ArrowLeft, Save, X, AlertCircle, Plus, Trash2,
-  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck
+  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck,
+  ChevronDown, ChevronRight, Info
 } from 'lucide-react'
 
 import { Container } from '@/components/layout/Container'
@@ -18,6 +19,12 @@ import AllergenWarningSelector from '@/components/admin/AllergenWarningSelector'
 import DatasheetUploader from '@/components/admin/DatasheetUploader'
 import { ReviewFrequencySelector } from '@/components/admin/ReviewFrequencySelector'
 import type { AllergenWarnings } from '@/types/allergen'
+import { computeWorstCaseAllergens } from '@/types/allergen'
+
+type SupplierProfile = {
+  allergen_warnings: AllergenWarnings
+  certifications: string[]
+}
 
 export default function EditIngredientPage() {
   const { showNotification } = useNotification()
@@ -67,6 +74,16 @@ export default function EditIngredientPage() {
   const [loadingSuppliers, setLoadingSuppliers] = useState(false)
   const [customCertInput, setCustomCertInput] = useState('')
   const [showCustomCertInput, setShowCustomCertInput] = useState(false)
+
+  // Per-supplier profiles: each supplier can have their own allergen warnings + certifications
+  const defaultAllergenWarnings: AllergenWarnings = {
+    cereals_gluten: 'none', crustaceans: 'none', eggs: 'none', fish: 'none',
+    peanuts: 'none', soybeans: 'none', milk: 'none', nuts: 'none',
+    celery: 'none', mustard: 'none', sesame: 'none', sulphites: 'none',
+    lupin: 'none', molluscs: 'none'
+  }
+  const [supplierProfiles, setSupplierProfiles] = useState<Record<string, SupplierProfile>>({})
+  const [expandedSuppliers, setExpandedSuppliers] = useState<Set<string>>(new Set())
 
   const parseJsonSafely = async (response: Response) => {
     const contentType = response.headers.get('content-type') || ''
@@ -166,6 +183,7 @@ export default function EditIngredientPage() {
           suppliers: data.ingredient.suppliers || [],
           certifications: data.ingredient.certifications || []
         })
+        setSupplierProfiles(data.ingredient.supplier_profiles || {})
 
         // Fetch existing datasheets
         const datasheetsResponse = await fetch(`/api/datasheets?ingredient_id=${ingredientId}`)
@@ -265,7 +283,7 @@ export default function EditIngredientPage() {
       const response = await fetch(`/api/ingredients/${ingredientId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ingredient)
+        body: JSON.stringify({ ...ingredient, supplier_profiles: supplierProfiles })
       })
       const data = await parseJsonSafely(response)
       if (!response.ok) {
@@ -347,6 +365,8 @@ export default function EditIngredientPage() {
         ...prev,
         suppliers: [...prev.suppliers, trimmed]
       }))
+      // Auto-expand the new supplier so the user is prompted to configure their profile
+      setExpandedSuppliers(prev => { const next = new Set(prev); next.add(trimmed); return next })
     }
   }
 
@@ -368,6 +388,24 @@ export default function EditIngredientPage() {
     setIngredient(prev => ({
       ...prev,
       suppliers: prev.suppliers.filter(s => s !== supplier)
+    }))
+    setSupplierProfiles(prev => { const { [supplier]: _, ...rest } = prev; return rest })
+    setExpandedSuppliers(prev => { const next = new Set(prev); next.delete(supplier); return next })
+  }
+
+  const toggleSupplierExpanded = (name: string) => {
+    setExpandedSuppliers(prev => {
+      const next = new Set(prev)
+      if (next.has(name)) next.delete(name)
+      else next.add(name)
+      return next
+    })
+  }
+
+  const updateSupplierProfile = (name: string, updates: Partial<SupplierProfile>) => {
+    setSupplierProfiles(prev => ({
+      ...prev,
+      [name]: { ...(prev[name] || { allergen_warnings: { ...defaultAllergenWarnings }, certifications: [] }), ...updates }
     }))
   }
 
@@ -496,6 +534,12 @@ export default function EditIngredientPage() {
           {/* Allergen Information */}
           <Card>
             <h2 className="text-xl font-semibold text-[#003842] mb-4">Allergen Information</h2>
+            {ingredient.suppliers.some(s => supplierProfiles[s]) && (
+              <div className="mb-4 p-3 bg-teal-50 border border-teal-200 rounded-lg flex items-start gap-2 text-sm text-teal-800">
+                <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span>Per-supplier allergen profiles are configured below. The effective allergen profile shown here is computed as the worst-case across all suppliers and will be saved automatically.</span>
+              </div>
+            )}
             <AllergenWarningSelector
               value={ingredient.allergen_warnings}
               onChange={(warnings) => setIngredient({ ...ingredient, allergen_warnings: warnings })}
@@ -644,20 +688,76 @@ export default function EditIngredientPage() {
               </div>
 
               {ingredient.suppliers.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {ingredient.suppliers.map((supplier, index) => (
-                    <Badge
-                      key={index}
-                      variant="default"
-                    >
-                      {supplier}
-                      <button
-                        onClick={() => removeSupplier(supplier)}
-                        className="hover:text-red-600 transition-colors"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
+                <div className="space-y-2 mt-2">
+                  {ingredient.suppliers.map((supplier) => (
+                    <div key={supplier} className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
+                      <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800">
+                        <span className="font-medium text-gray-800 dark:text-gray-200">{supplier}</span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => toggleSupplierExpanded(supplier)}
+                            className="flex items-center gap-1 text-xs text-[#42b8ac] hover:text-[#003842] transition-colors"
+                          >
+                            {expandedSuppliers.has(supplier)
+                              ? <><ChevronDown className="h-4 w-4" /><span>Hide profile</span></>
+                              : <><ChevronRight className="h-4 w-4" /><span>Set allergens &amp; certs</span></>}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeSupplier(supplier)}
+                            className="text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                      {expandedSuppliers.has(supplier) && (
+                        <div className="p-4 border-t border-gray-200 dark:border-gray-600 space-y-5">
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Allergens for {supplier}</h4>
+                            <AllergenWarningSelector
+                              value={supplierProfiles[supplier]?.allergen_warnings || { ...defaultAllergenWarnings }}
+                              onChange={(warnings) => updateSupplierProfile(supplier, { allergen_warnings: warnings })}
+                            />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Dietary certifications for {supplier}</h4>
+                            <div className="space-y-2">
+                              {certificationOptions.map((cert) => {
+                                const Icon = cert.icon
+                                const isSelected = (supplierProfiles[supplier]?.certifications || []).includes(cert.name)
+                                return (
+                                  <button
+                                    key={cert.name}
+                                    type="button"
+                                    onClick={() => {
+                                      const current = supplierProfiles[supplier]?.certifications || []
+                                      updateSupplierProfile(supplier, {
+                                        certifications: isSelected
+                                          ? current.filter(c => c !== cert.name)
+                                          : [...current, cert.name]
+                                      })
+                                    }}
+                                    className={`w-full flex items-center gap-3 p-2.5 rounded-lg border-2 transition-all text-sm ${
+                                      isSelected ? 'border-current shadow-sm' : 'border-gray-200 hover:border-gray-300'
+                                    }`}
+                                    style={{
+                                      borderColor: isSelected ? cert.color : undefined,
+                                      backgroundColor: isSelected ? `${cert.color}15` : undefined,
+                                      color: isSelected ? cert.color : '#6b7280'
+                                    }}
+                                  >
+                                    {React.createElement(Icon as React.ComponentType<{className: string}>, { className: 'h-4 w-4' })}
+                                    <span className="font-medium">{cert.name}</span>
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}

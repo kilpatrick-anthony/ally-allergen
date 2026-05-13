@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
+import { computeWorstCaseAllergens } from '@/types/allergen'
 
 const normalizeSupplierNames = (suppliers: string[]) => {
   const names: string[] = []
@@ -128,7 +129,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, description, category, allergen_warnings, suppliers, certifications, preferred_review_months } = body
+    const { name, description, category, allergen_warnings, suppliers, certifications, preferred_review_months, supplier_profiles } = body
 
     if (!name) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
@@ -149,6 +150,15 @@ export async function POST(request: NextRequest) {
 
     await upsertSuppliers(supabase, userBusiness.business_id, suppliers || [], userId)
 
+    // Compute effective allergen/cert values from per-supplier profiles if provided
+    const profiles = supplier_profiles ? Object.values(supplier_profiles as Record<string, { allergen_warnings: any; certifications: string[] }>) : []
+    const effectiveAllergens = profiles.length > 0
+      ? computeWorstCaseAllergens(profiles.map(p => p.allergen_warnings).filter(Boolean) as Parameters<typeof computeWorstCaseAllergens>[0])
+      : (allergen_warnings || {})
+    const effectiveCertifications = profiles.length > 0
+      ? profiles.map(p => p.certifications || []).reduce((acc, certs) => acc.filter(c => certs.includes(c)))
+      : (certifications || [])
+
     // Create ingredient
     const { data: ingredient, error } = await supabase
       .from('ingredients')
@@ -157,9 +167,10 @@ export async function POST(request: NextRequest) {
         name,
         description: description || '',
         category: category || '',
-        allergen_warnings: allergen_warnings || {},
+        allergen_warnings: effectiveAllergens,
         suppliers: suppliers || [],
-        certifications: certifications || [],
+        certifications: effectiveCertifications,
+        supplier_profiles: supplier_profiles || {},
         preferred_review_months: preferred_review_months || 3,
         status: 'active',
         compliance: 'compliant',
