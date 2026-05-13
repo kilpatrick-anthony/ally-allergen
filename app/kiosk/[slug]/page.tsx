@@ -1837,26 +1837,26 @@ export default function KioskPage() {
                             const allergenDetails = ALLERGENS.filter(allergen => item[allergen.id as keyof MenuItem] === true)
 
                             return (
-                              <Card key={item.id} className="h-full border border-slate-200 shadow-md hover:shadow-lg transition-shadow" style={item.color ? { background: item.color } : undefined}>
+                              <Card key={item.id} className="h-full border border-slate-200 shadow-md hover:shadow-lg transition-shadow overflow-hidden" style={item.color ? { borderLeftColor: item.color, borderLeftWidth: '4px', backgroundColor: `${item.color}0d` } : undefined}>
                                 <div className="p-6">
-                                  <h4 className="text-lg font-semibold" style={{ color: item.color ? '#fff' : '#003842' }}>{item.name}</h4>
-                                  {item.description && <p className="mt-3" style={{ color: item.color ? 'rgba(255,255,255,0.85)' : '#4b5563' }}>{item.description}</p>}
+                                  <h4 className="text-lg font-semibold text-[#003842]">{item.name}</h4>
+                                  {item.description && <p className="mt-3 text-gray-600">{item.description}</p>}
 
                                   {allergenDetails.length > 0 && (
-                                    <div className="mt-4 pt-4" style={{ borderTop: item.color ? '1px solid rgba(255,255,255,0.3)' : '1px solid #e5e7eb' }}>
-                                      <p className="text-sm font-medium mb-2" style={{ color: item.color ? 'rgba(255,255,255,0.9)' : '#374151' }}>Contains:</p>
+                                    <div className="mt-4 pt-4 border-t border-gray-200">
+                                      <p className="text-sm font-medium text-gray-700 mb-2">Contains:</p>
                                       <div className="flex flex-wrap gap-2">
                                         {allergenDetails.map(allergen => (
                                           <div 
                                             key={allergen.id} 
                                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
                                             style={{
-                                              backgroundColor: item.color ? 'rgba(255,255,255,0.2)' : `${allergen.bgColor}15`,
-                                              color: item.color ? '#fff' : allergen.bgColor,
-                                              borderColor: item.color ? 'rgba(255,255,255,0.3)' : `${allergen.bgColor}40`
+                                              backgroundColor: `${allergen.bgColor}15`,
+                                              color: allergen.bgColor,
+                                              borderColor: `${allergen.bgColor}40`
                                             }}
                                           >
-                                            <span style={{ color: item.color ? '#fff' : allergen.bgColor }}>{React.createElement(allergen.icon as unknown as React.ComponentType<{className: string}>, { className: 'w-4 h-4' })}</span>
+                                            <span style={{ color: allergen.bgColor }}>{React.createElement(allergen.icon as unknown as React.ComponentType<{className: string}>, { className: 'w-4 h-4' })}</span>
                                             <span>{allergen.name}</span>
                                           </div>
                                         ))}
@@ -1874,9 +1874,9 @@ export default function KioskPage() {
                                             key={d}
                                             className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold"
                                             style={{
-                                              backgroundColor: item.color ? 'rgba(255,255,255,0.25)' : `${opt.color}18`,
-                                              color: item.color ? '#fff' : opt.color,
-                                              border: `1px solid ${item.color ? 'rgba(255,255,255,0.35)' : `${opt.color}50`}`
+                                              backgroundColor: `${opt.color}18`,
+                                              color: opt.color,
+                                              border: `1px solid ${opt.color}50`
                                             }}
                                           >
                                             <IconComp className="w-3 h-3" />
@@ -2039,26 +2039,26 @@ export default function KioskPage() {
                             const allergenDetails = ALLERGENS.filter(allergen => item[allergen.id as keyof MenuItem] === true)
 
                             return (
-                              <Card key={item.id} className="h-full border border-slate-200 shadow-md hover:shadow-lg transition-shadow" style={item.color ? { background: item.color } : undefined}>
+                              <Card key={item.id} className="h-full border border-slate-200 shadow-md hover:shadow-lg transition-shadow overflow-hidden" style={item.color ? { borderLeftColor: item.color, borderLeftWidth: '4px', backgroundColor: `${item.color}0d` } : undefined}>
                                 <div className="p-6">
-                                  <h4 className="text-lg font-semibold" style={{ color: item.color ? '#fff' : '#003842' }}>{item.name}</h4>
-                                  {item.description && <p className="mt-3" style={{ color: item.color ? 'rgba(255,255,255,0.85)' : '#4b5563' }}>{item.description}</p>}
+                                  <h4 className="text-lg font-semibold text-[#003842]">{item.name}</h4>
+                                  {item.description && <p className="mt-3 text-gray-600">{item.description}</p>}
 
                                   {allergenDetails.length > 0 && (
-                                    <div className="mt-4 pt-4" style={{ borderTop: item.color ? '1px solid rgba(255,255,255,0.3)' : '1px solid #e5e7eb' }}>
-                                      <p className="text-sm font-medium mb-2" style={{ color: item.color ? 'rgba(255,255,255,0.9)' : '#374151' }}>Contains:</p>
+                                    <div className="mt-4 pt-4 border-t border-gray-200">
+                                      <p className="text-sm font-medium text-gray-700 mb-2">Contains:</p>
                                       <div className="flex flex-wrap gap-2">
                                         {allergenDetails.map(allergen => (
                                           <div 
                                             key={allergen.id} 
                                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
                                             style={{
-                                              backgroundColor: item.color ? 'rgba(255,255,255,0.2)' : `${allergen.bgColor}15`,
-                                              color: item.color ? '#fff' : allergen.bgColor,
-                                              borderColor: item.color ? 'rgba(255,255,255,0.3)' : `${allergen.bgColor}40`
+                                              backgroundColor: `${allergen.bgColor}15`,
+                                              color: allergen.bgColor,
+                                              borderColor: `${allergen.bgColor}40`
                                             }}
                                           >
-                                            <span style={{ color: item.color ? '#fff' : allergen.bgColor }}>{React.createElement(allergen.icon as unknown as React.ComponentType<{className: string}>, { className: 'w-4 h-4' })}</span>
+                                            <span style={{ color: allergen.bgColor }}>{React.createElement(allergen.icon as unknown as React.ComponentType<{className: string}>, { className: 'w-4 h-4' })}</span>
                                             <span>{allergen.name}</span>
                                           </div>
                                         ))}
@@ -2076,9 +2076,9 @@ export default function KioskPage() {
                                             key={d}
                                             className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold"
                                             style={{
-                                              backgroundColor: item.color ? 'rgba(255,255,255,0.25)' : `${opt.color}18`,
-                                              color: item.color ? '#fff' : opt.color,
-                                              border: `1px solid ${item.color ? 'rgba(255,255,255,0.35)' : `${opt.color}50`}`
+                                              backgroundColor: `${opt.color}18`,
+                                              color: opt.color,
+                                              border: `1px solid ${opt.color}50`
                                             }}
                                           >
                                             <IconComp className="w-3 h-3" />
