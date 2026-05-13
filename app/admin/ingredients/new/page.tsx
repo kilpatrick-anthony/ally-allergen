@@ -332,6 +332,8 @@ export default function NewIngredientPage() {
                 </div>
               </div>
             </div>
+            {/* Scan Label button hidden until feature is ready */}
+            {false && (
             <button
               type="button"
               onClick={() => setShowScan(true)}
@@ -340,6 +342,7 @@ export default function NewIngredientPage() {
               <ScanLine className="h-4 w-4" />
               Scan Label
             </button>
+            )}
           </div>
         </div>
 

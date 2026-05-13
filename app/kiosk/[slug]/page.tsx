@@ -8,7 +8,8 @@ import {
   FileText, Package, Calendar,
   Wheat, Fish, Egg, Nut, Leaf, Milk, Carrot, Shell, 
   Circle, Sprout, Shrimp, Cookie, Beaker, ArrowRight, Clock, Home, Table2, Grid3x3,
-  ChevronDown, ChevronUp, CheckSquare, Square, RefreshCw
+  ChevronDown, ChevronUp, CheckSquare, Square, RefreshCw,
+  Moon, Apple, WheatOff, Star, Globe, Droplets, ShieldCheck, Salad
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import jsPDF from 'jspdf'
@@ -214,6 +215,19 @@ const renderAllergenIcon = (IconComponent: IconComponent, className = 'w-4 h-4')
 // Backwards compatibility - map old ALLERGENS to new format
 const ALLERGENS = ALLERGENS_CONFIG
 
+// Dietary preference options — must match names used in admin menu builder
+const DIETARY_OPTIONS = [
+  { name: 'Vegan',            color: '#16a34a', icon: Leaf },
+  { name: 'Vegetarian',       color: '#84cc16', icon: Apple },
+  { name: 'Gluten-Free',      color: '#f59e0b', icon: WheatOff },
+  { name: 'Halal',            color: '#10b981', icon: Moon },
+  { name: 'Kosher',           color: '#3b82f6', icon: Star },
+  { name: 'Organic',          color: '#22c55e', icon: Sprout },
+  { name: 'Fair Trade',       color: '#8b5cf6', icon: Globe },
+  { name: 'Lactose-Free',     color: '#06b6d4', icon: Droplets },
+  { name: 'Coeliac-Friendly', color: '#ec4899', icon: ShieldCheck },
+]
+
 const CATEGORY_NAMES: Record<string, string> = {
   'acai_bowls': 'Açai Bowls',
   'smoothies': 'Smoothies',
@@ -316,6 +330,7 @@ export default function KioskPage() {
   })
   
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([])
+  const [selectedDietary, setSelectedDietary] = useState<string[]>([])
   const [expandedAllergens, setExpandedAllergens] = useState<string[]>([])
   const [selectedGlutenTypes, setSelectedGlutenTypes] = useState<GlutenType[]>([])
   const [selectedTreeNutTypes, setSelectedTreeNutTypes] = useState<TreeNutType[]>([])
@@ -346,7 +361,7 @@ export default function KioskPage() {
   const t = translations[currentLanguage] as typeof translations.en
   const businessName = business?.name?.trim() || ''
   const kioskDisplayName = business?.kiosk_display_name?.trim() || ''
-  const totalActiveFilters = selectedAllergens.length + selectedGlutenTypes.length + selectedTreeNutTypes.length
+  const totalActiveFilters = selectedAllergens.length + selectedGlutenTypes.length + selectedTreeNutTypes.length + selectedDietary.length
   
   // Refs for timeout management
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -568,6 +583,7 @@ export default function KioskPage() {
     
     // Clear any selections
     setSelectedAllergens([])
+    setSelectedDietary([])
     setSearchQuery('')
 
     // Reset accessibility settings to defaults
@@ -633,14 +649,14 @@ export default function KioskPage() {
   }, [kioskStarted])
 
   function toggleAllergen(allergenId: string) {
-    // If it's gluten or tree nuts, toggle expansion instead
+    // If it's gluten or tree nuts, also expand the sub-type panel
     if (allergenId === 'contains_cereals_gluten' || allergenId === 'contains_nuts') {
       setExpandedAllergens(prev => 
         prev.includes(allergenId)
           ? prev.filter(id => id !== allergenId)
           : [...prev, allergenId]
       )
-      return
+      // Fall through to also toggle in selectedAllergens for top-level filtering
     }
     
     setSelectedAllergens(prev => 
@@ -690,6 +706,7 @@ export default function KioskPage() {
 
   function clearFilters() {
     setSelectedAllergens([])
+    setSelectedDietary([])
     setSelectedGlutenTypes([])
     setSelectedTreeNutTypes([])
     setExpandedAllergens([])
@@ -729,8 +746,10 @@ export default function KioskPage() {
       }
       
       // Check specific gluten types
-      if (selectedGlutenTypes.length > 0 && item.contains_cereals_gluten) {
-        // If item has cereals_gluten_levels, check specific types
+      const itemHasGluten =
+        item.contains_cereals_gluten === true ||
+        ((item.allergen_warnings as Record<string, string> | undefined)?.cereals_gluten ?? 'none') !== 'none'
+      if (selectedGlutenTypes.length > 0 && itemHasGluten) {
         const itemGlutenLevels = (item as any).cereals_gluten_levels
         if (itemGlutenLevels) {
           const hasSelectedGluten = selectedGlutenTypes.some(glutenType => {
@@ -739,14 +758,15 @@ export default function KioskPage() {
           })
           if (hasSelectedGluten) return false
         } else {
-          // No specific levels, assume all gluten types if contains_cereals_gluten is true
           return false
         }
       }
       
       // Check specific tree nut types
-      if (selectedTreeNutTypes.length > 0 && item.contains_nuts) {
-        // If item has nuts_levels, check specific types
+      const itemHasNuts =
+        item.contains_nuts === true ||
+        ((item.allergen_warnings as Record<string, string> | undefined)?.nuts ?? 'none') !== 'none'
+      if (selectedTreeNutTypes.length > 0 && itemHasNuts) {
         const itemNutLevels = (item as any).nuts_levels
         if (itemNutLevels) {
           const hasSelectedNut = selectedTreeNutTypes.some(nutType => {
@@ -755,11 +775,17 @@ export default function KioskPage() {
           })
           if (hasSelectedNut) return false
         } else {
-          // No specific levels, assume all nut types if contains_nuts is true
           return false
         }
       }
       
+      // Dietary preference filter — INCLUDE logic: item must have ALL selected dietary attrs
+      if (selectedDietary.length > 0) {
+        const itemDietary: string[] = Array.isArray(item.dietary) ? item.dietary : []
+        const matchesAll = selectedDietary.every(d => itemDietary.includes(d))
+        if (!matchesAll) return false
+      }
+
       return true
     })
   }
@@ -1632,7 +1658,43 @@ export default function KioskPage() {
                   })}
                 </div>
 
-                {(selectedAllergens.length > 0 || selectedGlutenTypes.length > 0 || selectedTreeNutTypes.length > 0) && (
+                {/* Dietary Preference Filter */}
+                <div className="mt-6 pt-5 border-t border-gray-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Salad className="h-4 w-4 text-green-600" />
+                    <span className="text-sm font-semibold text-gray-700">Filter by Dietary Preference</span>
+                    <span className="text-xs text-gray-400 font-normal">— show only items suitable for:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {DIETARY_OPTIONS.map(option => {
+                      const isSelected = selectedDietary.includes(option.name)
+                      const IconComp = option.icon as unknown as React.ComponentType<{className: string}>
+                      return (
+                        <button
+                          key={option.name}
+                          onClick={() => setSelectedDietary(prev =>
+                            prev.includes(option.name)
+                              ? prev.filter(d => d !== option.name)
+                              : [...prev, option.name]
+                          )}
+                          className="inline-flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium border-2 transition-all"
+                          style={{
+                            backgroundColor: isSelected ? `${option.color}20` : '#fff',
+                            color: isSelected ? option.color : '#374151',
+                            borderColor: isSelected ? option.color : '#d1d5db',
+                            boxShadow: isSelected ? `0 0 0 2px ${option.color}40` : undefined
+                          }}
+                        >
+                          <span style={{ color: option.color }}><IconComp className="w-4 h-4" /></span>
+                          <span className="font-semibold">{option.name}</span>
+                          {isSelected && <X className="h-4 w-4 ml-1" style={{ color: option.color }} />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {(selectedAllergens.length > 0 || selectedGlutenTypes.length > 0 || selectedTreeNutTypes.length > 0 || selectedDietary.length > 0) && (
                   <div className="mt-6 p-4 bg-gradient-to-r from-red-50 to-red-100 border border-red-200 rounded-xl">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                       <div className="flex items-center gap-2">
@@ -1696,6 +1758,29 @@ export default function KioskPage() {
                           </div>
                         </div>
                       </div>
+                      {selectedDietary.length > 0 && (
+                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-red-200">
+                          <Salad className="h-4 w-4 text-green-700 flex-shrink-0" />
+                          <span className="font-medium text-green-800 text-sm">Showing only:</span>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedDietary.map(name => {
+                              const opt = DIETARY_OPTIONS.find(o => o.name === name)
+                              if (!opt) return null
+                              const IconComp = opt.icon as unknown as React.ComponentType<{className: string}>
+                              return (
+                                <span
+                                  key={name}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border"
+                                  style={{ backgroundColor: `${opt.color}15`, color: opt.color, borderColor: `${opt.color}40` }}
+                                >
+                                  <IconComp className="w-3.5 h-3.5" />
+                                  {name}
+                                </span>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
                       <Button variant="ghost" size="sm" onClick={clearFilters} className="text-red-700">
                         Clear All
                       </Button>
@@ -1737,30 +1822,53 @@ export default function KioskPage() {
                             const allergenDetails = ALLERGENS.filter(allergen => item[allergen.id as keyof MenuItem] === true)
 
                             return (
-                              <Card key={item.id} className="h-full border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-md hover:shadow-lg transition-shadow">
+                              <Card key={item.id} className="h-full border border-slate-200 shadow-md hover:shadow-lg transition-shadow" style={item.color ? { background: item.color } : undefined}>
                                 <div className="p-6">
-                                  <h4 className="text-lg font-semibold text-[#003842]">{item.name}</h4>
-                                  {item.description && <p className="text-gray-600 mt-3">{item.description}</p>}
+                                  <h4 className="text-lg font-semibold" style={{ color: item.color ? '#fff' : '#003842' }}>{item.name}</h4>
+                                  {item.description && <p className="mt-3" style={{ color: item.color ? 'rgba(255,255,255,0.85)' : '#4b5563' }}>{item.description}</p>}
 
                                   {allergenDetails.length > 0 && (
-                                    <div className="mt-4 pt-4 border-t border-gray-200">
-                                      <p className="text-sm font-medium text-gray-700 mb-2">Contains:</p>
+                                    <div className="mt-4 pt-4" style={{ borderTop: item.color ? '1px solid rgba(255,255,255,0.3)' : '1px solid #e5e7eb' }}>
+                                      <p className="text-sm font-medium mb-2" style={{ color: item.color ? 'rgba(255,255,255,0.9)' : '#374151' }}>Contains:</p>
                                       <div className="flex flex-wrap gap-2">
                                         {allergenDetails.map(allergen => (
                                           <div 
                                             key={allergen.id} 
                                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
                                             style={{
-                                              backgroundColor: `${allergen.bgColor}15`,
-                                              color: allergen.bgColor,
-                                              borderColor: `${allergen.bgColor}40`
+                                              backgroundColor: item.color ? 'rgba(255,255,255,0.2)' : `${allergen.bgColor}15`,
+                                              color: item.color ? '#fff' : allergen.bgColor,
+                                              borderColor: item.color ? 'rgba(255,255,255,0.3)' : `${allergen.bgColor}40`
                                             }}
                                           >
-                                            <span style={{ color: allergen.bgColor }}>{React.createElement(allergen.icon as unknown as React.ComponentType<{className: string}>, { className: 'w-4 h-4' })}</span>
+                                            <span style={{ color: item.color ? '#fff' : allergen.bgColor }}>{React.createElement(allergen.icon as unknown as React.ComponentType<{className: string}>, { className: 'w-4 h-4' })}</span>
                                             <span>{allergen.name}</span>
                                           </div>
                                         ))}
                                       </div>
+                                    </div>
+                                  )}
+                                  {Array.isArray(item.dietary) && item.dietary.length > 0 && (
+                                    <div className="mt-3 flex flex-wrap gap-1.5">
+                                      {item.dietary.map(d => {
+                                        const opt = DIETARY_OPTIONS.find(o => o.name === d)
+                                        if (!opt) return null
+                                        const IconComp = opt.icon as unknown as React.ComponentType<{className: string}>
+                                        return (
+                                          <span
+                                            key={d}
+                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold"
+                                            style={{
+                                              backgroundColor: item.color ? 'rgba(255,255,255,0.25)' : `${opt.color}18`,
+                                              color: item.color ? '#fff' : opt.color,
+                                              border: `1px solid ${item.color ? 'rgba(255,255,255,0.35)' : `${opt.color}50`}`
+                                            }}
+                                          >
+                                            <IconComp className="w-3 h-3" />
+                                            {d}
+                                          </span>
+                                        )
+                                      })}
                                     </div>
                                   )}
                                 </div>
@@ -1916,30 +2024,53 @@ export default function KioskPage() {
                             const allergenDetails = ALLERGENS.filter(allergen => item[allergen.id as keyof MenuItem] === true)
 
                             return (
-                              <Card key={item.id} className="h-full border border-slate-200 bg-gradient-to-br from-white to-slate-50 shadow-md hover:shadow-lg transition-shadow">
+                              <Card key={item.id} className="h-full border border-slate-200 shadow-md hover:shadow-lg transition-shadow" style={item.color ? { background: item.color } : undefined}>
                                 <div className="p-6">
-                                  <h4 className="text-lg font-semibold text-[#003842]">{item.name}</h4>
-                                  {item.description && <p className="text-gray-600 mt-3">{item.description}</p>}
+                                  <h4 className="text-lg font-semibold" style={{ color: item.color ? '#fff' : '#003842' }}>{item.name}</h4>
+                                  {item.description && <p className="mt-3" style={{ color: item.color ? 'rgba(255,255,255,0.85)' : '#4b5563' }}>{item.description}</p>}
 
                                   {allergenDetails.length > 0 && (
-                                    <div className="mt-4 pt-4 border-t border-gray-200">
-                                      <p className="text-sm font-medium text-gray-700 mb-2">Contains:</p>
+                                    <div className="mt-4 pt-4" style={{ borderTop: item.color ? '1px solid rgba(255,255,255,0.3)' : '1px solid #e5e7eb' }}>
+                                      <p className="text-sm font-medium mb-2" style={{ color: item.color ? 'rgba(255,255,255,0.9)' : '#374151' }}>Contains:</p>
                                       <div className="flex flex-wrap gap-2">
                                         {allergenDetails.map(allergen => (
                                           <div 
                                             key={allergen.id} 
                                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
                                             style={{
-                                              backgroundColor: `${allergen.bgColor}15`,
-                                              color: allergen.bgColor,
-                                              borderColor: `${allergen.bgColor}40`
+                                              backgroundColor: item.color ? 'rgba(255,255,255,0.2)' : `${allergen.bgColor}15`,
+                                              color: item.color ? '#fff' : allergen.bgColor,
+                                              borderColor: item.color ? 'rgba(255,255,255,0.3)' : `${allergen.bgColor}40`
                                             }}
                                           >
-                                            <span style={{ color: allergen.bgColor }}>{React.createElement(allergen.icon as unknown as React.ComponentType<{className: string}>, { className: 'w-4 h-4' })}</span>
+                                            <span style={{ color: item.color ? '#fff' : allergen.bgColor }}>{React.createElement(allergen.icon as unknown as React.ComponentType<{className: string}>, { className: 'w-4 h-4' })}</span>
                                             <span>{allergen.name}</span>
                                           </div>
                                         ))}
                                       </div>
+                                    </div>
+                                  )}
+                                  {Array.isArray(item.dietary) && item.dietary.length > 0 && (
+                                    <div className="mt-3 flex flex-wrap gap-1.5">
+                                      {item.dietary.map(d => {
+                                        const opt = DIETARY_OPTIONS.find(o => o.name === d)
+                                        if (!opt) return null
+                                        const IconComp = opt.icon as unknown as React.ComponentType<{className: string}>
+                                        return (
+                                          <span
+                                            key={d}
+                                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold"
+                                            style={{
+                                              backgroundColor: item.color ? 'rgba(255,255,255,0.25)' : `${opt.color}18`,
+                                              color: item.color ? '#fff' : opt.color,
+                                              border: `1px solid ${item.color ? 'rgba(255,255,255,0.35)' : `${opt.color}50`}`
+                                            }}
+                                          >
+                                            <IconComp className="w-3 h-3" />
+                                            {d}
+                                          </span>
+                                        )
+                                      })}
                                     </div>
                                   )}
                                 </div>

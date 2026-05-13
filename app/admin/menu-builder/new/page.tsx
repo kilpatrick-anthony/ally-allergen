@@ -28,6 +28,7 @@ interface MenuItem {
   allergen_warnings: AllergenWarnings
   dietary: string[]
   ingredients: string[]
+  color?: string
 }
 
 interface Ingredient {
@@ -35,6 +36,7 @@ interface Ingredient {
   name: string
   allergen_warnings: AllergenWarnings
   suppliers: string[]
+  certifications: string[]
 }
 
 interface SiteOption {
@@ -81,6 +83,7 @@ export default function NewMenuItemPage() {
     },
     dietary: [],
     ingredients: [],
+    color: '',
   })
 
   const dietaryOptions = [
@@ -144,7 +147,8 @@ export default function NewMenuItemPage() {
             id: ingredient.id,
             name: ingredient.name,
             allergen_warnings: ingredient.allergen_warnings || { ...defaultWarnings },
-            suppliers: ingredient.suppliers || []
+            suppliers: ingredient.suppliers || [],
+            certifications: ingredient.certifications || []
           }))
           setIngredients(mappedIngredients)
         }
@@ -224,12 +228,23 @@ export default function NewMenuItemPage() {
       .map(id => ingredients.find(i => i.id === id)?.allergen_warnings)
       .filter((w): w is AllergenWarnings => !!w)
 
+    // Strict intersection: a dietary label only carries over if ALL selected ingredients have it.
+    // This prevents e.g. 'Vegan' appearing on a menu item just because one ingredient is vegan.
+    const ingredientCerts = updatedIngredients.map(id => ingredients.find(i => i.id === id)?.certifications ?? [])
+    const mergedCertifications = ingredientCerts.length === 0
+      ? []
+      : ingredientCerts.reduce((acc, certs) => acc.filter(c => certs.includes(c)))
+    // Keep any dietary attrs the user manually added that aren't from ingredients
+    const manualDietary = menuItem.dietary.filter(d => !dietaryOptions.some(opt => opt.name === d) || mergedCertifications.includes(d))
+    const combinedDietary = Array.from(new Set([...manualDietary, ...mergedCertifications]))
+
     setMenuItem({
       ...menuItem,
       ingredients: updatedIngredients,
       allergen_warnings: profiles.length > 0
         ? computeWorstCaseAllergens(profiles)
         : menuItem.allergen_warnings,
+      dietary: combinedDietary,
     })
   }
 
@@ -427,6 +442,89 @@ export default function NewMenuItemPage() {
               />
             </Card>
 
+            {/* Tile Colour */}
+            <Card className="p-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Tile Colour <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                Choose a background colour for this item's tile on the kiosk. Leave blank to use the default white tile.
+              </p>
+              <div className="flex items-center gap-4">
+                <input
+                  type="color"
+                  value={menuItem.color || '#ffffff'}
+                  onChange={(e) => setMenuItem({ ...menuItem, color: e.target.value === '#ffffff' ? '' : e.target.value })}
+                  className="h-10 w-16 rounded border border-gray-300 cursor-pointer"
+                />
+                <div
+                  className="flex-1 h-10 rounded-lg border border-gray-200 flex items-center px-3 text-sm font-medium transition-colors"
+                  style={{ backgroundColor: menuItem.color || '#ffffff', color: menuItem.color ? '#fff' : '#374151', border: menuItem.color ? 'none' : undefined }}
+                >
+                  {menuItem.color ? menuItem.color : 'No colour selected (default white)'}
+                </div>
+                {menuItem.color && (
+                  <button
+                    type="button"
+                    onClick={() => setMenuItem({ ...menuItem, color: '' })}
+                    className="text-xs text-gray-500 hover:text-red-600 underline whitespace-nowrap"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </Card>
+
+            {/* Selected Ingredients */}
+            <Card className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Selected Ingredients
+                </label>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {menuItem.ingredients.length} selected
+                </span>
+              </div>
+
+              <div className="min-h-[100px] border border-gray-300 dark:border-gray-600 rounded-lg p-4 mb-4 bg-gray-50 dark:bg-gray-800">
+                {menuItem.ingredients.length === 0 ? (
+                  <div className="text-center text-gray-500 dark:text-gray-400 py-4">
+                    No ingredients selected
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {menuItem.ingredients.map(ingredientId => {
+                      const ingredient = ingredients.find(i => i.id === ingredientId)
+                      return ingredient ? (
+                        <div
+                          key={ingredient.id}
+                          className="flex items-center gap-2 bg-white dark:bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600"
+                        >
+                          <span className="text-sm text-gray-800 dark:text-gray-200">{ingredient.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleIngredientSelect(ingredient.id)}
+                            className="text-gray-500 dark:text-gray-400 hover:text-red-600"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : null
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <Button
+                onClick={() => setShowIngredientSelector(true)}
+                variant="outline"
+                icon={<Plus className="h-4 w-4" />}
+                fullWidth
+              >
+                {menuItem.ingredients.length === 0 ? 'Add Ingredients' : 'Add More Ingredients'}
+              </Button>
+            </Card>
+
             {/* Dietary Attributes */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
@@ -558,63 +656,13 @@ export default function NewMenuItemPage() {
               />
             </Card>
 
-            {/* Selected Ingredients */}
-            <Card className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Selected Ingredients
-                </label>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {menuItem.ingredients.length} selected
-                </span>
-              </div>
-
-              <div className="min-h-[100px] border border-gray-300 dark:border-gray-600 rounded-lg p-4 mb-4 bg-gray-50 dark:bg-gray-800">
-                {menuItem.ingredients.length === 0 ? (
-                  <div className="text-center text-gray-500 dark:text-gray-400 py-4">
-                    No ingredients selected
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {menuItem.ingredients.map(ingredientId => {
-                      const ingredient = ingredients.find(i => i.id === ingredientId)
-                      return ingredient ? (
-                        <div
-                          key={ingredient.id}
-                          className="flex items-center gap-2 bg-white dark:bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600"
-                        >
-                          <span className="text-sm text-gray-800 dark:text-gray-200">{ingredient.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleIngredientSelect(ingredient.id)}
-                            className="text-gray-500 dark:text-gray-400 hover:text-red-600"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ) : null
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <Button
-                onClick={() => setShowIngredientSelector(true)}
-                variant="outline"
-                icon={<Plus className="h-4 w-4" />}
-                fullWidth
-              >
-                {menuItem.ingredients.length === 0 ? 'Add Ingredients' : 'Add More Ingredients'}
-              </Button>
-            </Card>
-
             {/* Datasheets */}
             <Card className="p-6">
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                 Menu Item Specific Datasheets
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                Upload datasheets specific to this menu item
+                Upload datasheets specific to this menu item. Note: ingredient-specific datasheets will appear here automatically once the menu item is saved.
               </p>
               <DatasheetUploader
                 entityType="menu_item"

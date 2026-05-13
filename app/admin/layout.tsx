@@ -211,11 +211,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* Main Content */}
         <div className="lg:pl-[224px] pt-14 lg:pt-0 flex flex-col min-h-screen">
-          <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 admin-dot-grid dark:admin-dot-grid-dark">
+          <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 admin-dot-grid dark:admin-dot-grid-dark pb-[52px]">
             {children}
           </main>
-          {/* Food safety news ticker — pinned to the bottom of every admin page */}
-          <FsaiNewsTicker />
+          {/* Food safety news ticker — fixed to the bottom of the screen */}
+          <div className="fixed bottom-0 left-0 right-0 lg:left-[224px] z-40">
+            <FsaiNewsTicker />
+          </div>
           {/* Jen — compliance coach floating widget */}
           <JenCoach />
         </div>

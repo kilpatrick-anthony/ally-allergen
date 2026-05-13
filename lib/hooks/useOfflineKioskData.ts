@@ -45,6 +45,8 @@ export interface MenuItem {
   contains_sulphites?: boolean;
   contains_lupin?: boolean;
   contains_molluscs?: boolean;
+  color?: string;
+  dietary?: string[];
 }
 
 export interface Ingredient {

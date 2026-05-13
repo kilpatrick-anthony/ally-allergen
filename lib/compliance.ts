@@ -28,6 +28,7 @@ export function checkIngredientCompliance(ingredient: {
   preferred_review_months?: number;
   suppliers?: string[];
   has_datasheets?: boolean;
+  certifications?: string[];
 }, businessSettings: {
   compliance_review_days: number;
 }): ComplianceCheckResult {
@@ -56,6 +57,13 @@ export function checkIngredientCompliance(ingredient: {
   if (suppliers.length === 0) {
     reasons.push('No supplier information provided');
     status = 'error';
+  }
+
+  // Check dietary attributes
+  const certifications = ingredient.certifications || [];
+  if (certifications.length === 0) {
+    reasons.push('No dietary attributes entered (e.g. Vegan, Gluten-Free)');
+    if (status === 'compliant') status = 'warning';
   }
 
   // Check review date - use preferred_review_months if set, otherwise use business default

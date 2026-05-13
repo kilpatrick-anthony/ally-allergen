@@ -118,6 +118,26 @@ const countPdfDownloads = async (
   return (count || 0) + kioskDownloadCount
 }
 
+const countPairedDevices = async (
+  supabase: ReturnType<typeof createServiceClient>,
+  businessId: string,
+  siteId: string | null
+) => {
+  let query = supabase
+    .from('kiosk_devices')
+    .select('id', { count: 'exact', head: true })
+    .eq('business_id', businessId)
+  if (siteId) {
+    query = query.eq('site_id', siteId)
+  }
+  const { count, error } = await query
+  if (error) {
+    console.warn('countPairedDevices error:', error.message)
+    return 0
+  }
+  return count ?? 0
+}
+
 const countKioskInteractions = async (
   supabase: ReturnType<typeof createServiceClient>,
   businessId: string,
@@ -399,7 +419,8 @@ export async function GET(request: NextRequest) {
       activeMenuIngredientsCurrent,
       activeMenuIngredientsPrevious,
       kioskEventsCurrent,
-      kioskEventsPrevious
+      kioskEventsPrevious,
+      pairedDevices
     ] = await Promise.all([
       countPdfDownloads(supabase, businessId, siteId, currentStart, currentEnd),
       countPdfDownloads(supabase, businessId, siteId, previousStart, previousEnd),
@@ -410,7 +431,8 @@ export async function GET(request: NextRequest) {
       countActiveMenuIngredients(supabase, businessId, siteId, currentStart, currentEnd),
       countActiveMenuIngredients(supabase, businessId, siteId, previousStart, previousEnd),
       getKioskEvents(supabase, businessId, siteId, currentStart, currentEnd, ['page_view', 'search']),
-      getKioskEvents(supabase, businessId, siteId, previousStart, previousEnd, ['search'])
+      getKioskEvents(supabase, businessId, siteId, previousStart, previousEnd, ['search']),
+      countPairedDevices(supabase, businessId, siteId),
     ])
 
     const trends = buildTrends(kioskEventsCurrent)
@@ -420,6 +442,7 @@ export async function GET(request: NextRequest) {
       overview: {
         reportDownloads: reportDownloadsCurrent,
         kioskUsage: kioskInteractionsCurrent,
+        pairedDevices,
         activeMenuIngredients: activeMenuIngredientsCurrent,
         activeMenuItems: activeMenuItemsCurrent
       },

@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { 
@@ -33,6 +33,7 @@ export default function AnalyticsPage() {
     overview: {
       reportDownloads: number
       kioskUsage: number
+      pairedDevices: number
       activeMenuIngredients: number
       activeMenuItems: number
     }
@@ -48,7 +49,17 @@ export default function AnalyticsPage() {
   } | null>(null)
 
   const searchParams = useSearchParams()
+  const router = useRouter()
   const siteId = searchParams.get('site_id')
+
+  const [sites, setSites] = useState<Array<{ id: string; name: string }>>([]);
+
+  useEffect(() => {
+    fetch('/api/sites')
+      .then(r => r.ok ? r.json() : { sites: [] })
+      .then(data => setSites(data.sites || []))
+      .catch(() => {})
+  }, [])
 
   const presetConfig = {
     week: { label: 'Week', days: 7 },
@@ -197,6 +208,32 @@ export default function AnalyticsPage() {
       {/* Time Range Selector */}
       <Card className="mb-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+          {/* Site selector */}
+          {sites.length > 1 && (
+            <div className="flex items-center gap-2 mb-1 lg:mb-0">
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 shrink-0">
+                Site
+              </span>
+              <select
+                value={siteId ?? ''}
+                onChange={e => {
+                  const params = new URLSearchParams(searchParams.toString())
+                  if (e.target.value) {
+                    params.set('site_id', e.target.value)
+                  } else {
+                    params.delete('site_id')
+                  }
+                  router.push(`/admin/analytics?${params.toString()}`)
+                }}
+                className="text-xs rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#42b8ac]"
+              >
+                <option value="">All Sites</option>
+                {sites.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -235,7 +272,7 @@ export default function AnalyticsPage() {
                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border-transparent'
                     }`}
                   >
-                    {t('admin.filter')}
+                    Date Range
                   </button>
                 </Dialog.Trigger>
                 <Dialog.Portal>
@@ -319,13 +356,6 @@ export default function AnalyticsPage() {
             <Button
               variant="ghost"
               size="sm"
-              icon={<Filter className="h-4 w-4" />}
-            >
-              {t('admin.filter')}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
               icon={<RefreshCw className="h-4 w-4" />}
             >
               {t('admin.refresh')}
@@ -369,7 +399,7 @@ export default function AnalyticsPage() {
               <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Kiosk Devices</p>
                 <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">
-                  {analyticsData.overview.kioskUsage.toLocaleString()}
+                  {(analyticsData.overview.pairedDevices ?? analyticsData.overview.kioskUsage).toLocaleString()}
                 </p>
               </div>
               <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-purple-600 transition-all">

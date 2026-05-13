@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { useTranslation } from '@/lib/hooks/useTranslation'
-import { Plus, Search, Trash2, Edit, ChefHat, FilterIcon, ChevronDown, SortAsc, SortDesc, Grid, List, Package, MapPin, Eye, Building } from 'lucide-react'
+import { Plus, Search, Trash2, Edit, ChefHat, FilterIcon, ChevronDown, SortAsc, SortDesc, Grid, List, Package, MapPin, Eye, Building, Copy } from 'lucide-react'
 
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
@@ -165,6 +165,33 @@ export default function MenuBuilderPage() {
     return a.localeCompare(b)
   })
 
+  const handleDuplicate = async (item: MenuItem) => {
+    try {
+      const response = await fetch('/api/menu-items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...item,
+          id: undefined,
+          name: `Copy of ${item.name}`,
+          status: 'draft',
+        })
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to duplicate')
+      const newItem: MenuItem = {
+        ...item,
+        id: data.menuItem?.id || data.id,
+        name: `Copy of ${item.name}`,
+        status: 'draft',
+      }
+      setMenuItems(prev => [...prev, newItem])
+      showNotification('Menu item duplicated', 'success')
+    } catch (error: any) {
+      showNotification('Failed to duplicate: ' + error?.message, 'error')
+    }
+  }
+
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this menu item?')) return
     
@@ -258,7 +285,8 @@ export default function MenuBuilderPage() {
           </div>
         </Card>
 
-        <Card className="hover:shadow-lg transition-all hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-500 hover:to-blue-600 group cursor-pointer p-6">
+        <Link href="/admin/sites" className="block">
+          <Card className="hover:shadow-lg transition-all hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-500 hover:to-blue-600 group cursor-pointer p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">Sites</p>
@@ -272,6 +300,7 @@ export default function MenuBuilderPage() {
             <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">Managed sites</div>
           </div>
         </Card>
+        </Link>
       </div>
 
       {/* Search and Filters */}
@@ -462,6 +491,13 @@ export default function MenuBuilderPage() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      icon={<Copy className="h-4 w-4" />}
+                      onClick={() => handleDuplicate(item)}
+                      title="Duplicate"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       icon={<Trash2 className="h-4 w-4" />}
                       onClick={() => handleDelete(item.id)}
                       title="Delete"
@@ -529,6 +565,13 @@ export default function MenuBuilderPage() {
                         <Link href={`/admin/menu-builder/${item.id}/edit`}>
                           <Button variant="ghost" size="sm" icon={<Edit className="h-4 w-4" />} title="Edit" />
                         </Link>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          icon={<Copy className="h-4 w-4" />}
+                          onClick={() => handleDuplicate(item)}
+                          title="Duplicate"
+                        />
                         <Button
                           variant="ghost"
                           size="sm"

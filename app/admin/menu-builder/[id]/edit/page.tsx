@@ -33,6 +33,7 @@ interface MenuItem {
   ingredients: string[]
   status: 'active' | 'draft' | 'archived'
   preferred_review_months?: number
+  color?: string
 }
 
 interface Ingredient {
@@ -40,6 +41,7 @@ interface Ingredient {
   name: string
   allergen_warnings: AllergenWarnings
   suppliers: string[]
+  certifications: string[]
 }
 
 interface SiteOption {
@@ -143,7 +145,8 @@ export default function EditMenuItemPage() {
             dietary: Array.isArray(item.dietary) ? item.dietary : [],
             ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
             status: item.status || (item.is_active ? 'active' : 'draft'),
-            preferred_review_months: item.preferred_review_months || 3
+            preferred_review_months: item.preferred_review_months || 3,
+            color: item.color || '',
           })
         } else {
           throw new Error('Menu item not found')
@@ -155,7 +158,8 @@ export default function EditMenuItemPage() {
             id: ingredient.id,
             name: ingredient.name,
             allergen_warnings: ingredient.allergen_warnings || { ...defaultWarnings },
-            suppliers: ingredient.suppliers || []
+            suppliers: ingredient.suppliers || [],
+            certifications: ingredient.certifications || []
           }))
           setIngredients(mappedIngredients)
         }
@@ -259,12 +263,22 @@ export default function EditMenuItemPage() {
       .map(id => ingredients.find(i => i.id === id)?.allergen_warnings)
       .filter((w): w is AllergenWarnings => !!w)
 
+    // Strict intersection: a dietary label only carries over if ALL selected ingredients have it.
+    // This prevents e.g. 'Vegan' appearing on a menu item just because one ingredient is vegan.
+    const ingredientCerts = updatedIngredients.map(id => ingredients.find(i => i.id === id)?.certifications ?? [])
+    const mergedCertifications = ingredientCerts.length === 0
+      ? []
+      : ingredientCerts.reduce((acc, certs) => acc.filter(c => certs.includes(c)))
+    const manualDietary = menuItem.dietary.filter(d => !dietaryOptions.some(opt => opt.name === d) || mergedCertifications.includes(d))
+    const combinedDietary = Array.from(new Set([...manualDietary, ...mergedCertifications]))
+
     setMenuItem({
       ...menuItem,
       ingredients: updatedIngredients,
       allergen_warnings: profiles.length > 0
         ? computeWorstCaseAllergens(profiles)
         : menuItem.allergen_warnings,
+      dietary: combinedDietary,
     })
   }
 
@@ -654,16 +668,40 @@ export default function EditMenuItemPage() {
               />
             </Card>
 
-            {/* Selected Ingredients */}
+            {/* Tile Colour */}
             <Card className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Selected Ingredients
-                </label>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {menuItem.ingredients.length} selected
-                </span>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Tile Colour <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                Choose a background colour for this item's tile on the kiosk. Leave blank to use the default white tile.
+              </p>
+              <div className="flex items-center gap-4">
+                <input
+                  type="color"
+                  value={menuItem.color || '#ffffff'}
+                  onChange={(e) => setMenuItem({ ...menuItem, color: e.target.value === '#ffffff' ? '' : e.target.value })}
+                  className="h-10 w-16 rounded border border-gray-300 cursor-pointer"
+                />
+                <div
+                  className="flex-1 h-10 rounded-lg border border-gray-200 flex items-center px-3 text-sm font-medium transition-colors"
+                  style={{ backgroundColor: menuItem.color || '#ffffff', color: menuItem.color ? '#fff' : '#374151', border: menuItem.color ? 'none' : undefined }}
+                >
+                  {menuItem.color ? menuItem.color : 'No colour selected (default white)'}
+                </div>
+                {menuItem.color && (
+                  <button
+                    type="button"
+                    onClick={() => setMenuItem({ ...menuItem, color: '' })}
+                    className="text-xs text-gray-500 hover:text-red-600 underline whitespace-nowrap"
+                  >
+                    Clear
+                  </button>
+                )}
               </div>
+            </Card>
+
+            {/* Selected Ingredients */}
 
               <div className="min-h-[100px] border border-gray-300 dark:border-gray-600 rounded-lg p-4 mb-4 bg-gray-50 dark:bg-gray-800">
                 {menuItem.ingredients.length === 0 ? (
@@ -841,7 +879,7 @@ export default function EditMenuItemPage() {
                 Menu Item Specific Datasheets
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                Upload datasheets specific to this menu item
+                Upload datasheets specific to this menu item. Note: ingredient-specific datasheets will appear here automatically once the menu item is saved.
               </p>
               <DatasheetUploader
                 entityType="menu_item"
