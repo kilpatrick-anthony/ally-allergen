@@ -8,7 +8,7 @@ import { useNotification } from '@/lib/hooks/useNotification'
 import { 
   Package, ArrowLeft, Save, X, AlertCircle, Plus, Trash2,
   Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck, ScanLine,
-  ChevronDown, ChevronRight, Info
+  ChevronDown, ChevronRight
 } from 'lucide-react'
 
 import { Container } from '@/components/layout/Container'
@@ -703,7 +703,8 @@ export default function NewIngredientPage() {
           </div>
         </Card>
 
-        {/* Allergen Information */}
+        {/* Allergen Information — hidden when suppliers have their own profiles */}
+        {ingredient.suppliers.length === 0 && (
         <Card className="mb-8">
           <div className="p-6 border-b">
             <div className="flex items-center gap-2">
@@ -718,18 +719,13 @@ export default function NewIngredientPage() {
           </div>
 
           <div className="p-6">
-            {ingredient.suppliers.some(s => supplierProfiles[s]) && (
-              <div className="mb-4 p-3 bg-teal-50 border border-teal-200 rounded-lg flex items-start gap-2 text-sm text-teal-800">
-                <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <span>Per-supplier allergen profiles are configured above. The effective allergen profile below is computed as the worst-case across all suppliers and will be saved automatically.</span>
-              </div>
-            )}
             <AllergenWarningSelector
               value={ingredient.allergen_warnings}
               onChange={(warnings) => setIngredient({...ingredient, allergen_warnings: warnings})}
             />
           </div>
         </Card>
+        )}
 
         {/* Product Datasheets */}
         <Card className="mb-8">
