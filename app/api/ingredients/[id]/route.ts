@@ -174,6 +174,68 @@ export async function PUT(
       return NextResponse.json({ error: 'Failed to update ingredient' }, { status: 500 })
     }
 
+    // Cascade: recompute dietary on all menu items that contain this ingredient
+    try {
+      // 1. Find all menu items containing this ingredient
+      const { data: links } = await supabase
+        .from('menu_item_ingredients')
+        .select('menu_item_id')
+        .eq('ingredient_id', id)
+
+      if (links && links.length > 0) {
+        const menuItemIds = links.map((l: { menu_item_id: string }) => l.menu_item_id)
+
+        // 2. For each menu item, fetch all its ingredients and recompute strict intersection
+        for (const menuItemId of menuItemIds) {
+          const { data: allLinks } = await supabase
+            .from('menu_item_ingredients')
+            .select('ingredient_id')
+            .eq('menu_item_id', menuItemId)
+
+          if (!allLinks || allLinks.length === 0) continue
+
+          const ingredientIds = allLinks.map((l: { ingredient_id: string }) => l.ingredient_id)
+
+          const { data: ingredientRows } = await supabase
+            .from('ingredients')
+            .select('certifications')
+            .in('id', ingredientIds)
+
+          if (!ingredientRows) continue
+
+          // Strict intersection: dietary label only carries over if ALL ingredients have it
+          const allCerts: string[][] = ingredientRows.map((r: { certifications: string[] | null }) => r.certifications || [])
+          const mergedCerts: string[] = allCerts.length === 0
+            ? []
+            : allCerts.reduce((acc, certs) => acc.filter(c => certs.includes(c)))
+
+          // Fetch existing dietary to preserve any manually-added entries
+          const { data: menuItemRow } = await supabase
+            .from('menu_items')
+            .select('dietary')
+            .eq('id', menuItemId)
+            .single()
+
+          const existingDietary: string[] = Array.isArray(menuItemRow?.dietary) ? menuItemRow.dietary : []
+          // Keep manually-added entries that aren't auto-computed certifications
+          const knownCertNames = new Set(mergedCerts)
+          // We can't know which existing entries were manual vs auto, so union — then
+          // remove auto certs that no longer pass the intersection
+          const autoCertNames = ['Vegan','Vegetarian','Gluten-Free','Halal','Kosher','Organic','Fair Trade','Lactose-Free','Coeliac-Friendly']
+          const manualEntries = existingDietary.filter(d => !autoCertNames.includes(d) || knownCertNames.has(d))
+          const combined = Array.from(new Set([...manualEntries, ...mergedCerts]))
+
+          await supabase
+            .from('menu_items')
+            .update({ dietary: combined })
+            .eq('id', menuItemId)
+        }
+      }
+    } catch (cascadeErr) {
+      // Non-fatal: cascade failure shouldn't block the ingredient save response
+      console.error('[ingredient PUT] dietary cascade error:', cascadeErr)
+    }
+
     return NextResponse.json({ ingredient })
 
   } catch (error: any) {
