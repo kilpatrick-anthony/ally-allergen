@@ -164,23 +164,37 @@ export async function PUT(
       : (certifications || [])
 
     // Update ingredient
-    const { data: ingredient, error } = await supabase
+    const updatePayload = {
+      name,
+      description: description || '',
+      category: category || '',
+      allergen_warnings: effectiveAllergens,
+      suppliers: suppliers || [],
+      certifications: effectiveCertifications,
+      supplier_profiles: supplier_profiles || {},
+      preferred_review_months: preferred_review_months || 3,
+      updated_at: new Date().toISOString()
+    }
+
+    let { data: ingredient, error } = await supabase
       .from('ingredients')
-      .update({
-        name,
-        description: description || '',
-        category: category || '',
-        allergen_warnings: effectiveAllergens,
-        suppliers: suppliers || [],
-        certifications: effectiveCertifications,
-        supplier_profiles: supplier_profiles || {},
-        preferred_review_months: preferred_review_months || 3,
-        updated_at: new Date().toISOString()
-      })
+      .update(updatePayload)
       .eq('id', id)
       .eq('business_id', userBusiness.business_id)
       .select()
       .single()
+
+    // Fallback: if supplier_profiles column doesn't exist yet (migration not run), retry without it
+    if (error && error.message?.includes('supplier_profiles')) {
+      const { supplier_profiles: _sp, ...fallbackPayload } = updatePayload;
+      ({ data: ingredient, error } = await supabase
+        .from('ingredients')
+        .update(fallbackPayload)
+        .eq('id', id)
+        .eq('business_id', userBusiness.business_id)
+        .select()
+        .single())
+    }
 
     if (error) {
       console.error('Error updating ingredient:', error)

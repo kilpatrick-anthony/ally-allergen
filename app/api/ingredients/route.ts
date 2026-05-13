@@ -160,24 +160,36 @@ export async function POST(request: NextRequest) {
       : (certifications || [])
 
     // Create ingredient
-    const { data: ingredient, error } = await supabase
+    const insertPayload = {
+      business_id: userBusiness.business_id,
+      name,
+      description: description || '',
+      category: category || '',
+      allergen_warnings: effectiveAllergens,
+      suppliers: suppliers || [],
+      certifications: effectiveCertifications,
+      supplier_profiles: supplier_profiles || {},
+      preferred_review_months: preferred_review_months || 3,
+      status: 'active',
+      compliance: 'compliant',
+      created_by: userId
+    }
+
+    let { data: ingredient, error } = await supabase
       .from('ingredients')
-      .insert({
-        business_id: userBusiness.business_id,
-        name,
-        description: description || '',
-        category: category || '',
-        allergen_warnings: effectiveAllergens,
-        suppliers: suppliers || [],
-        certifications: effectiveCertifications,
-        supplier_profiles: supplier_profiles || {},
-        preferred_review_months: preferred_review_months || 3,
-        status: 'active',
-        compliance: 'compliant',
-        created_by: userId
-      })
+      .insert(insertPayload)
       .select()
       .single()
+
+    // Fallback: if supplier_profiles column doesn't exist yet (migration not run), retry without it
+    if (error && error.message?.includes('supplier_profiles')) {
+      const { supplier_profiles: _sp, ...fallbackPayload } = insertPayload;
+      ({ data: ingredient, error } = await supabase
+        .from('ingredients')
+        .insert(fallbackPayload)
+        .select()
+        .single())
+    }
 
     if (error) {
       console.error('Error creating ingredient:', error)
