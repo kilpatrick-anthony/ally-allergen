@@ -151,6 +151,8 @@ export async function POST(request: NextRequest) {
         ? body.site_id
         : null,
       allergen_warnings: body.allergen_warnings || {},
+      dietary: Array.isArray(body.dietary) ? body.dietary : [],
+      color: typeof body.color === 'string' && body.color.trim() !== '' ? body.color : null,
       is_active: body.status ? body.status === 'active' : body.is_active ?? true,
       price: typeof body.price === 'number' ? body.price : 0,
       display_order: typeof body.display_order === 'number' ? body.display_order : 0,
