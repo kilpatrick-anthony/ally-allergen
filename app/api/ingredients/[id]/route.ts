@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
+import { computeWorstCaseAllergens } from '@/types/allergen'
 
 const normalizeSupplierNames = (suppliers: string[]) => {
   const names: string[] = []
@@ -198,7 +199,7 @@ export async function PUT(
 
           const { data: ingredientRows } = await supabase
             .from('ingredients')
-            .select('certifications')
+            .select('certifications, allergen_warnings')
             .in('id', ingredientIds)
 
           if (!ingredientRows) continue
@@ -225,9 +226,20 @@ export async function PUT(
           const manualEntries = existingDietary.filter(d => !autoCertNames.includes(d) || knownCertNames.has(d))
           const combined = Array.from(new Set([...manualEntries, ...mergedCerts]))
 
+          // Worst-case allergen merge: if any ingredient has an allergen, the menu item has it
+          const allergenProfiles = ingredientRows
+            .map((r: { allergen_warnings: Record<string, unknown> | null }) => r.allergen_warnings)
+            .filter((w): w is Record<string, unknown> => !!w)
+          const mergedAllergens = allergenProfiles.length > 0
+            ? computeWorstCaseAllergens(allergenProfiles as Parameters<typeof computeWorstCaseAllergens>[0])
+            : undefined
+
           await supabase
             .from('menu_items')
-            .update({ dietary: combined })
+            .update({
+              dietary: combined,
+              ...(mergedAllergens !== undefined && { allergen_warnings: mergedAllergens }),
+            })
             .eq('id', menuItemId)
         }
       }
