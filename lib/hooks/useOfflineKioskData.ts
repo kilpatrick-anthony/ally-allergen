@@ -57,6 +57,7 @@ export interface Ingredient {
   category?: string | null;
   allergen_warnings?: AllergenWarnings;
   suppliers?: string[];
+  supplier_profiles?: Record<string, { allergen_warnings?: AllergenWarnings; certifications?: string[] }>;
   status?: string;
 }
 
