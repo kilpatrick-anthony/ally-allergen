@@ -1510,17 +1510,13 @@ export default function KioskPage() {
           <>
             {/* Allergen Filter Section */}
             <Card className="mb-8">
-              <div className="p-6 border-b">
-                <h2 className="text-lg font-semibold text-[#003842] flex items-center gap-2">
-                  <Filter className="h-5 w-5" />
-                  Filter by Allergens
-                </h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Click allergens to exclude items containing them from the menu
-                </p>
-              </div>
-
               <div className="p-6">
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Filter className="h-4 w-4 text-red-600" />
+                    <span className="text-sm font-semibold text-red-800">Filter by Allergens</span>
+                    <span className="text-xs text-red-500 font-normal">— hides items containing these allergens</span>
+                  </div>
                 <div className="flex flex-wrap gap-3">
                   {ALLERGENS.map(allergen => {
                     const isSelected = selectedAllergens.includes(allergen.id)
@@ -1657,9 +1653,10 @@ export default function KioskPage() {
                     )
                   })}
                 </div>
+                </div>
 
                 {/* Dietary Preference Filter */}
-                <div className="mt-6 pt-5 border-t border-gray-200">
+                <div className="mt-4">
                   <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <Salad className="h-4 w-4 text-green-600" />
