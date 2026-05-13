@@ -1660,10 +1660,11 @@ export default function KioskPage() {
 
                 {/* Dietary Preference Filter */}
                 <div className="mt-6 pt-5 border-t border-gray-200">
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <Salad className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-semibold text-gray-700">Filter by Dietary Preference</span>
-                    <span className="text-xs text-gray-400 font-normal">— show only items suitable for:</span>
+                    <span className="text-sm font-semibold text-green-800">Filter by Dietary Preference</span>
+                    <span className="text-xs text-green-600 font-normal">— shows only items with these attributes</span>
                   </div>
                   <div className="flex flex-wrap gap-3">
                     {DIETARY_OPTIONS.map(option => {
@@ -1692,27 +1693,25 @@ export default function KioskPage() {
                       )
                     })}
                   </div>
+                  </div>
                 </div>
 
-                {(selectedAllergens.length > 0 || selectedGlutenTypes.length > 0 || selectedTreeNutTypes.length > 0 || selectedDietary.length > 0) && (
-                  <div className="mt-6 p-4 bg-gradient-to-r from-red-50 to-red-100 border border-red-200 rounded-xl">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <div className="flex items-center gap-2">
-                        <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                {/* Allergen exclusion summary — red */}
+                {(selectedAllergens.length > 0 || selectedGlutenTypes.length > 0 || selectedTreeNutTypes.length > 0) && (
+                  <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                         <div>
-                          <span className="font-medium text-red-800">Excluding items containing:</span>
-                          <div className="flex flex-wrap gap-2 mt-1">
+                          <span className="font-semibold text-red-800 text-sm">Hiding items that contain:</span>
+                          <div className="flex flex-wrap gap-2 mt-2">
                             {selectedAllergens.map(id => {
                               const allergen = ALLERGENS.find(a => a.id === id)
                               return allergen ? (
-                                <span 
-                                  key={id} 
+                                <span
+                                  key={id}
                                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border"
-                                  style={{
-                                    backgroundColor: `${allergen.bgColor}15`,
-                                    color: allergen.bgColor,
-                                    borderColor: `${allergen.bgColor}40`
-                                  }}
+                                  style={{ backgroundColor: `${allergen.bgColor}15`, color: allergen.bgColor, borderColor: `${allergen.bgColor}40` }}
                                 >
                                   <span style={{ color: allergen.bgColor }}>{React.createElement(allergen.icon as unknown as React.ComponentType<{className: string}>, { className: 'w-4 h-4' })}</span>
                                   {allergen.name}
@@ -1723,14 +1722,10 @@ export default function KioskPage() {
                               const gluten = GLUTEN_TYPES.find(g => g.key === glutenType)
                               const allergen = ALLERGENS.find(a => a.id === 'contains_cereals_gluten')
                               return gluten && allergen ? (
-                                <span 
-                                  key={glutenType} 
+                                <span
+                                  key={glutenType}
                                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border"
-                                  style={{
-                                    backgroundColor: `${allergen.bgColor}15`,
-                                    color: allergen.bgColor,
-                                    borderColor: `${allergen.bgColor}40`
-                                  }}
+                                  style={{ backgroundColor: `${allergen.bgColor}15`, color: allergen.bgColor, borderColor: `${allergen.bgColor}40` }}
                                 >
                                   <Wheat className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
                                   {gluten.name}
@@ -1741,14 +1736,10 @@ export default function KioskPage() {
                               const nut = TREE_NUT_TYPES.find(n => n.key === nutType)
                               const allergen = ALLERGENS.find(a => a.id === 'contains_nuts')
                               return nut && allergen ? (
-                                <span 
-                                  key={nutType} 
+                                <span
+                                  key={nutType}
                                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border"
-                                  style={{
-                                    backgroundColor: `${allergen.bgColor}15`,
-                                    color: allergen.bgColor,
-                                    borderColor: `${allergen.bgColor}40`
-                                  }}
+                                  style={{ backgroundColor: `${allergen.bgColor}15`, color: allergen.bgColor, borderColor: `${allergen.bgColor}40` }}
                                 >
                                   <Nut className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
                                   {nut.name}
@@ -1758,11 +1749,25 @@ export default function KioskPage() {
                           </div>
                         </div>
                       </div>
-                      {selectedDietary.length > 0 && (
-                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-red-200">
-                          <Salad className="h-4 w-4 text-green-700 flex-shrink-0" />
-                          <span className="font-medium text-green-800 text-sm">Showing only:</span>
-                          <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => { setSelectedAllergens([]); setSelectedGlutenTypes([]); setSelectedTreeNutTypes([]) }}
+                        className="shrink-0 inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-800 font-medium"
+                      >
+                        <X className="h-3.5 w-3.5" /> Clear
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Dietary inclusion summary — green */}
+                {selectedDietary.length > 0 && (
+                  <div className="mt-3 p-4 bg-green-50 border border-green-200 rounded-xl">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-2">
+                        <Salad className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-semibold text-green-800 text-sm">Showing only items suitable for:</span>
+                          <div className="flex flex-wrap gap-2 mt-2">
                             {selectedDietary.map(name => {
                               const opt = DIETARY_OPTIONS.find(o => o.name === name)
                               if (!opt) return null
@@ -1780,11 +1785,23 @@ export default function KioskPage() {
                             })}
                           </div>
                         </div>
-                      )}
-                      <Button variant="ghost" size="sm" onClick={clearFilters} className="text-red-700">
-                        Clear All
-                      </Button>
+                      </div>
+                      <button
+                        onClick={() => setSelectedDietary([])}
+                        className="shrink-0 inline-flex items-center gap-1 text-xs text-green-700 hover:text-green-900 font-medium"
+                      >
+                        <X className="h-3.5 w-3.5" /> Clear
+                      </button>
                     </div>
+                  </div>
+                )}
+
+                {/* Clear all — only shown when both types active */}
+                {(selectedAllergens.length > 0 || selectedGlutenTypes.length > 0 || selectedTreeNutTypes.length > 0) && selectedDietary.length > 0 && (
+                  <div className="mt-2 flex justify-end">
+                    <button onClick={clearFilters} className="text-xs text-gray-500 hover:text-gray-700 underline">
+                      Clear all filters
+                    </button>
                   </div>
                 )}
               </div>
