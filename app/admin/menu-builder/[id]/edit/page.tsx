@@ -702,6 +702,15 @@ export default function EditMenuItemPage() {
             </Card>
 
             {/* Selected Ingredients */}
+            <Card className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Selected Ingredients
+                </label>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {menuItem.ingredients.length} selected
+                </span>
+              </div>
 
               <div className="min-h-[100px] border border-gray-300 dark:border-gray-600 rounded-lg p-4 mb-4 bg-gray-50 dark:bg-gray-800">
                 {menuItem.ingredients.length === 0 ? (

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { AlertTriangle, ExternalLink, RefreshCw, Rss } from 'lucide-react'
-import { Card } from '@/components/ui/Card'
+import { Card } from '@/components/layout/Card'
 import type { AlertItem } from '@/app/api/fsai-alerts/route'
 
 function SourceBadge({ source }: { source: AlertItem['source'] }) {
