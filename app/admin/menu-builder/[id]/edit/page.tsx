@@ -132,37 +132,51 @@ export default function EditMenuItemPage() {
           fetch('/api/sites')
         ])
 
-        const itemData = await itemResponse.json()
-        if (itemResponse.ok && itemData.menuItem) {
-          const item = itemData.menuItem
-          setMenuItem({
-            id: item.id,
-            name: item.name,
-            description: item.description || '',
-            category: item.category || '',
-            site_id: item.site_id ?? null,
-            allergen_warnings: item.allergen_warnings || { ...defaultWarnings },
-            dietary: Array.isArray(item.dietary) ? item.dietary : [],
-            ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
-            status: item.status || (item.is_active ? 'active' : 'draft'),
-            preferred_review_months: item.preferred_review_months || 3,
-            color: item.color || '',
-          })
-        } else {
+        const [itemData, ingredientData] = await Promise.all([
+          itemResponse.json(),
+          ingredientResponse.json(),
+        ])
+
+        if (!itemResponse.ok || !itemData.menuItem) {
           throw new Error('Menu item not found')
         }
 
-        const ingredientData = await ingredientResponse.json()
-        if (ingredientResponse.ok) {
-          const mappedIngredients = (ingredientData.ingredients || []).map((ingredient: any) => ({
-            id: ingredient.id,
-            name: ingredient.name,
-            allergen_warnings: ingredient.allergen_warnings || { ...defaultWarnings },
-            suppliers: ingredient.suppliers || [],
-            certifications: ingredient.certifications || []
-          }))
-          setIngredients(mappedIngredients)
-        }
+        const mappedIngredients = ingredientResponse.ok
+          ? (ingredientData.ingredients || []).map((ingredient: any) => ({
+              id: ingredient.id,
+              name: ingredient.name,
+              allergen_warnings: ingredient.allergen_warnings || { ...defaultWarnings },
+              suppliers: ingredient.suppliers || [],
+              certifications: ingredient.certifications || []
+            }))
+          : []
+
+        setIngredients(mappedIngredients)
+
+        const item = itemData.menuItem
+        const itemIngredientIds: string[] = Array.isArray(item.ingredients) ? item.ingredients : []
+        const existingDietary: string[] = Array.isArray(item.dietary) ? item.dietary : []
+
+        // Auto carry-over: strict intersection of certifications across all ingredients on load
+        const ingredientCerts = itemIngredientIds.map(id => mappedIngredients.find((i: { id: string }) => i.id === id)?.certifications ?? [])
+        const mergedCerts: string[] = ingredientCerts.length === 0
+          ? []
+          : ingredientCerts.reduce((acc: string[], certs: string[]) => acc.filter((c: string) => certs.includes(c)))
+        const combinedDietary = Array.from(new Set([...existingDietary, ...mergedCerts]))
+
+        setMenuItem({
+          id: item.id,
+          name: item.name,
+          description: item.description || '',
+          category: item.category || '',
+          site_id: item.site_id ?? null,
+          allergen_warnings: item.allergen_warnings || { ...defaultWarnings },
+          dietary: combinedDietary,
+          ingredients: itemIngredientIds,
+          status: item.status || (item.is_active ? 'active' : 'draft'),
+          preferred_review_months: item.preferred_review_months || 3,
+          color: item.color || '',
+        })
 
         const sitesData = await sitesResponse.json()
         if (sitesResponse.ok) {

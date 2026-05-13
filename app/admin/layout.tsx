@@ -214,8 +214,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 admin-dot-grid dark:admin-dot-grid-dark pb-[52px]">
             {children}
           </main>
-          {/* Food safety news ticker — fixed to the bottom of the screen */}
-          <div className="fixed bottom-0 left-0 right-0 lg:left-[224px] z-40">
+          {/* Food safety news ticker — fixed to the bottom of the screen (desktop only) */}
+          <div className="hidden lg:block fixed bottom-0 left-[224px] right-0 z-40">
+            <FsaiNewsTicker />
+          </div>
+          {/* Food safety news ticker — inline at bottom of page (mobile only) */}
+          <div className="lg:hidden">
             <FsaiNewsTicker />
           </div>
           {/* Jen — compliance coach floating widget */}
