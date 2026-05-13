@@ -84,12 +84,11 @@ async function fetchFeed(url: string, source: 'IE' | 'EU' | 'FSN' | 'FSAI'): Pro
 
 // ── Feed URLs ─────────────────────────────────────────────────────────────────
 
-// Google News RSS — curated queries. Returns ~10-80 matching news articles.
-// Note: Google News RSS is a longstanding public feature intended for RSS readers.
-// IE query: prioritises FSAI recalls, undeclared allergens and Irish food safety news.
-const IE_FEED_URL  = 'https://news.google.com/rss/search?q=FSAI+food+recall+OR+%22undeclared+allergen%22+OR+%22food+safety+alert%22+ireland&hl=en-IE&gl=IE&ceid=IE:en'
-const EU_FEED_URL  = 'https://news.google.com/rss/search?q=RASFF+EU+food+recall+alert+allergen&hl=en&gl=EU&ceid=IE:en'
-const FSN_FEED_URL = 'https://www.foodsafetynews.com/feed/'
+const IE_FEED_URL   = 'https://news.google.com/rss/search?q=FSAI+food+recall+OR+%22undeclared+allergen%22+OR+%22food+safety+alert%22+ireland&hl=en-IE&gl=IE&ceid=IE:en'
+const EU_FEED_URL   = 'https://news.google.com/rss/search?q=RASFF+EU+food+recall+alert+allergen&hl=en&gl=EU&ceid=IE:en'
+const FSN_FEED_URL  = 'https://www.foodsafetynews.com/feed/'
+// FSAI do not publish a native RSS feed; we use a targeted Google News search instead
+const FSAI_FEED_URL = 'https://news.google.com/rss/search?q=%22Food+Safety+Authority+of+Ireland%22+OR+%22FSAI%22+food+alert+recall+allergen&hl=en-IE&gl=IE&ceid=IE:en'
 
 const STATIC_FALLBACK: AlertItem[] = [
   {
@@ -120,13 +119,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ alerts: cache.data, cached: true })
     }
 
-    const fsaiUrl = process.env.FSAI_RSS_URL
-
     const results = await Promise.allSettled([
-      fetchFeed(IE_FEED_URL,  'IE'),
-      fetchFeed(EU_FEED_URL,  'EU'),
-      fetchFeed(FSN_FEED_URL, 'FSN'),
-      fsaiUrl ? fetchFeed(fsaiUrl, 'FSAI') : Promise.resolve([]),
+      fetchFeed(IE_FEED_URL,   'IE'),
+      fetchFeed(EU_FEED_URL,   'EU'),
+      fetchFeed(FSN_FEED_URL,  'FSN'),
+      fetchFeed(FSAI_FEED_URL, 'FSAI'),
     ])
 
     const ieItems   = results[0].status === 'fulfilled' ? results[0].value : []

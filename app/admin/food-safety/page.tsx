@@ -51,7 +51,13 @@ export default function FoodSafetyPage() {
     fetchAlerts()
   }, [])
 
-  const filtered = filter === 'all' ? alerts : alerts.filter(a => a.source === filter)
+  const filtered = (filter === 'all' ? alerts : alerts.filter(a => a.source === filter))
+    .slice()
+    .sort((a, b) => {
+      const da = a.date ? new Date(a.date).getTime() : 0
+      const db = b.date ? new Date(b.date).getTime() : 0
+      return db - da
+    })
 
   const sources: Array<{ value: string; label: string }> = [
     { value: 'all', label: 'All Sources' },
