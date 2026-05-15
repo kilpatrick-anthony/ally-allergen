@@ -125,6 +125,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       business: {
         ...businessWithoutSettings,
+        // Forward branding from settings so the PDF function can use it
+        logo_url: (business as any).settings?.logoUrl ?? (business as any).logo_url ?? null,
+        primary_color: (business as any).settings?.primaryColor ?? (business as any).primary_color ?? null,
         kiosk_disclaimer: (business as any).settings?.kioskDisclaimer ?? null,
         opening_hours: siteOpeningHours,
       },
