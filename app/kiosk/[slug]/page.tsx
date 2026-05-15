@@ -1091,9 +1091,9 @@ export default function KioskPage() {
 
             <button
               onClick={handleStartKiosk}
-              className="mx-auto mt-28 max-w-lg rounded-2xl px-6 py-5 cursor-pointer block w-full transition-all active:scale-[0.98] border border-white/30 bg-white/15 hover:bg-white/25 backdrop-blur-sm"
+              className="mx-auto mt-28 max-w-lg rounded-2xl px-6 py-5 cursor-pointer block w-full transition-all active:scale-[0.98] bg-[#003842] hover:bg-[#004d5c] border border-white/20 shadow-lg"
             >
-              <p className="text-white font-bold text-lg sm:text-xl lg:text-2xl mb-0 drop-shadow-sm">
+              <p className="text-white font-bold text-lg sm:text-xl lg:text-2xl mb-0">
                 {t.clickHereToBegin}
               </p>
             </button>
