@@ -872,12 +872,15 @@ export default function KioskPage() {
     }
     setSendingEmail(true)
     setEmailError('')
+    let pdfBase64: string | undefined
     try {
       const menuItemsToEmail = (includeFilters ? filteredItems : menuItems).map(i => ({ ...i, itemType: 'menu_item' as const }))
       const allItemsToEmail = [...menuItemsToEmail, ...ingredientGuideRows.map(i => ({ ...i, itemType: 'ingredient' as const }))]
       // Generate PDF as base64 in the browser, then POST to server for mailing
-      const pdfBase64 = await generateAllergenTablePDF({
-        business,
+      // Strip logo_url to avoid large payloads — branding colour still applies
+      const businessForPdf = { ...business, logo_url: null }
+      pdfBase64 = await generateAllergenTablePDF({
+        business: businessForPdf,
         items: allItemsToEmail,
         title: includeFilters && totalActiveFilters > 0
           ? `Allergen Guide (${totalActiveFilters} active filter${totalActiveFilters > 1 ? 's' : ''})`
@@ -885,7 +888,14 @@ export default function KioskPage() {
         showLegend: true,
         outputMode: 'base64',
       }) as string
+    } catch (err) {
+      console.error('Error generating PDF for email:', err)
+      setEmailError('Could not generate PDF. Please try again.')
+      setSendingEmail(false)
+      return
+    }
 
+    try {
       const response = await fetch('/api/kiosk/email-menu', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -897,14 +907,14 @@ export default function KioskPage() {
         }),
       })
       if (!response.ok) {
-        const data = await response.json()
+        const data = await response.json().catch(() => ({}))
         setEmailError(data.error || 'Failed to send. Please try again.')
         return
       }
       setEmailSent(true)
       setEmailInput('')
     } catch (err) {
-      console.error('Error emailing menu:', err)
+      console.error('Error sending email:', err)
       setEmailError('Failed to send. Please try again.')
     } finally {
       setSendingEmail(false)
