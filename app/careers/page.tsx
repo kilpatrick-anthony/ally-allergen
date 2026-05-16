@@ -185,8 +185,7 @@ export default function CareersPage() {
               <span className="text-[#42b8ac]">safer for everyone</span>
             </h1>
             <p className="text-xl text-white/75 leading-relaxed mb-8 max-w-2xl mx-auto">
-              AllyJen is on a mission to make allergen compliance effortless for food businesses across Ireland and Europe. 
-              We're a small, fast-moving team — and we're growing.
+              AllyJen is on a mission to make allergen compliance effortless for food businesses across Ireland and Europe.
             </p>
             <a
               href="#alert-signup"

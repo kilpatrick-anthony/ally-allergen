@@ -133,7 +133,7 @@ export default function LandingPage() {
               >
                 Contact
               </button>
-              <Link href="/careers" className="text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">
+              <Link href="/careers" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">
                 Careers
               </Link>
             </nav>
