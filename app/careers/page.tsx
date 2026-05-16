@@ -94,17 +94,21 @@ export default function CareersPage() {
     <div className="min-h-screen bg-white font-sans">
 
       {/* ── HEADER ── */}
-      <header className="sticky top-0 z-50 bg-[#003842]/95 backdrop-blur-md border-b border-white/10">
+      <header className="relative z-20 bg-[#003842] border-b border-[#003842]">
         <Container>
           <div className="flex items-center justify-between py-4 gap-4">
-            <Link href="/" className="flex-shrink-0">
-              <img
-                src="/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg"
-                alt="AllyJen Logo"
-                className="h-10 w-auto object-contain"
-              />
-            </Link>
+            {/* Logo */}
+            <div className="flex-shrink-0">
+              <Link href="/">
+                <img
+                  src="/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg"
+                  alt="AllyJen Logo"
+                  className="h-10 w-auto object-contain"
+                />
+              </Link>
+            </div>
 
+            {/* Desktop nav */}
             <nav className="hidden lg:flex items-center gap-8">
               <Link href="/#features" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Features</Link>
               <Link href="/#how-it-works" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">How It Works</Link>
@@ -113,6 +117,7 @@ export default function CareersPage() {
               <Link href="/careers" className="inline-flex items-center text-[#42b8ac] font-semibold text-sm">Careers</Link>
             </nav>
 
+            {/* Mobile menu toggle */}
             <div className="lg:hidden flex-1 flex justify-center">
               <button
                 type="button"
@@ -124,14 +129,15 @@ export default function CareersPage() {
               </button>
             </div>
 
+            {/* CTAs */}
             <div className="flex-shrink-0 flex items-center gap-2">
               <Link href="/book-demo" className="hidden sm:inline-flex">
-                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#42b8ac] text-white font-semibold text-sm hover:bg-[#3aa89e] transition-colors">
+                <span className="inline-flex items-center gap-2 px-3 lg:px-5 py-2 rounded-full bg-[#42b8ac] text-white font-semibold text-sm hover:bg-[#3aa89e] transition-colors">
                   Book a Demo
                 </span>
               </Link>
               <Link href="/auth/signin">
-                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-[#003842] font-semibold text-sm hover:bg-[#42b8ac] hover:text-white transition-colors">
+                <span className="inline-flex items-center gap-2 px-3 lg:px-5 py-2 rounded-full bg-white text-[#003842] font-semibold text-sm hover:bg-[#42b8ac] hover:text-white transition-colors">
                   Sign In <ArrowRight className="h-4 w-4" />
                 </span>
               </Link>
@@ -140,15 +146,15 @@ export default function CareersPage() {
         </Container>
       </header>
 
+      {/* Mobile nav dropdown */}
       {isNavOpen && (
-        <div className="lg:hidden bg-[#002d38] border-b border-white/10 z-40">
+        <div className="lg:hidden bg-[#002d38] border-b border-white/10 z-10">
           <nav className="flex flex-col divide-y divide-white/10">
             {[
               { label: 'Features', href: '/#features' },
               { label: 'How It Works', href: '/#how-it-works' },
               { label: 'Pricing', href: '/#pricing' },
               { label: 'Contact', href: '/#contact-form' },
-              { label: 'Careers', href: '/careers' },
             ].map(({ label, href }) => (
               <Link
                 key={label}
@@ -159,6 +165,13 @@ export default function CareersPage() {
                 {label}
               </Link>
             ))}
+            <Link
+              href="/careers"
+              onClick={() => setIsNavOpen(false)}
+              className="px-6 py-3 text-left text-[#42b8ac] hover:bg-white/5 transition-colors font-semibold text-sm"
+            >
+              Careers
+            </Link>
             <Link
               href="/book-demo"
               onClick={() => setIsNavOpen(false)}
@@ -171,20 +184,31 @@ export default function CareersPage() {
       )}
 
       {/* ── HERO ── */}
-      <section className="relative bg-[#003842] overflow-hidden py-20 lg:py-28">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-[#42b8ac]/20 blur-3xl" />
-          <div className="absolute -bottom-32 -left-32 w-[400px] h-[400px] rounded-full bg-white/5 blur-3xl" />
-        </div>
+      <section className="relative bg-[#003842] overflow-hidden">
+        <div className="absolute -top-24 -right-24 w-[500px] h-[500px] rounded-full bg-[#42b8ac]/20 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-[400px] h-[400px] rounded-full bg-[#42b8ac]/10 blur-3xl pointer-events-none" />
         <Container>
-          <div className="relative text-center max-w-3xl mx-auto">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-tight mb-6">
-              Help us make food<br />
-              <span className="text-[#42b8ac]">safer for everyone</span>
-            </h1>
-            <p className="text-xl text-white/75 leading-relaxed max-w-2xl mx-auto">
-              AllyJen is on a mission to make allergen compliance effortless for food businesses across Ireland and Europe.
-            </p>
+          <div className="relative flex flex-col lg:flex-row items-center gap-12 py-12 lg:py-16">
+            {/* Left – photo */}
+            <div className="flex-1 w-full lg:max-w-none">
+              <div className="rounded-2xl overflow-hidden shadow-2xl ring-4 ring-[#42b8ac]/30">
+                <img
+                  src="/food-safety-1.jpg"
+                  alt="Food safety in action"
+                  className="w-full h-auto block object-cover"
+                />
+              </div>
+            </div>
+            {/* Right – text */}
+            <div className="flex-1 text-center lg:text-left">
+              <h1 className="text-3xl md:text-4xl xl:text-5xl font-extrabold text-white leading-none mb-6 tracking-tight">
+                Help us make food<br />
+                <span className="text-[#42b8ac]">safer for everyone.</span>
+              </h1>
+              <p className="text-lg text-white/70 mb-0 max-w-xl mx-auto lg:mx-0">
+                AllyJen is on a mission to make allergen compliance effortless for food businesses across Ireland and Europe.
+              </p>
+            </div>
           </div>
         </Container>
       </section>
