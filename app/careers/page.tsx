@@ -106,10 +106,11 @@ export default function CareersPage() {
             </Link>
 
             <nav className="hidden lg:flex items-center gap-8">
-              <Link href="/#features" className="text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Features</Link>
-              <Link href="/#pricing" className="text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Pricing</Link>
-              <Link href="/careers" className="text-[#42b8ac] font-semibold text-sm">Careers</Link>
-              <Link href="/#contact-form" className="text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Contact</Link>
+              <Link href="/#features" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Features</Link>
+              <Link href="/#how-it-works" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">How It Works</Link>
+              <Link href="/#pricing" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Pricing</Link>
+              <Link href="/#contact-form" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Contact</Link>
+              <Link href="/careers" className="inline-flex items-center text-[#42b8ac] font-semibold text-sm">Careers</Link>
             </nav>
 
             <div className="lg:hidden flex-1 flex justify-center">
@@ -144,9 +145,10 @@ export default function CareersPage() {
           <nav className="flex flex-col divide-y divide-white/10">
             {[
               { label: 'Features', href: '/#features' },
+              { label: 'How It Works', href: '/#how-it-works' },
               { label: 'Pricing', href: '/#pricing' },
-              { label: 'Careers', href: '/careers' },
               { label: 'Contact', href: '/#contact-form' },
+              { label: 'Careers', href: '/careers' },
             ].map(({ label, href }) => (
               <Link
                 key={label}
@@ -176,24 +178,13 @@ export default function CareersPage() {
         </div>
         <Container>
           <div className="relative text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#42b8ac]/15 border border-[#42b8ac]/30 text-[#42b8ac] text-sm font-medium mb-6">
-              <Briefcase className="h-4 w-4" />
-              We're hiring soon
-            </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-tight mb-6">
               Help us make food<br />
               <span className="text-[#42b8ac]">safer for everyone</span>
             </h1>
-            <p className="text-xl text-white/75 leading-relaxed mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-white/75 leading-relaxed max-w-2xl mx-auto">
               AllyJen is on a mission to make allergen compliance effortless for food businesses across Ireland and Europe.
             </p>
-            <a
-              href="#alert-signup"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#42b8ac] text-white font-semibold text-base hover:bg-[#3aa89e] transition-colors shadow-lg"
-            >
-              <Bell className="h-5 w-5" />
-              Get notified when we hire
-            </a>
           </div>
         </Container>
       </section>
