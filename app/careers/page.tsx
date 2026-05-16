@@ -288,7 +288,7 @@ export default function CareersPage() {
                         required
                         value={form.name}
                         onChange={handleChange}
-                        placeholder="Jane Doe"
+                        placeholder="e.g. Aoife Murphy"
                         className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#42b8ac] text-sm"
                       />
                     </div>
@@ -300,7 +300,7 @@ export default function CareersPage() {
                         required
                         value={form.email}
                         onChange={handleChange}
-                        placeholder="jane@example.com"
+                        placeholder="e.g. aoife@example.ie"
                         className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#42b8ac] text-sm"
                       />
                     </div>
@@ -331,7 +331,7 @@ export default function CareersPage() {
                       value={form.message}
                       onChange={handleChange}
                       rows={3}
-                      placeholder="Tell us a little about your background or what excites you about AllyJen…"
+                      placeholder="e.g. I've been working in food tech for a few years and I'm based in Dublin…"
                       className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#42b8ac] text-sm resize-none"
                     />
                   </div>
