@@ -44,7 +44,7 @@ const WHY_ALLYJEN = [
   {
     icon: Shield,
     title: 'Compliance matters',
-    desc: 'We operate in a regulated space (EU FIC Regulation). You'll learn things that matter.',
+    desc: "We operate in a regulated space (EU FIC Regulation). You'll learn things that matter.",
   },
   {
     icon: Users,
