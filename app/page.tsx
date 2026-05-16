@@ -109,6 +109,7 @@ export default function LandingPage() {
             
             {/* Navigation - left-aligned after logo (hidden on mobile) */}
             <nav className="hidden lg:flex items-center gap-8">
+              <Link href="/" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Home</Link>
               <button
                 onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
                 className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
@@ -166,6 +167,13 @@ export default function LandingPage() {
       {isNavOpen && (
         <div className="lg:hidden bg-[#002d38] border-b border-white/10 z-10">
           <nav className="flex flex-col divide-y divide-white/10">
+            <Link
+              href="/"
+              onClick={() => setIsNavOpen(false)}
+              className="px-6 py-3 text-left text-white hover:text-[#42b8ac] hover:bg-white/5 transition-colors font-medium text-sm"
+            >
+              Home
+            </Link>
             {[
               { label: 'Features', id: 'features' },
               { label: 'How It Works', id: 'how-it-works' },

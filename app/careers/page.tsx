@@ -110,6 +110,7 @@ export default function CareersPage() {
 
             {/* Desktop nav */}
             <nav className="hidden lg:flex items-center gap-8">
+              <Link href="/" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Home</Link>
               <Link href="/#features" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Features</Link>
               <Link href="/#how-it-works" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">How It Works</Link>
               <Link href="/#pricing" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Pricing</Link>
@@ -146,6 +147,7 @@ export default function CareersPage() {
         <div className="lg:hidden bg-[#002d38] border-b border-white/10 z-10">
           <nav className="flex flex-col divide-y divide-white/10">
             {[
+              { label: 'Home', href: '/' },
               { label: 'Features', href: '/#features' },
               { label: 'How It Works', href: '/#how-it-works' },
               { label: 'Pricing', href: '/#pricing' },
