@@ -1,0 +1,385 @@
+'use client'
+
+import React, { useState } from 'react'
+import Link from 'next/link'
+import {
+  ArrowRight,
+  Bell,
+  Briefcase,
+  CheckCircle,
+  Globe,
+  Heart,
+  MapPin,
+  Menu,
+  Rocket,
+  Send,
+  Shield,
+  Users,
+  X,
+  Zap,
+} from 'lucide-react'
+import { Container } from '@/components/layout/Container'
+
+const WHY_ALLYJEN = [
+  {
+    icon: Rocket,
+    title: 'Early-stage impact',
+    desc: 'Join a small team where your work ships fast and shapes the product directly.',
+  },
+  {
+    icon: Globe,
+    title: 'Meaningful mission',
+    desc: 'We help people with allergies eat safely. Every feature we build has real-world consequences.',
+  },
+  {
+    icon: Heart,
+    title: 'People first',
+    desc: 'Flexible working, no unnecessary meetings, and a culture built on trust and autonomy.',
+  },
+  {
+    icon: Zap,
+    title: 'Modern stack',
+    desc: 'Next.js, TypeScript, Supabase — we use the best tools and keep technical debt low.',
+  },
+  {
+    icon: Shield,
+    title: 'Compliance matters',
+    desc: 'We operate in a regulated space (EU FIC Regulation). You'll learn things that matter.',
+  },
+  {
+    icon: Users,
+    title: 'Grow with us',
+    desc: 'As we scale across Ireland and Europe, the people who join early grow with us.',
+  },
+]
+
+export default function CareersPage() {
+  const [isNavOpen, setIsNavOpen] = useState(false)
+  const [form, setForm] = useState({ name: '', email: '', role: '', message: '' })
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
+    setError('')
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSubmitting(true)
+    setError('')
+    try {
+      const res = await fetch('/api/careers/alert', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        setError(data.error || 'Something went wrong. Please try again.')
+      } else {
+        setSubmitted(true)
+      }
+    } catch {
+      setError('Something went wrong. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-white font-sans">
+
+      {/* ── HEADER ── */}
+      <header className="sticky top-0 z-50 bg-[#003842]/95 backdrop-blur-md border-b border-white/10">
+        <Container>
+          <div className="flex items-center justify-between py-4 gap-4">
+            <Link href="/" className="flex-shrink-0">
+              <img
+                src="/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg"
+                alt="AllyJen Logo"
+                className="h-10 w-auto object-contain"
+              />
+            </Link>
+
+            <nav className="hidden lg:flex items-center gap-8">
+              <Link href="/#features" className="text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Features</Link>
+              <Link href="/#pricing" className="text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Pricing</Link>
+              <Link href="/careers" className="text-[#42b8ac] font-semibold text-sm">Careers</Link>
+              <Link href="/#contact-form" className="text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Contact</Link>
+            </nav>
+
+            <div className="lg:hidden flex-1 flex justify-center">
+              <button
+                type="button"
+                aria-label={isNavOpen ? 'Close menu' : 'Open menu'}
+                onClick={() => setIsNavOpen(o => !o)}
+                className="p-2 text-white hover:text-[#42b8ac] transition-colors"
+              >
+                {isNavOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
+
+            <div className="flex-shrink-0 flex items-center gap-2">
+              <Link href="/book-demo" className="hidden sm:inline-flex">
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#42b8ac] text-white font-semibold text-sm hover:bg-[#3aa89e] transition-colors">
+                  Book a Demo
+                </span>
+              </Link>
+              <Link href="/auth/signin">
+                <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white text-[#003842] font-semibold text-sm hover:bg-[#42b8ac] hover:text-white transition-colors">
+                  Sign In <ArrowRight className="h-4 w-4" />
+                </span>
+              </Link>
+            </div>
+          </div>
+        </Container>
+      </header>
+
+      {isNavOpen && (
+        <div className="lg:hidden bg-[#002d38] border-b border-white/10 z-40">
+          <nav className="flex flex-col divide-y divide-white/10">
+            {[
+              { label: 'Features', href: '/#features' },
+              { label: 'Pricing', href: '/#pricing' },
+              { label: 'Careers', href: '/careers' },
+              { label: 'Contact', href: '/#contact-form' },
+            ].map(({ label, href }) => (
+              <Link
+                key={label}
+                href={href}
+                onClick={() => setIsNavOpen(false)}
+                className="px-6 py-3 text-left text-white hover:text-[#42b8ac] hover:bg-white/5 transition-colors font-medium text-sm"
+              >
+                {label}
+              </Link>
+            ))}
+            <Link
+              href="/book-demo"
+              onClick={() => setIsNavOpen(false)}
+              className="px-6 py-3 text-[#42b8ac] font-semibold text-sm hover:bg-white/5 transition-colors"
+            >
+              Book a Free Demo →
+            </Link>
+          </nav>
+        </div>
+      )}
+
+      {/* ── HERO ── */}
+      <section className="relative bg-[#003842] overflow-hidden py-20 lg:py-28">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full bg-[#42b8ac]/20 blur-3xl" />
+          <div className="absolute -bottom-32 -left-32 w-[400px] h-[400px] rounded-full bg-white/5 blur-3xl" />
+        </div>
+        <Container>
+          <div className="relative text-center max-w-3xl mx-auto">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#42b8ac]/15 border border-[#42b8ac]/30 text-[#42b8ac] text-sm font-medium mb-6">
+              <Briefcase className="h-4 w-4" />
+              We're hiring soon
+            </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-tight mb-6">
+              Help us make food<br />
+              <span className="text-[#42b8ac]">safer for everyone</span>
+            </h1>
+            <p className="text-xl text-white/75 leading-relaxed mb-8 max-w-2xl mx-auto">
+              AllyJen is on a mission to make allergen compliance effortless for food businesses across Ireland and Europe. 
+              We're a small, fast-moving team — and we're growing.
+            </p>
+            <a
+              href="#alert-signup"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#42b8ac] text-white font-semibold text-base hover:bg-[#3aa89e] transition-colors shadow-lg"
+            >
+              <Bell className="h-5 w-5" />
+              Get notified when we hire
+            </a>
+          </div>
+        </Container>
+      </section>
+
+      {/* ── OPEN ROLES ── */}
+      <section className="py-16 bg-gray-50">
+        <Container>
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold text-[#003842] mb-3">Open Positions</h2>
+            <p className="text-gray-500 text-lg">Roles we're actively hiring for right now.</p>
+          </div>
+
+          <div className="max-w-2xl mx-auto bg-white rounded-2xl border border-gray-200 shadow-sm p-12 text-center">
+            <div className="w-16 h-16 rounded-full bg-[#42b8ac]/10 flex items-center justify-center mx-auto mb-5">
+              <Briefcase className="h-8 w-8 text-[#42b8ac]" />
+            </div>
+            <h3 className="text-xl font-semibold text-[#003842] mb-3">No open roles right now</h3>
+            <p className="text-gray-500 text-base leading-relaxed mb-6">
+              We don't have any positions available at the moment, but we're growing and that will change soon.
+              Sign up below and we'll email you the moment something opens up.
+            </p>
+            <a
+              href="#alert-signup"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#003842] text-white font-semibold text-sm hover:bg-[#004d5c] transition-colors"
+            >
+              <Bell className="h-4 w-4" />
+              Get job alerts
+            </a>
+          </div>
+        </Container>
+      </section>
+
+      {/* ── WHY ALLYJEN ── */}
+      <section className="py-16 bg-white">
+        <Container>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-[#003842] mb-3">Why join AllyJen?</h2>
+            <p className="text-gray-500 text-lg max-w-xl mx-auto">
+              We're building something that matters — and we want people who care about doing it well.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {WHY_ALLYJEN.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="p-6 rounded-2xl border border-gray-100 hover:border-[#42b8ac]/40 hover:shadow-md transition-all">
+                <div className="w-10 h-10 rounded-xl bg-[#42b8ac]/10 flex items-center justify-center mb-4">
+                  <Icon className="h-5 w-5 text-[#42b8ac]" />
+                </div>
+                <h3 className="font-semibold text-[#003842] mb-2">{title}</h3>
+                <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      {/* ── ALERT SIGN-UP ── */}
+      <section id="alert-signup" className="py-16 bg-[#003842]">
+        <Container>
+          <div className="max-w-xl mx-auto">
+            {submitted ? (
+              <div className="text-center">
+                <div className="w-16 h-16 rounded-full bg-[#42b8ac]/20 flex items-center justify-center mx-auto mb-5">
+                  <CheckCircle className="h-8 w-8 text-[#42b8ac]" />
+                </div>
+                <h2 className="text-2xl font-bold text-white mb-3">You're on the list!</h2>
+                <p className="text-white/70 text-base leading-relaxed mb-6">
+                  We'll reach out as soon as a relevant position opens up. Thanks for your interest in AllyJen.
+                </p>
+                <Link href="/" className="inline-flex items-center gap-2 text-[#42b8ac] hover:text-white transition-colors font-medium text-sm">
+                  ← Back to home
+                </Link>
+              </div>
+            ) : (
+              <>
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bold text-white mb-3">Get job alerts</h2>
+                  <p className="text-white/70 text-base">
+                    Leave your details and we'll notify you when a position opens up that might suit you.
+                  </p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-white/80 mb-1.5">Full name *</label>
+                      <input
+                        type="text"
+                        name="name"
+                        required
+                        value={form.name}
+                        onChange={handleChange}
+                        placeholder="Jane Doe"
+                        className="w-full px-4 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#42b8ac] text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-white/80 mb-1.5">Email address *</label>
+                      <input
+                        type="email"
+                        name="email"
+                        required
+                        value={form.email}
+                        onChange={handleChange}
+                        placeholder="jane@example.com"
+                        className="w-full px-4 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#42b8ac] text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-1.5">Area of interest</label>
+                    <select
+                      name="role"
+                      value={form.role}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#42b8ac] text-sm appearance-none"
+                    >
+                      <option value="" className="text-gray-800">— Select an area —</option>
+                      <option value="Engineering" className="text-gray-800">Engineering (Frontend / Fullstack)</option>
+                      <option value="Design" className="text-gray-800">Design / UX</option>
+                      <option value="Sales & Marketing" className="text-gray-800">Sales &amp; Marketing</option>
+                      <option value="Customer Success" className="text-gray-800">Customer Success</option>
+                      <option value="Operations" className="text-gray-800">Operations</option>
+                      <option value="Other" className="text-gray-800">Other / Open to anything</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-white/80 mb-1.5">Anything else? <span className="text-white/40 font-normal">(optional)</span></label>
+                    <textarea
+                      name="message"
+                      value={form.message}
+                      onChange={handleChange}
+                      rows={3}
+                      placeholder="Tell us a little about your background or what excites you about AllyJen…"
+                      className="w-full px-4 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#42b8ac] text-sm resize-none"
+                    />
+                  </div>
+
+                  {error && (
+                    <p className="text-red-400 text-sm">{error}</p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-full bg-[#42b8ac] text-white font-semibold text-base hover:bg-[#3aa89e] transition-colors disabled:opacity-60"
+                  >
+                    {submitting ? (
+                      <>
+                        <span className="h-4 w-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                        Sending…
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        Notify me
+                      </>
+                    )}
+                  </button>
+                </form>
+              </>
+            )}
+          </div>
+        </Container>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer className="bg-[#003842] border-t border-white/10 py-10">
+        <Container>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <img src="/Logo-AllyJen.svg" alt="AllyJen" className="h-24 w-auto" />
+            <div className="flex flex-col items-center md:items-end gap-2">
+              <div className="flex items-center gap-4 text-sm text-white/50">
+                <Link href="/" className="hover:text-white/80 transition-colors">Home</Link>
+                <Link href="/book-demo" className="hover:text-white/80 transition-colors">Book a Demo</Link>
+                <Link href="/careers" className="text-[#42b8ac]">Careers</Link>
+              </div>
+              <p className="text-sm text-white/40">© 2026 AllyJen Solutions Limited.</p>
+              <p className="text-xs text-white/30">CRO No. 811542 | Republic of Ireland</p>
+            </div>
+          </div>
+        </Container>
+      </footer>
+
+    </div>
+  )
+}

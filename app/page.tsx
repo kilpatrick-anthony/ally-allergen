@@ -133,6 +133,9 @@ export default function LandingPage() {
               >
                 Contact
               </button>
+              <Link href="/careers" className="text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">
+                Careers
+              </Link>
             </nav>
             
             {/* Mobile menu toggle */}
@@ -185,6 +188,13 @@ export default function LandingPage() {
                 {label}
               </button>
             ))}
+            <Link
+              href="/careers"
+              onClick={() => setIsNavOpen(false)}
+              className="px-6 py-3 text-left text-white hover:text-[#42b8ac] hover:bg-white/5 transition-colors font-medium text-sm"
+            >
+              Careers
+            </Link>
             <Link
               href="/book-demo"
               onClick={() => setIsNavOpen(false)}
@@ -658,7 +668,11 @@ export default function LandingPage() {
         <Container>
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <img src="/Logo-AllyJen.svg" alt="AllyJen" className="h-24 w-auto" />
-            <div className="text-center md:text-right space-y-2">
+            <div className="flex flex-col items-center md:items-end gap-2">
+              <div className="flex items-center gap-4 text-sm text-white/50">
+                <Link href="/book-demo" className="hover:text-white/80 transition-colors">Book a Demo</Link>
+                <Link href="/careers" className="hover:text-white/80 transition-colors">Careers</Link>
+              </div>
               <p className="text-sm text-white/40">© 2026 AllyJen Solutions Limited.</p>
               <p className="text-xs text-white/30">CRO No. 811542 | Republic of Ireland</p>
             </div>
