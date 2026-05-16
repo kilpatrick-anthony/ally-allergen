@@ -230,22 +230,22 @@ export default function CareersPage() {
       </section>
 
       {/* ── WHY ALLYJEN ── */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-[#003842]">
         <Container>
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-[#003842] mb-3">Why join AllyJen?</h2>
-            <p className="text-gray-500 text-lg max-w-xl mx-auto">
+            <h2 className="text-3xl font-bold text-white mb-3">Why join AllyJen?</h2>
+            <p className="text-white/70 text-lg max-w-xl mx-auto">
               We're building something that matters — and we want people who care about doing it well.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {WHY_ALLYJEN.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="p-6 rounded-2xl border border-gray-100 hover:border-[#42b8ac]/40 hover:shadow-md transition-all">
-                <div className="w-10 h-10 rounded-xl bg-[#42b8ac]/10 flex items-center justify-center mb-4">
+              <div key={title} className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-[#42b8ac]/50 hover:bg-white/10 transition-all">
+                <div className="w-10 h-10 rounded-xl bg-[#42b8ac]/20 flex items-center justify-center mb-4">
                   <Icon className="h-5 w-5 text-[#42b8ac]" />
                 </div>
-                <h3 className="font-semibold text-[#003842] mb-2">{title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
+                <h3 className="font-semibold text-white mb-2">{title}</h3>
+                <p className="text-white/60 text-sm leading-relaxed">{desc}</p>
               </div>
             ))}
           </div>
@@ -253,27 +253,27 @@ export default function CareersPage() {
       </section>
 
       {/* ── ALERT SIGN-UP ── */}
-      <section id="alert-signup" className="py-16 bg-[#003842]">
+      <section id="alert-signup" className="py-16 bg-gray-50">
         <Container>
           <div className="max-w-xl mx-auto">
             {submitted ? (
               <div className="text-center">
-                <div className="w-16 h-16 rounded-full bg-[#42b8ac]/20 flex items-center justify-center mx-auto mb-5">
+                <div className="w-16 h-16 rounded-full bg-[#42b8ac]/10 flex items-center justify-center mx-auto mb-5">
                   <CheckCircle className="h-8 w-8 text-[#42b8ac]" />
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-3">You're on the list!</h2>
-                <p className="text-white/70 text-base leading-relaxed mb-6">
+                <h2 className="text-2xl font-bold text-[#003842] mb-3">You're on the list!</h2>
+                <p className="text-gray-500 text-base leading-relaxed mb-6">
                   We'll reach out as soon as a relevant position opens up. Thanks for your interest in AllyJen.
                 </p>
-                <Link href="/" className="inline-flex items-center gap-2 text-[#42b8ac] hover:text-white transition-colors font-medium text-sm">
+                <Link href="/" className="inline-flex items-center gap-2 text-[#42b8ac] hover:text-[#003842] transition-colors font-medium text-sm">
                   ← Back to home
                 </Link>
               </div>
             ) : (
               <>
                 <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-white mb-3">Get job alerts</h2>
-                  <p className="text-white/70 text-base">
+                  <h2 className="text-3xl font-bold text-[#003842] mb-3">Get job alerts</h2>
+                  <p className="text-gray-500 text-base">
                     Leave your details and we'll notify you when a position opens up that might suit you.
                   </p>
                 </div>
@@ -281,7 +281,7 @@ export default function CareersPage() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-white/80 mb-1.5">Full name *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Full name *</label>
                       <input
                         type="text"
                         name="name"
@@ -289,11 +289,11 @@ export default function CareersPage() {
                         value={form.name}
                         onChange={handleChange}
                         placeholder="Jane Doe"
-                        className="w-full px-4 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#42b8ac] text-sm"
+                        className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#42b8ac] text-sm"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-white/80 mb-1.5">Email address *</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1.5">Email address *</label>
                       <input
                         type="email"
                         name="email"
@@ -301,49 +301,49 @@ export default function CareersPage() {
                         value={form.email}
                         onChange={handleChange}
                         placeholder="jane@example.com"
-                        className="w-full px-4 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#42b8ac] text-sm"
+                        className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#42b8ac] text-sm"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-white/80 mb-1.5">Area of interest</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Area of interest</label>
                     <select
                       name="role"
                       value={form.role}
                       onChange={handleChange}
-                      className="w-full px-4 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#42b8ac] text-sm appearance-none"
+                      className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#42b8ac] text-sm appearance-none"
                     >
-                      <option value="" className="text-gray-800">— Select an area —</option>
-                      <option value="Engineering" className="text-gray-800">Engineering (Frontend / Fullstack)</option>
-                      <option value="Design" className="text-gray-800">Design / UX</option>
-                      <option value="Sales & Marketing" className="text-gray-800">Sales &amp; Marketing</option>
-                      <option value="Customer Success" className="text-gray-800">Customer Success</option>
-                      <option value="Operations" className="text-gray-800">Operations</option>
-                      <option value="Other" className="text-gray-800">Other / Open to anything</option>
+                      <option value="">— Select an area —</option>
+                      <option value="Engineering">Engineering (Frontend / Fullstack)</option>
+                      <option value="Design">Design / UX</option>
+                      <option value="Sales & Marketing">Sales &amp; Marketing</option>
+                      <option value="Customer Success">Customer Success</option>
+                      <option value="Operations">Operations</option>
+                      <option value="Other">Other / Open to anything</option>
                     </select>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-white/80 mb-1.5">Anything else? <span className="text-white/40 font-normal">(optional)</span></label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Anything else? <span className="text-gray-400 font-normal">(optional)</span></label>
                     <textarea
                       name="message"
                       value={form.message}
                       onChange={handleChange}
                       rows={3}
                       placeholder="Tell us a little about your background or what excites you about AllyJen…"
-                      className="w-full px-4 py-2.5 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#42b8ac] text-sm resize-none"
+                      className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#42b8ac] text-sm resize-none"
                     />
                   </div>
 
                   {error && (
-                    <p className="text-red-400 text-sm">{error}</p>
+                    <p className="text-red-600 text-sm">{error}</p>
                   )}
 
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-full bg-[#42b8ac] text-white font-semibold text-base hover:bg-[#3aa89e] transition-colors disabled:opacity-60"
+                    className="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-full bg-[#003842] text-white font-semibold text-base hover:bg-[#004d5c] transition-colors disabled:opacity-60"
                   >
                     {submitting ? (
                       <>
