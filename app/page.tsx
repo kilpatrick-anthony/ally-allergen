@@ -111,25 +111,25 @@ export default function LandingPage() {
             <nav className="hidden lg:flex items-center gap-8">
               <button
                 onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-                className="text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
+                className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
               >
                 Features
               </button>
               <button
                 onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
-                className="text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
+                className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
               >
                 How It Works
               </button>
               <button
                 onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
-                className="text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
+                className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
               >
                 Pricing
               </button>
               <button
                 onClick={() => document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })}
-                className="text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
+                className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
               >
                 Contact
               </button>
@@ -152,11 +152,6 @@ export default function LandingPage() {
             
             {/* CTAs - right */}
             <div className="flex-shrink-0 flex items-center gap-2">
-              <Link href="/book-demo" className="hidden sm:inline-flex">
-                <span className="inline-flex items-center gap-2 px-3 lg:px-5 py-2 rounded-full bg-[#42b8ac] text-white font-semibold text-sm hover:bg-[#3aa89e] transition-colors">
-                  Book a Demo
-                </span>
-              </Link>
               <Link href="/auth/signin">
                 <span className="inline-flex items-center gap-2 px-3 lg:px-5 py-2 rounded-full bg-white text-[#003842] font-semibold text-sm hover:bg-[#42b8ac] hover:text-white transition-colors">
                   Sign In <ArrowRight className="h-4 w-4" />
@@ -194,13 +189,6 @@ export default function LandingPage() {
               className="px-6 py-3 text-left text-white hover:text-[#42b8ac] hover:bg-white/5 transition-colors font-medium text-sm"
             >
               Careers
-            </Link>
-            <Link
-              href="/book-demo"
-              onClick={() => setIsNavOpen(false)}
-              className="px-6 py-3 text-[#42b8ac] font-semibold text-sm hover:bg-white/5 transition-colors"
-            >
-              Book a Free Demo →
             </Link>
           </nav>
         </div>
@@ -669,10 +657,6 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <img src="/Logo-AllyJen.svg" alt="AllyJen" className="h-24 w-auto" />
             <div className="flex flex-col items-center md:items-end gap-2">
-              <div className="flex items-center gap-4 text-sm text-white/50">
-                <Link href="/book-demo" className="hover:text-white/80 transition-colors">Book a Demo</Link>
-                <Link href="/careers" className="hover:text-white/80 transition-colors">Careers</Link>
-              </div>
               <p className="text-sm text-white/40">© 2026 AllyJen Solutions Limited.</p>
               <p className="text-xs text-white/30">CRO No. 811542 | Republic of Ireland</p>
             </div>
