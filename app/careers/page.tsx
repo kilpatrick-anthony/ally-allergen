@@ -91,7 +91,7 @@ export default function CareersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-white" style={{ fontFamily: "var(--font-atkinson), sans-serif" }}>
 
       {/* ── HEADER ── */}
       <header className="relative z-20 bg-[#003842] border-b border-[#003842]">
