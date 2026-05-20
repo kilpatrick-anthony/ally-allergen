@@ -332,7 +332,7 @@ export default function LandingPage() {
                 </ul>
               </div>
               <div className="relative z-10 text-center sm:text-right flex-shrink-0">
-                <div className="text-5xl font-extrabold text-white">€299</div>
+                <div className="text-5xl font-extrabold text-white">€499</div>
                 <div className="text-white/60 text-sm mt-1">per location, once</div>
               </div>
             </div>
@@ -459,7 +459,7 @@ export default function LandingPage() {
           </div>
 
           <p className="text-center text-sm text-gray-400 mt-10">
-            The €299 setup fee covers device installation per location. Need an additional device at a location?{' '}
+            The €499 setup fee covers device installation per location. Need an additional device at a location?{' '}
             <button
               type="button"
               onClick={() => document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })}
