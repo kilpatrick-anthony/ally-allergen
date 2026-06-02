@@ -77,7 +77,7 @@ const classifySearch = (query: string): 'allergen' | 'dietary' | 'other' => {
 export async function GET(req: NextRequest) {
   try {
     const supabase = createServiceClient()
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const token = cookieStore.get('auth-token')?.value
 
     if (!token) {
