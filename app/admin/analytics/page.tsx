@@ -9,7 +9,7 @@ import {
   BarChart3, TrendingUp, Eye,
   Download, Package, ChefHat, Building, Calendar,
   Filter, RefreshCw, ArrowUpRight, ArrowDownRight,
-  DollarSign, PieChart, LineChart, Target
+  DollarSign, PieChart, LineChart, Target, Leaf
 } from 'lucide-react'
 
 // Import design system components
@@ -46,7 +46,10 @@ export default function AnalyticsPage() {
     trends: any[]
     topIngredients: any[]
     topMenus: any[]
+    topAllergens: any[]
+    topDietary: any[]
   } | null>(null)
+  const [exporting, setExporting] = useState(false)
 
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -149,6 +152,91 @@ export default function AnalyticsPage() {
     return {
       label: `${isPositive ? '+' : ''}${rounded}%`,
       className: isPositive ? 'text-emerald-600 group-hover:text-white' : 'text-red-600 group-hover:text-white'
+    }
+  }
+
+  const handleExport = async (format: 'csv' | 'json') => {
+    if (!analyticsData) return
+    
+    try {
+      setExporting(true)
+      const exportData = {
+        exportDate: new Date().toISOString(),
+        dateRange: activeRangeLabel,
+        overview: analyticsData.overview,
+        deltas: analyticsData.deltas,
+        trends: analyticsData.trends,
+        topAllergens: analyticsData.topAllergens,
+        topDietary: analyticsData.topDietary,
+        topIngredients: analyticsData.topIngredients
+      }
+
+      if (format === 'json') {
+        const jsonStr = JSON.stringify(exportData, null, 2)
+        const blob = new Blob([jsonStr], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `analytics-${new Date().toISOString().slice(0, 10)}.json`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      } else {
+        // CSV export
+        const rows: string[] = []
+        rows.push('AllyJen Analytics Report')
+        rows.push(`Export Date: ${new Date().toLocaleDateString()}`)
+        rows.push(`Date Range: ${activeRangeLabel}`)
+        rows.push('')
+        
+        // Overview section
+        rows.push('OVERVIEW METRICS')
+        rows.push(`Report Downloads,${analyticsData.overview.reportDownloads}`)
+        rows.push(`Kiosk Usage,${analyticsData.overview.kioskUsage}`)
+        rows.push(`Paired Devices,${analyticsData.overview.pairedDevices}`)
+        rows.push(`Active Ingredients,${analyticsData.overview.activeMenuIngredients}`)
+        rows.push(`Active Menu Items,${analyticsData.overview.activeMenuItems}`)
+        rows.push('')
+        
+        // Top allergens
+        rows.push('TOP SEARCHED ALLERGENS')
+        rows.push('Allergen,Searches,Change %')
+        analyticsData.topAllergens.forEach((item: any) => {
+          rows.push(`"${item.name}",${item.searches},${item.change}`)
+        })
+        rows.push('')
+        
+        // Top dietary
+        rows.push('TOP DIETARY FILTERS')
+        rows.push('Dietary,Clicks,Change %')
+        analyticsData.topDietary.forEach((item: any) => {
+          rows.push(`"${item.name}",${item.clicks},${item.change}`)
+        })
+        rows.push('')
+        
+        // Trends
+        rows.push('DAILY TRENDS')
+        rows.push('Day,Menu Views,Ingredient Searches')
+        analyticsData.trends.forEach((trend: any) => {
+          rows.push(`${trend.day},${trend.views},${trend.searches}`)
+        })
+        
+        const csvStr = rows.join('\n')
+        const blob = new Blob([csvStr], { type: 'text/csv' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `analytics-${new Date().toISOString().slice(0, 10)}.csv`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      }
+    } catch (error) {
+      console.error('Export failed:', error)
+    } finally {
+      setExporting(false)
     }
   }
 
@@ -360,12 +448,49 @@ export default function AnalyticsPage() {
             >
               {t('admin.refresh')}
             </Button>
-            <Button
-              variant="primary"
-              icon={<Download className="h-4 w-4" />}
-            >
-              {t('admin.export')}
-            </Button>
+            <Dialog.Root>
+              <Dialog.Trigger asChild>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={<Download className="h-4 w-4" />}
+                  disabled={exporting}
+                >
+                  {exporting ? 'Exporting...' : t('admin.export')}
+                </Button>
+              </Dialog.Trigger>
+              <Dialog.Portal>
+                <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm" />
+                <Dialog.Content className="fixed left-1/2 top-1/2 w-[min(92vw,400px)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <Dialog.Title className="text-lg font-semibold text-[#003842] dark:text-white">Export Analytics</Dialog.Title>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">Choose export format</p>
+                    </div>
+                    <Dialog.Close className="rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-700">✕</Dialog.Close>
+                  </div>
+
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => handleExport('json')}
+                      disabled={exporting}
+                      className="w-full p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-left transition-colors disabled:opacity-50"
+                    >
+                      <div className="font-semibold text-gray-900 dark:text-white">JSON Format</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Machine-readable format for integrations</div>
+                    </button>
+                    <button
+                      onClick={() => handleExport('csv')}
+                      disabled={exporting}
+                      className="w-full p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-left transition-colors disabled:opacity-50"
+                    >
+                      <div className="font-semibold text-gray-900 dark:text-white">CSV Format</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">Compatible with Excel and spreadsheet apps</div>
+                    </button>
+                  </div>
+                </Dialog.Content>
+              </Dialog.Portal>
+            </Dialog.Root>
           </div>
         </div>
       </Card>
@@ -462,6 +587,93 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Top Allergens */}
+        <Card>
+          <div className="p-6 border-b dark:border-gray-700">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">Most Searched Allergens</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">What customers are filtering for</p>
+              </div>
+              <Badge variant="primary">
+                Top 6
+              </Badge>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="space-y-4">
+              {analyticsData.topAllergens && analyticsData.topAllergens.length === 0 ? (
+                <div className="text-sm text-gray-500 dark:text-gray-400">No allergen search data yet.</div>
+              ) : (
+                analyticsData.topAllergens?.map((item: any, index: number) => (
+                  <div key={index} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                        <Target className="h-4 w-4 text-red-600 dark:text-red-400" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{item.searches?.toLocaleString() || 0} searches</div>
+                      </div>
+                    </div>
+                    <Badge
+                      variant={item.change?.startsWith('+') ? 'success' : 'error'}
+                      icon={item.change?.startsWith('+') ? ArrowUpRight : ArrowDownRight}
+                    >
+                      {item.change || '0%'}
+                    </Badge>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </Card>
+
+        {/* Top Dietary Filters */}
+        <Card>
+          <div className="p-6 border-b dark:border-gray-700">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">Most Used Dietary Filters</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">Popular dietary preferences</p>
+              </div>
+              <Badge variant="primary">
+                Top 6
+              </Badge>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="space-y-4">
+              {analyticsData.topDietary && analyticsData.topDietary.length === 0 ? (
+                <div className="text-sm text-gray-500 dark:text-gray-400">No dietary filter data yet.</div>
+              ) : (
+                analyticsData.topDietary?.map((item: any, index: number) => (
+                  <div key={index} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                        <Leaf className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{item.clicks?.toLocaleString() || 0} clicks</div>
+                      </div>
+                    </div>
+                    <Badge
+                      variant={item.change?.startsWith('+') ? 'success' : 'error'}
+                      icon={item.change?.startsWith('+') ? ArrowUpRight : ArrowDownRight}
+                    >
+                      {item.change || '0%'}
+                    </Badge>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Engagement & Top Items */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* Engagement Trends */}
         <Card>

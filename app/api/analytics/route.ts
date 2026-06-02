@@ -294,6 +294,92 @@ const buildTopIngredients = (current: KioskAnalyticsEvent[], previous: KioskAnal
     })
 }
 
+// Common allergens list for classification
+const COMMON_ALLERGENS = [
+  'peanut', 'peanuts', 'tree nut', 'tree nuts', 'milk', 'dairy', 'lactose',
+  'egg', 'eggs', 'fish', 'shellfish', 'sesame', 'soy', 'soybean', 'gluten',
+  'wheat', 'barley', 'rye', 'oats', 'mustard', 'celery', 'sulphite', 'sulfite'
+]
+
+const COMMON_DIETARY = [
+  'vegan', 'vegetarian', 'gluten-free', 'gluten free', 'halal',
+  'kosher', 'organic', 'fair trade', 'lactose-free', 'lactose free',
+  'coeliac', 'celiac', 'dairy-free', 'dairy free', 'nut-free', 'nut free'
+]
+
+const classifySearch = (query: string): 'allergen' | 'dietary' | 'other' => {
+  const lower = query.toLowerCase()
+  if (COMMON_ALLERGENS.some(a => lower.includes(a))) return 'allergen'
+  if (COMMON_DIETARY.some(d => lower.includes(d))) return 'dietary'
+  return 'other'
+}
+
+const buildTopAllergens = (current: KioskAnalyticsEvent[], previous: KioskAnalyticsEvent[]) => {
+  const currentCounts = new Map<string, number>()
+  const previousCounts = new Map<string, number>()
+
+  const ingest = (events: KioskAnalyticsEvent[], map: Map<string, number>) => {
+    for (const event of events) {
+      if (event.event_type !== 'search') continue
+      const query = (event.search_query || '').trim().toLowerCase()
+      if (!query || classifySearch(query) !== 'allergen') continue
+      map.set(query, (map.get(query) || 0) + 1)
+    }
+  }
+
+  ingest(current, currentCounts)
+  ingest(previous, previousCounts)
+
+  return Array.from(currentCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([query, count]) => {
+      const prev = previousCounts.get(query) || 0
+      const delta = percentChange(count, prev)
+      const rounded = Math.round(delta * 10) / 10
+      const withSign = `${rounded >= 0 ? '+' : ''}${rounded}%`
+
+      return {
+        name: titleCase(query),
+        searches: count,
+        change: withSign
+      }
+    })
+}
+
+const buildTopDietary = (current: KioskAnalyticsEvent[], previous: KioskAnalyticsEvent[]) => {
+  const currentCounts = new Map<string, number>()
+  const previousCounts = new Map<string, number>()
+
+  const ingest = (events: KioskAnalyticsEvent[], map: Map<string, number>) => {
+    for (const event of events) {
+      if (event.event_type !== 'search') continue
+      const query = (event.search_query || '').trim().toLowerCase()
+      if (!query || classifySearch(query) !== 'dietary') continue
+      map.set(query, (map.get(query) || 0) + 1)
+    }
+  }
+
+  ingest(current, currentCounts)
+  ingest(previous, previousCounts)
+
+  return Array.from(currentCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([query, count]) => {
+      const prev = previousCounts.get(query) || 0
+      const delta = percentChange(count, prev)
+      const rounded = Math.round(delta * 10) / 10
+      const withSign = `${rounded >= 0 ? '+' : ''}${rounded}%`
+
+      return {
+        name: titleCase(query),
+        clicks: count,
+        change: withSign
+      }
+    })
+}
+
 const countActiveMenuItems = async (
   supabase: ReturnType<typeof createServiceClient>,
   businessId: string,
@@ -437,6 +523,8 @@ export async function GET(request: NextRequest) {
 
     const trends = buildTrends(kioskEventsCurrent)
     const topIngredients = buildTopIngredients(kioskEventsCurrent, kioskEventsPrevious)
+    const topAllergens = buildTopAllergens(kioskEventsCurrent, kioskEventsPrevious)
+    const topDietary = buildTopDietary(kioskEventsCurrent, kioskEventsPrevious)
 
     return NextResponse.json({
       overview: {
@@ -454,6 +542,8 @@ export async function GET(request: NextRequest) {
       },
       trends,
       topIngredients,
+      topAllergens,
+      topDietary,
       topMenus: []
     })
   } catch (error: any) {

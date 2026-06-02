@@ -430,12 +430,16 @@ export function JenCoach() {
       {!dismissed && (
         <button
           onClick={() => setOpen((o) => !o)}
-          className="relative flex items-center gap-0 rounded-full shadow-2xl hover:shadow-teal-400/30 hover:scale-[1.03] active:scale-[0.97] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 overflow-visible h-[56px] sm:h-[62px]"
+          onTouchEnd={(e) => { e.preventDefault(); setOpen((o) => !o) }}
+          className="relative flex items-center gap-0 rounded-full shadow-2xl hover:shadow-teal-400/30 hover:scale-[1.03] active:scale-[0.97] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 overflow-visible h-[56px] sm:h-[62px] cursor-pointer"
           style={{
             background: open
               ? 'linear-gradient(135deg, #003842 0%, #005a6e 100%)'
               : 'linear-gradient(135deg, #003842 0%, #00616e 60%, #42b8ac 100%)',
             paddingRight: open ? '0' : '18px',
+            zIndex: 50,
+            WebkitTouchCallout: 'none',
+            WebkitUserSelect: 'none',
           }}
           aria-label={open ? 'Close' : coachMode === 'ally' ? 'Open Ally' : 'Open Jen'}
         >

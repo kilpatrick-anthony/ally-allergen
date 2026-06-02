@@ -266,6 +266,19 @@ export default function ViewMenuItemPage() {
                   </div>
                 </div>
               </div>
+
+              {menuItem.color && (
+                <div className="pt-4 border-t">
+                  <label className="text-sm font-medium text-gray-500">Tile Colour</label>
+                  <div className="flex items-center gap-3 mt-2">
+                    <div
+                      className="h-10 w-10 rounded-lg border-2 border-gray-200"
+                      style={{ backgroundColor: menuItem.color }}
+                    />
+                    <span className="text-gray-900 font-mono text-sm">{menuItem.color}</span>
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
 

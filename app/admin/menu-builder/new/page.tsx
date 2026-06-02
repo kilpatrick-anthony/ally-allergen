@@ -29,6 +29,7 @@ interface MenuItem {
   dietary: string[]
   ingredients: string[]
   color?: string
+  icon?: string
 }
 
 interface Ingredient {
@@ -472,6 +473,58 @@ export default function NewMenuItemPage() {
                     Clear
                   </button>
                 )}
+              </div>
+            </Card>
+
+            {/* Menu Item Icon/Image */}
+            <Card className="p-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Icon or Picture <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                Add an icon or picture to this menu item. Choose from preset icons or upload a custom image. This will be displayed on the kiosk menu.
+              </p>
+              
+              {/* Upload Custom Image */}
+              <div className="mb-5 pb-5 border-b border-gray-200 dark:border-gray-600">
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Upload Custom Image</p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#42b8ac] file:text-white hover:file:bg-[#3aa89e]"
+                />
+              </div>
+
+              {/* Preset Icons */}
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-3">Or choose from preset icons:</p>
+              <div className="grid grid-cols-4 gap-3">
+                {[
+                  { icon: '🍕', name: 'Pizza' },
+                  { icon: '🍔', name: 'Burger' },
+                  { icon: '🥗', name: 'Salad' },
+                  { icon: '🍜', name: 'Noodles' },
+                  { icon: '🥩', name: 'Meat' },
+                  { icon: '🐟', name: 'Fish' },
+                  { icon: '🥘', name: 'Curry' },
+                  { icon: '🍰', name: 'Dessert' },
+                  { icon: '☕', name: 'Coffee' },
+                  { icon: '🥤', name: 'Drink' },
+                  { icon: '🧁', name: 'Cupcake' },
+                  { icon: '🍪', name: 'Cookie' },
+                  { icon: '🌮', name: 'Taco' },
+                  { icon: '🥙', name: 'Wrap' },
+                  { icon: '🍝', name: 'Pasta' },
+                  { icon: '🥟', name: 'Dumpling' },
+                ].map(preset => (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    className="p-3 rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-[#42b8ac] hover:bg-[#42b8ac]/10 transition-all text-3xl"
+                    title={preset.name}
+                  >
+                    {preset.icon}
+                  </button>
+                ))}
               </div>
             </Card>
 

@@ -659,6 +659,26 @@ export default function LandingPage() {
         </Container>
       </section>
 
+      {/* ── DISCLAIMER ── */}
+      <section className="bg-orange-50 border-t border-orange-200 py-12">
+        <Container>
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-start gap-4">
+              <Shield className="h-6 w-6 text-orange-600 flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-orange-900 mb-3">Allergen Safety Notice</h3>
+                <p className="text-orange-800 text-sm leading-relaxed mb-4">
+                  Our staff are trained in allergen awareness and follow strict food safety systems. To use this service safely: carefully enter your allergen information, make informed decisions based on the information provided, and always verify with our staff before ordering. Complete allergen information for all menu items is available through this system. If you have severe allergies or concerns about cross-contamination, please consult directly with our staff.
+                </p>
+                <p className="text-xs text-orange-600 font-medium">
+                  This platform is designed to support allergen management but does not replace professional medical advice or direct consultation with food service staff.
+                </p>
+              </div>
+            </div>
+          </div>
+        </Container>
+      </section>
+
       {/* ── FOOTER ── */}
       <footer className="bg-[#003842] border-t border-white/10 py-10">
         <Container>

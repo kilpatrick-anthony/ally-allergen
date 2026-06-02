@@ -1519,6 +1519,12 @@ export default function KioskPage() {
         {/* Allergen Filter View */}
         {activeView === 'filters' && (
           <>
+            {/* Page Title */}
+            <div className="mb-8">
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{t.avoidAllergens || 'Avoid Allergens'}</h1>
+              <p className="text-gray-600 text-lg">{t.selectAllergenDesc || 'Select the allergens you want to avoid, and we\'ll hide menu items containing them.'}</p>
+            </div>
+
             {/* Allergen Filter Section */}
             <Card className="mb-8">
               <div className="p-6">

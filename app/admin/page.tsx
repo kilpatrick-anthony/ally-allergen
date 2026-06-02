@@ -155,6 +155,23 @@ export default function AdminDashboard() {
           <NotificationsPanel settings={settings} />
         </div>
 
+        {/* Business Responsibility Disclaimer */}
+        <div className="mb-8 p-4 bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 rounded-lg">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 pt-0.5">
+              <Shield className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
+                {t('businessDisclaimerTitle') || 'Business Data Accuracy Responsibility'}
+              </h3>
+              <p className="text-sm text-amber-800 dark:text-amber-200 leading-relaxed">
+                {t('businessDisclaimerText') || 'AllyJen provides tools to help manage allergen information. However, your business is responsible for the accuracy, completeness, and correctness of all data entered into this system.'}
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Frequently Used */}
         <div className="mb-8">
           <div className="flex items-center gap-2 mb-4">
