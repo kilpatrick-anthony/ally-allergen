@@ -21,6 +21,7 @@ interface MenuItem {
   description: string
   category: string
   site_id?: string | null
+  icon?: string
   allergen_warnings: AllergenWarnings
   dietary: string[]
   ingredients: string[]
@@ -30,6 +31,27 @@ interface MenuItem {
 interface SiteOption {
   id: string
   name: string
+}
+
+const isImageIcon = (icon?: string) => Boolean(icon && /^https?:\/\//.test(icon))
+
+function MenuItemIcon({ icon, size = 'md' }: { icon?: string; size?: 'sm' | 'md' }) {
+  const iconSize = size === 'sm' ? 'h-9 w-9 text-2xl' : 'h-10 w-10 text-3xl'
+  const chefSize = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5'
+
+  return (
+    <div className={`flex ${iconSize} items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-[#42b8ac] to-[#003842] shrink-0`}>
+      {icon ? (
+        isImageIcon(icon) ? (
+          <img src={icon} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <span>{icon}</span>
+        )
+      ) : (
+        <ChefHat className={`${chefSize} text-white`} />
+      )}
+    </div>
+  )
 }
 
 export default function MenuBuilderPage() {
@@ -83,6 +105,7 @@ export default function MenuBuilderPage() {
             description: item.description || '',
             category: item.category || '',
             site_id: item.site_id ?? null,
+            icon: item.icon || '',
             allergen_warnings: item.allergen_warnings || { ...defaultWarnings },
             dietary: Array.isArray(item.dietary) ? item.dietary : [],
             ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
@@ -441,9 +464,7 @@ export default function MenuBuilderPage() {
               >
                 {/* Tile Header */}
                 <div className="p-5 flex items-start gap-3">
-                  <div className="p-2 bg-gradient-to-br from-[#42b8ac] to-[#003842] rounded-lg shrink-0">
-                    <ChefHat className="h-5 w-5 text-white" />
-                  </div>
+                  <MenuItemIcon icon={item.icon} />
                   <div className="min-w-0 flex-1">
                     <h3 className="font-semibold text-gray-900 dark:text-white truncate" title={item.name}>
                       {item.name}
@@ -536,7 +557,12 @@ export default function MenuBuilderPage() {
                     </tr>
                 {groupedMenuItems[cat].map((item, idx) => (
                   <tr key={item.id} className="border-b border-gray-200 dark:border-gray-700">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">{item.name}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <MenuItemIcon icon={item.icon} size="sm" />
+                        <span className="truncate">{item.name}</span>
+                      </div>
+                    </td>
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate">{item.description}</td>
                     <td className="px-6 py-4 text-sm">
                       <Badge variant={item.site_id ? 'primary' : 'default'}>

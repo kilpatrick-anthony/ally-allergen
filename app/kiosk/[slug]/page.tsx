@@ -67,8 +67,11 @@ async function trackDownload(slug: string, downloadType: string, siteId?: string
   await sendKioskAnalyticsEvent({ slug, siteId, eventType: 'download', downloadType })
 }
 
-async function trackFilterUsage(slug: string, selectedAllergens: string[], siteId?: string | null) {
-  await sendKioskAnalyticsEvent({ slug, siteId, eventType: 'filter', selectedAllergens })
+async function trackFilterUsage(slug: string, selectedAllergens: string[], selectedDietary: string[], siteId?: string | null) {
+  const searchQuery = selectedDietary.length > 0
+    ? selectedDietary.map(value => `dietary:${value}`).join('|')
+    : undefined
+  await sendKioskAnalyticsEvent({ slug, siteId, eventType: 'filter', selectedAllergens, searchQuery })
 }
 
 async function trackSearch(slug: string, searchQuery: string, siteId?: string | null) {
@@ -618,10 +621,10 @@ export default function KioskPage() {
 
   // Track filter usage
   useEffect(() => {
-    if (selectedAllergens.length > 0) {
-      trackFilterUsage(slug, selectedAllergens, siteIdParam)
+    if (selectedAllergens.length > 0 || selectedDietary.length > 0) {
+      trackFilterUsage(slug, selectedAllergens, selectedDietary, siteIdParam)
     }
-  }, [selectedAllergens, slug, siteIdParam])
+  }, [selectedAllergens, selectedDietary, slug, siteIdParam])
 
   useEffect(() => {
     if (showQRCode) {

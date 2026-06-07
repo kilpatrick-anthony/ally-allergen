@@ -124,7 +124,7 @@ const countPairedDevices = async (
   siteId: string | null
 ) => {
   let query = supabase
-    .from('kiosk_devices')
+    .from('devices')
     .select('id', { count: 'exact', head: true })
     .eq('business_id', businessId)
   if (siteId) {
@@ -182,6 +182,8 @@ const countKioskInteractions = async (
 type KioskAnalyticsEvent = {
   event_type: string
   search_query: string | null
+  selected_allergens?: string[] | null
+  site_id?: string | null
   created_at: string
 }
 
@@ -196,7 +198,7 @@ const getKioskEvents = async (
   try {
     let query = supabase
       .from('kiosk_analytics_events')
-      .select('event_type, search_query, created_at')
+      .select('event_type, search_query, selected_allergens, site_id, created_at')
       .eq('business_id', businessId)
       .in('event_type', eventTypes)
       .gte('created_at', start.toISOString())
@@ -320,10 +322,21 @@ const buildTopAllergens = (current: KioskAnalyticsEvent[], previous: KioskAnalyt
 
   const ingest = (events: KioskAnalyticsEvent[], map: Map<string, number>) => {
     for (const event of events) {
-      if (event.event_type !== 'search') continue
-      const query = (event.search_query || '').trim().toLowerCase()
-      if (!query || classifySearch(query) !== 'allergen') continue
-      map.set(query, (map.get(query) || 0) + 1)
+      if (event.event_type === 'filter' && Array.isArray(event.selected_allergens)) {
+        for (const allergen of event.selected_allergens) {
+          const normalized = allergen.replace(/^contains_/, '').replace(/_/g, ' ').trim().toLowerCase()
+          if (normalized) {
+            map.set(normalized, (map.get(normalized) || 0) + 1)
+          }
+        }
+        continue
+      }
+
+      if (event.event_type === 'search') {
+        const query = (event.search_query || '').trim().toLowerCase()
+        if (!query || classifySearch(query) !== 'allergen') continue
+        map.set(query, (map.get(query) || 0) + 1)
+      }
     }
   }
 
@@ -353,10 +366,26 @@ const buildTopDietary = (current: KioskAnalyticsEvent[], previous: KioskAnalytic
 
   const ingest = (events: KioskAnalyticsEvent[], map: Map<string, number>) => {
     for (const event of events) {
-      if (event.event_type !== 'search') continue
-      const query = (event.search_query || '').trim().toLowerCase()
-      if (!query || classifySearch(query) !== 'dietary') continue
-      map.set(query, (map.get(query) || 0) + 1)
+      if (event.event_type === 'filter') {
+        const filters = (event.search_query || '')
+          .split('|')
+          .map(value => value.trim())
+          .filter(value => value.startsWith('dietary:'))
+          .map(value => value.replace(/^dietary:/, '').trim().toLowerCase())
+
+        for (const filter of filters) {
+          if (filter) {
+            map.set(filter, (map.get(filter) || 0) + 1)
+          }
+        }
+        continue
+      }
+
+      if (event.event_type === 'search') {
+        const query = (event.search_query || '').trim().toLowerCase()
+        if (!query || classifySearch(query) !== 'dietary') continue
+        map.set(query, (map.get(query) || 0) + 1)
+      }
     }
   }
 
@@ -394,10 +423,14 @@ const countActiveMenuItems = async (
     .eq('is_active', true)
 
   if (siteId) {
-    query = query.eq('site_id', siteId)
+    query = query.or(`site_id.is.null,site_id.eq.${siteId}`)
   }
 
-  const { count } = await query
+  const { count, error } = await query
+  if (error) {
+    console.warn('Active menu items query error:', error.message)
+    return 0
+  }
   return count || 0
 }
 
@@ -408,18 +441,109 @@ const countActiveMenuIngredients = async (
   start: Date,
   end: Date
 ) => {
+  if (siteId) {
+    const { data: menuItems, error: menuError } = await supabase
+      .from('menu_items')
+      .select('id')
+      .eq('business_id', businessId)
+      .eq('is_active', true)
+      .or(`site_id.is.null,site_id.eq.${siteId}`)
+
+    if (menuError) {
+      console.warn('Site menu items ingredient query error:', menuError.message)
+      return 0
+    }
+
+    const menuItemIds = (menuItems || []).map((item: any) => item.id)
+    if (menuItemIds.length === 0) return 0
+
+    const { data: links, error: linksError } = await supabase
+      .from('menu_item_ingredients')
+      .select('ingredient_id')
+      .in('menu_item_id', menuItemIds)
+
+    if (linksError) {
+      console.warn('Menu item ingredient links query error:', linksError.message)
+      return 0
+    }
+
+    return new Set((links || []).map((link: any) => link.ingredient_id).filter(Boolean)).size
+  }
+
   let query = supabase
     .from('ingredients')
     .select('id', { count: 'exact', head: true })
     .eq('business_id', businessId)
     .eq('status', 'active')
 
+  const { count, error } = await query
+  if (error) {
+    console.warn('Active ingredients query error:', error.message)
+    return 0
+  }
+  return count || 0
+}
+
+const buildSiteBreakdown = async (
+  supabase: ReturnType<typeof createServiceClient>,
+  businessId: string,
+  siteId: string | null,
+  events: KioskAnalyticsEvent[]
+) => {
+  let siteQuery = supabase
+    .from('sites')
+    .select('id, name')
+    .eq('business_id', businessId)
+    .order('name')
+
   if (siteId) {
-    query = query.eq('site_id', siteId)
+    siteQuery = siteQuery.eq('id', siteId)
   }
 
-  const { count } = await query
-  return count || 0
+  const { data: sites, error: sitesError } = await siteQuery
+  if (sitesError) {
+    console.warn('Site breakdown sites query error:', sitesError.message)
+    return []
+  }
+
+  const siteIds = (sites || []).map((site: any) => site.id)
+  if (siteIds.length === 0) return []
+
+  const { data: devices, error: devicesError } = await supabase
+    .from('devices')
+    .select('id, site_id')
+    .eq('business_id', businessId)
+    .in('site_id', siteIds)
+
+  if (devicesError) {
+    console.warn('Site breakdown devices query error:', devicesError.message)
+  }
+
+  const devicesBySite = new Map<string, number>()
+  for (const device of devices || []) {
+    if (!device.site_id) continue
+    devicesBySite.set(device.site_id, (devicesBySite.get(device.site_id) || 0) + 1)
+  }
+
+  const activityBySite = new Map<string, { views: number; searches: number }>()
+  for (const event of events) {
+    if (!event.site_id) continue
+    const activity = activityBySite.get(event.site_id) || { views: 0, searches: 0 }
+    if (event.event_type === 'page_view') activity.views += 1
+    if (event.event_type === 'search') activity.searches += 1
+    activityBySite.set(event.site_id, activity)
+  }
+
+  return (sites || []).map((site: any) => {
+    const activity = activityBySite.get(site.id) || { views: 0, searches: 0 }
+    return {
+      id: site.id,
+      name: site.name,
+      devices: devicesBySite.get(site.id) || 0,
+      views: activity.views,
+      searches: activity.searches
+    }
+  })
 }
 
 export async function GET(request: NextRequest) {
@@ -516,8 +640,8 @@ export async function GET(request: NextRequest) {
       countActiveMenuItems(supabase, businessId, siteId, previousStart, previousEnd),
       countActiveMenuIngredients(supabase, businessId, siteId, currentStart, currentEnd),
       countActiveMenuIngredients(supabase, businessId, siteId, previousStart, previousEnd),
-      getKioskEvents(supabase, businessId, siteId, currentStart, currentEnd, ['page_view', 'search']),
-      getKioskEvents(supabase, businessId, siteId, previousStart, previousEnd, ['search']),
+      getKioskEvents(supabase, businessId, siteId, currentStart, currentEnd, ['page_view', 'search', 'filter']),
+      getKioskEvents(supabase, businessId, siteId, previousStart, previousEnd, ['search', 'filter']),
       countPairedDevices(supabase, businessId, siteId),
     ])
 
@@ -525,6 +649,7 @@ export async function GET(request: NextRequest) {
     const topIngredients = buildTopIngredients(kioskEventsCurrent, kioskEventsPrevious)
     const topAllergens = buildTopAllergens(kioskEventsCurrent, kioskEventsPrevious)
     const topDietary = buildTopDietary(kioskEventsCurrent, kioskEventsPrevious)
+    const siteBreakdown = await buildSiteBreakdown(supabase, businessId, siteId, kioskEventsCurrent)
 
     return NextResponse.json({
       overview: {
@@ -537,6 +662,7 @@ export async function GET(request: NextRequest) {
       deltas: {
         reportDownloads: percentChange(reportDownloadsCurrent, reportDownloadsPrevious),
         kioskUsage: percentChange(kioskInteractionsCurrent, kioskInteractionsPrevious),
+        pairedDevices: null,
         activeMenuIngredients: percentChange(activeMenuIngredientsCurrent, activeMenuIngredientsPrevious),
         activeMenuItems: percentChange(activeMenuItemsCurrent, activeMenuItemsPrevious)
       },
@@ -544,6 +670,7 @@ export async function GET(request: NextRequest) {
       topIngredients,
       topAllergens,
       topDietary,
+      siteBreakdown,
       topMenus: []
     })
   } catch (error: any) {

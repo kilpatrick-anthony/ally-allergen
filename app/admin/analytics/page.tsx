@@ -8,8 +8,8 @@ import { useTranslation } from '@/lib/hooks/useTranslation'
 import { 
   BarChart3, TrendingUp, Eye,
   Download, Package, ChefHat, Building, Calendar,
-  Filter, RefreshCw, ArrowUpRight, ArrowDownRight,
-  DollarSign, PieChart, LineChart, Target, Leaf
+  RefreshCw, ArrowUpRight, ArrowDownRight,
+  LineChart, Target, Leaf
 } from 'lucide-react'
 
 // Import design system components
@@ -28,7 +28,6 @@ export default function AnalyticsPage() {
   const [customRange, setCustomRange] = useState<DateRange | undefined>()
   const [draftRange, setDraftRange] = useState<DateRange | undefined>()
   const [calendarOpen, setCalendarOpen] = useState(false)
-  const [selectedMetric, setSelectedMetric] = useState('overview')
   const [analyticsData, setAnalyticsData] = useState<{ 
     overview: {
       reportDownloads: number
@@ -40,6 +39,7 @@ export default function AnalyticsPage() {
     deltas: {
       reportDownloads: number | null
       kioskUsage: number | null
+      pairedDevices: number | null
       activeMenuIngredients: number | null
       activeMenuItems: number | null
     }
@@ -48,8 +48,16 @@ export default function AnalyticsPage() {
     topMenus: any[]
     topAllergens: any[]
     topDietary: any[]
+    siteBreakdown: Array<{
+      id: string
+      name: string
+      devices: number
+      views: number
+      searches: number
+    }>
   } | null>(null)
   const [exporting, setExporting] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -136,7 +144,7 @@ export default function AnalyticsPage() {
     }
 
     loadAnalytics()
-  }, [rangePreset, customRange, siteId])
+  }, [rangePreset, customRange, siteId, refreshKey])
 
   const formatDelta = (value: number | null) => {
     if (value === null || Number.isNaN(value)) {
@@ -168,7 +176,8 @@ export default function AnalyticsPage() {
         trends: analyticsData.trends,
         topAllergens: analyticsData.topAllergens,
         topDietary: analyticsData.topDietary,
-        topIngredients: analyticsData.topIngredients
+        topIngredients: analyticsData.topIngredients,
+        siteBreakdown: analyticsData.siteBreakdown
       }
 
       if (format === 'json') {
@@ -297,10 +306,10 @@ export default function AnalyticsPage() {
       <Card className="mb-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           {/* Site selector */}
-          {sites.length > 1 && (
+          {sites.length > 0 && (
             <div className="flex items-center gap-2 mb-1 lg:mb-0">
               <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 shrink-0">
-                Site
+                Store/Site
               </span>
               <select
                 value={siteId ?? ''}
@@ -325,7 +334,7 @@ export default function AnalyticsPage() {
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                {t('admin.timeRange')}
+                Date Range
               </span>
               {(Object.keys(presetConfig) as Array<keyof typeof presetConfig>).map((preset) => (
                 <button
@@ -445,6 +454,7 @@ export default function AnalyticsPage() {
               variant="ghost"
               size="sm"
               icon={<RefreshCw className="h-4 w-4" />}
+              onClick={() => setRefreshKey(key => key + 1)}
             >
               {t('admin.refresh')}
             </Button>
@@ -532,11 +542,8 @@ export default function AnalyticsPage() {
               </div>
             </div>
             <div className="mt-4 flex items-center">
-              <div
-                className={`flex items-center text-sm font-medium transition-colors ${formatDelta(analyticsData.deltas.kioskUsage).className}`}
-              >
-                <TrendingUp className="h-4 w-4 mr-1" />
-                <span>{formatDelta(analyticsData.deltas.kioskUsage).label}</span>
+              <div className="text-sm font-medium text-gray-500 group-hover:text-white transition-colors">
+                Total setup devices
               </div>
             </div>
           </Card>
@@ -785,7 +792,28 @@ export default function AnalyticsPage() {
                 <p className="text-sm text-gray-600 dark:text-gray-300">Site usage statistics</p>
               </div>
             </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400">No kiosk performance data yet.</div>
+            <div className="space-y-4">
+              {analyticsData.siteBreakdown.length === 0 ? (
+                <div className="text-sm text-gray-500 dark:text-gray-400">No site activity data yet.</div>
+              ) : (
+                analyticsData.siteBreakdown.map((site) => (
+                  <div key={site.id} className="rounded-lg border border-gray-100 dark:border-gray-700 p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="font-medium text-gray-900 dark:text-white truncate">{site.name}</div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {site.devices} device{site.devices !== 1 ? 's' : ''}
+                        </div>
+                      </div>
+                      <div className="text-right text-sm text-gray-600 dark:text-gray-300">
+                        <div>{site.views.toLocaleString()} views</div>
+                        <div>{site.searches.toLocaleString()} searches</div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </Card>
 
