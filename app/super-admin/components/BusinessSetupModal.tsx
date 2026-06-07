@@ -58,6 +58,14 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
     businessPostalCode: '',
     businessCountry: 'Ireland',
 
+    // First Site Info
+    createFirstSite: true,
+    siteName: 'Main Location',
+    siteAddress: '',
+    siteCity: '',
+    sitePostalCode: '',
+    siteCountry: 'Ireland',
+
     // Subscription Info
     plan: 'starter',
     subscriptionStatus: 'active',
@@ -89,6 +97,11 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
     if (currentStep === 2) {
       if (!formData.businessName.trim()) {
         setStepError('Business name is required to continue.')
+        return false
+      }
+
+      if (formData.createFirstSite && !formData.siteName.trim()) {
+        setStepError('First site name is required, or turn off first site creation.')
         return false
       }
     }
@@ -176,6 +189,12 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
         businessCity: '',
         businessPostalCode: '',
         businessCountry: 'Ireland',
+        createFirstSite: true,
+        siteName: 'Main Location',
+        siteAddress: '',
+        siteCity: '',
+        sitePostalCode: '',
+        siteCountry: 'Ireland',
         plan: 'starter',
         subscriptionStatus: 'active',
         billingCycle: 'monthly',
@@ -371,13 +390,113 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="">Select Country</option>
-              <option value="US">United States</option>
-              <option value="CA">Canada</option>
-              <option value="UK">United Kingdom</option>
-              <option value="AU">Australia</option>
+              <option value="Ireland">Ireland</option>
+              <option value="United Kingdom">United Kingdom</option>
+              <option value="United States">United States</option>
+              <option value="Canada">Canada</option>
+              <option value="Australia">Australia</option>
             </select>
           </div>
         </div>
+      </div>
+
+      <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h4 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-[#42b8ac]" />
+              First Site / Location
+            </h4>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              Create the first store now so devices, kiosk links, and reporting have a location to attach to.
+            </p>
+          </div>
+          <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <input
+              type="checkbox"
+              name="createFirstSite"
+              checked={formData.createFirstSite}
+              onChange={handleChange}
+              className="rounded border-gray-300 text-[#42b8ac] focus:ring-[#42b8ac]"
+            />
+            Create
+          </label>
+        </div>
+
+        {formData.createFirstSite && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Site Name *
+              </label>
+              <input
+                type="text"
+                name="siteName"
+                value={formData.siteName}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                placeholder="Main Location"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Site Address
+              </label>
+              <input
+                type="text"
+                name="siteAddress"
+                value={formData.siteAddress}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                placeholder="Use business address if left blank"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                City
+              </label>
+              <input
+                type="text"
+                name="siteCity"
+                value={formData.siteCity}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                placeholder="Use business city if left blank"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Eircode / Postal Code
+              </label>
+              <input
+                type="text"
+                name="sitePostalCode"
+                value={formData.sitePostalCode}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                placeholder="Use business postal code if left blank"
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Country
+              </label>
+              <select
+                name="siteCountry"
+                value={formData.siteCountry}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="">Use business country</option>
+                <option value="Ireland">Ireland</option>
+                <option value="United Kingdom">United Kingdom</option>
+                <option value="United States">United States</option>
+                <option value="Canada">Canada</option>
+                <option value="Australia">Australia</option>
+              </select>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -601,7 +720,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
             </Button>
           </div>
           <p className="text-sm text-gray-500 mt-2">
-            Fast path: create owner + business now, then handle billing details later if needed.
+            Fast path: create owner, business, and first site now, then handle billing details later if needed.
           </p>
         </div>
 

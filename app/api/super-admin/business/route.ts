@@ -25,6 +25,13 @@ async function getAuthenticatedSuperAdmin() {
   }
 }
 
+const slugify = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
 export async function GET() {
   try {
     const admin = await getAuthenticatedSuperAdmin()
@@ -174,6 +181,12 @@ export async function POST(request: NextRequest) {
       businessCity,
       businessPostalCode,
       businessCountry,
+      createFirstSite = true,
+      siteName = 'Main Location',
+      siteAddress,
+      siteCity,
+      sitePostalCode,
+      siteCountry,
       plan,
       sendWelcomeEmail,
     } = body
@@ -181,6 +194,13 @@ export async function POST(request: NextRequest) {
     if (!ownerName || !ownerEmail || !businessName) {
       return NextResponse.json(
         { error: 'Owner name, email, and business name are required' },
+        { status: 400 }
+      )
+    }
+
+    if (createFirstSite !== false && !String(siteName || '').trim()) {
+      return NextResponse.json(
+        { error: 'First site name is required when creating a first site' },
         { status: 400 }
       )
     }
@@ -255,7 +275,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to link user to business' }, { status: 500 })
     }
 
-    // 4. Send password reset / welcome email so the user can set their own password
+    // 4. Create the first site/location so onboarding can continue immediately
+    let firstSite = null
+    if (createFirstSite !== false) {
+      const cleanSiteName = String(siteName || '').trim()
+      const siteSlug = `${slugify(cleanSiteName)}-${Date.now().toString().slice(-6)}`
+      const { data: createdSite, error: siteError } = await supabase
+        .from('sites')
+        .insert({
+          business_id: business.id,
+          name: cleanSiteName,
+          slug: siteSlug,
+          address: siteAddress || businessAddress || null,
+          city: siteCity || businessCity || null,
+          country: siteCountry || businessCountry || null,
+          eircode: sitePostalCode || businessPostalCode || null,
+          phone: ownerPhone || null,
+          email: ownerEmail,
+          is_active: true,
+        })
+        .select()
+        .single()
+
+      if (siteError) {
+        console.error('Failed to create first site:', siteError)
+        await supabase.from('user_businesses').delete().eq('business_id', business.id)
+        await supabase.from('businesses').delete().eq('id', business.id)
+        await supabase.auth.admin.deleteUser(userData.user.id)
+        return NextResponse.json({ error: 'Failed to create first site' }, { status: 500 })
+      }
+
+      firstSite = createdSite
+    }
+
+    // 5. Send password reset / welcome email so the user can set their own password
     if (sendWelcomeEmail !== false) {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(ownerEmail, {
         redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://allyjen.ie'}/auth/update-password`
@@ -268,7 +321,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       businessId: business.id,
+      businessName: business.name,
       userId: userData.user.id,
+      ownerEmail,
+      firstSiteId: firstSite?.id || null,
+      firstSiteName: firstSite?.name || null,
       message: `Business "${businessName}" created. A password setup email has been sent to ${ownerEmail}.`
     })
   } catch (err) {

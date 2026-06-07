@@ -231,7 +231,8 @@ export default function SuperAdminDashboard() {
       businessName: result?.businessName || result?.name || 'New business',
       ownerEmail: result?.ownerEmail || result?.contactEmail || ''
     })
-    setActionNotice({ type: 'success', text: 'New business created successfully.' })
+    const siteText = result?.firstSiteName ? ` First site "${result.firstSiteName}" was also created.` : ''
+    setActionNotice({ type: 'success', text: `New business created successfully.${siteText}` })
   }
 
   const getSetupProgress = (business: Business) => {
