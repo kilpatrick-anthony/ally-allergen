@@ -84,9 +84,21 @@ interface BusinessDetailsModalProps {
   isOpen: boolean
   onClose: () => void
   business: Business | null
+  onEdit?: (business: Business) => void
+  onResetPassword?: (business: Business) => void
+  onSetPassword?: (business: Business) => void
+  onToggleStatus?: (business: Business) => void
 }
 
-export function BusinessDetailsModal({ isOpen, onClose, business }: BusinessDetailsModalProps) {
+export function BusinessDetailsModal({
+  isOpen,
+  onClose,
+  business,
+  onEdit,
+  onResetPassword,
+  onSetPassword,
+  onToggleStatus
+}: BusinessDetailsModalProps) {
   const [summary, setSummary] = useState<BusinessSummary | null>(null)
   const [summaryLoading, setSummaryLoading] = useState(false)
   const [summaryError, setSummaryError] = useState('')
@@ -467,19 +479,29 @@ export function BusinessDetailsModal({ isOpen, onClose, business }: BusinessDeta
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex flex-col gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 sm:flex-row sm:justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Button variant="outline" onClick={() => onResetPassword?.(business)}>
+              Send Reset Email
+            </Button>
+            <Button variant="outline" onClick={() => onSetPassword?.(business)}>
+              Set Password
+            </Button>
+            <Button
+              variant={business.status === 'suspended' ? 'primary' : 'outline'}
+              onClick={() => onToggleStatus?.(business)}
+            >
+              {business.status === 'suspended' ? 'Activate' : 'Suspend'}
+            </Button>
+          </div>
+          <div className="flex justify-end gap-3">
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>
-          <Button
-            variant="primary"
-            onClick={() => {
-              // In a real implementation, this would open an edit modal
-              alert('Edit functionality would be implemented here')
-            }}
-          >
+          <Button variant="primary" onClick={() => onEdit?.(business)}>
             Edit Business
           </Button>
+          </div>
         </div>
       </div>
     </Modal>

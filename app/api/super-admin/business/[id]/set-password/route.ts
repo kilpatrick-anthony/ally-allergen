@@ -12,7 +12,9 @@ async function getAuthenticatedSuperAdmin() {
     const secret = new TextEncoder().encode(process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret')
     const { payload } = await jwtVerify(authToken, secret)
     const userEmail = payload.email as string
-    if (userEmail !== process.env.SUPER_ADMIN_EMAIL) return null
+    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL
+    const isSuperAdmin = userEmail === superAdminEmail || payload.role === 'super_admin'
+    if (!isSuperAdmin) return null
     return { userEmail }
   } catch {
     return null

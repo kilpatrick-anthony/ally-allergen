@@ -76,6 +76,17 @@ export default function SuperAdminDashboard() {
   const [setPasswordValue, setSetPasswordValue] = useState('')
   const [setPasswordConfirm, setSetPasswordConfirm] = useState('')
   const [setPasswordError, setSetPasswordError] = useState('')
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editBusiness, setEditBusiness] = useState<Business | null>(null)
+  const [editForm, setEditForm] = useState({
+    name: '',
+    ownerName: '',
+    phone: '',
+    address: '',
+    plan: 'starter',
+    status: 'active'
+  })
+  const [editError, setEditError] = useState('')
   const [actionNotice, setActionNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showDemoModal, setShowDemoModal] = useState(false)
   const [demoForm, setDemoForm] = useState({ ownerEmail: '', ownerName: '', businessName: '', locationName: '' })
@@ -323,8 +334,53 @@ export default function SuperAdminDashboard() {
   }
 
   const handleEditBusiness = (business: Business) => {
-    // In a real implementation, this would open an edit modal
-    alert(`Edit functionality for "${business.name}" would be implemented here`)
+    setEditBusiness(business)
+    setEditForm({
+      name: business.name || '',
+      ownerName: business.contactName || '',
+      phone: business.phone || '',
+      address: business.address || '',
+      plan: business.plan || 'starter',
+      status: business.status || 'active'
+    })
+    setEditError('')
+    setShowEditModal(true)
+  }
+
+  const handleEditBusinessSubmit = async () => {
+    if (!editBusiness) return
+    if (!editForm.name.trim()) {
+      setEditError('Business name is required.')
+      return
+    }
+
+    setIsLoading(true)
+    setEditError('')
+    try {
+      const response = await fetch(`/api/super-admin/business/${editBusiness.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editForm.name.trim(),
+          ownerName: editForm.ownerName.trim(),
+          phone: editForm.phone.trim(),
+          address: editForm.address.trim(),
+          plan: editForm.plan,
+          status: editForm.status
+        })
+      })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error || 'Failed to update business')
+
+      await loadBusinesses()
+      setShowEditModal(false)
+      setShowBusinessDetails(false)
+      setActionNotice({ type: 'success', text: `Business "${editForm.name}" updated successfully.` })
+    } catch (error: any) {
+      setEditError(error.message || 'Failed to update business.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleSuspendBusiness = async (business: Business) => {
@@ -340,6 +396,9 @@ export default function SuperAdminDashboard() {
       })
       if (!response.ok) throw new Error('Failed to suspend business')
       await loadBusinesses()
+      if (selectedBusiness?.id === business.id) {
+        setSelectedBusiness(prev => prev ? { ...prev, status: 'suspended' } : prev)
+      }
       setActionNotice({ type: 'success', text: `Business "${business.name}" has been suspended.` })
     } catch (error) {
       setActionNotice({ type: 'error', text: 'Failed to suspend business.' })
@@ -358,6 +417,9 @@ export default function SuperAdminDashboard() {
       })
       if (!response.ok) throw new Error('Failed to activate business')
       await loadBusinesses()
+      if (selectedBusiness?.id === business.id) {
+        setSelectedBusiness(prev => prev ? { ...prev, status: 'active' } : prev)
+      }
       setActionNotice({ type: 'success', text: `Business "${business.name}" has been activated.` })
     } catch (error) {
       setActionNotice({ type: 'error', text: 'Failed to activate business.' })
@@ -903,6 +965,13 @@ export default function SuperAdminDashboard() {
                               <button
                                 type="button"
                                 className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                                onClick={() => { setOpenMenuId(null); handleEditBusiness(business) }}
+                              >
+                                Edit Customer
+                              </button>
+                              <button
+                                type="button"
+                                className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
                                 onClick={() => { setOpenMenuId(null); handleSetPassword(business) }}
                               >
                                 Set Temporary Password
@@ -1028,7 +1097,111 @@ export default function SuperAdminDashboard() {
         isOpen={showBusinessDetails}
         onClose={() => setShowBusinessDetails(false)}
         business={selectedBusiness}
+        onEdit={handleEditBusiness}
+        onResetPassword={handleResetPassword}
+        onSetPassword={handleSetPassword}
+        onToggleStatus={(business) => {
+          if (business.status === 'suspended') {
+            handleActivateBusiness(business)
+          } else {
+            handleSuspendBusiness(business)
+          }
+        }}
       />
+
+      {/* Edit Business Modal */}
+      {showEditModal && editBusiness && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 w-full max-w-2xl">
+            <div className="flex items-start justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Edit Customer</h2>
+                <p className="text-sm text-gray-500 mt-1">{editBusiness.contactEmail}</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setShowEditModal(false)}>
+                <XCircle className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {editError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+                {editError}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Business Name</label>
+                <input
+                  type="text"
+                  value={editForm.name}
+                  onChange={e => { setEditForm(p => ({ ...p, name: e.target.value })); setEditError('') }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Owner Name</label>
+                <input
+                  type="text"
+                  value={editForm.ownerName}
+                  onChange={e => setEditForm(p => ({ ...p, ownerName: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={editForm.phone}
+                  onChange={e => setEditForm(p => ({ ...p, phone: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
+                <input
+                  type="text"
+                  value={editForm.address}
+                  onChange={e => setEditForm(p => ({ ...p, address: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Plan</label>
+                <select
+                  value={editForm.plan}
+                  onChange={e => setEditForm(p => ({ ...p, plan: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                >
+                  <option value="starter">Starter</option>
+                  <option value="pro">Professional</option>
+                  <option value="enterprise">Enterprise</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                <select
+                  value={editForm.status}
+                  onChange={e => setEditForm(p => ({ ...p, status: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                >
+                  <option value="active">Active</option>
+                  <option value="trial">Trial</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="suspended">Suspended</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button variant="outline" onClick={() => setShowEditModal(false)} disabled={isLoading}>Cancel</Button>
+              <Button variant="primary" onClick={handleEditBusinessSubmit} disabled={isLoading}>
+                {isLoading ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Set Password Modal */}
       {showSetPasswordModal && setPasswordBusiness && (
