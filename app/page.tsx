@@ -90,6 +90,7 @@ export default function LandingPage() {
       desc: 'Understand customer allergen queries and demonstrate compliance with detailed reports.',
     },
   ]
+  const navItemClass = 'inline-flex h-10 items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm leading-none appearance-none bg-transparent p-0'
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "var(--font-atkinson), sans-serif" }}>
@@ -97,9 +98,9 @@ export default function LandingPage() {
       {/* Header */}
       <header className="relative z-20 bg-[#003842] border-b border-[#003842]">
         <Container>
-          <div className="flex items-center justify-between py-4 gap-4">
-            {/* Logo - left */}
-            <div className="flex-shrink-0">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center py-4 gap-4 lg:flex lg:justify-between">
+            {/* Logo */}
+            <div className="col-start-2 row-start-1 justify-self-center flex-shrink-0 lg:col-auto lg:row-auto lg:justify-self-auto">
               <img
                 src="/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg"
                 alt="AllyJen Logo"
@@ -108,39 +109,39 @@ export default function LandingPage() {
             </div>
             
             {/* Navigation - left-aligned after logo (hidden on mobile) */}
-            <nav className="hidden lg:flex items-center gap-8">
-              <Link href="/" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Home</Link>
+            <nav className="hidden lg:flex items-center gap-8 h-10">
+              <Link href="/" className={navItemClass}>Home</Link>
               <button
                 onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-                className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
+                className={navItemClass}
               >
                 Features
               </button>
               <button
                 onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
-                className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
+                className={navItemClass}
               >
                 How It Works
               </button>
               <button
                 onClick={() => document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' })}
-                className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
+                className={navItemClass}
               >
                 Pricing
               </button>
               <button
                 onClick={() => document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })}
-                className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm"
+                className={navItemClass}
               >
                 Contact
               </button>
-              <Link href="/careers" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">
+              <Link href="/careers" className={navItemClass}>
                 Careers
               </Link>
             </nav>
             
-            {/* Mobile menu toggle */}
-            <div className="lg:hidden flex-1 flex justify-center">
+            {/* Mobile menu toggle - left */}
+            <div className="col-start-1 row-start-1 justify-self-start lg:hidden">
               <button
                 type="button"
                 aria-label={isNavOpen ? 'Close menu' : 'Open menu'}
@@ -152,7 +153,7 @@ export default function LandingPage() {
             </div>
             
             {/* CTAs - right */}
-            <div className="flex-shrink-0 flex items-center gap-2">
+            <div className="col-start-3 row-start-1 justify-self-end flex-shrink-0 flex items-center gap-2 lg:col-auto lg:row-auto lg:justify-self-auto">
               <Link href="/auth/signin">
                 <span className="inline-flex items-center gap-2 px-3 lg:px-5 py-2 rounded-full bg-white text-[#003842] font-semibold text-sm hover:bg-[#42b8ac] hover:text-white transition-colors">
                   Sign In <ArrowRight className="h-4 w-4" />
