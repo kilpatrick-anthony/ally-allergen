@@ -1071,47 +1071,63 @@ export default function KioskPage() {
   if (!kioskStarted) {
     return (
       <div
-        className="min-h-screen relative overflow-hidden bg-[#003842]"
+        className="min-h-screen relative overflow-hidden"
+        style={{ background: 'linear-gradient(145deg, #42b8ac 0%, #1a6e8a 55%, #001a20 100%)' }}
         data-context="kiosk"
         onClick={enterFullscreen}
       >
+        {/* Decorative blobs for depth */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute inset-x-0 top-0 h-2 bg-[#42b8ac]" />
-          <div className="absolute inset-x-0 bottom-0 h-2 bg-[#42b8ac]" />
+          <div
+            className="absolute -top-44 -left-32 w-[560px] h-[560px] rounded-full bg-[#42b8ac]/30 blur-3xl"
+            style={{ animation: 'kioskBlobOne 18s ease-in-out infinite alternate' }}
+          />
+          <div
+            className="absolute -bottom-44 -right-32 w-[620px] h-[620px] rounded-full bg-white/10 blur-3xl"
+            style={{ animation: 'kioskBlobTwo 22s ease-in-out infinite alternate' }}
+          />
+          <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '52px 52px' }} />
         </div>
 
         <AccessibilityPanel />
 
-        <div className="relative z-10 min-h-screen flex items-center justify-center px-8 py-8">
-          <div className="w-full max-w-5xl text-center">
+        <div className="relative z-10 min-h-screen flex items-center justify-center px-8 py-12 lg:px-16">
+          <div className="w-full max-w-6xl rounded-3xl border border-white/20 bg-white/10 backdrop-blur-md shadow-2xl p-8 sm:p-12 lg:p-16 text-center">
             <img
               src={ADMIN_WORDMARK_SRC}
               alt="AllyJen"
-              className="h-16 sm:h-20 lg:h-24 w-auto mx-auto mb-12"
+              className="h-20 sm:h-24 lg:h-28 xl:h-32 w-auto mx-auto mb-5"
             />
 
-            <h1 className="text-white text-5xl sm:text-6xl lg:text-7xl font-black leading-none">
+            <p className="text-white/95 text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 tracking-tight">
               Interactive Allergen Guide
-            </h1>
+            </p>
 
-            <p className="mt-6 text-[#d9fff7] text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight">
+            <p className="text-white/85 text-lg sm:text-xl lg:text-2xl font-semibold leading-snug">
               Check allergens, ingredients, and menu details in seconds.
             </p>
 
             <button
               onClick={handleStartKiosk}
-              className="mx-auto mt-14 w-full max-w-xl rounded-2xl px-8 py-7 cursor-pointer transition-all active:scale-[0.98] bg-[#42b8ac] hover:bg-[#5fd0c5] shadow-2xl"
+              className="mx-auto mt-28 max-w-lg rounded-2xl px-6 py-5 cursor-pointer block w-full transition-all active:scale-[0.98] bg-[#003842] hover:bg-[#004d5c] border border-white/20 shadow-lg"
             >
-              <p className="text-[#003842] font-black text-3xl sm:text-4xl lg:text-5xl mb-0">
+              <p className="text-white font-bold text-lg sm:text-xl lg:text-2xl mb-0">
                 {t.clickHereToBegin}
               </p>
             </button>
-
-            <p className="mt-6 text-white/70 text-lg sm:text-xl font-semibold">
-              Tap once to start
-            </p>
           </div>
         </div>
+
+        <style jsx>{`
+          @keyframes kioskBlobOne {
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            100% { transform: translate3d(48px, -26px, 0) scale(1.08); }
+          }
+          @keyframes kioskBlobTwo {
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            100% { transform: translate3d(-56px, 24px, 0) scale(1.07); }
+          }
+        `}</style>
       </div>
     )
   }
