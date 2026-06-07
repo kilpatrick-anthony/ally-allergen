@@ -153,7 +153,7 @@ export default function LandingPage() {
             </div>
             
             {/* CTAs - right */}
-            <div className="col-start-3 row-start-1 justify-self-end flex-shrink-0 flex items-center gap-2 lg:col-auto lg:row-auto lg:justify-self-auto">
+            <div className="hidden flex-shrink-0 items-center gap-2 lg:flex">
               <Link href="/auth/signin">
                 <span className="inline-flex items-center gap-2 px-3 lg:px-5 py-2 rounded-full bg-white text-[#003842] font-semibold text-sm hover:bg-[#42b8ac] hover:text-white transition-colors">
                   Sign In <ArrowRight className="h-4 w-4" />
@@ -198,6 +198,14 @@ export default function LandingPage() {
               className="px-6 py-3 text-left text-white hover:text-[#42b8ac] hover:bg-white/5 transition-colors font-medium text-sm"
             >
               Careers
+            </Link>
+            <Link
+              href="/auth/signin"
+              onClick={() => setIsNavOpen(false)}
+              className="px-6 py-4 text-left text-[#003842] bg-white hover:bg-[#42b8ac] hover:text-white transition-colors font-semibold text-sm inline-flex items-center justify-between"
+            >
+              Sign In
+              <ArrowRight className="h-4 w-4" />
             </Link>
           </nav>
         </div>
