@@ -15,8 +15,8 @@ async function getAuthenticatedSuperAdmin() {
     const userId = payload.userId as string
     const userEmail = payload.email as string
 
-    const isSuperAdmin =
-      userEmail === process.env.SUPER_ADMIN_EMAIL
+    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL
+    const isSuperAdmin = userEmail === superAdminEmail || payload.role === 'super_admin'
 
     if (!isSuperAdmin) return null
     return { userId, userEmail }
@@ -50,23 +50,32 @@ export async function GET() {
 
     let siteCountsByBusiness: Record<string, number> = {}
     let deviceCountsByBusiness: Record<string, number> = {}
+    let onlineDeviceCountsByBusiness: Record<string, number> = {}
+    let offlineDeviceCountsByBusiness: Record<string, number> = {}
     let menuItemCountsByBusiness: Record<string, number> = {}
+    let lastActivityByBusiness: Record<string, string> = {}
 
     if (businessIds.length > 0) {
-      const [sitesResult, devicesResult, menuItemsResult] = await Promise.all([
+      const [sitesResult, devicesResult, menuItemsResult, activityResult] = await Promise.all([
         supabase
           .from('sites')
           .select('business_id')
           .in('business_id', businessIds),
         supabase
           .from('devices')
-          .select('business_id')
+          .select('business_id, status')
           .in('business_id', businessIds),
         supabase
           .from('menu_items')
           .select('business_id')
           .in('business_id', businessIds)
           .eq('is_active', true),
+        supabase
+          .from('kiosk_analytics_events')
+          .select('business_id, created_at')
+          .in('business_id', businessIds)
+          .order('created_at', { ascending: false })
+          .limit(1000),
       ])
 
       siteCountsByBusiness = (sitesResult.data || []).reduce((acc: Record<string, number>, row: any) => {
@@ -79,10 +88,30 @@ export async function GET() {
         return acc
       }, {})
 
+      onlineDeviceCountsByBusiness = (devicesResult.data || []).reduce((acc: Record<string, number>, row: any) => {
+        if (row.status === 'online') {
+          acc[row.business_id] = (acc[row.business_id] || 0) + 1
+        }
+        return acc
+      }, {})
+
+      offlineDeviceCountsByBusiness = (devicesResult.data || []).reduce((acc: Record<string, number>, row: any) => {
+        if (row.status !== 'online') {
+          acc[row.business_id] = (acc[row.business_id] || 0) + 1
+        }
+        return acc
+      }, {})
+
       menuItemCountsByBusiness = (menuItemsResult.data || []).reduce((acc: Record<string, number>, row: any) => {
         acc[row.business_id] = (acc[row.business_id] || 0) + 1
         return acc
       }, {})
+
+      for (const row of activityResult.data || []) {
+        if (!lastActivityByBusiness[row.business_id]) {
+          lastActivityByBusiness[row.business_id] = row.created_at
+        }
+      }
     }
 
     // Enrich with owner email from auth.users via admin API
@@ -113,7 +142,12 @@ export async function GET() {
           sitesCount: siteCountsByBusiness[b.id] || 0,
           devicesCount: deviceCountsByBusiness[b.id] || 0,
           menuItemsCount: menuItemCountsByBusiness[b.id] || 0,
-        }
+        },
+        deviceStatus: {
+          online: onlineDeviceCountsByBusiness[b.id] || 0,
+          offline: offlineDeviceCountsByBusiness[b.id] || 0,
+        },
+        lastActivityAt: lastActivityByBusiness[b.id] || null,
       }
     }))
 

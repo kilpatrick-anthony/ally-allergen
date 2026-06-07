@@ -51,6 +51,11 @@ interface Business {
     devicesCount?: number
     menuItemsCount?: number
   }
+  deviceStatus?: {
+    online?: number
+    offline?: number
+  }
+  lastActivityAt?: string | null
 }
 
 export default function SuperAdminDashboard() {
@@ -242,6 +247,32 @@ export default function SuperAdminDashboard() {
       label: completed === steps.length ? 'Complete' : 'In Progress',
       detail: `${business.setupMilestones?.sitesCount || 0} sites, ${business.setupMilestones?.devicesCount || 0} devices, ${business.setupMilestones?.menuItemsCount || 0} menu items`
     }
+  }
+
+  const getNeedsAttention = (business: Business) => {
+    const issues: string[] = []
+    if ((business.setupMilestones?.sitesCount || 0) === 0) issues.push('No site')
+    if ((business.setupMilestones?.devicesCount || 0) === 0) issues.push('No device')
+    if ((business.setupMilestones?.menuItemsCount || 0) === 0) issues.push('No active menu')
+    if (business.status === 'suspended') issues.push('Suspended')
+    if (business.status === 'trial' && business.trialEndsAt) {
+      const daysLeft = Math.ceil((new Date(business.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+      if (daysLeft <= 7) issues.push(daysLeft < 0 ? 'Trial expired' : 'Trial ending soon')
+    }
+    if ((business.deviceStatus?.offline || 0) > 0) issues.push(`${business.deviceStatus?.offline} offline device${business.deviceStatus?.offline === 1 ? '' : 's'}`)
+    return issues
+  }
+
+  const formatLastActivity = (value?: string | null) => {
+    if (!value) return 'No kiosk activity'
+    const diffMs = Date.now() - new Date(value).getTime()
+    const minutes = Math.floor(diffMs / 60000)
+    if (minutes < 1) return 'Active just now'
+    if (minutes < 60) return `Active ${minutes}m ago`
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return `Active ${hours}h ago`
+    const days = Math.floor(hours / 24)
+    return `Active ${days}d ago`
   }
 
   const getRecentBusinessMatch = () => {
@@ -449,24 +480,44 @@ export default function SuperAdminDashboard() {
     .filter(b => b.status === 'active')
     .reduce((sum, b) => sum + (b.revenue || 0), 0)
   const newThisMonth = businesses.filter(b => new Date(b.createdAt) >= firstOfMonth).length
+  const needsSetupCount = businesses.filter(b => getSetupProgress(b).completed < 3).length
+  const offlineDeviceCount = businesses.reduce((sum, b) => sum + (b.deviceStatus?.offline || 0), 0)
+  const onlineDeviceCount = businesses.reduce((sum, b) => sum + (b.deviceStatus?.online || 0), 0)
+  const attentionBusinesses = businesses
+    .map(business => ({ business, issues: getNeedsAttention(business), progress: getSetupProgress(business) }))
+    .filter(item => item.issues.length > 0)
+    .slice(0, 6)
+  const recentlyActiveBusinesses = businesses
+    .filter(business => business.lastActivityAt)
+    .sort((a, b) => new Date(b.lastActivityAt || 0).getTime() - new Date(a.lastActivityAt || 0).getTime())
+    .slice(0, 5)
 
   return (
     <>
       {/* Page heading */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Platform Overview</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Super Admin Command Center</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-            {totalBusinesses} registered business{totalBusinesses !== 1 ? 'es' : ''} &middot; last refreshed just now
+            Manage customer setup, monitor kiosk health, and keep the platform moving.
           </p>
         </div>
-        <Button
-          variant="primary"
-          icon={<Plus className="h-4 w-4" />}
-          onClick={() => setShowCreateModal(true)}
-        >
-          Add Business
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            icon={<Zap className="h-4 w-4" />}
+            onClick={() => setShowDemoModal(true)}
+          >
+            Create Demo
+          </Button>
+          <Button
+            variant="primary"
+            icon={<Plus className="h-4 w-4" />}
+            onClick={() => setShowCreateModal(true)}
+          >
+            Add Business
+          </Button>
+        </div>
       </div>
 
       {actionNotice && (
@@ -512,7 +563,7 @@ export default function SuperAdminDashboard() {
       )}
 
       {/* Stats row */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
         <Card>
           <div className="p-5">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Total</p>
@@ -536,6 +587,20 @@ export default function SuperAdminDashboard() {
         </Card>
         <Card>
           <div className="p-5">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Needs Setup</p>
+            <p className="text-3xl font-bold text-amber-500">{needsSetupCount}</p>
+            <p className="text-xs text-gray-400 mt-1">incomplete accounts</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="p-5">
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Devices</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{onlineDeviceCount}/{onlineDeviceCount + offlineDeviceCount}</p>
+            <p className="text-xs text-gray-400 mt-1">{offlineDeviceCount} offline</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="p-5">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Est. MRR</p>
             <p className="text-3xl font-bold text-gray-900 dark:text-white">€{estimatedMRR.toLocaleString()}</p>
             <p className="text-xs text-gray-400 mt-1">active accounts only</p>
@@ -549,6 +614,110 @@ export default function SuperAdminDashboard() {
           </div>
         </Card>
       </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6 mb-8">
+        <Card>
+          <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Needs Attention</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Accounts with setup gaps or operational issues.</p>
+            </div>
+            <Badge variant={attentionBusinesses.length > 0 ? 'warning' : 'success'}>
+              {attentionBusinesses.length > 0 ? `${attentionBusinesses.length} to review` : 'Clear'}
+            </Badge>
+          </div>
+          <div className="p-5">
+            {attentionBusinesses.length === 0 ? (
+              <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-sm text-green-800">
+                All businesses have the core setup pieces in place.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {attentionBusinesses.map(({ business, issues, progress }) => (
+                  <div key={business.id} className="flex flex-col gap-3 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-semibold text-gray-900 dark:text-white">{business.name}</p>
+                        {getStatusBadge(business.status)}
+                      </div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {progress.detail} &middot; {formatLastActivity(business.lastActivityAt)}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {issues.map(issue => (
+                          <span key={issue} className="rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 border border-amber-200">
+                            {issue}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => handleViewBusinessDetails(business)}>
+                      Review
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </Card>
+
+        <Card>
+          <div className="p-5 border-b border-gray-100 dark:border-gray-800">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Customer Setup Flow</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">The fastest path for a new business user.</p>
+          </div>
+          <div className="p-5 space-y-4">
+            {[
+              ['Create owner and business', 'Use Add Business to create the login and customer record.'],
+              ['Add first site', 'Create the customer location that the kiosk will use.'],
+              ['Pair kiosk device', 'Generate a setup code and link the physical tablet.'],
+              ['Publish active menu', 'Add menu items, allergens, colours, and icons.'],
+            ].map(([title, desc], index) => (
+              <div key={title} className="flex gap-3">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#42b8ac]/10 text-sm font-bold text-[#0f766e]">
+                  {index + 1}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{title}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{desc}</p>
+                </div>
+              </div>
+            ))}
+            <Button variant="primary" className="w-full" onClick={() => setShowCreateModal(true)}>
+              Start New Business Setup
+            </Button>
+          </div>
+        </Card>
+      </div>
+
+      <Card className="mb-8">
+        <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Platform Activity</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Latest businesses with kiosk activity.</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => router.push('/super-admin/analytics')}>
+            Open Analytics
+          </Button>
+        </div>
+        <div className="p-5 grid grid-cols-1 md:grid-cols-5 gap-3">
+          {recentlyActiveBusinesses.length === 0 ? (
+            <div className="md:col-span-5 text-sm text-gray-500 dark:text-gray-400">No kiosk activity recorded yet.</div>
+          ) : (
+            recentlyActiveBusinesses.map(business => (
+              <button
+                key={business.id}
+                type="button"
+                className="text-left rounded-lg border border-gray-200 dark:border-gray-700 p-3 hover:border-[#42b8ac]/60 hover:bg-[#42b8ac]/5 transition-colors"
+                onClick={() => handleViewBusinessDetails(business)}
+              >
+                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{business.name}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{formatLastActivity(business.lastActivityAt)}</p>
+              </button>
+            ))
+          )}
+        </div>
+      </Card>
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">

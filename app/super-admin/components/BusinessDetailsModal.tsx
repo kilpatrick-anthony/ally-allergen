@@ -34,6 +34,16 @@ interface Business {
   trialEndsAt?: string
   subscriptionStatus?: 'active' | 'past_due' | 'canceled' | 'trial'
   revenue?: number
+  setupMilestones?: {
+    sitesCount?: number
+    devicesCount?: number
+    menuItemsCount?: number
+  }
+  deviceStatus?: {
+    online?: number
+    offline?: number
+  }
+  lastActivityAt?: string | null
 }
 
 interface BusinessDetailsModalProps {
@@ -89,6 +99,15 @@ export function BusinessDetailsModal({ isOpen, onClose, business }: BusinessDeta
   }
 
   const planDetails = getPlanDetails(business.plan)
+  const setupSteps = [
+    { label: 'Sites', count: business.setupMilestones?.sitesCount || 0 },
+    { label: 'Devices', count: business.setupMilestones?.devicesCount || 0 },
+    { label: 'Active Menu Items', count: business.setupMilestones?.menuItemsCount || 0 },
+  ]
+  const setupComplete = setupSteps.filter(step => step.count > 0).length
+  const lastActivity = business.lastActivityAt
+    ? new Date(business.lastActivityAt).toLocaleString()
+    : 'No kiosk activity recorded'
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Business Details">
@@ -172,6 +191,46 @@ export function BusinessDetailsModal({ isOpen, onClose, business }: BusinessDeta
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Plan Features */}
+        <div className="space-y-4">
+          <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Setup & Monitoring
+          </h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {setupSteps.map(step => (
+              <div key={step.label} className="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{step.label}</span>
+                  {step.count > 0 ? (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-amber-500" />
+                  )}
+                </div>
+                <p className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{step.count}</p>
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+              <p className="text-sm text-gray-600 dark:text-gray-400">Device Health</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                {business.deviceStatus?.online || 0} online / {business.deviceStatus?.offline || 0} offline
+              </p>
+            </div>
+            <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+              <p className="text-sm text-gray-600 dark:text-gray-400">Last Kiosk Activity</p>
+              <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{lastActivity}</p>
+            </div>
+          </div>
+          <div className="h-2 rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+            <div
+              className="h-full bg-[#42b8ac]"
+              style={{ width: `${(setupComplete / setupSteps.length) * 100}%` }}
+            />
           </div>
         </div>
 
