@@ -1096,20 +1096,22 @@ export default function KioskPage() {
             <img
               src={ADMIN_WORDMARK_SRC}
               alt="AllyJen"
-              className="h-20 sm:h-24 lg:h-28 xl:h-32 w-auto mx-auto mb-5"
+              className="h-20 sm:h-24 lg:h-28 xl:h-32 w-auto mx-auto"
             />
 
-            <p className="text-white/95 text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 tracking-tight">
-              Interactive Allergen Guide
-            </p>
+            <div className="mt-10 sm:mt-12 lg:mt-14">
+              <p className="text-white/95 text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 tracking-tight">
+                Interactive Allergen Guide
+              </p>
 
-            <p className="text-white/85 text-lg sm:text-xl lg:text-2xl font-semibold leading-snug">
-              Check allergens, ingredients, and menu details in seconds.
-            </p>
+              <p className="text-white/85 text-lg sm:text-xl lg:text-2xl font-semibold leading-snug">
+                Check allergens, ingredients, and menu details in seconds.
+              </p>
+            </div>
 
             <button
               onClick={handleStartKiosk}
-              className="mx-auto mt-28 max-w-lg rounded-2xl px-6 py-5 cursor-pointer block w-full transition-all active:scale-[0.98] bg-[#003842] hover:bg-[#004d5c] border border-white/20 shadow-lg"
+              className="mx-auto mt-16 sm:mt-20 max-w-lg rounded-2xl px-6 py-5 cursor-pointer block w-full transition-all active:scale-[0.98] bg-[#003842] hover:bg-[#004d5c] border border-white/20 shadow-lg"
             >
               <p className="text-white font-bold text-lg sm:text-xl lg:text-2xl mb-0">
                 {t.clickHereToBegin}
