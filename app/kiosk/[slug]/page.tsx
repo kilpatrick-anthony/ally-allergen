@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { 
   Filter, Search, AlertCircle, Check, X, QrCode, Download, 
-  FileText, Package, Calendar,
+  FileText, Mail, Package, Calendar,
   Wheat, Fish, Egg, Nut, Leaf, Milk, Carrot, Shell, 
   Circle, Sprout, Shrimp, Cookie, Beaker, ArrowRight, Clock, Home, Table2, Grid3x3,
   ChevronDown, ChevronUp, CheckSquare, Square, RefreshCw,
@@ -1436,7 +1436,7 @@ export default function KioskPage() {
                 <Card className="relative overflow-hidden p-6 sm:p-7 bg-[#effaf8] border border-[#99d8d1] shadow-md hover:shadow-lg transition-all h-full min-h-[170px]">
                   <div className="flex h-full items-center gap-5">
                     <div className="p-4 bg-[#0f4f4a] rounded-2xl shadow-sm flex-shrink-0">
-                      <FileText className="h-8 w-8 text-white" />
+                      <Mail className="h-8 w-8 text-white" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="text-2xl sm:text-3xl font-bold text-[#134e4a] leading-tight">{t.emailAllergenGuide}</h3>

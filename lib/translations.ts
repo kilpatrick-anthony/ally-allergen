@@ -25,7 +25,7 @@ export const translations = {
     browseFullMenu: 'Browse Full Menu',
     browseFullMenuDesc: 'Search for specific items or browse all menu categories',
     viewMenu: 'View Menu →',
-    saveMenuToPhone: 'Scan to Save Menu',
+    saveMenuToPhone: 'Scan QR Code',
     saveMenuToPhoneDesc: 'Open this menu on your phone.',
     showQRCode: 'Show QR',
     fullAllergenGuide: 'View Allergen Guide',
