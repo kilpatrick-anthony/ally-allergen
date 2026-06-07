@@ -1358,32 +1358,25 @@ export default function KioskPage() {
         {activeView === 'landing' && (
           <>
             {/* Quick Action Tiles */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 xl:gap-5 mb-8">
               {/* Search by Allergen Tile */}
               <button
                 onClick={() => setActiveView('filters')}
-                className="group text-left flex flex-col h-full transition-transform md:hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#dc2626] rounded-3xl"
+                className="group text-left flex flex-col h-full transition-transform md:hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#dc2626] rounded-2xl"
               >
-                <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#fff5f4] via-[#ffeceb] to-[#ffdeda] border border-[#f5c8c2] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
-                  <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
-                  <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#ef4444]/10 group-hover:scale-110 transition-transform" />
-                  <div className="flex flex-col h-full">
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="p-3.5 bg-gradient-to-br from-[#dc2626] to-[#ef4444] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
-                        <Filter className="h-6 w-6 text-white" />
-                      </div>
-                      <div className="min-w-0 break-words">
-                        <h3 className="text-base sm:text-lg font-bold text-[#7f1d1d] mb-2 tracking-tight leading-tight hyphens-auto">{t.avoidAllergens}</h3>
-                        <p className="text-[#991b1b] text-sm sm:text-[15px] leading-relaxed">
-                          {t.avoidAllergensDesc}
-                        </p>
-                      </div>
+                <Card className="relative overflow-hidden p-6 sm:p-7 bg-[#fff7f6] border-2 border-[#dc2626] shadow-md hover:shadow-lg transition-all h-full min-h-[170px]">
+                  <div className="flex h-full items-center gap-5">
+                    <div className="p-4 bg-[#dc2626] rounded-2xl shadow-sm flex-shrink-0">
+                      <Filter className="h-8 w-8 text-white" />
                     </div>
-                    <div className="mt-auto w-full flex justify-center">
-                      <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#dc2626] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
-                        {t.startFiltering}
-                        <ArrowRight className="h-4 w-4" />
-                      </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-2xl sm:text-3xl font-bold text-[#7f1d1d] leading-tight">{t.avoidAllergens}</h3>
+                      <p className="mt-2 text-[#991b1b] text-base sm:text-lg leading-snug">
+                        {t.avoidAllergensDesc}
+                      </p>
+                    </div>
+                    <div className="self-end text-[#dc2626] group-hover:translate-x-1 transition-transform">
+                      <ArrowRight className="h-7 w-7" />
                     </div>
                   </div>
                 </Card>
@@ -1392,28 +1385,21 @@ export default function KioskPage() {
               {/* Full Allergen Guide Tile */}
               <button
                 onClick={handleOpenAllergenGuide}
-                className="group text-left flex flex-col h-full transition-transform md:hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#047857] rounded-3xl"
+                className="group text-left flex flex-col h-full transition-transform md:hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#047857] rounded-2xl"
               >
-                <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#ecfdf5] via-[#d1fae5] to-[#a7f3d0] border border-[#6ee7b7] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
-                  <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
-                  <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#059669]/10 group-hover:scale-110 transition-transform" />
-                  <div className="flex flex-col h-full">
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="p-3.5 bg-gradient-to-br from-[#047857] to-[#059669] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
-                        <FileText className="h-6 w-6 text-white" />
-                      </div>
-                      <div className="min-w-0 break-words">
-                        <h3 className="text-base sm:text-lg font-bold text-[#064e3b] mb-2 tracking-tight leading-tight hyphens-auto">{t.fullAllergenGuide}</h3>
-                        <p className="text-[#065f46] text-sm sm:text-[15px] leading-relaxed">
-                          {t.fullAllergenGuideDesc}
-                        </p>
-                      </div>
+                <Card className="relative overflow-hidden p-6 sm:p-7 bg-[#f0fdf4] border border-[#86efac] shadow-md hover:shadow-lg transition-all h-full min-h-[170px]">
+                  <div className="flex h-full items-center gap-5">
+                    <div className="p-4 bg-[#047857] rounded-2xl shadow-sm flex-shrink-0">
+                      <FileText className="h-8 w-8 text-white" />
                     </div>
-                    <div className="mt-auto w-full flex justify-center">
-                      <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#047857] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
-                        {t.viewGuide}
-                        <ArrowRight className="h-4 w-4" />
-                      </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-2xl sm:text-3xl font-bold text-[#064e3b] leading-tight">{t.fullAllergenGuide}</h3>
+                      <p className="mt-2 text-[#065f46] text-base sm:text-lg leading-snug">
+                        {t.fullAllergenGuideDesc}
+                      </p>
+                    </div>
+                    <div className="self-end text-[#047857] group-hover:translate-x-1 transition-transform">
+                      <ArrowRight className="h-7 w-7" />
                     </div>
                   </div>
                 </Card>
@@ -1422,28 +1408,21 @@ export default function KioskPage() {
               {/* QR Code Download Tile */}
               <button
                 onClick={() => setShowQRCode(true)}
-                className="group text-left flex flex-col h-full transition-transform md:hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7e22ce] rounded-3xl"
+                className="group text-left flex flex-col h-full transition-transform md:hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7e22ce] rounded-2xl"
               >
-                <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#f7f0ff] via-[#f1e6ff] to-[#e8d6ff] border border-[#d4b9f2] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
-                  <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
-                  <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#9333ea]/10 group-hover:scale-110 transition-transform" />
-                  <div className="flex flex-col h-full">
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="p-3.5 bg-gradient-to-br from-[#7e22ce] to-[#a855f7] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
-                        <QrCode className="h-6 w-6 text-white" />
-                      </div>
-                      <div className="min-w-0 break-words">
-                        <h3 className="text-base sm:text-lg font-bold text-[#581c87] mb-2 tracking-tight leading-tight hyphens-auto">{t.saveMenuToPhone}</h3>
-                        <p className="text-[#6b21a8] text-sm sm:text-[15px] leading-relaxed">
-                          {t.saveMenuToPhoneDesc}
-                        </p>
-                      </div>
+                <Card className="relative overflow-hidden p-6 sm:p-7 bg-[#faf5ff] border border-[#d8b4fe] shadow-md hover:shadow-lg transition-all h-full min-h-[170px]">
+                  <div className="flex h-full items-center gap-5">
+                    <div className="p-4 bg-[#7e22ce] rounded-2xl shadow-sm flex-shrink-0">
+                      <QrCode className="h-8 w-8 text-white" />
                     </div>
-                    <div className="mt-auto w-full flex justify-center">
-                      <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#7e22ce] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
-                        {t.showQRCode}
-                        <ArrowRight className="h-4 w-4" />
-                      </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-2xl sm:text-3xl font-bold text-[#581c87] leading-tight">{t.saveMenuToPhone}</h3>
+                      <p className="mt-2 text-[#6b21a8] text-base sm:text-lg leading-snug">
+                        {t.saveMenuToPhoneDesc}
+                      </p>
+                    </div>
+                    <div className="self-end text-[#7e22ce] group-hover:translate-x-1 transition-transform">
+                      <ArrowRight className="h-7 w-7" />
                     </div>
                   </div>
                 </Card>
@@ -1452,28 +1431,21 @@ export default function KioskPage() {
               {/* Email Guide Tile */}
               <button
                 onClick={() => setShowPDFOptions(true)}
-                className="group text-left flex flex-col h-full transition-transform md:hover:scale-[1.015] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0f4f4a] rounded-3xl"
+                className="group text-left flex flex-col h-full transition-transform md:hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0f4f4a] rounded-2xl"
               >
-                <Card className="relative overflow-hidden p-8 sm:p-9 bg-gradient-to-br from-[#e8f7f5] via-[#d6f0ec] to-[#bde8e1] border border-[#8ccfc7] shadow-md hover:shadow-xl transition-all h-full min-h-[220px] sm:min-h-[240px]">
-                  <div className="pointer-events-none absolute -left-24 top-0 h-full w-32 bg-white/45 blur-2xl -skew-x-12 translate-x-[-180%] group-hover:translate-x-[520%] transition-transform duration-1000 ease-out" />
-                  <div className="absolute -right-8 -top-8 w-32 h-32 rounded-full bg-[#0f766e]/10 group-hover:scale-110 transition-transform" />
-                  <div className="flex flex-col h-full">
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="p-3.5 bg-gradient-to-br from-[#0f4f4a] to-[#0f766e] rounded-xl shadow-sm flex-shrink-0 ring-4 ring-white/60">
-                        <FileText className="h-6 w-6 text-white" />
-                      </div>
-                      <div className="min-w-0 break-words">
-                        <h3 className="text-base sm:text-lg font-bold text-[#134e4a] mb-2 tracking-tight leading-tight hyphens-auto">{t.emailAllergenGuide}</h3>
-                        <p className="text-[#115e59] text-sm sm:text-[15px] leading-relaxed">
-                          {t.emailAllergenGuideDesc}
-                        </p>
-                      </div>
+                <Card className="relative overflow-hidden p-6 sm:p-7 bg-[#effaf8] border border-[#99d8d1] shadow-md hover:shadow-lg transition-all h-full min-h-[170px]">
+                  <div className="flex h-full items-center gap-5">
+                    <div className="p-4 bg-[#0f4f4a] rounded-2xl shadow-sm flex-shrink-0">
+                      <FileText className="h-8 w-8 text-white" />
                     </div>
-                    <div className="mt-auto w-full flex justify-center">
-                      <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0f4f4a] text-white rounded-xl font-semibold text-sm shadow-sm group-hover:translate-x-0.5 transition-transform whitespace-nowrap">
-                        {t.emailGuide}
-                        <ArrowRight className="h-4 w-4" />
-                      </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-2xl sm:text-3xl font-bold text-[#134e4a] leading-tight">{t.emailAllergenGuide}</h3>
+                      <p className="mt-2 text-[#115e59] text-base sm:text-lg leading-snug">
+                        {t.emailAllergenGuideDesc}
+                      </p>
+                    </div>
+                    <div className="self-end text-[#0f4f4a] group-hover:translate-x-1 transition-transform">
+                      <ArrowRight className="h-7 w-7" />
                     </div>
                   </div>
                 </Card>
