@@ -1077,9 +1077,10 @@ export default function KioskPage() {
         onClick={enterFullscreen}
       >
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.9) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.9) 1px, transparent 1px)', backgroundSize: '64px 64px' }} />
-          <div className="absolute inset-x-0 top-0 h-28 bg-white/8" />
-          <div className="absolute inset-x-0 bottom-0 h-36 bg-black/16" />
+          <div className="absolute inset-x-0 top-0 h-32 bg-white/8" />
+          <div className="absolute left-0 top-0 h-full w-1/2 bg-[radial-gradient(circle_at_25%_35%,rgba(217,255,247,0.22),transparent_34%)]" />
+          <div className="absolute right-0 bottom-0 h-full w-1/2 bg-[radial-gradient(circle_at_70%_72%,rgba(66,184,172,0.28),transparent_36%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-40 bg-black/18" />
         </div>
 
         <AccessibilityPanel />
@@ -1095,10 +1096,6 @@ export default function KioskPage() {
 
           <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-8 lg:gap-12 items-center w-full max-w-7xl mx-auto">
             <div className="text-center lg:text-left">
-              <p className="inline-flex items-center rounded-full bg-[#d9fff7] px-5 py-2 text-[#003842] text-lg sm:text-xl font-black mb-6">
-                Know before you order
-              </p>
-
               <h1 className="text-white text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black leading-none">
                 Interactive Allergen Guide
               </h1>
