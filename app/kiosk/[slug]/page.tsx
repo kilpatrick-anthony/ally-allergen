@@ -1072,46 +1072,60 @@ export default function KioskPage() {
     return (
       <div
         className="min-h-screen relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #f4fffb 0%, #baf3ea 34%, #42b8ac 68%, #003842 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #003842 0%, #07515a 48%, #0f766e 100%)' }}
         data-context="kiosk"
         onClick={enterFullscreen}
       >
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute inset-0 opacity-[0.12]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.9) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.9) 1px, transparent 1px)', backgroundSize: '56px 56px' }} />
-          <div className="absolute inset-x-0 top-0 h-32 bg-white/45" />
-          <div className="absolute inset-x-0 bottom-0 h-40 bg-[#003842]/30" />
+          <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.9) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.9) 1px, transparent 1px)', backgroundSize: '64px 64px' }} />
+          <div className="absolute inset-x-0 top-0 h-28 bg-white/8" />
+          <div className="absolute inset-x-0 bottom-0 h-36 bg-black/16" />
         </div>
 
         <AccessibilityPanel />
 
-        <div className="relative z-10 min-h-screen flex items-center justify-center px-8 py-12 lg:px-16">
-          <div className="w-full max-w-6xl rounded-3xl border border-white/80 bg-white/88 shadow-2xl p-8 sm:p-12 lg:p-16 text-center">
+        <div className="relative z-10 min-h-screen flex flex-col px-8 py-8 lg:px-14 lg:py-10">
+          <div className="flex justify-center">
             <img
               src={ADMIN_WORDMARK_SRC}
               alt="AllyJen"
-              className="h-20 sm:h-24 lg:h-28 xl:h-32 w-auto mx-auto mb-8"
+              className="h-16 sm:h-20 lg:h-24 w-auto"
             />
+          </div>
 
-            <p className="text-[#0f766e] text-2xl sm:text-3xl lg:text-4xl font-black mb-4 tracking-tight">
-              Know before you order.
-            </p>
-
-            <h1 className="text-[#003842] text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tight leading-none">
-              Interactive Allergen Guide
-            </h1>
-
-            <p className="mt-6 text-[#155e63] text-xl sm:text-2xl lg:text-3xl font-semibold">
-              Check allergens, ingredients, and menu details in seconds.
-            </p>
-
-            <button
-              onClick={handleStartKiosk}
-              className="mx-auto mt-14 lg:mt-16 max-w-xl rounded-2xl px-8 py-6 cursor-pointer block w-full transition-all active:scale-[0.98] bg-[#003842] hover:bg-[#004d5c] border border-[#42b8ac]/40 shadow-xl"
-            >
-              <p className="text-white font-black text-2xl sm:text-3xl lg:text-4xl mb-0">
-                {t.clickHereToBegin}
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-8 lg:gap-12 items-center w-full max-w-7xl mx-auto">
+            <div className="text-center lg:text-left">
+              <p className="inline-flex items-center rounded-full bg-[#d9fff7] px-5 py-2 text-[#003842] text-lg sm:text-xl font-black mb-6">
+                Know before you order
               </p>
-            </button>
+
+              <h1 className="text-white text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black leading-none">
+                Interactive Allergen Guide
+              </h1>
+
+              <p className="mt-7 text-[#d9fff7] text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight">
+                Check allergens, ingredients, and menu details in seconds.
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-white/25 bg-white/14 p-6 sm:p-8 lg:p-10 shadow-2xl">
+              <div className="rounded-2xl bg-[#d9fff7] p-6 sm:p-8 text-center shadow-xl">
+                <p className="text-[#0f4f4a] text-xl sm:text-2xl font-black mb-5">
+                  Ready to browse safely?
+                </p>
+                <button
+                  onClick={handleStartKiosk}
+                  className="w-full rounded-2xl px-8 py-7 cursor-pointer transition-all active:scale-[0.98] bg-[#003842] hover:bg-[#004d5c] shadow-xl"
+                >
+                  <p className="text-white font-black text-3xl sm:text-4xl lg:text-5xl mb-0">
+                    {t.clickHereToBegin}
+                  </p>
+                </button>
+                <p className="mt-5 text-[#155e63] text-base sm:text-lg font-semibold">
+                  Tap once to start.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
