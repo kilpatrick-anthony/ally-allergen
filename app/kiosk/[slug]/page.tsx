@@ -2176,23 +2176,55 @@ export default function KioskPage() {
 
       {/* QR Code Modal */}
       {showQRCode && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="max-w-md w-full">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-[#003842]">Use AllyJen on Your Phone</h3>
-                <button onClick={() => setShowQRCode(false)} className="text-gray-400 hover:text-gray-600">
-                  <X className="h-5 w-5" />
+        <div className="fixed inset-0 bg-[#001a20]/75 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-2xl overflow-hidden border-0 shadow-2xl">
+            <div className="bg-[#003842] px-6 py-5 sm:px-8">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#42b8ac]/20 text-[#8be1d8]">
+                    <QrCode className="h-7 w-7" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white">Use AllyJen on Your Phone</h3>
+                    <p className="mt-1 text-sm font-medium text-white/75">Open this allergen guide on a mobile device.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowQRCode(false)}
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+                  aria-label="Close QR code"
+                >
+                  <X className="h-6 w-6" />
                 </button>
               </div>
-              <div className="flex justify-center p-4 bg-white rounded-lg border border-gray-200">
-                <QRCodeSVG id="qr-code-svg" value={kioskUrl + (siteIdParam ? '?site_id=' + siteIdParam : '')} size={256} level="H" bgColor="#FFFFFF" fgColor="#003842" />
+            </div>
+
+            <div className="p-6 sm:p-8">
+              <div className="grid gap-6 sm:grid-cols-[auto,1fr] sm:items-center">
+                <div className="mx-auto rounded-3xl border border-gray-200 bg-white p-5 shadow-sm">
+                  <QRCodeSVG id="qr-code-svg" value={kioskUrl + (siteIdParam ? '?site_id=' + siteIdParam : '')} size={250} level="H" bgColor="#FFFFFF" fgColor="#003842" />
+                </div>
+
+                <div className="text-center sm:text-left">
+                  <p className="text-2xl font-bold leading-tight text-[#003842]">
+                    Scan with your phone camera
+                  </p>
+                  <p className="mt-3 text-base leading-relaxed text-gray-700">
+                    The menu will open for this business, so you can read allergen details more comfortably on your own screen.
+                  </p>
+                  <div className="mt-5 rounded-2xl bg-[#f0f9f8] px-4 py-3 text-sm font-semibold text-[#134e4a]">
+                    No app needed. Just point your camera at the code.
+                  </div>
+                </div>
               </div>
-              <p className="text-sm text-gray-600 text-center mt-4">Scan with your phone camera to open AllyJen for this business on your mobile device</p>
-              <div className="mt-6 flex justify-center">
-                <Button variant="ghost" onClick={() => setShowQRCode(false)}>
+
+              <div className="mt-7 flex justify-center sm:justify-end">
+                <button
+                  onClick={() => setShowQRCode(false)}
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-gray-300 bg-white px-6 text-base font-bold text-[#003842] shadow-sm hover:bg-gray-50"
+                >
                   Close
-                </Button>
+                </button>
               </div>
             </div>
           </Card>
@@ -2267,68 +2299,89 @@ export default function KioskPage() {
       {/* PDF / Email Options Modal */}
       {showPDFOptions && (
         <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 transition-[padding] duration-150"
+          className="fixed inset-0 bg-[#001a20]/75 backdrop-blur-sm flex items-start sm:items-center justify-center z-50 p-4 transition-[padding] duration-150 overflow-y-auto"
           style={{ paddingBottom: `${keyboardOffset + 16}px` }}
         >
-          <Card className="max-w-md w-full">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-semibold text-[#003842]">{t.getYourAllergenGuide}</h3>
-                <button onClick={() => { setShowPDFOptions(false); setShowEmailInput(false); setEmailInput(''); setEmailSent(false); setEmailError(''); }} className="text-gray-400 hover:text-gray-600">
-                  <X className="h-5 w-5" />
+          <Card className="my-auto w-full max-w-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto border-0 shadow-2xl">
+            <div className="bg-[#003842] px-6 py-5 sm:px-8">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#42b8ac]/20 text-[#8be1d8]">
+                    <Mail className="h-7 w-7" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-white">{t.getYourAllergenGuide}</h3>
+                    <p className="mt-1 text-sm font-medium text-white/75">Send a copy of this guide to your inbox.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => { setShowPDFOptions(false); setShowEmailInput(false); setEmailInput(''); setEmailSent(false); setEmailError(''); }}
+                  className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
+                  aria-label="Close email guide"
+                >
+                  <X className="h-6 w-6" />
                 </button>
               </div>
+            </div>
 
-              <div className="space-y-4">
-                <div className="border-t border-gray-200 pt-4">
+            <div className="p-6 sm:p-8">
+              <div className="rounded-3xl border border-gray-200 bg-gray-50 p-5 sm:p-6">
                   {emailSent ? (
                     <div className="text-center py-4">
-                      <div className="text-2xl mb-2">✅</div>
-                      <p className="font-semibold text-[#003842]">{t.emailSent}</p>
-                      <p className="text-sm text-gray-500 mt-1">{t.emailSentDesc}</p>
+                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#42b8ac]/15 text-[#13786f]">
+                        <Check className="h-9 w-9" />
+                      </div>
+                      <p className="text-2xl font-bold text-[#003842]">{t.emailSent}</p>
+                      <p className="mx-auto mt-2 max-w-md text-base leading-relaxed text-gray-700">{t.emailSentDesc}</p>
                       <button
                         onClick={() => { setEmailSent(false); setEmailInput(''); }}
-                        className="mt-3 text-sm text-[#42b8ac] underline"
+                        className="mt-5 inline-flex min-h-12 items-center justify-center rounded-xl bg-[#003842] px-6 text-base font-bold text-white hover:bg-[#004d5c]"
                       >
                         {t.sendToAnotherAddress}
                       </button>
                     </div>
                   ) : (
                     <>
-                      <p className="text-sm font-medium text-gray-700 mb-2">{t.emailMeThisGuide}</p>
-                      <p className="text-xs text-gray-500 mb-3">
+                      <p className="text-xl font-bold text-[#003842]">{t.emailMeThisGuide}</p>
+                      <p className="mt-2 text-base leading-relaxed text-gray-700">
                         {t.emailGuideDesc}
                       </p>
-                      <div className="flex gap-2">
+                      <div className="mt-5 flex flex-col gap-3 sm:flex-row">
                         <input
                           type="email"
                           value={emailInput}
                           onChange={e => { setEmailInput(e.target.value); setEmailError(''); }}
                           onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 300)}
                           placeholder="your@email.com"
-                          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#42b8ac]"
+                          className="min-h-14 flex-1 rounded-xl border border-gray-300 bg-white px-4 text-lg text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-4 focus:ring-[#42b8ac]/30 focus:border-[#42b8ac]"
                           disabled={sendingEmail}
+                          autoComplete="email"
+                          inputMode="email"
                         />
                         <button
                           onClick={() => handleEmailMenu(false)}
                           disabled={sendingEmail || !emailInput.trim()}
-                          className="bg-[#42b8ac] text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-[#389e93] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          className="inline-flex min-h-14 items-center justify-center rounded-xl bg-[#42b8ac] px-6 text-lg font-bold text-white shadow-sm hover:bg-[#389e93] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                           {sendingEmail ? (
-                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+                            <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
                           ) : 'Send'}
                         </button>
                       </div>
-                      {emailError && <p className="text-red-500 text-xs mt-2">{emailError}</p>}
+                      {emailError && (
+                        <div className="mt-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+                          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                          <p>{emailError}</p>
+                        </div>
+                      )}
                     </>
                   )}
-                </div>
               </div>
 
               {generatingPDF && (
-                <div className="mt-4 text-center">
-                  <div className="inline-flex items-center gap-2 text-sm text-gray-600">
-                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#42b8ac] border-t-transparent"></div>
+                <div className="mt-5 text-center">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#42b8ac] border-t-transparent" />
                     Generating PDF...
                   </div>
                 </div>
