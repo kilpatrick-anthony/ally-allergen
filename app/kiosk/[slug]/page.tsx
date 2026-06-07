@@ -1071,58 +1071,45 @@ export default function KioskPage() {
   if (!kioskStarted) {
     return (
       <div
-        className="min-h-screen relative overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #003842 0%, #07515a 48%, #0f766e 100%)' }}
+        className="min-h-screen relative overflow-hidden bg-[#003842]"
         data-context="kiosk"
         onClick={enterFullscreen}
       >
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute inset-x-0 top-0 h-32 bg-white/8" />
-          <div className="absolute left-0 top-0 h-full w-1/2 bg-[radial-gradient(circle_at_25%_35%,rgba(217,255,247,0.22),transparent_34%)]" />
-          <div className="absolute right-0 bottom-0 h-full w-1/2 bg-[radial-gradient(circle_at_70%_72%,rgba(66,184,172,0.28),transparent_36%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-40 bg-black/18" />
+          <div className="absolute inset-x-0 top-0 h-2 bg-[#42b8ac]" />
+          <div className="absolute inset-x-0 bottom-0 h-2 bg-[#42b8ac]" />
         </div>
 
         <AccessibilityPanel />
 
-        <div className="relative z-10 min-h-screen flex flex-col px-8 py-8 lg:px-14 lg:py-10">
-          <div className="flex justify-center">
+        <div className="relative z-10 min-h-screen flex items-center justify-center px-8 py-8">
+          <div className="w-full max-w-5xl text-center">
             <img
               src={ADMIN_WORDMARK_SRC}
               alt="AllyJen"
-              className="h-16 sm:h-20 lg:h-24 w-auto"
+              className="h-16 sm:h-20 lg:h-24 w-auto mx-auto mb-12"
             />
-          </div>
 
-          <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-8 lg:gap-12 items-center w-full max-w-7xl mx-auto">
-            <div className="text-center lg:text-left">
-              <h1 className="text-white text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black leading-none">
-                Interactive Allergen Guide
-              </h1>
+            <h1 className="text-white text-5xl sm:text-6xl lg:text-7xl font-black leading-none">
+              Interactive Allergen Guide
+            </h1>
 
-              <p className="mt-7 text-[#d9fff7] text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight">
-                Check allergens, ingredients, and menu details in seconds.
+            <p className="mt-6 text-[#d9fff7] text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight">
+              Check allergens, ingredients, and menu details in seconds.
+            </p>
+
+            <button
+              onClick={handleStartKiosk}
+              className="mx-auto mt-14 w-full max-w-xl rounded-2xl px-8 py-7 cursor-pointer transition-all active:scale-[0.98] bg-[#42b8ac] hover:bg-[#5fd0c5] shadow-2xl"
+            >
+              <p className="text-[#003842] font-black text-3xl sm:text-4xl lg:text-5xl mb-0">
+                {t.clickHereToBegin}
               </p>
-            </div>
+            </button>
 
-            <div className="rounded-3xl border border-white/25 bg-white/14 p-6 sm:p-8 lg:p-10 shadow-2xl">
-              <div className="rounded-2xl bg-[#d9fff7] p-6 sm:p-8 text-center shadow-xl">
-                <p className="text-[#0f4f4a] text-xl sm:text-2xl font-black mb-5">
-                  Ready to browse safely?
-                </p>
-                <button
-                  onClick={handleStartKiosk}
-                  className="w-full rounded-2xl px-8 py-7 cursor-pointer transition-all active:scale-[0.98] bg-[#003842] hover:bg-[#004d5c] shadow-xl"
-                >
-                  <p className="text-white font-black text-3xl sm:text-4xl lg:text-5xl mb-0">
-                    {t.clickHereToBegin}
-                  </p>
-                </button>
-                <p className="mt-5 text-[#155e63] text-base sm:text-lg font-semibold">
-                  Tap once to start.
-                </p>
-              </div>
-            </div>
+            <p className="mt-6 text-white/70 text-lg sm:text-xl font-semibold">
+              Tap once to start
+            </p>
           </div>
         </div>
       </div>
