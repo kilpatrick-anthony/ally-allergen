@@ -16,6 +16,8 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { ALLERGEN_LIST } from '@/types/allergen'
 
+const isImageIcon = (icon?: string) => Boolean(icon && /^https?:\/\//.test(icon))
+
 export default function ViewMenuItemPage() {
   const { showNotification } = useNotification()
   const router = useRouter()
@@ -199,8 +201,16 @@ export default function ViewMenuItemPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div className="flex items-center gap-4 min-w-0">
-          <div className="p-3 bg-gradient-to-br from-[#42b8ac] to-[#003842] rounded-xl flex-shrink-0">
-            <Package className="h-8 w-8 text-white" />
+          <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#42b8ac] to-[#003842] flex-shrink-0 text-3xl">
+            {menuItem.icon ? (
+              isImageIcon(menuItem.icon) ? (
+                <img src={menuItem.icon} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <span>{menuItem.icon}</span>
+              )
+            ) : (
+              <Package className="h-8 w-8 text-white" />
+            )}
           </div>
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-bold text-[#003842] truncate">{menuItem.name}</h1>
@@ -276,6 +286,24 @@ export default function ViewMenuItemPage() {
                       style={{ backgroundColor: menuItem.color }}
                     />
                     <span className="text-gray-900 font-mono text-sm">{menuItem.color}</span>
+                  </div>
+                </div>
+              )}
+
+              {menuItem.icon && (
+                <div className="pt-4 border-t">
+                  <label className="text-sm font-medium text-gray-500">Icon or Picture</label>
+                  <div className="flex items-center gap-3 mt-2">
+                    <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border-2 border-gray-200 bg-white text-3xl">
+                      {isImageIcon(menuItem.icon) ? (
+                        <img src={menuItem.icon} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <span>{menuItem.icon}</span>
+                      )}
+                    </div>
+                    <span className="text-gray-900 text-sm">
+                      {isImageIcon(menuItem.icon) ? 'Custom uploaded image' : 'Preset icon'}
+                    </span>
                   </div>
                 </div>
               )}

@@ -45,6 +45,27 @@ interface SiteOption {
   name: string
 }
 
+const PRESET_MENU_ICONS = [
+  { icon: '🍕', name: 'Pizza' },
+  { icon: '🍔', name: 'Burger' },
+  { icon: '🥗', name: 'Salad' },
+  { icon: '🍜', name: 'Noodles' },
+  { icon: '🥩', name: 'Meat' },
+  { icon: '🐟', name: 'Fish' },
+  { icon: '🥘', name: 'Curry' },
+  { icon: '🍰', name: 'Dessert' },
+  { icon: '☕', name: 'Coffee' },
+  { icon: '🥤', name: 'Drink' },
+  { icon: '🧁', name: 'Cupcake' },
+  { icon: '🍪', name: 'Cookie' },
+  { icon: '🌮', name: 'Taco' },
+  { icon: '🥙', name: 'Wrap' },
+  { icon: '🍝', name: 'Pasta' },
+  { icon: '🥟', name: 'Dumpling' },
+]
+
+const isImageIcon = (icon?: string) => Boolean(icon && /^https?:\/\//.test(icon))
+
 export default function NewMenuItemPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
@@ -60,6 +81,7 @@ export default function NewMenuItemPage() {
   const [saveMessage, setSaveMessage] = useState('')
   const [ingredientSearch, setIngredientSearch] = useState('')
   const [loadingIngredientDatasheets, setLoadingIngredientDatasheets] = useState(false)
+  const [uploadingIcon, setUploadingIcon] = useState(false)
 
   const [menuItem, setMenuItem] = useState<MenuItem>({
     name: '',
@@ -85,6 +107,7 @@ export default function NewMenuItemPage() {
     dietary: [],
     ingredients: [],
     color: '',
+    icon: '',
   })
 
   const dietaryOptions = [
@@ -252,6 +275,34 @@ export default function NewMenuItemPage() {
   const filteredIngredients = ingredients.filter(ing =>
     ing.name.toLowerCase().includes(ingredientSearch.toLowerCase())
   )
+
+  const handleIconUpload = async (file: File | null) => {
+    if (!file) return
+
+    try {
+      setUploadingIcon(true)
+      const formData = new FormData()
+      formData.append('icon', file)
+
+      const response = await fetch('/api/upload/menu-item-icon', {
+        method: 'POST',
+        body: formData
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to upload icon')
+      }
+
+      setMenuItem(current => ({ ...current, icon: data.iconUrl }))
+    } catch (error: any) {
+      console.error('Error uploading menu item icon:', error)
+      setSaveStatus('error')
+      setSaveMessage(error?.message || 'Failed to upload icon')
+    } finally {
+      setUploadingIcon(false)
+    }
+  }
 
   const handleSave = async () => {
     if (!menuItem.name || !menuItem.description) {
@@ -491,35 +542,56 @@ export default function NewMenuItemPage() {
                 <input
                   type="file"
                   accept="image/*"
+                  onChange={(e) => {
+                    handleIconUpload(e.target.files?.[0] || null)
+                    e.currentTarget.value = ''
+                  }}
+                  disabled={uploadingIcon}
                   className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#42b8ac] file:text-white hover:file:bg-[#3aa89e]"
                 />
+                {uploadingIcon && (
+                  <p className="mt-2 text-xs text-[#0f766e] font-medium">Uploading image...</p>
+                )}
               </div>
+
+              {menuItem.icon && (
+                <div className="mb-5 flex items-center justify-between gap-4 rounded-lg border border-[#42b8ac]/40 bg-[#42b8ac]/10 p-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-white border border-gray-200 text-3xl shrink-0">
+                      {isImageIcon(menuItem.icon) ? (
+                        <img src={menuItem.icon} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <span>{menuItem.icon}</span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[#003842]">Selected icon</p>
+                      <p className="truncate text-xs text-gray-500">{isImageIcon(menuItem.icon) ? 'Custom uploaded image' : 'Preset icon'}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMenuItem({ ...menuItem, icon: '' })}
+                    className="text-xs text-gray-500 hover:text-red-600 underline whitespace-nowrap"
+                  >
+                    Clear
+                  </button>
+                </div>
+              )}
 
               {/* Preset Icons */}
               <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-3">Or choose from preset icons:</p>
               <div className="grid grid-cols-4 gap-3">
-                {[
-                  { icon: '🍕', name: 'Pizza' },
-                  { icon: '🍔', name: 'Burger' },
-                  { icon: '🥗', name: 'Salad' },
-                  { icon: '🍜', name: 'Noodles' },
-                  { icon: '🥩', name: 'Meat' },
-                  { icon: '🐟', name: 'Fish' },
-                  { icon: '🥘', name: 'Curry' },
-                  { icon: '🍰', name: 'Dessert' },
-                  { icon: '☕', name: 'Coffee' },
-                  { icon: '🥤', name: 'Drink' },
-                  { icon: '🧁', name: 'Cupcake' },
-                  { icon: '🍪', name: 'Cookie' },
-                  { icon: '🌮', name: 'Taco' },
-                  { icon: '🥙', name: 'Wrap' },
-                  { icon: '🍝', name: 'Pasta' },
-                  { icon: '🥟', name: 'Dumpling' },
-                ].map(preset => (
+                {PRESET_MENU_ICONS.map(preset => (
                   <button
                     key={preset.name}
                     type="button"
-                    className="p-3 rounded-lg border-2 border-gray-200 dark:border-gray-600 hover:border-[#42b8ac] hover:bg-[#42b8ac]/10 transition-all text-3xl"
+                    onClick={() => setMenuItem({ ...menuItem, icon: preset.icon })}
+                    className={`p-3 rounded-lg border-2 transition-all text-3xl ${
+                      menuItem.icon === preset.icon
+                        ? 'border-[#42b8ac] bg-[#42b8ac]/10'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-[#42b8ac] hover:bg-[#42b8ac]/10'
+                    }`}
                     title={preset.name}
                   >
                     {preset.icon}

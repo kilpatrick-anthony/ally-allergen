@@ -46,6 +46,7 @@ export interface MenuItem {
   contains_lupin?: boolean;
   contains_molluscs?: boolean;
   color?: string;
+  icon?: string;
   dietary?: string[];
 }
 

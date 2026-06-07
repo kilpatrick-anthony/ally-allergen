@@ -253,6 +253,7 @@ const INACTIVITY_TIMEOUT = 120000 // 2 minutes before returning to home screen
 const WARNING_TIME = 20000 // 20 seconds warning before reset
 const SCREENSAVER_TIMEOUT = 180000 // 3 minutes idle on home screen → screensaver
 const ADMIN_WORDMARK_SRC = '/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg'
+const isImageIcon = (icon?: string) => Boolean(icon && /^https?:\/\//.test(icon))
 
 // Examples:
 // 10000 = 10 seconds
@@ -1855,7 +1856,18 @@ export default function KioskPage() {
                             return (
                               <Card key={item.id} className="h-full border border-slate-200 shadow-md hover:shadow-lg transition-shadow overflow-hidden" style={item.color ? { borderLeftColor: item.color, borderLeftWidth: '4px', backgroundColor: `${item.color}0d` } : undefined}>
                                 <div className="p-6">
-                                  <h4 className="text-lg font-semibold text-[#003842]">{item.name}</h4>
+                                  <div className="flex items-start gap-3">
+                                    {item.icon && (
+                                      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white text-3xl">
+                                        {isImageIcon(item.icon) ? (
+                                          <img src={item.icon} alt="" className="h-full w-full object-cover" />
+                                        ) : (
+                                          <span>{item.icon}</span>
+                                        )}
+                                      </div>
+                                    )}
+                                    <h4 className="text-lg font-semibold text-[#003842]">{item.name}</h4>
+                                  </div>
                                   {item.description && <p className="mt-3 text-gray-600">{item.description}</p>}
 
                                   {allergenDetails.length > 0 && (
@@ -2057,7 +2069,18 @@ export default function KioskPage() {
                             return (
                               <Card key={item.id} className="h-full border border-slate-200 shadow-md hover:shadow-lg transition-shadow overflow-hidden" style={item.color ? { borderLeftColor: item.color, borderLeftWidth: '4px', backgroundColor: `${item.color}0d` } : undefined}>
                                 <div className="p-6">
-                                  <h4 className="text-lg font-semibold text-[#003842]">{item.name}</h4>
+                                  <div className="flex items-start gap-3">
+                                    {item.icon && (
+                                      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-white text-3xl">
+                                        {isImageIcon(item.icon) ? (
+                                          <img src={item.icon} alt="" className="h-full w-full object-cover" />
+                                        ) : (
+                                          <span>{item.icon}</span>
+                                        )}
+                                      </div>
+                                    )}
+                                    <h4 className="text-lg font-semibold text-[#003842]">{item.name}</h4>
+                                  </div>
                                   {item.description && <p className="mt-3 text-gray-600">{item.description}</p>}
 
                                   {allergenDetails.length > 0 && (

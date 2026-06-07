@@ -153,6 +153,7 @@ export async function POST(request: NextRequest) {
       allergen_warnings: body.allergen_warnings || {},
       dietary: Array.isArray(body.dietary) ? body.dietary : [],
       color: typeof body.color === 'string' && body.color.trim() !== '' ? body.color : null,
+      icon: typeof body.icon === 'string' && body.icon.trim() !== '' ? body.icon : null,
       is_active: body.status ? body.status === 'active' : body.is_active ?? true,
       price: typeof body.price === 'number' ? body.price : 0,
       display_order: typeof body.display_order === 'number' ? body.display_order : 0,
@@ -165,8 +166,19 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
 
+    if (error && error.code === 'PGRST204' && error.message?.includes('icon')) {
+      const { icon: _icon, ...fallbackPayload } = insertPayload
+      const retry = await supabase
+        .from('menu_items')
+        .insert(fallbackPayload)
+        .select()
+        .single()
+      menuItem = retry.data
+      error = retry.error
+    }
+
     if (error && error.code === 'PGRST204' && error.message?.includes('allergen_warnings')) {
-      const { allergen_warnings: _allergenWarnings, ...fallbackPayload } = insertPayload
+      const { allergen_warnings: _allergenWarnings, icon: _icon, ...fallbackPayload } = insertPayload
       const retry = await supabase
         .from('menu_items')
         .insert(fallbackPayload)
