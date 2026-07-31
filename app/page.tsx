@@ -342,7 +342,7 @@ export default function LandingPage() {
               <div className="relative z-10 text-center sm:text-right flex-shrink-0 max-w-[240px]">
                 <div className="text-5xl font-extrabold text-white">€299</div>
                 <div className="text-white/60 text-sm mt-1">One-time setup fee.</div>
-                <div className="text-white/60 text-sm mt-2">Additional devices at the same location can be added for a lower price.</div>
+                <div className="text-white/60 text-sm mt-2">Additional devices at the same location can be added for a reduced price.</div>
               </div>
             </div>
           </div>
