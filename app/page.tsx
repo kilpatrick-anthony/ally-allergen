@@ -255,8 +255,6 @@ export default function LandingPage() {
             <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac]" />FSAI-aligned allergen workflows</span>
             <span className="hidden sm:inline text-[#42b8ac]/40">|</span>
             <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac]" />Irish-owned</span>
-            <span className="hidden sm:inline text-[#42b8ac]/40">|</span>
-            <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac]" />12-month minimum agreement</span>
           </div>
         </Container>
       </section>
@@ -321,7 +319,7 @@ export default function LandingPage() {
             <span className="inline-block mb-3 text-[#42b8ac] text-xs font-bold uppercase tracking-widest">Simple, Transparent Pricing</span>
             <h2 className="text-3xl md:text-4xl font-extrabold text-[#003842] mb-3">Everything You Need, Nothing You Don&apos;t</h2>
             <p className="text-gray-500 text-lg max-w-xl mx-auto">
-              One-time setup per location, then a simple monthly subscription. All plans are on a minimum 12-month agreement. Clear, transparent pricing from day one.
+              One-time setup per location, then a simple monthly subscription. No minimum contract. Clear, transparent pricing from day one.
             </p>
           </div>
 
@@ -335,14 +333,15 @@ export default function LandingPage() {
                 <p className="text-[#42b8ac] text-xs font-bold uppercase tracking-widest mb-1">One-Time Setup Fee</p>
                 <h3 className="text-2xl font-extrabold mb-2">New Device Configuration &amp; Shipping</h3>
                 <ul className="space-y-1 text-sm text-white/80">
-                  <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac] flex-shrink-0" /> New device configured and shipped directly to your location - All you need to do is connect it to WiFi and it's good to go.</li>
+                  <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac] flex-shrink-0" /> New device configured and shipped directly to your location.</li>
+                  <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac] flex-shrink-0" /> All you need to do is connect it to WiFi and it's good to go.</li>
                   <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac] flex-shrink-0" /> Platform onboarding &amp; initial configuration.</li>
                   <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac] flex-shrink-0" /> Remote training and walkthrough.</li>
                 </ul>
               </div>
               <div className="relative z-10 text-center sm:text-right flex-shrink-0">
                 <div className="text-5xl font-extrabold text-white">€299</div>
-                <div className="text-white/60 text-sm mt-1">per location, once</div>
+                <div className="text-white/60 text-sm mt-1">One-time setup fee; additional devices at the same location can be added for a lower price.</div>
               </div>
             </div>
           </div>
