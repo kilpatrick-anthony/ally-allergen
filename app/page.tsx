@@ -267,7 +267,7 @@ export default function LandingPage() {
               Save Time. Reduce Risk. Build Trust.
             </h2>
             <p className="text-lg text-gray-500 max-w-xl mx-auto">
-              Purpose-built for Irish and EU food service businesses from day one.
+              Built for Irish &amp; EU food businesses.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -299,8 +299,8 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
               { step: '01', title: 'Get in Touch', desc: 'Fill out the contact form below and tell us about your business. We\'ll respond within one business day.' },
-              { step: '02', title: 'We Get You Running', desc: 'Our team configures your allergen system, prepares your kiosk, and ships it straight to your location ready to go. Just connect it to WiFi and the platform is live. Menu management support is included for those on the Fully Managed plan.' },
-              { step: '03', title: 'Go Live with Confidence', desc: 'Launch your AllyJen dashboard, start managing allergens, and give your customers the transparency they deserve.' },
+              { step: '02', title: 'We Get You Running', desc: 'We configure your allergen system, prepare your kiosk, and ship it ready to go. Just connect to WiFi and the platform is live.' },
+              { step: '03', title: 'Go Live with Confidence', desc: 'Launch AllyJen, manage allergens, and show customers the information they need.' },
             ].map((s, i) => (
               <div key={i} className="relative pl-6 border-l-2 border-[#42b8ac]">
                 <span className="block text-[#42b8ac] text-xs font-bold uppercase tracking-widest mb-2">{s.step}</span>
@@ -319,7 +319,7 @@ export default function LandingPage() {
             <span className="inline-block mb-3 text-[#42b8ac] text-xs font-bold uppercase tracking-widest">Simple, Transparent Pricing</span>
             <h2 className="text-3xl md:text-4xl font-extrabold text-[#003842] mb-3">Everything You Need, Nothing You Don&apos;t</h2>
             <p className="text-gray-500 text-lg max-w-xl mx-auto">
-              One-time setup per location, then a simple monthly subscription. No minimum contract. Clear, transparent pricing from day one.
+              €299 one-time setup per location, then a simple monthly subscription with no minimum contract.
             </p>
           </div>
 
@@ -468,7 +468,7 @@ export default function LandingPage() {
           </div>
 
           <p className="text-center text-sm text-gray-400 mt-10">
-            The €499 setup fee covers device installation per location. Need an additional device at a location?{' '}
+            The €299 setup fee covers a single device per location. Additional devices in the same location are available for a reduced price.{' '}
             <button
               type="button"
               onClick={() => document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })}
@@ -476,15 +476,7 @@ export default function LandingPage() {
             >
               Contact us
             </button>
-            {' '}to discuss options.{' '}Not sure which plan suits you?{' '}
-            <button
-              type="button"
-              onClick={() => document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })}
-              className="text-[#42b8ac] hover:underline font-medium"
-            >
-              Talk to us
-            </button>
-            {' '}and we&apos;ll help you get started.
+            {' '}if you want help choosing the right plan.
           </p>
         </Container>
       </section>
