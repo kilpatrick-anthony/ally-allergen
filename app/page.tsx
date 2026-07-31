@@ -299,7 +299,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
               { step: '01', title: 'Get in Touch', desc: 'Fill out the contact form below and tell us about your business. We\'ll respond within one business day.' },
-              { step: '02', title: 'We Get You Running', desc: 'Our team configures your allergen system, installs your kiosk, and gets you set up on the platform. Menu management support is included for those on the Fully Managed plan.' },
+              { step: '02', title: 'We Get You Running', desc: 'Our team configures your allergen system, prepares your kiosk, and ships it straight to your location ready to go. Just connect it to WiFi and the platform is live. Menu management support is included for those on the Fully Managed plan.' },
               { step: '03', title: 'Go Live with Confidence', desc: 'Launch your AllyJen dashboard, start managing allergens, and give your customers the transparency they deserve.' },
             ].map((s, i) => (
               <div key={i} className="relative pl-6 border-l-2 border-[#42b8ac]">
