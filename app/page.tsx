@@ -333,15 +333,15 @@ export default function LandingPage() {
               <div className="absolute -right-4 -bottom-10 w-32 h-32 rounded-full bg-[#42b8ac]/10 pointer-events-none" />
               <div className="relative z-10">
                 <p className="text-[#42b8ac] text-xs font-bold uppercase tracking-widest mb-1">One-Time Setup Fee</p>
-                <h3 className="text-2xl font-extrabold mb-2">Device Installation &amp; Training</h3>
+                <h3 className="text-2xl font-extrabold mb-2">New Device Configuration &amp; Shipping</h3>
                 <ul className="space-y-1 text-sm text-white/80">
-                  <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac] flex-shrink-0" /> On-site kiosk device installation</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac] flex-shrink-0" /> Staff training &amp; hands-on walkthrough</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac] flex-shrink-0" /> Platform onboarding &amp; initial configuration</li>
+                  <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac] flex-shrink-0" /> New device configured and shipped directly to your location - All you need to do is connect it to WiFi and it's good to go.</li>
+                  <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac] flex-shrink-0" /> Platform onboarding &amp; initial configuration.</li>
+                  <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac] flex-shrink-0" /> Remote training and walkthrough.</li>
                 </ul>
               </div>
               <div className="relative z-10 text-center sm:text-right flex-shrink-0">
-                <div className="text-5xl font-extrabold text-white">€499</div>
+                <div className="text-5xl font-extrabold text-white">€299</div>
                 <div className="text-white/60 text-sm mt-1">per location, once</div>
               </div>
             </div>
