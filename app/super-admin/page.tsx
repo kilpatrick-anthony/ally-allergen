@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { Elements } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
 import { useRef } from 'react'
@@ -781,6 +782,11 @@ export default function SuperAdminDashboard() {
           >
             Create Demo
           </Button>
+          <Link href="/super-admin/training">
+            <Button variant="outline" icon={<Users className="h-4 w-4" />}>
+              Training Hub
+            </Button>
+          </Link>
           <Button
             variant="primary"
             icon={<Plus className="h-4 w-4" />}
