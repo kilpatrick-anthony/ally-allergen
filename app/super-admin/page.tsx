@@ -846,7 +846,7 @@ export default function SuperAdminDashboard() {
           <div className="p-5">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Active</p>
             <p className="text-3xl font-bold text-green-600">{activeCount}</p>
-            <p className="text-xs text-gray-400 mt-1">paid subscribers</p>
+            <p className="text-xs text-gray-400 mt-1">subscribers</p>
           </div>
         </Card>
         <Card>
@@ -925,7 +925,7 @@ export default function SuperAdminDashboard() {
           </div>
         </Card>
 
-        <Card className="h-full flex flex-col">
+        <Card className="self-start min-h-[360px] flex flex-col">
           <div className="p-5 border-b border-gray-100 dark:border-gray-800">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Customer Setup Flow</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">The fastest path for a new business user.</p>
