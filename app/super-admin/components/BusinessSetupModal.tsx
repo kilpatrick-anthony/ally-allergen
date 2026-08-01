@@ -91,7 +91,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
 
   const selectedPlan = PLAN_DETAILS[formData.plan]
   const totalSteps = formData.setupStripePayment ? 4 : 3
-  const canSetUpStripe = formData.plan !== 'free'
+  const canSetUpStripe = formData.plan === 'starter' || formData.plan === 'pro'
 
   const validateStep = () => {
     if (currentStep === 1) {
@@ -134,6 +134,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
     }
 
     setLoading(true)
+    setStepError('')
 
     try {
       const response = await fetch('/api/super-admin/business', {
@@ -219,7 +220,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
       setStepError('')
     } catch (error) {
       console.error('Failed to create business:', error)
-      alert('Failed to create business. Please try again.')
+      setStepError(error instanceof Error ? error.message : 'Failed to create business. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -516,18 +517,23 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
           Subscription Plan
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6 items-stretch">
           {SUPER_ADMIN_PLAN_ORDER.map((key) => {
             const plan = PLAN_DETAILS[key]
             return (
             <div
               key={key}
-              className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+              className={`border-2 rounded-lg p-4 cursor-pointer transition-all flex flex-col h-full ${
                 formData.plan === key
                   ? 'border-[#42b8ac] bg-[#42b8ac]/5 dark:bg-[#42b8ac]/10'
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
               }`}
-              onClick={() => setFormData(prev => ({ ...prev, plan: key, setupStripePayment: key === 'free' ? false : prev.setupStripePayment }))}
+              onClick={() => setFormData(prev => ({
+                ...prev,
+                plan: key,
+                setupStripePayment: key === 'starter' || key === 'pro' ? prev.setupStripePayment : false,
+                billingCycle: 'monthly'
+              }))}
             >
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-semibold text-gray-900 dark:text-white">{plan.name}</h4>
@@ -537,11 +543,11 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
                 {plan.priceLabel}
                 {key !== 'free' && key !== 'enterprise' && <span className="text-sm font-normal text-gray-600 dark:text-gray-400">/month</span>}
               </div>
-              <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+              <ul className="mt-3 text-sm text-gray-600 dark:text-gray-400 space-y-2 flex-1">
                 {plan.features.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-2">
-                    <CheckCircle className="h-3 w-3 text-green-500" />
-                    {feature}
+                  <li key={index} className="flex items-start gap-2 leading-5">
+                    <CheckCircle className="mt-0.5 h-3.5 w-3.5 text-green-500 shrink-0" />
+                    <span>{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -559,10 +565,10 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
               name="billingCycle"
               value={formData.billingCycle}
               onChange={handleChange}
+              disabled={!canSetUpStripe}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
               <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly (Save 20%)</option>
             </select>
           </div>
           <div>
@@ -585,7 +591,12 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
             </div>
             {!canSetUpStripe && (
               <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                Free plans do not create a Stripe subscription.
+                Stripe setup is only available for Self-Managed and Fully Managed plans. Free and Enterprise are not auto-billed here.
+              </p>
+            )}
+            {canSetUpStripe && (
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                Monthly billing only. If STRIPE_PRICE_SETUP_FEE is configured, the one-time setup fee is added to the first invoice.
               </p>
             )}
           </div>

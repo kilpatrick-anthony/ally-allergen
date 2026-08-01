@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
-import { getMonthlyRevenueForPlan } from '@/lib/plans'
+import { getMonthlyRevenueForPlan, isPlanKey } from '@/lib/plans'
 
 async function getAuthenticatedSuperAdmin() {
   const cookieStore = await cookies()
@@ -205,6 +205,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (plan && !isPlanKey(plan)) {
+      return NextResponse.json(
+        { error: 'Please select a valid plan before continuing' },
+        { status: 400 }
+      )
+    }
+
     if (createFirstSite !== false && !String(siteName || '').trim()) {
       return NextResponse.json(
         { error: 'First site name is required when creating a first site' },
@@ -267,8 +274,9 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (businessError) {
+      console.error('Failed to create business record:', businessError)
       await supabase.auth.admin.deleteUser(userData.user.id)
-      return NextResponse.json({ error: 'Failed to create business' }, { status: 500 })
+      return NextResponse.json({ error: businessError.message || 'Failed to create business record' }, { status: 500 })
     }
 
     // 3. Link owner to business
@@ -277,9 +285,10 @@ export async function POST(request: NextRequest) {
       .insert({ user_id: userData.user.id, business_id: business.id, role: 'owner' })
 
     if (linkError) {
+      console.error('Failed to link owner to business:', linkError)
       await supabase.auth.admin.deleteUser(userData.user.id)
       await supabase.from('businesses').delete().eq('id', business.id)
-      return NextResponse.json({ error: 'Failed to link user to business' }, { status: 500 })
+      return NextResponse.json({ error: linkError.message || 'Failed to link owner to business' }, { status: 500 })
     }
 
     // 4. Create the first site/location so onboarding can continue immediately
@@ -309,7 +318,7 @@ export async function POST(request: NextRequest) {
         await supabase.from('user_businesses').delete().eq('business_id', business.id)
         await supabase.from('businesses').delete().eq('id', business.id)
         await supabase.auth.admin.deleteUser(userData.user.id)
-        return NextResponse.json({ error: 'Failed to create first site' }, { status: 500 })
+        return NextResponse.json({ error: siteError.message || 'Failed to create first site' }, { status: 500 })
       }
 
       firstSite = createdSite
