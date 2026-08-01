@@ -3,9 +3,13 @@
 
 import { useState } from 'react'
 import { X, Save, User, Building, Mail, Phone, MapPin, CreditCard, DollarSign, Calendar, CheckCircle } from 'lucide-react'
+import { Elements } from '@stripe/react-stripe-js'
+import { loadStripe } from '@stripe/stripe-js'
+import { useRef } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { PLAN_DEFINITIONS, SUPER_ADMIN_PLAN_ORDER, type PlanKey } from '@/lib/plans'
+import StripeCardElementField, { type StripeCardElementHandle } from '@/components/stripe/StripeCardElementField'
 
 interface BusinessSetupModalProps {
   isOpen: boolean
@@ -46,10 +50,15 @@ const PLAN_DETAILS: Record<string, PlanDetails> = {
   }
 }
 
+const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+  : null
+
 export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupModalProps) {
   const [loading, setLoading] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const [stepError, setStepError] = useState('')
+  const cardElementRef = useRef<StripeCardElementHandle>(null)
   const [formData, setFormData] = useState({
     // Business Owner Info
     ownerName: '',
@@ -81,10 +90,6 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
     createSampleData: true,
 
     // Payment Info (for manual setup)
-    cardNumber: '',
-    expiryMonth: '',
-    expiryYear: '',
-    cvc: '',
     billingName: '',
     billingAddress: ''
   })
@@ -114,8 +119,8 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
     }
 
     if (currentStep === 4 && canSetUpStripe) {
-      if (!formData.cardNumber || !formData.expiryMonth || !formData.expiryYear || !formData.cvc) {
-        setStepError('Complete payment details to continue for paid plans.')
+      if (!stripePromise) {
+        setStepError('Stripe publishable key is missing. Set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to continue.')
         return false
       }
     }
@@ -156,6 +161,11 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
       // Paid plans require Stripe setup before finishing.
       if (canSetUpStripe) {
         try {
+          const paymentMethodResult = await cardElementRef.current?.createPaymentMethod(formData.billingName)
+          if (!paymentMethodResult?.paymentMethodId) {
+            throw new Error(paymentMethodResult?.error || 'Unable to validate payment details')
+          }
+
           const stripeResponse = await fetch('/api/super-admin/stripe/setup-subscription', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -163,14 +173,11 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
               businessId: result.businessId,
               plan: formData.plan,
               billingCycle: formData.billingCycle,
+              paymentMethodId: paymentMethodResult.paymentMethodId,
               paymentMethod: {
-                cardNumber: formData.cardNumber,
-                expiryMonth: formData.expiryMonth,
-                expiryYear: formData.expiryYear,
-                cvc: formData.cvc,
                 billingName: formData.billingName,
-                billingAddress: formData.billingAddress
-              }
+                billingAddress: formData.billingAddress,
+              },
             })
           })
 
@@ -209,10 +216,6 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
         setupStripePayment: true,
         sendWelcomeEmail: true,
         createSampleData: true,
-        cardNumber: '',
-        expiryMonth: '',
-        expiryYear: '',
-        cvc: '',
         billingName: '',
         billingAddress: ''
       })
@@ -627,65 +630,15 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Card Number
-            </label>
-            <input
-              type="text"
-              name="cardNumber"
-              value={formData.cardNumber}
-              onChange={handleChange}
-              placeholder="1234 5678 9012 3456"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Expiry Month
-            </label>
-            <select
-              name="expiryMonth"
-              value={formData.expiryMonth}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              <option value="">MM</option>
-              {Array.from({ length: 12 }, (_, i) => i + 1).map(month => (
-                <option key={month} value={month.toString().padStart(2, '0')}>
-                  {month.toString().padStart(2, '0')}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Expiry Year
-            </label>
-            <select
-              name="expiryYear"
-              value={formData.expiryYear}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              <option value="">YYYY</option>
-              {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i).map(year => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              CVC
-            </label>
-            <input
-              type="text"
-              name="cvc"
-              value={formData.cvc}
-              onChange={handleChange}
-              placeholder="123"
-              maxLength={4}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            />
+            {stripePromise ? (
+              <Elements stripe={stripePromise}>
+                <StripeCardElementField ref={cardElementRef} disabled={loading} />
+              </Elements>
+            ) : (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                Stripe payment form is unavailable because NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set.
+              </div>
+            )}
           </div>
           <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

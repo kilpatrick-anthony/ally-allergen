@@ -3,6 +3,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Elements } from '@stripe/react-stripe-js'
+import { loadStripe } from '@stripe/stripe-js'
+import { useRef } from 'react'
 import {
   Users,
   Building,
@@ -33,6 +36,7 @@ import { Select } from '@/components/ui/Select'
 import { BusinessSetupModal } from './components/BusinessSetupModal'
 import { BusinessDetailsModal } from './components/BusinessDetailsModal'
 import { getMonthlyRevenueForPlan, getPlanDefinition, SUPER_ADMIN_PLAN_ORDER } from '@/lib/plans'
+import StripeCardElementField, { type StripeCardElementHandle } from '@/components/stripe/StripeCardElementField'
 
 interface Business {
   id: string
@@ -58,6 +62,10 @@ interface Business {
   }
   lastActivityAt?: string | null
 }
+
+const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+  : null
 
 export default function SuperAdminDashboard() {
   const router = useRouter()
@@ -98,13 +106,10 @@ export default function SuperAdminDashboard() {
   const [billingLoading, setBillingLoading] = useState(false)
   const [billingError, setBillingError] = useState('')
   const [billingForm, setBillingForm] = useState({
-    cardNumber: '',
-    expiryMonth: '',
-    expiryYear: '',
-    cvc: '',
     billingName: '',
     billingAddress: '',
   })
+  const billingCardRef = useRef<StripeCardElementHandle>(null)
 
   const handleCreateDemoAccount = async () => {
     if (!demoForm.ownerEmail.trim()) {
@@ -534,10 +539,6 @@ export default function SuperAdminDashboard() {
 
     setBillingBusiness(business)
     setBillingForm({
-      cardNumber: '',
-      expiryMonth: '',
-      expiryYear: '',
-      cvc: '',
       billingName: business.contactName || '',
       billingAddress: business.address || '',
     })
@@ -547,8 +548,14 @@ export default function SuperAdminDashboard() {
 
   const handleSaveBilling = async () => {
     if (!billingBusiness) return
-    if (!billingForm.cardNumber || !billingForm.expiryMonth || !billingForm.expiryYear || !billingForm.cvc) {
-      setBillingError('Card number, expiry month/year, and CVC are required.')
+    if (!stripePromise) {
+      setBillingError('Stripe publishable key is missing. Set NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY and redeploy.')
+      return
+    }
+
+    const paymentMethodResult = await billingCardRef.current?.createPaymentMethod(billingForm.billingName)
+    if (!paymentMethodResult?.paymentMethodId) {
+      setBillingError(paymentMethodResult?.error || 'Failed to validate card details.')
       return
     }
 
@@ -563,11 +570,8 @@ export default function SuperAdminDashboard() {
           businessId: billingBusiness.id,
           plan: billingBusiness.plan,
           billingCycle: 'monthly',
+          paymentMethodId: paymentMethodResult.paymentMethodId,
           paymentMethod: {
-            cardNumber: billingForm.cardNumber,
-            expiryMonth: billingForm.expiryMonth,
-            expiryYear: billingForm.expiryYear,
-            cvc: billingForm.cvc,
             billingName: billingForm.billingName,
             billingAddress: billingForm.billingAddress,
           },
@@ -1242,53 +1246,15 @@ export default function SuperAdminDashboard() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Card Number</label>
-                <input
-                  type="text"
-                  value={billingForm.cardNumber}
-                  onChange={e => setBillingForm(p => ({ ...p, cardNumber: e.target.value }))}
-                  placeholder="1234 5678 9012 3456"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expiry Month</label>
-                <select
-                  value={billingForm.expiryMonth}
-                  onChange={e => setBillingForm(p => ({ ...p, expiryMonth: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
-                >
-                  <option value="">MM</option>
-                  {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
-                    <option key={month} value={month.toString().padStart(2, '0')}>
-                      {month.toString().padStart(2, '0')}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expiry Year</label>
-                <select
-                  value={billingForm.expiryYear}
-                  onChange={e => setBillingForm(p => ({ ...p, expiryYear: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
-                >
-                  <option value="">YYYY</option>
-                  {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i).map((year) => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CVC</label>
-                <input
-                  type="text"
-                  value={billingForm.cvc}
-                  onChange={e => setBillingForm(p => ({ ...p, cvc: e.target.value }))}
-                  maxLength={4}
-                  placeholder="123"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
-                />
+                {stripePromise ? (
+                  <Elements stripe={stripePromise}>
+                    <StripeCardElementField ref={billingCardRef} disabled={billingLoading} />
+                  </Elements>
+                ) : (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                    Stripe payment form is unavailable because NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set.
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Billing Name</label>
