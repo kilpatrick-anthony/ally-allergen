@@ -1,21 +1,25 @@
 // app/api/signout/route.ts
 // Clears the server-side `auth-token` cookie (development + production).
 import { NextRequest, NextResponse } from 'next/server'
+import { AUTH_COOKIE_NAME, IMPERSONATOR_COOKIE_NAME } from '@/lib/auth'
+
+function clearCookie(res: NextResponse, name: string) {
+  res.cookies.set(name, '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+  })
+
+  res.cookies.set(name, '', { path: '/', expires: new Date(0) })
+}
 
 export async function POST(request: NextRequest) {
   try {
     const res = NextResponse.json({ success: true })
-    // Clear the auth-token cookie
-    res.cookies.set('auth-token', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      path: '/',
-      maxAge: 0,
-    })
-
-    // Also send an expired cookie variant for safety
-    res.cookies.set('auth-token', '', { path: '/', expires: new Date(0) })
+    clearCookie(res, AUTH_COOKIE_NAME)
+    clearCookie(res, IMPERSONATOR_COOKIE_NAME)
 
     return res
   } catch (err: any) {

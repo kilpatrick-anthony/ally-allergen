@@ -20,6 +20,7 @@ import {
 import Modal from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { getPlanDefinition } from '@/lib/plans'
 
 interface Business {
   id: string
@@ -29,7 +30,7 @@ interface Business {
   phone?: string
   address?: string
   status: 'active' | 'inactive' | 'trial' | 'suspended'
-  plan: 'starter' | 'pro' | 'enterprise'
+  plan: 'free' | 'starter' | 'pro' | 'enterprise'
   createdAt: string
   trialEndsAt?: string
   subscriptionStatus?: 'active' | 'past_due' | 'canceled' | 'trial'
@@ -85,6 +86,7 @@ interface BusinessDetailsModalProps {
   onClose: () => void
   business: Business | null
   onEdit?: (business: Business) => void
+  onImpersonate?: (business: Business) => void
   onResetPassword?: (business: Business) => void
   onSetPassword?: (business: Business) => void
   onToggleStatus?: (business: Business) => void
@@ -95,6 +97,7 @@ export function BusinessDetailsModal({
   onClose,
   business,
   onEdit,
+  onImpersonate,
   onResetPassword,
   onSetPassword,
   onToggleStatus
@@ -172,20 +175,7 @@ export function BusinessDetailsModal({
     }
   }
 
-  const getPlanDetails = (plan: string) => {
-    switch (plan) {
-      case 'starter':
-        return { price: '$99/mo', features: ['Basic allergen management', 'Up to 50 products', 'Email support'] }
-      case 'pro':
-        return { price: '$299/mo', features: ['Advanced allergen management', 'Unlimited products', 'Priority support', 'Custom reports'] }
-      case 'enterprise':
-        return { price: '$499/mo', features: ['Full enterprise features', 'Multi-location support', 'Dedicated support', 'API access'] }
-      default:
-        return { price: 'Unknown', features: [] }
-    }
-  }
-
-  const planDetails = getPlanDetails(business.plan)
+  const planDetails = getPlanDefinition(business.plan)
   const setupSteps = [
     { label: 'Sites', count: business.setupMilestones?.sitesCount || 0 },
     { label: 'Devices', count: business.setupMilestones?.devicesCount || 0 },
@@ -205,7 +195,7 @@ export function BusinessDetailsModal({
     value ? new Date(value).toLocaleString() : 'Not recorded'
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Business Details">
+    <Modal isOpen={isOpen} onClose={onClose} title="Business Details" size="xl">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -269,11 +259,14 @@ export function BusinessDetailsModal({
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400">Plan:</span>
-                <Badge variant="default">{business.plan.toUpperCase()}</Badge>
+                <Badge variant="default">{planDetails.title}</Badge>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400">Price:</span>
-                <span className="font-semibold text-gray-900 dark:text-white">{planDetails.price}</span>
+                <span className="font-semibold text-gray-900 dark:text-white">
+                  {planDetails.priceLabel.replace('EUR', '€')}
+                  {planDetails.priceSuffix ? ` ${planDetails.priceSuffix}` : ''}
+                </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400">Status:</span>
@@ -282,7 +275,7 @@ export function BusinessDetailsModal({
               {business.revenue && (
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 dark:text-gray-400">Monthly Revenue:</span>
-                  <span className="font-semibold text-green-600">${business.revenue}</span>
+                  <span className="font-semibold text-green-600">€{business.revenue.toFixed(2)}</span>
                 </div>
               )}
             </div>
@@ -435,7 +428,7 @@ export function BusinessDetailsModal({
             Plan Features
           </h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {planDetails.features.map((feature, index) => (
+            {planDetails.adminFeatures.map((feature, index) => (
               <div key={index} className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-green-500" />
                 <span className="text-gray-700 dark:text-gray-300">{feature}</span>
@@ -487,6 +480,11 @@ export function BusinessDetailsModal({
             <Button variant="outline" onClick={() => onSetPassword?.(business)}>
               Set Password
             </Button>
+            {business.contactEmail && (
+              <Button variant="outline" onClick={() => onImpersonate?.(business)}>
+                Enter Admin Portal
+              </Button>
+            )}
             <Button
               variant={business.status === 'suspended' ? 'primary' : 'outline'}
               onClick={() => onToggleStatus?.(business)}

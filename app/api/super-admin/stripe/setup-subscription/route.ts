@@ -122,6 +122,10 @@ export async function POST(request: NextRequest) {
 
 function getPriceId(plan: string, billingCycle: string): string {
   const priceIds: Record<string, Record<string, string>> = {
+    free: {
+      monthly: '',
+      yearly: ''
+    },
     starter: {
       monthly: 'price_starter_monthly',
       yearly: 'price_starter_yearly'

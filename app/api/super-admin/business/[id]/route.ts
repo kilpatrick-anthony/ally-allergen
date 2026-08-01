@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
+import { isPlanKey } from '@/lib/plans'
 
 async function getAuthenticatedSuperAdmin() {
   const cookieStore = await cookies()
@@ -58,7 +59,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Business name is required' }, { status: 400 })
     }
 
-    if (plan && !['starter', 'pro', 'enterprise'].includes(plan)) {
+    if (plan && !isPlanKey(plan)) {
       return NextResponse.json({ error: 'Invalid plan' }, { status: 400 })
     }
 

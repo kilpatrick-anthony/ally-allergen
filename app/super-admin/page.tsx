@@ -32,6 +32,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Select } from '@/components/ui/Select'
 import { BusinessSetupModal } from './components/BusinessSetupModal'
 import { BusinessDetailsModal } from './components/BusinessDetailsModal'
+import { getMonthlyRevenueForPlan, getPlanDefinition, SUPER_ADMIN_PLAN_ORDER } from '@/lib/plans'
 
 interface Business {
   id: string
@@ -41,7 +42,7 @@ interface Business {
   phone?: string
   address?: string
   status: 'active' | 'inactive' | 'trial' | 'suspended'
-  plan: 'starter' | 'pro' | 'enterprise'
+  plan: 'free' | 'starter' | 'pro' | 'enterprise'
   createdAt: string
   trialEndsAt?: string
   subscriptionStatus?: 'active' | 'past_due' | 'canceled' | 'trial'
@@ -145,6 +146,15 @@ export default function SuperAdminDashboard() {
       console.error('Failed to load businesses:', error)
     }
   }
+
+  const euroFormatter = new Intl.NumberFormat('en-IE', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+
+  const formatPlanName = (plan: Business['plan']) => getPlanDefinition(plan).title
 
   useEffect(() => {
     // Check if user is super admin
@@ -332,6 +342,26 @@ export default function SuperAdminDashboard() {
   const handleViewBusinessDetails = (business: Business) => {
     setSelectedBusiness(business)
     setShowBusinessDetails(true)
+  }
+
+  const handleImpersonateBusiness = async (business: Business) => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/super-admin/business/${business.id}/impersonate`, {
+        method: 'POST',
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to enter the business admin portal')
+      }
+
+      window.location.href = data.redirectTo || '/admin'
+    } catch (error: any) {
+      setActionNotice({ type: 'error', text: error.message || 'Failed to enter the business admin portal.' })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleEditBusiness = (business: Business) => {
@@ -542,7 +572,7 @@ export default function SuperAdminDashboard() {
   const suspendedCount = businesses.filter(b => b.status === 'suspended').length
   const estimatedMRR = businesses
     .filter(b => b.status === 'active')
-    .reduce((sum, b) => sum + (b.revenue || 0), 0)
+    .reduce((sum, b) => sum + getMonthlyRevenueForPlan(b.plan), 0)
   const newThisMonth = businesses.filter(b => new Date(b.createdAt) >= firstOfMonth).length
   const needsSetupCount = businesses.filter(b => getSetupProgress(b).completed < 3).length
   const offlineDeviceCount = businesses.reduce((sum, b) => sum + (b.deviceStatus?.offline || 0), 0)
@@ -658,16 +688,9 @@ export default function SuperAdminDashboard() {
         </Card>
         <Card>
           <div className="p-5">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Devices</p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">{onlineDeviceCount}/{onlineDeviceCount + offlineDeviceCount}</p>
-            <p className="text-xs text-gray-400 mt-1">{offlineDeviceCount} offline</p>
-          </div>
-        </Card>
-        <Card>
-          <div className="p-5">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Est. MRR</p>
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">€{estimatedMRR.toLocaleString()}</p>
-            <p className="text-xs text-gray-400 mt-1">active accounts only</p>
+            <p className="text-3xl font-bold text-gray-900 dark:text-white">{euroFormatter.format(estimatedMRR)}</p>
+            <p className="text-xs text-gray-400 mt-1">free and custom enterprise excluded</p>
           </div>
         </Card>
         <Card>
@@ -859,9 +882,7 @@ export default function SuperAdminDashboard() {
                 onChange={(value) => setPlanFilter(value)}
                 options={[
                   { value: 'all', label: 'All Plans' },
-                  { value: 'starter', label: 'Starter' },
-                  { value: 'pro', label: 'Pro' },
-                  { value: 'enterprise', label: 'Enterprise' }
+                  ...SUPER_ADMIN_PLAN_ORDER.map((plan) => ({ value: plan, label: getPlanDefinition(plan).title }))
                 ]}
               />
               {(searchTerm || statusFilter !== 'all' || planFilter !== 'all') && (
@@ -905,7 +926,7 @@ export default function SuperAdminDashboard() {
                   <td className="px-4 py-3">
                     <div className="font-medium text-sm text-gray-900 dark:text-white">{business.name}</div>
                     <div className="text-xs text-gray-400 mt-0.5">
-                      <span className="capitalize">{business.plan}</span> &middot; joined {new Date(business.createdAt).toLocaleDateString('en-IE', { day: 'numeric', month: 'short', year: '2-digit' })}
+                      <span>{formatPlanName(business.plan)}</span> &middot; joined {new Date(business.createdAt).toLocaleDateString('en-IE', { day: 'numeric', month: 'short', year: '2-digit' })}
                     </div>
                   </td>
 
@@ -1099,6 +1120,7 @@ export default function SuperAdminDashboard() {
         onClose={() => setShowBusinessDetails(false)}
         business={selectedBusiness}
         onEdit={handleEditBusiness}
+        onImpersonate={handleImpersonateBusiness}
         onResetPassword={handleResetPassword}
         onSetPassword={handleSetPassword}
         onToggleStatus={(business) => {
@@ -1174,8 +1196,9 @@ export default function SuperAdminDashboard() {
                   onChange={e => setEditForm(p => ({ ...p, plan: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
                 >
-                  <option value="starter">Starter</option>
-                  <option value="pro">Professional</option>
+                  <option value="free">Free</option>
+                  <option value="starter">Self-Managed</option>
+                  <option value="pro">Fully Managed</option>
                   <option value="enterprise">Enterprise</option>
                 </select>
               </div>

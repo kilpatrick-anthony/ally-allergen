@@ -3,7 +3,7 @@
 
 import { ReactNode, useCallback, useEffect, useState, useRef } from 'react'
 import ProtectedRoute from '@/components/auth/ProtectedRoute'
-import { Building2, User, LogOut, Menu, X } from 'lucide-react'
+import { Building2, User, LogOut, Menu, X, ShieldAlert, Undo2 } from 'lucide-react'
 import { Navigation } from '@/components/layout/Navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
@@ -22,6 +22,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const { t } = useTranslation()
   const [userName, setUserName] = useState<string>('')
   const [businessId, setBusinessId] = useState<string | null>(null)
+  const [userEmail, setUserEmail] = useState<string>('')
+  const [isImpersonating, setIsImpersonating] = useState(false)
+  const [impersonatedByEmail, setImpersonatedByEmail] = useState<string>('')
+  const [isStoppingImpersonation, setIsStoppingImpersonation] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const pathname = usePathname()
   const supabaseRef = useRef(createClient())
@@ -54,6 +58,24 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
   }, [])
 
+  const handleStopImpersonation = useCallback(async () => {
+    setIsStoppingImpersonation(true)
+
+    try {
+      const response = await fetch('/api/auth/stop-impersonation', { method: 'POST' })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to return to the super admin portal')
+      }
+
+      window.location.replace(data.redirectTo || '/super-admin')
+    } catch (error) {
+      console.error('Failed to stop impersonation:', error)
+      setIsStoppingImpersonation(false)
+    }
+  }, [])
+
   useEffect(() => {
     setIsSidebarOpen(false)
     // Track page visits — businessId may not be loaded yet; fall back to sessionStorage
@@ -70,6 +92,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         
         if (data.authenticated && data.user) {
           setUserName(data.user.name || data.user.email?.split('@')[0] || 'Admin User')
+          setUserEmail(data.user.email || '')
+          setIsImpersonating(Boolean(data.user.isImpersonating))
+          setImpersonatedByEmail(data.user.impersonatedByEmail || '')
           const biz = data.user.businessId || null
           setBusinessId(biz)
           if (biz && typeof window !== 'undefined') {
@@ -212,6 +237,31 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         {/* Main Content */}
         <div className="lg:pl-[224px] pt-14 lg:pt-0 flex flex-col min-h-screen">
           <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 admin-dot-grid dark:admin-dot-grid-dark pb-[52px]">
+            {isImpersonating && (
+              <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm dark:border-amber-900/30 dark:bg-amber-900/20 dark:text-amber-100">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                  <div className="flex items-start gap-3">
+                    <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" />
+                    <div>
+                      <p className="text-sm font-semibold">Impersonation mode is active</p>
+                      <p className="text-sm text-amber-800 dark:text-amber-200">
+                        You are browsing as {userName || userEmail || 'this business owner'}.
+                        {impersonatedByEmail ? ` Original super admin: ${impersonatedByEmail}.` : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleStopImpersonation}
+                    disabled={isStoppingImpersonation}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-70 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100 dark:hover:bg-amber-900/30"
+                  >
+                    <Undo2 className="h-4 w-4" />
+                    {isStoppingImpersonation ? 'Returning…' : 'Return to Super Admin'}
+                  </button>
+                </div>
+              </div>
+            )}
             {children}
           </main>
           {/* Food safety news ticker — fixed to the bottom of the screen (desktop only) */}

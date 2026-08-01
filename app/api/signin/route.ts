@@ -1,8 +1,8 @@
-import { getJwtSecret } from '@/lib/auth'
+import { signSessionToken, getSessionCookieOptions, AUTH_COOKIE_NAME } from '@/lib/auth'
 // app/api/signin/route.ts
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
-import { SignJWT } from 'jose'
+import { createServiceClient } from '@/lib/supabase/server'
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,12 +33,18 @@ export async function POST(request: NextRequest) {
 
     const user = authData.user
 
-    // Create a simple JWT session token
-    const secret = getJwtSecret()
-    const token = await new SignJWT({ userId: user.id, email: user.email })
-      .setProtectedHeader({ alg: 'HS256' })
-      .setExpirationTime('7d')
-      .sign(secret)
+    const supabase = createServiceClient()
+    const [{ data: userRoleData }, { data: userBusiness }] = await Promise.all([
+      supabase.from('users').select('role').eq('id', user.id).maybeSingle(),
+      supabase.from('user_businesses').select('business_id, role').eq('user_id', user.id).maybeSingle(),
+    ])
+
+    const token = await signSessionToken({
+      userId: user.id,
+      email: user.email || email,
+      role: userRoleData?.role || userBusiness?.role || null,
+      businessId: userBusiness?.business_id || null,
+    })
 
     // Set session cookie
     const response = NextResponse.json({
@@ -47,14 +53,7 @@ export async function POST(request: NextRequest) {
       email: user.email,
     })
 
-    response.cookies.set('auth-token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      // rememberMe: 30-day persistent cookie; otherwise session cookie (expires on browser close)
-      ...(rememberMe ? { maxAge: 60 * 60 * 24 * 30 } : {}),
-      path: '/'
-    })
+    response.cookies.set(AUTH_COOKIE_NAME, token, getSessionCookieOptions(rememberMe ? 60 * 60 * 24 * 30 : undefined))
 
     return response
 

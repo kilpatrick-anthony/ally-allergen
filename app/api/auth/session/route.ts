@@ -1,7 +1,6 @@
-import { getJwtSecret } from '@/lib/auth'
+import { verifySessionToken } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 
 export async function GET(_request: NextRequest) {
@@ -16,8 +15,7 @@ export async function GET(_request: NextRequest) {
       )
     }
 
-    const secret = getJwtSecret()
-    const { payload } = await jwtVerify(authToken, secret)
+    const payload = await verifySessionToken(authToken)
 
     const userId = payload.userId as string
     const email = payload.email as string
@@ -47,7 +45,7 @@ export async function GET(_request: NextRequest) {
     const userDetails = userData?.user
     const fullName = userDetails?.user_metadata?.full_name || email?.split('@')[0] || 'User'
     const twoFactorEnabled = userDetails?.user_metadata?.twoFactorEnabled || false
-    const role = userRoleData?.role || userBusiness?.role || null
+    const role = payload.role || userRoleData?.role || userBusiness?.role || null
 
     return NextResponse.json({
       user: {
@@ -55,8 +53,11 @@ export async function GET(_request: NextRequest) {
         email: email,
         name: fullName,
         role,
-        businessId: userBusiness?.business_id || null,
+        businessId: payload.businessId || userBusiness?.business_id || null,
         twoFactorEnabled,
+        isImpersonating: Boolean(payload.isImpersonating),
+        impersonatedByEmail: payload.impersonatedByEmail || null,
+        impersonatedByUserId: payload.impersonatedByUserId || null,
       },
       authenticated: true,
     })

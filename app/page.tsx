@@ -19,6 +19,7 @@ import {
   Menu,
   X,
 } from 'lucide-react'
+import { getPlanDefinition } from '@/lib/plans'
 
 export default function LandingPage() {
   const [isNavOpen, setIsNavOpen] = useState(false)
@@ -31,6 +32,60 @@ export default function LandingPage() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const publicPlans = [
+    {
+      ...getPlanDefinition('starter'),
+      badge: null,
+      desc: 'Full access to the AllyJen platform. You keep your menu up to date; we power the technology.',
+      features: [
+        'Full AllyJen platform access',
+        'Customer-facing allergen kiosk &amp; QR code',
+        'All 14 EU-mandated allergens tracked',
+        'Sub-allergen detail tracking',
+        'Multilingual allergen display',
+        'Real-time menu updates (self-managed)',
+        'Unlimited menu items',
+        'Audit-ready compliance reports',
+        'Analytics &amp; usage dashboard',
+        'Email support',
+      ],
+      cta: 'Get Started',
+      highlight: false,
+    },
+    {
+      ...getPlanDefinition('pro'),
+      badge: 'Most Popular',
+      desc: 'Everything in Self-Managed, plus our team handles your menu and platform management for you.',
+      features: [
+        'Everything in Self-Managed',
+        'Menu management by our team',
+        'Regular menu &amp; ingredient updates on your behalf',
+        'Content accuracy guaranteed',
+        'Dedicated account manager',
+        'Priority email support',
+        'Proactive compliance monitoring',
+        'Seasonal menu change assistance',
+      ],
+      cta: 'Get Started',
+      highlight: true,
+    },
+    {
+      ...getPlanDefinition('enterprise'),
+      badge: null,
+      desc: 'For large chains and multi-site groups. Tailored pricing, dedicated support, and a rollout plan built around your business.',
+      features: [
+        'Everything in Fully Managed',
+        'Unlimited locations',
+        'Volume pricing for large chains',
+        'Dedicated account team',
+        'Custom onboarding &amp; rollout plan',
+        'SLA-backed support agreement',
+        'Flexible contract terms',
+      ],
+      cta: 'Contact Us',
+      highlight: false,
+    },
+  ]
 
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -353,66 +408,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {[
-              {
-                name: 'Self-Managed',
-                price: '€19.99',
-                priceSuffix: '/month per location',
-                badge: null,
-                desc: 'Full access to the AllyJen platform. You keep your menu up to date; we power the technology.',
-                features: [
-                  'Full AllyJen platform access',
-                  'Customer-facing allergen kiosk &amp; QR code',
-                  'All 14 EU-mandated allergens tracked',
-                  'Sub-allergen detail tracking',
-                  'Multilingual allergen display',
-                  'Real-time menu updates (self-managed)',
-                  'Unlimited menu items',
-                  'Audit-ready compliance reports',
-                  'Analytics &amp; usage dashboard',
-                  'Email support',
-                ],
-                cta: 'Get Started',
-                highlight: false,
-              },
-              {
-                name: 'Fully Managed',
-                price: '€39.99',
-                priceSuffix: '/month per location',
-                badge: 'Most Popular',
-                desc: 'Everything in Self-Managed, plus our team handles your menu and platform management for you.',
-                features: [
-                  'Everything in Self-Managed',
-                  'Menu management by our team',
-                  'Regular menu &amp; ingredient updates on your behalf',
-                  'Content accuracy guaranteed',
-                  'Dedicated account manager',
-                  'Priority email support',
-                  'Proactive compliance monitoring',
-                  'Seasonal menu change assistance',
-                ],
-                cta: 'Get Started',
-                highlight: true,
-              },
-              {
-                name: 'Enterprise',
-                price: 'Contact Us',
-                priceSuffix: '',
-                badge: null,
-                desc: 'For large chains and multi-site groups. Tailored pricing, dedicated support, and a rollout plan built around your business.',
-                features: [
-                  'Everything in Fully Managed',
-                  'Unlimited locations',
-                  'Volume pricing for large chains',
-                  'Dedicated account team',
-                  'Custom onboarding &amp; rollout plan',
-                  'SLA-backed support agreement',
-                  'Flexible contract terms',
-                ],
-                cta: 'Contact Us',
-                highlight: false,
-              },
-            ].map((plan, i) => (
+            {publicPlans.map((plan, i) => (
               <div
                 key={i}
                 className={`relative flex flex-col rounded-2xl border-2 p-7 ${
@@ -429,9 +425,9 @@ export default function LandingPage() {
                   </div>
                 )}
                 <div className="mb-5">
-                  <p className="text-sm font-bold text-[#42b8ac] uppercase tracking-widest mb-1">{plan.name}</p>
+                  <p className="text-sm font-bold text-[#42b8ac] uppercase tracking-widest mb-1">{plan.title}</p>
                   <div className="flex items-end gap-1 mb-3 flex-wrap">
-                    <span className="text-4xl font-extrabold text-[#003842]">{plan.price}</span>
+                    <span className="text-4xl font-extrabold text-[#003842]">{plan.priceLabel.replace('EUR', '€')}</span>
                     {plan.priceSuffix && <span className="text-gray-400 text-sm mb-1">{plan.priceSuffix}</span>}
                   </div>
                   <p className="text-gray-500 text-sm leading-relaxed">{plan.desc}</p>

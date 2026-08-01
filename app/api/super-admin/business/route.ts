@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
+import { getMonthlyRevenueForPlan } from '@/lib/plans'
 
 async function getAuthenticatedSuperAdmin() {
   const cookieStore = await cookies()
@@ -150,7 +151,7 @@ export async function GET() {
         phone: b.settings?.address?.phone || '',
         address: [b.settings?.address?.street, b.settings?.address?.city, b.settings?.address?.country].filter(Boolean).join(', '),
         subscriptionStatus: b.status === 'active' ? 'active' : b.status === 'trial' ? 'trial' : b.status,
-        revenue: b.plan_type === 'starter' ? 99 : b.plan_type === 'pro' ? 299 : 499,
+        revenue: getMonthlyRevenueForPlan(b.plan_type),
         setupMilestones: {
           sitesCount: siteCountsByBusiness[b.id] || 0,
           devicesCount: deviceCountsByBusiness[b.id] || 0,

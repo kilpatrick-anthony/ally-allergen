@@ -1,4 +1,19 @@
+import { SignJWT, jwtVerify, type JWTPayload } from 'jose'
 import { createServiceClient } from '@/lib/supabase/server'
+
+export const AUTH_COOKIE_NAME = 'auth-token'
+export const IMPERSONATOR_COOKIE_NAME = 'auth-token-impersonator'
+
+export interface SessionTokenPayload extends JWTPayload {
+  userId: string
+  email: string
+  role?: string | null
+  businessId?: string | null
+  isImpersonating?: boolean
+  impersonatedByUserId?: string
+  impersonatedByEmail?: string
+  impersonatedByRole?: string | null
+}
 
 export function getJwtSecret(): Uint8Array {
   const secret = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -6,6 +21,30 @@ export function getJwtSecret(): Uint8Array {
     throw new Error('Missing required environment variable SUPABASE_SERVICE_ROLE_KEY')
   }
   return new TextEncoder().encode(secret)
+}
+
+export function getSessionCookieOptions(maxAge?: number) {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax' as const,
+    path: '/',
+    ...(typeof maxAge === 'number' ? { maxAge } : {}),
+  }
+}
+
+export async function signSessionToken(payload: SessionTokenPayload, expiresIn: string = '7d') {
+  const secret = getJwtSecret()
+  return new SignJWT(payload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setExpirationTime(expiresIn)
+    .sign(secret)
+}
+
+export async function verifySessionToken(token: string) {
+  const secret = getJwtSecret()
+  const { payload } = await jwtVerify(token, secret)
+  return payload as SessionTokenPayload
 }
 
 export function getConfiguredSuperAdminEmails(): string[] {

@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { X, Save, User, Building, Mail, Phone, MapPin, CreditCard, DollarSign, Calendar, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
+import { PLAN_DEFINITIONS, SUPER_ADMIN_PLAN_ORDER, type PlanKey } from '@/lib/plans'
 
 interface BusinessSetupModalProps {
   isOpen: boolean
@@ -14,28 +15,33 @@ interface BusinessSetupModalProps {
 
 interface PlanDetails {
   name: string
-  price: number
+  priceLabel: string
   features: string[]
   stripePriceId?: string
 }
 
 const PLAN_DETAILS: Record<string, PlanDetails> = {
+  free: {
+    name: PLAN_DEFINITIONS.free.title,
+    priceLabel: PLAN_DEFINITIONS.free.priceLabel,
+    features: PLAN_DEFINITIONS.free.adminFeatures,
+  },
   starter: {
-    name: 'Starter',
-    price: 99,
-    features: ['Up to 50 menu items', 'Basic allergen tracking', 'Email support', '1 location'],
+    name: PLAN_DEFINITIONS.starter.title,
+    priceLabel: PLAN_DEFINITIONS.starter.priceLabel.replace('EUR', '€'),
+    features: PLAN_DEFINITIONS.starter.adminFeatures,
     stripePriceId: 'price_starter_plan'
   },
   pro: {
-    name: 'Professional',
-    price: 299,
-    features: ['Up to 200 menu items', 'Advanced allergen tracking', 'Priority support', '3 locations', 'Custom branding'],
+    name: PLAN_DEFINITIONS.pro.title,
+    priceLabel: PLAN_DEFINITIONS.pro.priceLabel.replace('EUR', '€'),
+    features: PLAN_DEFINITIONS.pro.adminFeatures,
     stripePriceId: 'price_pro_plan'
   },
   enterprise: {
-    name: 'Enterprise',
-    price: 499,
-    features: ['Unlimited menu items', 'Advanced analytics', 'Phone & email support', 'Unlimited locations', 'API access', 'Custom integrations'],
+    name: PLAN_DEFINITIONS.enterprise.title,
+    priceLabel: PLAN_DEFINITIONS.enterprise.priceLabel,
+    features: PLAN_DEFINITIONS.enterprise.adminFeatures,
     stripePriceId: 'price_enterprise_plan'
   }
 }
@@ -67,7 +73,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
     siteCountry: 'Ireland',
 
     // Subscription Info
-    plan: 'starter',
+    plan: 'starter' as PlanKey,
     subscriptionStatus: 'active',
     billingCycle: 'monthly',
     setupStripePayment: false,
@@ -85,6 +91,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
 
   const selectedPlan = PLAN_DETAILS[formData.plan]
   const totalSteps = formData.setupStripePayment ? 4 : 3
+  const canSetUpStripe = formData.plan !== 'free'
 
   const validateStep = () => {
     if (currentStep === 1) {
@@ -146,7 +153,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
       }
 
       // If Stripe payment setup is enabled, create the subscription
-      if (formData.setupStripePayment) {
+      if (formData.setupStripePayment && canSetUpStripe) {
         try {
           const stripeResponse = await fetch('/api/super-admin/stripe/setup-subscription', {
             method: 'POST',
@@ -195,7 +202,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
         siteCity: '',
         sitePostalCode: '',
         siteCountry: 'Ireland',
-        plan: 'starter',
+        plan: 'starter' as PlanKey,
         subscriptionStatus: 'active',
         billingCycle: 'monthly',
         setupStripePayment: false,
@@ -509,8 +516,10 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
           Subscription Plan
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          {Object.entries(PLAN_DETAILS).map(([key, plan]) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+          {SUPER_ADMIN_PLAN_ORDER.map((key) => {
+            const plan = PLAN_DETAILS[key]
+            return (
             <div
               key={key}
               className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
@@ -518,14 +527,15 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
                   ? 'border-[#42b8ac] bg-[#42b8ac]/5 dark:bg-[#42b8ac]/10'
                   : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
               }`}
-              onClick={() => setFormData(prev => ({ ...prev, plan: key }))}
+              onClick={() => setFormData(prev => ({ ...prev, plan: key, setupStripePayment: key === 'free' ? false : prev.setupStripePayment }))}
             >
               <div className="flex items-center justify-between mb-2">
                 <h4 className="font-semibold text-gray-900 dark:text-white">{plan.name}</h4>
                 {formData.plan === key && <CheckCircle className="h-5 w-5 text-[#42b8ac]" />}
               </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                ${plan.price}<span className="text-sm font-normal text-gray-600 dark:text-gray-400">/month</span>
+                {plan.priceLabel}
+                {key !== 'free' && key !== 'enterprise' && <span className="text-sm font-normal text-gray-600 dark:text-gray-400">/month</span>}
               </div>
               <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
                 {plan.features.map((feature, index) => (
@@ -536,7 +546,8 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
                 ))}
               </ul>
             </div>
-          ))}
+            )
+          })}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -565,12 +576,18 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
                 name="setupStripePayment"
                 checked={formData.setupStripePayment}
                 onChange={handleChange}
+                disabled={!canSetUpStripe}
                 className="rounded border-gray-300 text-[#42b8ac] focus:ring-[#42b8ac]"
               />
-              <label htmlFor="setupStripePayment" className="text-sm text-gray-700 dark:text-gray-300">
+              <label htmlFor="setupStripePayment" className={`text-sm ${canSetUpStripe ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}>
                 Set up payment method now
               </label>
             </div>
+            {!canSetUpStripe && (
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                Free plans do not create a Stripe subscription.
+              </p>
+            )}
           </div>
         </div>
       </div>
