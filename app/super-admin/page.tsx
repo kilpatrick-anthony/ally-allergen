@@ -111,6 +111,7 @@ export default function SuperAdminDashboard() {
   const [demoForm, setDemoForm] = useState({ ownerEmail: '', ownerName: '', businessName: '', locationName: '' })
   const [demoLoading, setDemoLoading] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [menuAnchor, setMenuAnchor] = useState<{ top: number; left: number } | null>(null)
   const [showBillingModal, setShowBillingModal] = useState(false)
   const [billingBusiness, setBillingBusiness] = useState<Business | null>(null)
   const [billingLoading, setBillingLoading] = useState(false)
@@ -675,6 +676,22 @@ export default function SuperAdminDashboard() {
     window.URL.revokeObjectURL(url)
   }
 
+  const openActionsMenu = (event: React.MouseEvent<HTMLButtonElement>, businessId: string) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    const menuWidth = 224
+    const left = Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8))
+    const top = Math.min(rect.bottom + 6, window.innerHeight - 12)
+
+    if (openMenuId === businessId) {
+      setOpenMenuId(null)
+      setMenuAnchor(null)
+      return
+    }
+
+    setOpenMenuId(businessId)
+    setMenuAnchor({ top, left })
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -1086,38 +1103,56 @@ export default function SuperAdminDashboard() {
                         <button
                           type="button"
                           className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500"
-                          onClick={() => setOpenMenuId(menuOpen ? null : business.id)}
+                          onClick={(event) => openActionsMenu(event, business.id)}
                           aria-label="More actions"
                         >
                           <MoreVertical className="h-4 w-4" />
                         </button>
 
-                        {menuOpen && (
+                        {menuOpen && menuAnchor && (
                           <>
                             {/* Click-outside backdrop */}
                             <div
                               className="fixed inset-0 z-40"
-                              onClick={() => setOpenMenuId(null)}
+                              onClick={() => {
+                                setOpenMenuId(null)
+                                setMenuAnchor(null)
+                              }}
                             />
-                            <div className="absolute right-0 z-50 mt-1 w-56 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl p-1">
+                            <div
+                              className="fixed z-50 w-56 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl p-1"
+                              style={{ top: `${menuAnchor.top}px`, left: `${menuAnchor.left}px` }}
+                            >
                               <button
                                 type="button"
                                 className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-                                onClick={() => { setOpenMenuId(null); handleEditBusiness(business) }}
+                                onClick={() => {
+                                  setOpenMenuId(null)
+                                  setMenuAnchor(null)
+                                  handleEditBusiness(business)
+                                }}
                               >
                                 Edit Customer
                               </button>
                               <button
                                 type="button"
                                 className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-                                onClick={() => { setOpenMenuId(null); handleSetPassword(business) }}
+                                onClick={() => {
+                                  setOpenMenuId(null)
+                                  setMenuAnchor(null)
+                                  handleSetPassword(business)
+                                }}
                               >
                                 Set Temporary Password
                               </button>
                               <button
                                 type="button"
                                 className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-                                onClick={() => { setOpenMenuId(null); handleResetPassword(business) }}
+                                onClick={() => {
+                                  setOpenMenuId(null)
+                                  setMenuAnchor(null)
+                                  handleResetPassword(business)
+                                }}
                               >
                                 Send Password Reset Email
                               </button>
@@ -1126,7 +1161,11 @@ export default function SuperAdminDashboard() {
                                 <button
                                   type="button"
                                   className="w-full text-left px-3 py-2 text-sm rounded-md text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                  onClick={() => { setOpenMenuId(null); handleSuspendBusiness(business) }}
+                                  onClick={() => {
+                                    setOpenMenuId(null)
+                                    setMenuAnchor(null)
+                                    handleSuspendBusiness(business)
+                                  }}
                                 >
                                   Suspend Business
                                 </button>
@@ -1134,7 +1173,11 @@ export default function SuperAdminDashboard() {
                                 <button
                                   type="button"
                                   className="w-full text-left px-3 py-2 text-sm rounded-md text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
-                                  onClick={() => { setOpenMenuId(null); handleActivateBusiness(business) }}
+                                  onClick={() => {
+                                    setOpenMenuId(null)
+                                    setMenuAnchor(null)
+                                    handleActivateBusiness(business)
+                                  }}
                                 >
                                   Activate Business
                                 </button>
@@ -1143,7 +1186,11 @@ export default function SuperAdminDashboard() {
                               <button
                                 type="button"
                                 className="w-full text-left px-3 py-2 text-sm rounded-md text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                onClick={() => { setOpenMenuId(null); handleDeleteBusiness(business) }}
+                                onClick={() => {
+                                  setOpenMenuId(null)
+                                  setMenuAnchor(null)
+                                  handleDeleteBusiness(business)
+                                }}
                               >
                                 Permanently Delete
                               </button>
