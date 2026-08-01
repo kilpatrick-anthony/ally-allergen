@@ -23,13 +23,13 @@ export default function HelpPage() {
   const [expandedTopic, setExpandedTopic] = useState<number | null>(null)
 
   const categories = [
-    { id: 'all', name: 'All Topics', icon: Book },
-    { id: 'getting-started', name: 'Getting Started', icon: Zap },
+    { id: 'all', name: 'All topics', icon: Book },
+    { id: 'getting-started', name: 'Getting started', icon: Zap },
     { id: 'ingredients', name: 'Ingredients', icon: Package },
-    { id: 'menu', name: 'Menu Builder', icon: ChefHat },
-    { id: 'sites', name: 'Sites & Kiosks', icon: Building },
+    { id: 'menu', name: 'Menu builder', icon: ChefHat },
+    { id: 'sites', name: 'Sites and kiosks', icon: Building },
     { id: 'compliance', name: 'Compliance', icon: Shield },
-    { id: 'downloads', name: 'Reports & Downloads', icon: Download }
+    { id: 'downloads', name: 'Reports and downloads', icon: Download }
   ]
 
   const categoryNamesByLanguage: Record<string, Record<string, string>> = {
@@ -84,120 +84,120 @@ export default function HelpPage() {
     {
       id: 1,
       category: 'getting-started',
-      title: 'Getting Started with AllyJen',
-      description: 'Learn the basics of setting up and using the AllyJen allergen management platform',
+      title: 'Getting started with AllyJen',
+      description: 'Learn the essentials of setting up and using AllyJen for allergen management.',
       icon: Zap,
       color: 'purple'
     },
     {
       id: 2,
       category: 'getting-started',
-      title: 'Platform Overview',
-      description: 'Understand the main features and how to navigate the admin dashboard',
+      title: 'Platform overview',
+      description: 'See the main features and how to move around the admin dashboard with ease.',
       icon: Book,
       color: 'blue'
     },
     {
       id: 3,
       category: 'ingredients',
-      title: 'Adding New Ingredients',
-      description: 'How to create ingredient records with allergen information and datasheets',
+      title: 'Adding ingredients',
+      description: 'Create ingredient records with allergen details and datasheets in a few simple steps.',
       icon: Package,
       color: 'green'
     },
     {
       id: 4,
       category: 'ingredients',
-      title: 'Managing Product Datasheets',
-      description: 'Upload, view, and track product specification sheets and compliance documents',
+      title: 'Managing datasheets',
+      description: 'Upload, view and keep track of specification sheets and compliance documents.',
       icon: FileText,
       color: 'orange'
     },
     {
       id: 5,
       category: 'ingredients',
-      title: 'Supplier Management',
-      description: 'Track multiple suppliers per ingredient and manage supplier information',
+      title: 'Supplier management',
+      description: 'Keep track of suppliers for each ingredient and manage their details clearly.',
       icon: Users,
       color: 'indigo'
     },
     {
       id: 6,
       category: 'menu',
-      title: 'Creating Menu Items',
-      description: 'Build menu items by combining ingredients with automatic allergen calculation',
+      title: 'Creating menu items',
+      description: 'Build menu items by combining ingredients with allergen calculations that happen automatically.',
       icon: ChefHat,
       color: 'pink'
     },
     {
       id: 7,
       category: 'menu',
-      title: 'Allergen Warnings',
-      description: 'Understanding allergen warning levels: Contains, May Contain, Traces, Not Suitable',
+      title: 'Allergen warnings',
+      description: 'Understand the warning levels for contains, may contain, traces and not suitable.',
       icon: Shield,
       color: 'red'
     },
     {
       id: 8,
       category: 'menu',
-      title: 'Dietary Attributes',
-      description: 'Add dietary certifications like Vegan, Gluten-Free, Halal, and more',
+      title: 'Dietary attributes',
+      description: 'Add labels such as vegan, gluten-free, halal and more where they apply.',
       icon: CheckCircle,
       color: 'teal'
     },
     {
       id: 9,
       category: 'sites',
-      title: 'Site Configuration',
-      description: 'Set up your locations and configure kiosk settings',
+      title: 'Site configuration',
+      description: 'Set up each location and tailor the kiosk settings to suit the site.',
       icon: Building,
       color: 'blue'
     },
     {
       id: 10,
       category: 'sites',
-      title: 'Kiosk Customization',
-      description: 'Customise the look and feel of your customer-facing kiosks',
+      title: 'Kiosk customisation',
+      description: 'Make the customer-facing kiosk look and feel right for your venue.',
       icon: Settings,
       color: 'gray'
     },
     {
       id: 11,
       category: 'compliance',
-      title: 'Allergen Compliance Guide',
-      description: 'Ensure your allergen information meets regulatory requirements',
+      title: 'Allergen compliance guide',
+      description: 'Keep your allergen information accurate and in line with the rules that matter.',
       icon: Shield,
       color: 'red'
     },
     {
       id: 12,
       category: 'compliance',
-      title: 'Datasheet Review Process',
-      description: 'Set up review reminders and keep your documentation up to date',
+      title: 'Datasheet review process',
+      description: 'Set review reminders and keep your documentation current without the fuss.',
       icon: FileText,
       color: 'amber'
     },
     {
       id: 13,
       category: 'downloads',
-      title: 'Generating Reports',
-      description: 'Create allergen guides, compliance reports, and printable materials',
+      title: 'Generating reports',
+      description: 'Create allergen guides, compliance reports and printable materials for your team.',
       icon: Download,
       color: 'blue'
     },
     {
       id: 14,
       category: 'downloads',
-      title: 'Viewing All Datasheets',
-      description: 'Access and manage all product datasheets in one central location',
+      title: 'Viewing all datasheets',
+      description: 'Access and manage every product datasheet from one central place.',
       icon: FileText,
       color: 'purple'
     },
     {
       id: 15,
       category: 'sites',
-      title: 'Kiosk Opening Hours & Sleep Mode',
-      description: 'Schedule active hours per day and configure the sleep screen shown when the kiosk is outside operating times',
+      title: 'Kiosk opening hours and sleep mode',
+      description: 'Schedule active hours and configure the screen that appears when the kiosk is closed.',
       icon: Clock,
       color: 'teal'
     }
@@ -521,7 +521,7 @@ export default function HelpPage() {
   const quickLinks = [
     {
       title: t('admin.documentation'),
-      description: 'Read detailed documentation',
+      description: 'Read the full help guide',
       icon: Book,
       href: '#help-topics',
       color: 'blue'
@@ -535,7 +535,7 @@ export default function HelpPage() {
     },
     {
       title: t('admin.email'),
-      description: 'info@allyjen.ie',
+      description: 'Email the AllyJen team',
       icon: Mail,
       href: 'mailto:info@allyjen.ie',
       color: 'purple'
@@ -545,16 +545,16 @@ export default function HelpPage() {
   return (
     <Container>
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex justify-between items-start">
+      <div className="mb-8 rounded-2xl border border-gray-200/70 bg-white/70 p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800/70">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-gradient-to-br from-teal-400 to-teal-600 dark:from-teal-500 dark:to-gray-700 rounded-lg">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2.5 bg-gradient-to-br from-teal-400 to-teal-600 dark:from-teal-500 dark:to-gray-700 rounded-xl shadow-sm">
                 <HelpCircle className="h-6 w-6 text-white" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-[#003842] dark:text-white">{t('admin.helpSupport')}</h1>
-                <p className="text-gray-600 dark:text-gray-300">
+                <p className="text-gray-600 dark:text-gray-300 mt-1">
                   {t('admin.helpSupportDesc')}
                 </p>
               </div>
@@ -567,15 +567,15 @@ export default function HelpPage() {
       </div>
 
       {/* Quick Links */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 auto-rows-fr">
         {quickLinks.map((link, index) => (
           <a
             key={index}
             href={link.href}
-            className="block"
+            className="block h-full"
           >
-            <Card className="hover:shadow-lg transition-all hover:scale-105 cursor-pointer h-full">
-              <div className="flex items-start gap-3">
+            <Card className="hover:shadow-xl transition-all duration-200 hover:-translate-y-1 cursor-pointer h-full flex flex-col border border-gray-200/80 shadow-sm">
+              <div className="flex items-start gap-3 h-full">
                 <div 
                   className={`p-3 rounded-lg bg-${link.color}-100`}
                   style={{
@@ -609,7 +609,7 @@ export default function HelpPage() {
       </div>
 
       {/* Search and Categories */}
-      <Card className="mb-8">
+      <Card className="mb-8 border border-gray-200/80 shadow-sm">
         <div className="p-6">
           <div className="relative mb-6">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -631,9 +631,9 @@ export default function HelpPage() {
                   key={category.id}
                   onClick={() => setActiveCategory(category.id)}
                   className={`
-                    flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-all
+                    flex items-center gap-2 px-4 py-2 rounded-full border transition-all
                     ${isActive
-                      ? 'border-[#42b8ac] bg-[#42b8ac]/10 text-[#003842] dark:text-white font-medium'
+                      ? 'border-[#42b8ac] bg-[#42b8ac]/10 text-[#003842] dark:text-white font-medium shadow-sm'
                       : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-gray-400 dark:hover:border-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700'
                     }
                   `}
@@ -662,11 +662,11 @@ export default function HelpPage() {
           <div className="text-center py-12">
             <HelpCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('admin.noTopicsFound')}</h3>
-            <p className="text-gray-600 dark:text-gray-400">Try adjusting your search or filters</p>
+            <p className="text-gray-600 dark:text-gray-400">Try changing your search or filters</p>
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-fr">
           {filteredTopics.map((topic) => {
             const colorClasses = {
               purple: 'from-purple-500 to-purple-600',
@@ -689,23 +689,23 @@ export default function HelpPage() {
                 tabIndex={0}
                 onClick={() => setExpandedTopic(isExpanded ? null : topic.id)}
                 onKeyDown={(e) => e.key === 'Enter' && setExpandedTopic(isExpanded ? null : topic.id)}
-                className="cursor-pointer group"
+                className="cursor-pointer group h-full"
               >
-                <Card className="hover:shadow-lg transition-all">
-                  <div className="flex items-start gap-4">
+                <Card className="hover:shadow-xl transition-all duration-200 hover:-translate-y-1 h-full flex flex-col border border-gray-200/80 shadow-sm">
+                  <div className="flex items-start gap-4 h-full">
                     <div className={`p-3 bg-gradient-to-br ${colorClasses[topic.color as keyof typeof colorClasses]} rounded-lg group-hover:scale-110 transition-transform flex-shrink-0`}>
                       {typeof topic.icon === 'function' && React.createElement(topic.icon as React.ComponentType<{className: string}>, {
                         className: "h-6 w-6 text-white"
                       })}
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 flex flex-col">
                       <h3 className="font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-[#42b8ac] transition-colors">
                         {topic.title}
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                         {topic.description}
                       </p>
-                      <div className="flex items-center text-[#42b8ac] text-sm font-medium">
+                      <div className="mt-auto flex items-center text-[#42b8ac] text-sm font-medium">
                         {isExpanded ? t('admin.close') : t('admin.learnMore')}
                         <ChevronRight className={`h-4 w-4 ml-1 transition-transform ${isExpanded ? 'rotate-90' : 'group-hover:translate-x-1'}`} />
                       </div>
@@ -736,7 +736,7 @@ export default function HelpPage() {
       )}
 
       {/* Contact Support Section */}
-      <Card className="mt-8 bg-gradient-to-br from-[#42b8ac]/10 to-[#003842]/10 border-2 border-[#42b8ac]/20">
+      <Card className="mt-8 bg-gradient-to-br from-[#42b8ac]/10 to-[#003842]/10 border border-[#42b8ac]/20 shadow-sm">
         <div className="text-center">
           <MessageCircle className="h-12 w-12 text-[#42b8ac] mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-[#003842] dark:text-white mb-2">
