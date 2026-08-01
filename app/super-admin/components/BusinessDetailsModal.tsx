@@ -87,6 +87,7 @@ interface BusinessDetailsModalProps {
   business: Business | null
   onEdit?: (business: Business) => void
   onImpersonate?: (business: Business) => void
+  onManageBilling?: (business: Business) => void
   onResetPassword?: (business: Business) => void
   onSetPassword?: (business: Business) => void
   onToggleStatus?: (business: Business) => void
@@ -98,6 +99,7 @@ export function BusinessDetailsModal({
   business,
   onEdit,
   onImpersonate,
+  onManageBilling,
   onResetPassword,
   onSetPassword,
   onToggleStatus
@@ -483,6 +485,11 @@ export function BusinessDetailsModal({
             {business.contactEmail && (
               <Button variant="outline" onClick={() => onImpersonate?.(business)}>
                 Enter Admin Portal
+              </Button>
+            )}
+            {(business.plan === 'starter' || business.plan === 'pro') && (
+              <Button variant="outline" onClick={() => onManageBilling?.(business)}>
+                Manage Billing
               </Button>
             )}
             <Button

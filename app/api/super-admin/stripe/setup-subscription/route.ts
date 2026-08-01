@@ -104,12 +104,7 @@ export async function POST(request: NextRequest) {
     }
 
     const currentSubscription = business.settings?.subscription || {}
-    if (currentSubscription?.stripeSubscriptionId) {
-      return NextResponse.json(
-        { error: 'This business already has a Stripe subscription recorded' },
-        { status: 409 }
-      )
-    }
+    const hasExistingSubscription = Boolean(currentSubscription?.stripeSubscriptionId)
 
     const priceId = getStripePriceId(plan, billingCycle)
     const setupFeePriceId = getStripeSetupFeePriceId()
@@ -126,6 +121,17 @@ export async function POST(request: NextRequest) {
     if (customerId) {
       try {
         await stripe.customers.retrieve(customerId)
+      } catch {
+        customerId = undefined
+      }
+    }
+
+    if (!customerId && hasExistingSubscription) {
+      try {
+        const existingSubscription = await stripe.subscriptions.retrieve(String(currentSubscription.stripeSubscriptionId))
+        customerId = typeof existingSubscription.customer === 'string'
+          ? existingSubscription.customer
+          : existingSubscription.customer?.id
       } catch {
         customerId = undefined
       }
@@ -165,6 +171,48 @@ export async function POST(request: NextRequest) {
         default_payment_method: stripePaymentMethodId,
       },
     })
+
+    if (hasExistingSubscription) {
+      const subscriptionId = String(currentSubscription.stripeSubscriptionId)
+      const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
+        default_payment_method: stripePaymentMethodId,
+      })
+
+      const nextSettings = {
+        ...(business.settings || {}),
+        subscription: {
+          ...currentSubscription,
+          plan,
+          billingCycle,
+          status: updatedSubscription.status,
+          stripeCustomerId: customerId,
+          stripeSubscriptionId: subscriptionId,
+          stripePaymentMethodId,
+          paymentMethodUpdatedAt: new Date().toISOString(),
+        },
+      }
+
+      const { error: updateExistingError } = await supabase
+        .from('businesses')
+        .update({ settings: nextSettings })
+        .eq('id', business.id)
+
+      if (updateExistingError) {
+        console.error('Failed to persist Stripe payment method update:', updateExistingError)
+        return NextResponse.json(
+          { error: 'Payment method was updated in Stripe, but saving to the business record failed' },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({
+        success: true,
+        mode: 'updated_payment_method',
+        customerId,
+        subscriptionId,
+        status: updatedSubscription.status,
+      })
+    }
 
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
@@ -222,6 +270,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      mode: 'created_subscription',
       customerId,
       subscriptionId: subscription.id,
       status: subscription.status,

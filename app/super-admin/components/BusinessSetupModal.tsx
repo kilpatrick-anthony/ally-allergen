@@ -76,7 +76,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
     plan: 'starter' as PlanKey,
     subscriptionStatus: 'active',
     billingCycle: 'monthly',
-    setupStripePayment: false,
+    setupStripePayment: true,
     sendWelcomeEmail: true,
     createSampleData: true,
 
@@ -90,8 +90,8 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
   })
 
   const selectedPlan = PLAN_DETAILS[formData.plan]
-  const totalSteps = formData.setupStripePayment ? 4 : 3
   const canSetUpStripe = formData.plan === 'starter' || formData.plan === 'pro'
+  const totalSteps = canSetUpStripe ? 4 : 3
 
   const validateStep = () => {
     if (currentStep === 1) {
@@ -113,9 +113,9 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
       }
     }
 
-    if (currentStep === 4 && formData.setupStripePayment) {
+    if (currentStep === 4 && canSetUpStripe) {
       if (!formData.cardNumber || !formData.expiryMonth || !formData.expiryYear || !formData.cvc) {
-        setStepError('Complete payment details or disable payment setup for now.')
+        setStepError('Complete payment details to continue for paid plans.')
         return false
       }
     }
@@ -153,8 +153,8 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
         throw new Error(result.error || 'Failed to create business')
       }
 
-      // If Stripe payment setup is enabled, create the subscription
-      if (formData.setupStripePayment && canSetUpStripe) {
+      // Paid plans require Stripe setup before finishing.
+      if (canSetUpStripe) {
         try {
           const stripeResponse = await fetch('/api/super-admin/stripe/setup-subscription', {
             method: 'POST',
@@ -206,7 +206,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
         plan: 'starter' as PlanKey,
         subscriptionStatus: 'active',
         billingCycle: 'monthly',
-        setupStripePayment: false,
+        setupStripePayment: true,
         sendWelcomeEmail: true,
         createSampleData: true,
         cardNumber: '',
@@ -531,7 +531,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
               onClick={() => setFormData(prev => ({
                 ...prev,
                 plan: key,
-                setupStripePayment: key === 'starter' || key === 'pro' ? prev.setupStripePayment : false,
+                setupStripePayment: key === 'starter' || key === 'pro',
                 billingCycle: 'monthly'
               }))}
             >
@@ -582,11 +582,11 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
                 name="setupStripePayment"
                 checked={formData.setupStripePayment}
                 onChange={handleChange}
-                disabled={!canSetUpStripe}
+                disabled
                 className="rounded border-gray-300 text-[#42b8ac] focus:ring-[#42b8ac]"
               />
               <label htmlFor="setupStripePayment" className={`text-sm ${canSetUpStripe ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}>
-                Set up payment method now
+                {canSetUpStripe ? 'Payment setup required for this plan' : 'Payment setup not required for this plan'}
               </label>
             </div>
             {!canSetUpStripe && (
@@ -748,7 +748,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
             </Button>
           </div>
           <p className="text-sm text-gray-500 mt-2">
-            Fast path: create owner, business, and first site now, then handle billing details later if needed.
+            Create owner, business, and first site. Paid plans require billing details in the final step.
           </p>
         </div>
 

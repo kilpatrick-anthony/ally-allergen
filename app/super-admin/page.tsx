@@ -93,6 +93,18 @@ export default function SuperAdminDashboard() {
   const [demoForm, setDemoForm] = useState({ ownerEmail: '', ownerName: '', businessName: '', locationName: '' })
   const [demoLoading, setDemoLoading] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [showBillingModal, setShowBillingModal] = useState(false)
+  const [billingBusiness, setBillingBusiness] = useState<Business | null>(null)
+  const [billingLoading, setBillingLoading] = useState(false)
+  const [billingError, setBillingError] = useState('')
+  const [billingForm, setBillingForm] = useState({
+    cardNumber: '',
+    expiryMonth: '',
+    expiryYear: '',
+    cvc: '',
+    billingName: '',
+    billingAddress: '',
+  })
 
   const handleCreateDemoAccount = async () => {
     if (!demoForm.ownerEmail.trim()) {
@@ -511,6 +523,74 @@ export default function SuperAdminDashboard() {
       setSetPasswordError(error.message || 'Failed to set password')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleManageBilling = (business: Business) => {
+    if (business.plan !== 'starter' && business.plan !== 'pro') {
+      setActionNotice({ type: 'error', text: 'Billing setup is only available for Self-Managed and Fully Managed plans.' })
+      return
+    }
+
+    setBillingBusiness(business)
+    setBillingForm({
+      cardNumber: '',
+      expiryMonth: '',
+      expiryYear: '',
+      cvc: '',
+      billingName: business.contactName || '',
+      billingAddress: business.address || '',
+    })
+    setBillingError('')
+    setShowBillingModal(true)
+  }
+
+  const handleSaveBilling = async () => {
+    if (!billingBusiness) return
+    if (!billingForm.cardNumber || !billingForm.expiryMonth || !billingForm.expiryYear || !billingForm.cvc) {
+      setBillingError('Card number, expiry month/year, and CVC are required.')
+      return
+    }
+
+    setBillingLoading(true)
+    setBillingError('')
+
+    try {
+      const response = await fetch('/api/super-admin/stripe/setup-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          businessId: billingBusiness.id,
+          plan: billingBusiness.plan,
+          billingCycle: 'monthly',
+          paymentMethod: {
+            cardNumber: billingForm.cardNumber,
+            expiryMonth: billingForm.expiryMonth,
+            expiryYear: billingForm.expiryYear,
+            cvc: billingForm.cvc,
+            billingName: billingForm.billingName,
+            billingAddress: billingForm.billingAddress,
+          },
+        }),
+      })
+
+      const result = await response.json()
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to save billing details')
+      }
+
+      await loadBusinesses()
+      setShowBillingModal(false)
+      setActionNotice({
+        type: 'success',
+        text: result.mode === 'updated_payment_method'
+          ? `Billing details updated for ${billingBusiness.name}.`
+          : `Stripe subscription created for ${billingBusiness.name}.`,
+      })
+    } catch (error: any) {
+      setBillingError(error.message || 'Failed to save billing details.')
+    } finally {
+      setBillingLoading(false)
     }
   }
 
@@ -1129,6 +1209,7 @@ export default function SuperAdminDashboard() {
         business={selectedBusiness}
         onEdit={handleEditBusiness}
         onImpersonate={handleImpersonateBusiness}
+        onManageBilling={handleManageBilling}
         onResetPassword={handleResetPassword}
         onSetPassword={handleSetPassword}
         onToggleStatus={(business) => {
@@ -1139,6 +1220,107 @@ export default function SuperAdminDashboard() {
           }
         }}
       />
+
+      {showBillingModal && billingBusiness && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl p-8 w-full max-w-2xl">
+            <div className="flex items-start justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Manage Billing</h2>
+                <p className="text-sm text-gray-500 mt-1">{billingBusiness.name} ({billingBusiness.contactEmail})</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setShowBillingModal(false)}>
+                <XCircle className="h-5 w-5" />
+              </Button>
+            </div>
+
+            {billingError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
+                {billingError}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Card Number</label>
+                <input
+                  type="text"
+                  value={billingForm.cardNumber}
+                  onChange={e => setBillingForm(p => ({ ...p, cardNumber: e.target.value }))}
+                  placeholder="1234 5678 9012 3456"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expiry Month</label>
+                <select
+                  value={billingForm.expiryMonth}
+                  onChange={e => setBillingForm(p => ({ ...p, expiryMonth: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                >
+                  <option value="">MM</option>
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                    <option key={month} value={month.toString().padStart(2, '0')}>
+                      {month.toString().padStart(2, '0')}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Expiry Year</label>
+                <select
+                  value={billingForm.expiryYear}
+                  onChange={e => setBillingForm(p => ({ ...p, expiryYear: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                >
+                  <option value="">YYYY</option>
+                  {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i).map((year) => (
+                    <option key={year} value={year}>{year}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">CVC</label>
+                <input
+                  type="text"
+                  value={billingForm.cvc}
+                  onChange={e => setBillingForm(p => ({ ...p, cvc: e.target.value }))}
+                  maxLength={4}
+                  placeholder="123"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Billing Name</label>
+                <input
+                  type="text"
+                  value={billingForm.billingName}
+                  onChange={e => setBillingForm(p => ({ ...p, billingName: e.target.value }))}
+                  placeholder="Billing name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Billing Address</label>
+                <input
+                  type="text"
+                  value={billingForm.billingAddress}
+                  onChange={e => setBillingForm(p => ({ ...p, billingAddress: e.target.value }))}
+                  placeholder="Street, City, Postcode"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button variant="outline" onClick={() => setShowBillingModal(false)} disabled={billingLoading}>Cancel</Button>
+              <Button variant="primary" onClick={handleSaveBilling} disabled={billingLoading}>
+                {billingLoading ? 'Saving...' : 'Save Billing Details'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit Business Modal */}
       {showEditModal && editBusiness && (
