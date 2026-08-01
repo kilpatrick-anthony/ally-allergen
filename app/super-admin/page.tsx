@@ -84,7 +84,7 @@ export default function SuperAdminDashboard() {
   const [businesses, setBusinesses] = useState<Business[]>([])
   const [filteredBusinesses, setFilteredBusinesses] = useState<Business[]>([])
   const [searchTerm, setSearchTerm] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('active')
   const [planFilter, setPlanFilter] = useState('all')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showBusinessDetails, setShowBusinessDetails] = useState(false)
@@ -488,6 +488,41 @@ export default function SuperAdminDashboard() {
       setActionNotice({ type: 'success', text: `Business "${business.name}" has been activated.` })
     } catch (error) {
       setActionNotice({ type: 'error', text: 'Failed to activate business.' })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleDeleteBusiness = async (business: Business) => {
+    const confirmed = confirm(
+      `Permanently delete "${business.name}"? This cannot be undone and will remove the business and related operational data.`
+    )
+    if (!confirmed) return
+
+    const confirmationText = prompt('Type DELETE to confirm permanent removal.')
+    if (confirmationText !== 'DELETE') {
+      setActionNotice({ type: 'error', text: 'Delete cancelled. Confirmation text did not match.' })
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/super-admin/business/${business.id}`, {
+        method: 'DELETE',
+      })
+      const result = await response.json()
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to permanently delete business')
+      }
+
+      await loadBusinesses()
+      if (selectedBusiness?.id === business.id) {
+        setShowBusinessDetails(false)
+        setSelectedBusiness(null)
+      }
+      setActionNotice({ type: 'success', text: `Business "${business.name}" was permanently deleted.` })
+    } catch (error: any) {
+      setActionNotice({ type: 'error', text: error.message || 'Failed to permanently delete business.' })
     } finally {
       setIsLoading(false)
     }
@@ -926,23 +961,24 @@ export default function SuperAdminDashboard() {
       </div>
 
       {/* Search & Filters + table */}
-      <Card className="mb-6">
+      <Card className="mb-6 overflow-visible">
         <div className="p-4 border-b border-gray-100 dark:border-gray-800">
           <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
+            <div className="relative flex-1 min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search by name or email…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full h-10 pl-9 pr-4 text-sm border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 shrink-0">
               <Select
                 value={statusFilter}
                 onChange={(value) => setStatusFilter(value)}
+                className="h-10 w-40 py-2 px-3 text-sm"
                 options={[
                   { value: 'all', label: 'All Statuses' },
                   { value: 'active', label: 'Active' },
@@ -954,16 +990,17 @@ export default function SuperAdminDashboard() {
               <Select
                 value={planFilter}
                 onChange={(value) => setPlanFilter(value)}
+                className="h-10 w-44 py-2 px-3 text-sm"
                 options={[
                   { value: 'all', label: 'All Plans' },
                   ...SUPER_ADMIN_PLAN_ORDER.map((plan) => ({ value: plan, label: getPlanDefinition(plan).title }))
                 ]}
               />
-              {(searchTerm || statusFilter !== 'all' || planFilter !== 'all') && (
+              {(searchTerm || statusFilter !== 'active' || planFilter !== 'all') && (
                 <button
                   type="button"
-                  className="px-3 py-2 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50"
-                  onClick={() => { setSearchTerm(''); setStatusFilter('all'); setPlanFilter('all') }}
+                  className="h-10 px-3 text-xs text-gray-500 hover:text-gray-700 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50"
+                  onClick={() => { setSearchTerm(''); setStatusFilter('active'); setPlanFilter('all') }}
                 >
                   Clear
                 </button>
@@ -995,7 +1032,7 @@ export default function SuperAdminDashboard() {
                 const menuOpen = openMenuId === business.id
 
                 return (
-                <tr key={business.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                <tr key={business.id} className={`hover:bg-gray-50 dark:hover:bg-gray-800 ${menuOpen ? 'relative z-30' : ''}`}>
                   {/* Business name + plan + joined */}
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap items-center gap-2">
@@ -1034,7 +1071,7 @@ export default function SuperAdminDashboard() {
                   </td>
 
                   {/* Actions */}
-                  <td className="px-4 py-3">
+                  <td className={`px-4 py-3 relative ${menuOpen ? 'z-40' : ''}`}>
                     <div className="flex items-center justify-end gap-2">
                       <Button
                         variant="outline"
@@ -1059,10 +1096,10 @@ export default function SuperAdminDashboard() {
                           <>
                             {/* Click-outside backdrop */}
                             <div
-                              className="fixed inset-0 z-10"
+                              className="fixed inset-0 z-40"
                               onClick={() => setOpenMenuId(null)}
                             />
-                            <div className="absolute right-0 z-20 mt-1 w-52 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl p-1">
+                            <div className="absolute right-0 z-50 mt-1 w-56 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl p-1">
                               <button
                                 type="button"
                                 className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -1102,6 +1139,14 @@ export default function SuperAdminDashboard() {
                                   Activate Business
                                 </button>
                               )}
+                              <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
+                              <button
+                                type="button"
+                                className="w-full text-left px-3 py-2 text-sm rounded-md text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                onClick={() => { setOpenMenuId(null); handleDeleteBusiness(business) }}
+                              >
+                                Permanently Delete
+                              </button>
                             </div>
                           </>
                         )}

@@ -136,3 +136,66 @@ export async function PATCH(
     return NextResponse.json({ error: 'Failed to update business' }, { status: 500 })
   }
 }
+
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const admin = await getAuthenticatedSuperAdmin()
+    if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const { id } = await params
+    const supabase = createServiceClient()
+
+    const { data: existingBusiness, error: existingError } = await supabase
+      .from('businesses')
+      .select('id, name')
+      .eq('id', id)
+      .single()
+
+    if (existingError || !existingBusiness) {
+      return NextResponse.json({ error: 'Business not found' }, { status: 404 })
+    }
+
+    // Remove dependent operational records first.
+    const cleanupTables = [
+      'kiosk_analytics_events',
+      'menu_items',
+      'devices',
+      'sites',
+      'user_businesses',
+    ] as const
+
+    for (const table of cleanupTables) {
+      const { error } = await supabase
+        .from(table)
+        .delete()
+        .eq('business_id', id)
+
+      if (error) {
+        console.error(`Failed deleting ${table} for business ${id}:`, error)
+        return NextResponse.json({ error: `Failed to delete related ${table} records` }, { status: 500 })
+      }
+    }
+
+    const { error: businessDeleteError } = await supabase
+      .from('businesses')
+      .delete()
+      .eq('id', id)
+
+    if (businessDeleteError) {
+      console.error('Failed deleting business record:', businessDeleteError)
+      return NextResponse.json({ error: 'Failed to delete business record' }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      success: true,
+      deletedBusinessId: id,
+      deletedBusinessName: existingBusiness.name,
+    })
+  } catch (err) {
+    console.error('Super admin business delete error:', err)
+    return NextResponse.json({ error: 'Failed to permanently delete business' }, { status: 500 })
+  }
+}
