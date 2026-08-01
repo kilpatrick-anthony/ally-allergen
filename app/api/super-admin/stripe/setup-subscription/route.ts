@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
       if (shouldChargeSetupFee && setupFeePriceId) {
         await stripe.invoiceItems.create({
           customer: customerId,
-          price: setupFeePriceId,
+          pricing: { price: setupFeePriceId },
           description: 'One-time device/setup fee',
         })
 
