@@ -680,8 +680,16 @@ export default function SuperAdminDashboard() {
     const rect = event.currentTarget.getBoundingClientRect()
     const menuWidth = 224
     const menuHeightEstimate = 320
-    const left = Math.max(8, Math.min(event.clientX - menuWidth + 16, window.innerWidth - menuWidth - 8))
-    const top = Math.max(8, Math.min(event.clientY + 8, window.innerHeight - menuHeightEstimate - 8))
+    const viewportPadding = 8
+
+    let left = rect.right - menuWidth
+    left = Math.max(viewportPadding, Math.min(left, window.innerWidth - menuWidth - viewportPadding))
+
+    let top = rect.bottom + 6
+    if (top + menuHeightEstimate > window.innerHeight - viewportPadding) {
+      top = rect.top - menuHeightEstimate - 6
+    }
+    top = Math.max(viewportPadding, top)
 
     if (openMenuId === businessId) {
       setOpenMenuId(null)
@@ -690,7 +698,7 @@ export default function SuperAdminDashboard() {
     }
 
     setOpenMenuId(businessId)
-    setMenuAnchor({ top: Number.isFinite(top) ? top : rect.bottom + 6, left: Number.isFinite(left) ? left : rect.right - menuWidth })
+    setMenuAnchor({ top, left })
   }
 
   if (loading) {
@@ -904,29 +912,31 @@ export default function SuperAdminDashboard() {
           </div>
         </Card>
 
-        <Card>
+        <Card className="h-full">
           <div className="p-5 border-b border-gray-100 dark:border-gray-800">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Customer Setup Flow</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">The fastest path for a new business user.</p>
           </div>
-          <div className="p-5 space-y-4">
-            {[
-              ['Create owner and business', 'Use Add Business to create the login and customer record.'],
-              ['Add first site', 'Create the customer location that the kiosk will use.'],
-              ['Pair kiosk device', 'Generate a setup code and link the physical tablet.'],
-              ['Publish active menu', 'Add menu items, allergens, colours, and icons.'],
-            ].map(([title, desc], index) => (
-              <div key={title} className="flex gap-3">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#42b8ac]/10 text-sm font-bold text-[#0f766e]">
-                  {index + 1}
+          <div className="p-5 flex flex-1 flex-col">
+            <div className="space-y-4">
+              {[
+                ['Create owner and business', 'Use Add Business to create the login and customer record.'],
+                ['Add first site', 'Create the customer location that the kiosk will use.'],
+                ['Pair kiosk device', 'Generate a setup code and link the physical tablet.'],
+                ['Publish active menu', 'Add menu items, allergens, colours, and icons.'],
+              ].map(([title, desc], index) => (
+                <div key={title} className="flex gap-3">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#42b8ac]/10 text-sm font-bold text-[#0f766e]">
+                    {index + 1}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{title}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{title}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{desc}</p>
-                </div>
-              </div>
-            ))}
-            <Button variant="primary" className="w-full" onClick={() => setShowCreateModal(true)}>
+              ))}
+            </div>
+            <Button variant="primary" className="w-full mt-auto" onClick={() => setShowCreateModal(true)}>
               Start New Business Setup
             </Button>
           </div>
