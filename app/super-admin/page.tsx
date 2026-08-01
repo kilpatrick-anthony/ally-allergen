@@ -57,6 +57,8 @@ interface Business {
   paymentCardExpMonth?: number | null
   paymentCardExpYear?: number | null
   paymentMethodUpdatedAt?: string | null
+  setupFeeCharged?: boolean
+  setupFeeLastInvoiceId?: string | null
   lastInvoiceStatus?: string | null
   revenue?: number
   setupMilestones?: {

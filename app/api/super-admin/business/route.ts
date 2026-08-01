@@ -160,6 +160,8 @@ export async function GET() {
         paymentCardExpMonth: paymentMethod?.expMonth || null,
         paymentCardExpYear: paymentMethod?.expYear || null,
         hasPaymentMethodOnFile: Boolean(subscription?.stripePaymentMethodId),
+        setupFeeCharged: Boolean(subscription?.setupFeeCharged),
+        setupFeeLastInvoiceId: subscription?.setupFeeLastInvoiceId || null,
         paymentMethodUpdatedAt: subscription?.paymentMethodUpdatedAt || null,
         lastInvoiceStatus: subscription?.lastInvoiceStatus || null,
         revenue: getMonthlyRevenueForPlan(b.plan_type),

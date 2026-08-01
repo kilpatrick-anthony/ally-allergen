@@ -41,6 +41,8 @@ interface Business {
   paymentCardExpMonth?: number | null
   paymentCardExpYear?: number | null
   hasPaymentMethodOnFile?: boolean
+  setupFeeCharged?: boolean
+  setupFeeLastInvoiceId?: string | null
   paymentMethodUpdatedAt?: string | null
   lastInvoiceStatus?: string | null
   revenue?: number
@@ -325,6 +327,20 @@ export function BusinessDetailsModal({
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 dark:text-gray-400">Last Invoice:</span>
                   <span className="font-semibold text-gray-900 dark:text-white capitalize">{business.lastInvoiceStatus}</span>
+                </div>
+              )}
+              {(business.plan === 'starter' || business.plan === 'pro') && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">One-Time Device Fee:</span>
+                  <span className={`font-semibold ${business.setupFeeCharged ? 'text-green-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                    {business.setupFeeCharged ? 'Charged' : 'Not charged'}
+                  </span>
+                </div>
+              )}
+              {business.setupFeeCharged && business.setupFeeLastInvoiceId && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Device Fee Invoice:</span>
+                  <span className="font-mono text-xs text-gray-700 dark:text-gray-300">{business.setupFeeLastInvoiceId}</span>
                 </div>
               )}
               {business.paymentMethodUpdatedAt && (
