@@ -166,6 +166,14 @@ export async function POST(request: NextRequest) {
       await stripe.paymentMethods.attach(stripePaymentMethodId, { customer: customerId })
     }
 
+    const card = attachedPaymentMethod.type === 'card' ? attachedPaymentMethod.card : null
+    const paymentMethodSummary = {
+      brand: card?.brand || null,
+      last4: card?.last4 || null,
+      expMonth: card?.exp_month || null,
+      expYear: card?.exp_year || null,
+    }
+
     await stripe.customers.update(customerId, {
       invoice_settings: {
         default_payment_method: stripePaymentMethodId,
@@ -177,6 +185,9 @@ export async function POST(request: NextRequest) {
       const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
         default_payment_method: stripePaymentMethodId,
       })
+      const updatedPeriodEnd = updatedSubscription.items.data[0]?.current_period_end
+        ? new Date(updatedSubscription.items.data[0].current_period_end * 1000).toISOString()
+        : (currentSubscription?.stripeCurrentPeriodEnd || null)
 
       const nextSettings = {
         ...(business.settings || {}),
@@ -188,6 +199,8 @@ export async function POST(request: NextRequest) {
           stripeCustomerId: customerId,
           stripeSubscriptionId: subscriptionId,
           stripePaymentMethodId,
+          stripeCurrentPeriodEnd: updatedPeriodEnd,
+          paymentMethod: paymentMethodSummary,
           paymentMethodUpdatedAt: new Date().toISOString(),
         },
       }
@@ -246,6 +259,8 @@ export async function POST(request: NextRequest) {
         stripeSetupFeePriceId: shouldChargeSetupFee ? setupFeePriceId : currentSubscription?.stripeSetupFeePriceId,
         setupFeeCharged: shouldChargeSetupFee || Boolean(currentSubscription?.setupFeeCharged),
         stripePaymentMethodId,
+        paymentMethod: paymentMethodSummary,
+        paymentMethodUpdatedAt: new Date().toISOString(),
         stripeCurrentPeriodEnd: currentPeriodEnd,
       },
     }

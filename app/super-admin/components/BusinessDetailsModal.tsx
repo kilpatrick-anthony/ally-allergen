@@ -34,6 +34,14 @@ interface Business {
   createdAt: string
   trialEndsAt?: string
   subscriptionStatus?: 'active' | 'past_due' | 'canceled' | 'trial'
+  billingCycle?: 'monthly' | 'yearly' | null
+  nextBillingAt?: string | null
+  paymentCardBrand?: string | null
+  paymentCardLast4?: string | null
+  paymentCardExpMonth?: number | null
+  paymentCardExpYear?: number | null
+  paymentMethodUpdatedAt?: string | null
+  lastInvoiceStatus?: string | null
   revenue?: number
   setupMilestones?: {
     sitesCount?: number
@@ -196,6 +204,14 @@ export function BusinessDetailsModal({
   const formatDateTime = (value?: string | null) =>
     value ? new Date(value).toLocaleString() : 'Not recorded'
 
+  const cardLabel = business.paymentCardBrand && business.paymentCardLast4
+    ? `${business.paymentCardBrand.toUpperCase()} ending ${business.paymentCardLast4}`
+    : null
+  const cardExpiry =
+    business.paymentCardExpMonth && business.paymentCardExpYear
+      ? `${String(business.paymentCardExpMonth).padStart(2, '0')}/${business.paymentCardExpYear}`
+      : null
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Business Details" size="xl">
       <div className="space-y-6">
@@ -274,6 +290,47 @@ export function BusinessDetailsModal({
                 <span className="text-gray-600 dark:text-gray-400">Status:</span>
                 {getSubscriptionBadge(business.subscriptionStatus)}
               </div>
+              {business.billingCycle && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Billing Cycle:</span>
+                  <span className="font-semibold text-gray-900 dark:text-white capitalize">{business.billingCycle}</span>
+                </div>
+              )}
+              {cardLabel && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Payment Method:</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{cardLabel}</span>
+                </div>
+              )}
+              {cardExpiry && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Card Expires:</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{cardExpiry}</span>
+                </div>
+              )}
+              {business.nextBillingAt && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Next Billing Date:</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{formatDateTime(business.nextBillingAt)}</span>
+                </div>
+              )}
+              {business.lastInvoiceStatus && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Last Invoice:</span>
+                  <span className="font-semibold text-gray-900 dark:text-white capitalize">{business.lastInvoiceStatus}</span>
+                </div>
+              )}
+              {business.paymentMethodUpdatedAt && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Payment Updated:</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{formatDateTime(business.paymentMethodUpdatedAt)}</span>
+                </div>
+              )}
+              {!cardLabel && (business.plan === 'starter' || business.plan === 'pro') && (
+                <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  No card summary on file yet. Use Manage Billing to save a payment method.
+                </div>
+              )}
               {business.revenue && (
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600 dark:text-gray-400">Monthly Revenue:</span>

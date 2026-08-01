@@ -131,6 +131,8 @@ export async function GET() {
     // Enrich with owner email from auth.users via admin API
     const enriched = await Promise.all((businesses || []).map(async (b: any) => {
       const ownerRow = b.user_businesses?.find((ub: any) => ub.role === 'owner')
+      const subscription = b.settings?.subscription || {}
+      const paymentMethod = subscription?.paymentMethod || {}
       let ownerEmail = ''
       let ownerName = ''
       if (ownerRow?.user_id) {
@@ -150,7 +152,15 @@ export async function GET() {
         contactName: ownerName,
         phone: b.settings?.address?.phone || '',
         address: [b.settings?.address?.street, b.settings?.address?.city, b.settings?.address?.country].filter(Boolean).join(', '),
-        subscriptionStatus: b.status === 'active' ? 'active' : b.status === 'trial' ? 'trial' : b.status,
+        subscriptionStatus: subscription?.status || (b.status === 'active' ? 'active' : b.status === 'trial' ? 'trial' : b.status),
+        billingCycle: subscription?.billingCycle || null,
+        nextBillingAt: subscription?.stripeCurrentPeriodEnd || null,
+        paymentCardBrand: paymentMethod?.brand || null,
+        paymentCardLast4: paymentMethod?.last4 || null,
+        paymentCardExpMonth: paymentMethod?.expMonth || null,
+        paymentCardExpYear: paymentMethod?.expYear || null,
+        paymentMethodUpdatedAt: subscription?.paymentMethodUpdatedAt || null,
+        lastInvoiceStatus: subscription?.lastInvoiceStatus || null,
         revenue: getMonthlyRevenueForPlan(b.plan_type),
         setupMilestones: {
           sitesCount: siteCountsByBusiness[b.id] || 0,

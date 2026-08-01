@@ -50,6 +50,14 @@ interface Business {
   createdAt: string
   trialEndsAt?: string
   subscriptionStatus?: 'active' | 'past_due' | 'canceled' | 'trial'
+  billingCycle?: 'monthly' | 'yearly' | null
+  nextBillingAt?: string | null
+  paymentCardBrand?: string | null
+  paymentCardLast4?: string | null
+  paymentCardExpMonth?: number | null
+  paymentCardExpYear?: number | null
+  paymentMethodUpdatedAt?: string | null
+  lastInvoiceStatus?: string | null
   revenue?: number
   setupMilestones?: {
     sitesCount?: number
