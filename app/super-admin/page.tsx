@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Elements } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
 import { useRef } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Users,
   Building,
@@ -111,6 +112,7 @@ export default function SuperAdminDashboard() {
   const [demoForm, setDemoForm] = useState({ ownerEmail: '', ownerName: '', businessName: '', locationName: '' })
   const [demoLoading, setDemoLoading] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [menuBusiness, setMenuBusiness] = useState<Business | null>(null)
   const [menuAnchor, setMenuAnchor] = useState<{ top: number; left: number } | null>(null)
   const [showBillingModal, setShowBillingModal] = useState(false)
   const [billingBusiness, setBillingBusiness] = useState<Business | null>(null)
@@ -677,6 +679,9 @@ export default function SuperAdminDashboard() {
   }
 
   const openActionsMenu = (event: React.MouseEvent<HTMLButtonElement>, businessId: string) => {
+    const business = filteredBusinesses.find((item) => item.id === businessId) || null
+    if (!business) return
+
     const rect = event.currentTarget.getBoundingClientRect()
     const menuWidth = 224
     const menuHeightEstimate = 320
@@ -693,12 +698,20 @@ export default function SuperAdminDashboard() {
 
     if (openMenuId === businessId) {
       setOpenMenuId(null)
+      setMenuBusiness(null)
       setMenuAnchor(null)
       return
     }
 
     setOpenMenuId(businessId)
+    setMenuBusiness(business)
     setMenuAnchor({ top, left })
+  }
+
+  const closeActionsMenu = () => {
+    setOpenMenuId(null)
+    setMenuBusiness(null)
+    setMenuAnchor(null)
   }
 
   if (loading) {
@@ -912,7 +925,7 @@ export default function SuperAdminDashboard() {
           </div>
         </Card>
 
-        <Card className="h-full">
+        <Card className="h-full flex flex-col">
           <div className="p-5 border-b border-gray-100 dark:border-gray-800">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Customer Setup Flow</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">The fastest path for a new business user.</p>
@@ -1119,94 +1132,8 @@ export default function SuperAdminDashboard() {
                         >
                           <MoreVertical className="h-4 w-4" />
                         </button>
-
-                        {menuOpen && menuAnchor && (
-                          <>
-                            {/* Click-outside backdrop */}
-                            <div
-                              className="fixed inset-0 z-40"
-                              onClick={() => {
-                                setOpenMenuId(null)
-                                setMenuAnchor(null)
-                              }}
-                            />
-                            <div
-                              className="fixed z-50 w-56 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl p-1"
-                              style={{ top: `${menuAnchor.top}px`, left: `${menuAnchor.left}px` }}
-                            >
-                              <button
-                                type="button"
-                                className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-                                onClick={() => {
-                                  setOpenMenuId(null)
-                                  setMenuAnchor(null)
-                                  handleEditBusiness(business)
-                                }}
-                              >
-                                Edit Customer
-                              </button>
-                              <button
-                                type="button"
-                                className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-                                onClick={() => {
-                                  setOpenMenuId(null)
-                                  setMenuAnchor(null)
-                                  handleSetPassword(business)
-                                }}
-                              >
-                                Set Temporary Password
-                              </button>
-                              <button
-                                type="button"
-                                className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
-                                onClick={() => {
-                                  setOpenMenuId(null)
-                                  setMenuAnchor(null)
-                                  handleResetPassword(business)
-                                }}
-                              >
-                                Send Password Reset Email
-                              </button>
-                              <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
-                              {business.status === 'active' || business.status === 'trial' ? (
-                                <button
-                                  type="button"
-                                  className="w-full text-left px-3 py-2 text-sm rounded-md text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                  onClick={() => {
-                                    setOpenMenuId(null)
-                                    setMenuAnchor(null)
-                                    handleSuspendBusiness(business)
-                                  }}
-                                >
-                                  Suspend Business
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  className="w-full text-left px-3 py-2 text-sm rounded-md text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
-                                  onClick={() => {
-                                    setOpenMenuId(null)
-                                    setMenuAnchor(null)
-                                    handleActivateBusiness(business)
-                                  }}
-                                >
-                                  Activate Business
-                                </button>
-                              )}
-                              <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
-                              <button
-                                type="button"
-                                className="w-full text-left px-3 py-2 text-sm rounded-md text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                onClick={() => {
-                                  setOpenMenuId(null)
-                                  setMenuAnchor(null)
-                                  handleDeleteBusiness(business)
-                                }}
-                              >
-                                Permanently Delete
-                              </button>
-                            </div>
-                          </>
+                        {menuOpen && (
+                          <span className="sr-only">Actions menu open</span>
                         )}
                       </div>
                     </div>
@@ -1228,6 +1155,65 @@ export default function SuperAdminDashboard() {
           </div>
         )}
       </Card>
+
+      {menuBusiness && menuAnchor && typeof document !== 'undefined' && createPortal(
+        <>
+          <div className="fixed inset-0 z-[90]" onClick={closeActionsMenu} />
+          <div
+            className="fixed z-[100] w-56 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-xl p-1"
+            style={{ top: `${menuAnchor.top}px`, left: `${menuAnchor.left}px` }}
+          >
+            <button
+              type="button"
+              className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => { closeActionsMenu(); handleEditBusiness(menuBusiness) }}
+            >
+              Edit Customer
+            </button>
+            <button
+              type="button"
+              className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => { closeActionsMenu(); handleSetPassword(menuBusiness) }}
+            >
+              Set Temporary Password
+            </button>
+            <button
+              type="button"
+              className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+              onClick={() => { closeActionsMenu(); handleResetPassword(menuBusiness) }}
+            >
+              Send Password Reset Email
+            </button>
+            <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
+            {menuBusiness.status === 'active' || menuBusiness.status === 'trial' ? (
+              <button
+                type="button"
+                className="w-full text-left px-3 py-2 text-sm rounded-md text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                onClick={() => { closeActionsMenu(); handleSuspendBusiness(menuBusiness) }}
+              >
+                Suspend Business
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="w-full text-left px-3 py-2 text-sm rounded-md text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20"
+                onClick={() => { closeActionsMenu(); handleActivateBusiness(menuBusiness) }}
+              >
+                Activate Business
+              </button>
+            )}
+            <div className="my-1 border-t border-gray-100 dark:border-gray-800" />
+            <button
+              type="button"
+              className="w-full text-left px-3 py-2 text-sm rounded-md text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+              onClick={() => { closeActionsMenu(); handleDeleteBusiness(menuBusiness) }}
+            >
+              Permanently Delete
+            </button>
+          </div>
+        </>,
+        document.body
+      )}
 
       <Card className="mb-8">
         <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
