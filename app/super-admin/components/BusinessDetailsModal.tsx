@@ -40,6 +40,7 @@ interface Business {
   paymentCardLast4?: string | null
   paymentCardExpMonth?: number | null
   paymentCardExpYear?: number | null
+  hasPaymentMethodOnFile?: boolean
   paymentMethodUpdatedAt?: string | null
   lastInvoiceStatus?: string | null
   revenue?: number
@@ -174,14 +175,20 @@ export function BusinessDetailsModal({
     switch (subscriptionStatus) {
       case 'active':
         return <Badge variant="success">Active</Badge>
+      case 'incomplete':
+        return <Badge variant="warning">Incomplete</Badge>
+      case 'incomplete_expired':
+        return <Badge variant="error">Incomplete Expired</Badge>
       case 'past_due':
         return <Badge variant="warning">Past Due</Badge>
+      case 'unpaid':
+        return <Badge variant="warning">Unpaid</Badge>
       case 'canceled':
         return <Badge variant="error">Canceled</Badge>
       case 'trial':
         return <Badge variant="info">Trial</Badge>
       default:
-        return <Badge variant="default">Unknown</Badge>
+        return <Badge variant="default">{subscriptionStatus ? subscriptionStatus.replace(/_/g, ' ') : 'Unknown'}</Badge>
     }
   }
 
@@ -328,7 +335,9 @@ export function BusinessDetailsModal({
               )}
               {!cardLabel && (business.plan === 'starter' || business.plan === 'pro') && (
                 <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                  No card summary on file yet. Use Manage Billing to save a payment method.
+                  {business.hasPaymentMethodOnFile
+                    ? 'A payment method is on file, but card summary details are not available yet. Use Manage Billing to refresh card metadata.'
+                    : 'No card summary on file yet. Use Manage Billing to save a payment method.'}
                 </div>
               )}
               {business.revenue && (

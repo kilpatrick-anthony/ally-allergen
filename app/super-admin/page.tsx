@@ -259,14 +259,20 @@ export default function SuperAdminDashboard() {
     switch (subscriptionStatus) {
       case 'active':
         return <Badge variant="success">Active</Badge>
+      case 'incomplete':
+        return <Badge variant="warning">Incomplete</Badge>
+      case 'incomplete_expired':
+        return <Badge variant="error">Incomplete Expired</Badge>
       case 'past_due':
         return <Badge variant="warning">Past Due</Badge>
+      case 'unpaid':
+        return <Badge variant="warning">Unpaid</Badge>
       case 'canceled':
         return <Badge variant="error">Canceled</Badge>
       case 'trial':
         return <Badge variant="info">Trial</Badge>
       default:
-        return <Badge variant="default">Unknown</Badge>
+        return <Badge variant="default">{subscriptionStatus ? subscriptionStatus.replace(/_/g, ' ') : 'Unknown'}</Badge>
     }
   }
 

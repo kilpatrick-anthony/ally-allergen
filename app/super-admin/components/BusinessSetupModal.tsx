@@ -86,6 +86,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
     subscriptionStatus: 'active',
     billingCycle: 'monthly',
     setupStripePayment: true,
+    chargeDeviceFee: false,
     sendWelcomeEmail: true,
     createSampleData: true,
 
@@ -174,6 +175,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
               plan: formData.plan,
               billingCycle: formData.billingCycle,
               paymentMethodId: paymentMethodResult.paymentMethodId,
+              chargeSetupFee: formData.chargeDeviceFee,
               paymentMethod: {
                 billingName: formData.billingName,
                 billingAddress: formData.billingAddress,
@@ -214,6 +216,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
         subscriptionStatus: 'active',
         billingCycle: 'monthly',
         setupStripePayment: true,
+        chargeDeviceFee: false,
         sendWelcomeEmail: true,
         createSampleData: true,
         billingName: '',
@@ -598,9 +601,24 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
               </p>
             )}
             {canSetUpStripe && (
-              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                Monthly billing only. If STRIPE_PRICE_SETUP_FEE is configured, the one-time setup fee is added to the first invoice.
-              </p>
+              <div className="mt-2 space-y-2">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Monthly billing only. You can optionally add a one-time device/setup fee on the first invoice.
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="chargeDeviceFee"
+                    name="chargeDeviceFee"
+                    checked={formData.chargeDeviceFee}
+                    onChange={handleChange}
+                    className="rounded border-gray-300 text-[#42b8ac] focus:ring-[#42b8ac]"
+                  />
+                  <label htmlFor="chargeDeviceFee" className="text-sm text-gray-700 dark:text-gray-300">
+                    Add one-time device/setup fee to first invoice (optional)
+                  </label>
+                </div>
+              </div>
             )}
           </div>
         </div>
