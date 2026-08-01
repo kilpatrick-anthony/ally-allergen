@@ -1,3 +1,4 @@
+import { getJwtSecret } from '@/lib/auth'
 // app/api/auth/change-password/route.ts
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify JWT token
-    const secret = new TextEncoder().encode(process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret')
+    const secret = getJwtSecret()
     const { payload } = await jwtVerify(authToken, secret)
 
     const userId = payload.userId as string

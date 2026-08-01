@@ -8,7 +8,7 @@ import {
   HelpCircle, Book, FileText, MessageCircle, 
   Mail, ExternalLink, Search, ChevronRight, Package,
   ChefHat, Building, BarChart, Download, Settings,
-  Shield, Users, Zap, CheckCircle, Clock
+  Shield, Users, Zap, CheckCircle, Clock, Lightbulb, Send
 } from 'lucide-react'
 
 import { Container } from '@/components/layout/Container'
@@ -21,6 +21,16 @@ export default function HelpPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [activeCategory, setActiveCategory] = useState('all')
   const [expandedTopic, setExpandedTopic] = useState<number | null>(null)
+  const [feedbackForm, setFeedbackForm] = useState({
+    name: '',
+    email: '',
+    type: 'feature',
+    subject: '',
+    message: ''
+  })
+  const [isFeedbackSubmitting, setIsFeedbackSubmitting] = useState(false)
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
+  const [feedbackError, setFeedbackError] = useState('')
 
   const categories = [
     { id: 'all', name: 'All topics', icon: Book },
@@ -539,8 +549,55 @@ export default function HelpPage() {
       icon: Mail,
       href: 'mailto:info@allyjen.ie',
       color: 'purple'
+    },
+    {
+      title: 'Suggest a feature or report a bug',
+      description: 'Share an idea, issue or improvement request',
+      icon: Lightbulb,
+      href: '#feedback-form',
+      color: 'teal'
     }
   ]
+
+  const handleFeedbackChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    setFeedbackForm(prev => ({ ...prev, [name]: value }))
+    if (feedbackError) setFeedbackError('')
+  }
+
+  const handleFeedbackSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsFeedbackSubmitting(true)
+    setFeedbackError('')
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: feedbackForm.name,
+          email: feedbackForm.email,
+          company: 'Help centre feedback',
+          phone: '',
+          message: `Feedback type: ${feedbackForm.type === 'feature' ? 'Feature suggestion' : feedbackForm.type === 'bug' ? 'Bug report' : 'Other'}\n\nSubject: ${feedbackForm.subject}\n\n${feedbackForm.message}`,
+          feedbackType: feedbackForm.type,
+          subject: feedbackForm.subject
+        })
+      })
+
+      const data = await response.json()
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Unable to send your feedback right now.')
+      }
+
+      setFeedbackSubmitted(true)
+      setFeedbackForm({ name: '', email: '', type: 'feature', subject: '', message: '' })
+    } catch (error) {
+      setFeedbackError(error instanceof Error ? error.message : 'Unable to send your feedback right now.')
+    } finally {
+      setIsFeedbackSubmitting(false)
+    }
+  }
 
   return (
     <Container>
@@ -567,7 +624,7 @@ export default function HelpPage() {
       </div>
 
       {/* Quick Links */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 auto-rows-fr">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8 auto-rows-fr">
         {quickLinks.map((link, index) => (
           <a
             key={index}
@@ -607,6 +664,132 @@ export default function HelpPage() {
           </a>
         ))}
       </div>
+
+      {/* Feedback Form */}
+      <section id="feedback-form" className="mb-8">
+        <Card className="overflow-hidden border border-gray-200/80 shadow-sm bg-gradient-to-br from-[#003842] to-[#0f4f5a] text-white">
+          <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] p-6 lg:p-8">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-sm font-medium text-[#bfece7]">
+                <Lightbulb className="h-4 w-4" />
+                Share feedback
+              </div>
+              <div>
+                <h2 className="text-2xl font-semibold text-white">Suggest a feature or report a problem</h2>
+                <p className="mt-2 text-sm leading-6 text-white/75">
+                  Tell us about a feature you would like to see, a bug you have found, or anything else that could improve AllyJen for your team.
+                </p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm text-white/80">
+                <p className="font-medium text-white">What to include</p>
+                <ul className="mt-2 space-y-2 text-white/75">
+                  <li>• The feature you would like to see</li>
+                  <li>• The issue or bug you have noticed</li>
+                  <li>• Any steps to reproduce it, if relevant</li>
+                </ul>
+              </div>
+            </div>
+
+            <div>
+              {feedbackSubmitted ? (
+                <div className="rounded-2xl border border-white/15 bg-white/10 p-6 text-center">
+                  <CheckCircle className="mx-auto mb-3 h-10 w-10 text-[#42b8ac]" />
+                  <h3 className="text-lg font-semibold text-white">Thanks for your feedback</h3>
+                  <p className="mt-2 text-sm text-white/75">
+                    We have received your message and will review it shortly.
+                  </p>
+                </div>
+              ) : (
+                <form onSubmit={handleFeedbackSubmit} className="space-y-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="feedback-name" className="mb-1.5 block text-sm font-medium text-white/80">Your name</label>
+                      <input
+                        id="feedback-name"
+                        name="name"
+                        value={feedbackForm.name}
+                        onChange={handleFeedbackChange}
+                        required
+                        className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2.5 text-sm text-white placeholder-white/40 outline-none ring-0"
+                        placeholder="Aoife Murphy"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="feedback-email" className="mb-1.5 block text-sm font-medium text-white/80">Email address</label>
+                      <input
+                        id="feedback-email"
+                        name="email"
+                        type="email"
+                        value={feedbackForm.email}
+                        onChange={handleFeedbackChange}
+                        required
+                        className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2.5 text-sm text-white placeholder-white/40 outline-none ring-0"
+                        placeholder="you@business.ie"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="feedback-type" className="mb-1.5 block text-sm font-medium text-white/80">Type</label>
+                      <select
+                        id="feedback-type"
+                        name="type"
+                        value={feedbackForm.type}
+                        onChange={handleFeedbackChange}
+                        className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2.5 text-sm text-white outline-none"
+                      >
+                        <option value="feature" className="text-[#003842]">Feature suggestion</option>
+                        <option value="bug" className="text-[#003842]">Bug report</option>
+                        <option value="other" className="text-[#003842]">Other</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="feedback-subject" className="mb-1.5 block text-sm font-medium text-white/80">Subject</label>
+                      <input
+                        id="feedback-subject"
+                        name="subject"
+                        value={feedbackForm.subject}
+                        onChange={handleFeedbackChange}
+                        required
+                        className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2.5 text-sm text-white placeholder-white/40 outline-none ring-0"
+                        placeholder="For example: Add bulk editing"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="feedback-message" className="mb-1.5 block text-sm font-medium text-white/80">Details</label>
+                    <textarea
+                      id="feedback-message"
+                      name="message"
+                      value={feedbackForm.message}
+                      onChange={handleFeedbackChange}
+                      required
+                      rows={5}
+                      className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2.5 text-sm text-white placeholder-white/40 outline-none ring-0 resize-none"
+                      placeholder="Please describe the idea or issue in a bit of detail."
+                    />
+                  </div>
+
+                  {feedbackError && (
+                    <p className="text-sm text-amber-200">{feedbackError}</p>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isFeedbackSubmitting}
+                    className="flex items-center justify-center gap-2 rounded-lg bg-[#42b8ac] px-4 py-2.5 text-sm font-semibold text-[#003842] transition hover:bg-white disabled:opacity-70"
+                  >
+                    {isFeedbackSubmitting ? 'Sending…' : 'Send feedback'}
+                    <Send className="h-4 w-4" />
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        </Card>
+      </section>
 
       {/* Search and Categories */}
       <Card className="mb-8 border border-gray-200/80 shadow-sm">

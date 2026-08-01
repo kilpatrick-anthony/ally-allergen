@@ -1,3 +1,4 @@
+import { getJwtSecret } from '@/lib/auth'
 // app/api/upload/logo/route.ts
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
@@ -14,7 +15,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorised' }, { status: 401 })
     }
 
-    const secret = new TextEncoder().encode(process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret')
+    const secret = getJwtSecret()
     const { payload } = await jwtVerify(authToken, secret)
     const userId = payload.userId as string
 
@@ -69,7 +70,6 @@ export async function POST(request: NextRequest) {
     const bucketExists = buckets?.some(bucket => bucket.name === 'business-assets')
     
     if (!bucketExists) {
-      console.log('Creating business-assets bucket...')
       const { error: createError } = await supabase.storage.createBucket('business-assets', {
         public: true,
         allowedMimeTypes: ['image/*'],

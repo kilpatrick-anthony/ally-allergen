@@ -1,3 +1,4 @@
+import { getJwtSecret } from '@/lib/auth'
 // app/api/business/data/route.ts
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
@@ -6,8 +7,6 @@ import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 Business data API called')
-
     const cookieStore = await cookies()
     const authToken = cookieStore.get('auth-token')?.value
 
@@ -20,7 +19,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify JWT token
-    const secret = new TextEncoder().encode(process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret')
+    const secret = getJwtSecret()
     const { payload } = await jwtVerify(authToken, secret)
 
     const userId = payload.userId as string
@@ -31,8 +30,6 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       )
     }
-
-    console.log('🔍 Getting business data for user:', userId)
 
     const supabase = createServiceClient()
 
@@ -52,7 +49,6 @@ export async function GET(request: NextRequest) {
     }
 
     const businessId = userBusiness.business_id
-    console.log('🔍 Loading data for business:', businessId)
 
     // Fetch all data in parallel
     const [
@@ -77,14 +73,6 @@ export async function GET(request: NextRequest) {
         { status: 500 }
       )
     }
-
-    console.log('✅ Business data loaded successfully:', {
-      business: businessResult.data?.name,
-      sites: sitesResult.data?.length || 0,
-      menuItems: menuItemsResult.data?.length || 0,
-      ingredients: ingredientsResult.data?.length || 0,
-      suppliers: suppliersResult.data?.length || 0
-    })
 
     return NextResponse.json({
       business: businessResult.data,

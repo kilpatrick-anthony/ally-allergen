@@ -1,3 +1,4 @@
+import { getJwtSecret, hasSuperAdminAccess } from '@/lib/auth'
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { jwtVerify } from 'jose'
@@ -9,11 +10,19 @@ async function getAuthenticatedSuperAdmin() {
   if (!authToken) return null
 
   try {
-    const secret = new TextEncoder().encode(process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret')
+    const secret = getJwtSecret()
     const { payload } = await jwtVerify(authToken, secret)
+    const userId = payload.userId as string
     const userEmail = payload.email as string
-    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL || process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL
-    const isSuperAdmin = userEmail === superAdminEmail || payload.role === 'super_admin'
+    const userRole = payload.role as string | undefined
+    const supabase = createServiceClient()
+
+    const isSuperAdmin = await hasSuperAdminAccess({
+      userEmail,
+      userRole,
+      userId,
+      supabase,
+    })
 
     if (!isSuperAdmin) return null
     return { userEmail }

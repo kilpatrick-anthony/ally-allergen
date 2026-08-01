@@ -29,6 +29,7 @@ export function Button({
   fullWidth = false,
   className = '',
   disabled,
+  onClick,
   ...props
 }: ButtonProps) {
   const [ripples, setRipples] = useState<Ripple[]>([])
@@ -112,7 +113,7 @@ export function Button({
       disabled={disabled || loading}
       onClick={(e) => {
         addRipple(e)
-        props.onClick?.(e)
+        onClick?.(e)
       }}
       {...props}
     >

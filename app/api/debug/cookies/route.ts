@@ -1,3 +1,4 @@
+import { getJwtSecret } from '@/lib/auth'
 // Development-only debug endpoint: /api/debug/cookies
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     if (authToken) {
       try {
-        const secret = new TextEncoder().encode(process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret')
+        const secret = getJwtSecret()
         const { payload } = await jwtVerify(authToken, secret)
         result.payload = payload
       } catch (err: any) {
@@ -25,10 +26,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log('DEBUG /api/debug/cookies ->', result)
     return NextResponse.json(result)
   } catch (err: any) {
-    console.error('DEBUG /api/debug/cookies error:', err)
     return NextResponse.json({ error: String(err.message || err) }, { status: 500 })
   }
 }

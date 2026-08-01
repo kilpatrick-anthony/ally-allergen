@@ -1,3 +1,4 @@
+import { getJwtSecret } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
@@ -30,7 +31,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const secret = new TextEncoder().encode(process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret')
+    const secret = getJwtSecret()
     const { payload } = await jwtVerify(authToken, secret)
     const userId = payload.userId as string
 
@@ -113,7 +114,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const secret = new TextEncoder().encode(process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret')
+    const secret = getJwtSecret()
     const { payload } = await jwtVerify(authToken, secret)
     const userId = payload.userId as string
 

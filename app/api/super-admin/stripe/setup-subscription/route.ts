@@ -94,11 +94,6 @@ export async function POST(request: NextRequest) {
 
     // Update business record with Stripe customer ID and subscription ID
     // In a real implementation, you'd update your database here
-    console.log('✅ Stripe subscription created:', {
-      customerId: customer.id,
-      subscriptionId: subscription.id,
-      status: subscription.status
-    })
 
     return NextResponse.json({
       success: true,

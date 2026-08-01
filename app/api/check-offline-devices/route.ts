@@ -14,13 +14,6 @@ async function sendOfflineAlert(
   lastSeen: string
 ) {
   // TODO: Implement email sending with Resend, SendGrid, etc.
-  console.log('📧 Would send offline alert:', {
-    deviceName,
-    siteName,
-    siteEmail,
-    adminEmail,
-    lastSeen
-  })
 
   // Example with fetch to an email API:
   /*

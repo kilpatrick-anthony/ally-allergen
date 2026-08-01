@@ -1,3 +1,4 @@
+import { getJwtSecret } from '@/lib/auth'
 // app/api/devices/pair/route.ts
 // POST /api/devices/pair  — authenticated
 // Creates a device record + generates a short-lived pairing code.
@@ -42,9 +43,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const secret = new TextEncoder().encode(
-      process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret'
-    )
+    const secret = getJwtSecret()
     const { payload } = await jwtVerify(authToken, secret)
     const userId = payload.userId as string
 

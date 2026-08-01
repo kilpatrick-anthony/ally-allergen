@@ -1,3 +1,4 @@
+import { getJwtSecret } from '@/lib/auth'
 // app/api/signin/route.ts
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
@@ -31,16 +32,13 @@ export async function POST(request: NextRequest) {
     }
 
     const user = authData.user
-    console.log('✅ Credentials verified for:', user.id)
 
     // Create a simple JWT session token
-    const secret = new TextEncoder().encode(process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret')
+    const secret = getJwtSecret()
     const token = await new SignJWT({ userId: user.id, email: user.email })
       .setProtectedHeader({ alg: 'HS256' })
       .setExpirationTime('7d')
       .sign(secret)
-
-    console.log('🍪 Setting auth-token cookie for user:', user.id)
 
     // Set session cookie
     const response = NextResponse.json({
@@ -57,8 +55,6 @@ export async function POST(request: NextRequest) {
       ...(rememberMe ? { maxAge: 60 * 60 * 24 * 30 } : {}),
       path: '/'
     })
-
-    console.log('✅ Sign-in complete, cookie set')
 
     return response
 

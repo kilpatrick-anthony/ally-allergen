@@ -1,7 +1,4 @@
-// app/api/super-admin/demo-account/route.ts
-// Creates a fully-seeded demo account (business + location + device + sample menu items)
-// in one single API call for use during customer demos.
-
+import { getJwtSecret, hasSuperAdminAccess } from '@/lib/auth'
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { jwtVerify } from 'jose'
@@ -13,11 +10,22 @@ async function getAuthenticatedSuperAdmin() {
   if (!authToken) return null
 
   try {
-    const secret = new TextEncoder().encode(process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback-secret')
+    const secret = getJwtSecret()
     const { payload } = await jwtVerify(authToken, secret)
+    const userId = payload.userId as string
     const userEmail = payload.email as string
-    if (userEmail !== process.env.SUPER_ADMIN_EMAIL) return null
-    return { userId: payload.userId as string, userEmail }
+    const userRole = payload.role as string | undefined
+    const supabase = createServiceClient()
+
+    const isSuperAdmin = await hasSuperAdminAccess({
+      userEmail,
+      userRole,
+      userId,
+      supabase,
+    })
+
+    if (!isSuperAdmin) return null
+    return { userId, userEmail }
   } catch {
     return null
   }

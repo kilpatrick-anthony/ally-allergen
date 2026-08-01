@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import { createServiceClient } from '@/lib/supabase/server'
+import { getJwtSecret, hasSuperAdminAccess } from '@/lib/auth'
 
 type RangeKey = 'week' | 'month' | 'quarter' | 'year'
 
@@ -87,19 +88,23 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // Verify JWT token
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-secret-key')
+    const secret = getJwtSecret()
     const verified = await jwtVerify(token, secret).catch(() => null)
 
-    if (!verified?.payload?.sub) {
+    const userId = (verified?.payload?.userId || verified?.payload?.sub) as string | undefined
+    if (!userId) {
       return NextResponse.json(
         { error: 'Invalid token' },
         { status: 401 }
       )
     }
 
-    const userId = verified.payload.sub as string
-    const authorized = await isSuperAdmin(userId, supabase)
+    const authorized = await hasSuperAdminAccess({
+      userEmail: verified?.payload?.email as string | undefined,
+      userRole: verified?.payload?.role as string | undefined,
+      userId,
+      supabase,
+    })
 
     if (!authorized) {
       return NextResponse.json(

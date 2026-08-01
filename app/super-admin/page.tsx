@@ -161,6 +161,7 @@ export default function SuperAdminDashboard() {
         }
 
         const isAdmin = session?.user?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL ||
+                       session?.user?.email === process.env.SUPER_ADMIN_EMAIL ||
                        session?.user?.role === 'super_admin'
 
         if (!isAdmin) {
