@@ -11,6 +11,8 @@ function SourceBadge({ source }: { source: AlertItem['source'] }) {
     EU: 'bg-blue-700 text-white',
     FSN: 'bg-green-600 text-white',
     FSAI: 'bg-amber-500 text-white',
+    UK: 'bg-indigo-600 text-white',
+    EFSA: 'bg-teal-600 text-white',
   }
   const style = styles[source]
   if (!style) return null
@@ -64,6 +66,8 @@ export default function FoodSafetyPage() {
     { value: 'FSAI', label: 'FSAI (Ireland)' },
     { value: 'IE', label: 'IE (Ireland)' },
     { value: 'EU', label: 'EU RASFF' },
+    { value: 'EFSA', label: 'EFSA (EU Authority)' },
+    { value: 'UK', label: 'FSA UK / UK Alerts' },
     { value: 'FSN', label: 'Food Safety News' },
   ]
 

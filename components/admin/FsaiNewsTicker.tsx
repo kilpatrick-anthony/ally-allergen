@@ -39,6 +39,20 @@ function SourceBadge({ source }: { source: AlertItem['source'] }) {
       </span>
     )
   }
+  if (source === 'UK') {
+    return (
+      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-600 text-white shrink-0">
+        UK
+      </span>
+    )
+  }
+  if (source === 'EFSA') {
+    return (
+      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-600 text-white shrink-0">
+        EFSA
+      </span>
+    )
+  }
   return null
 }
 

@@ -30,7 +30,7 @@ export interface AlertItem {
   title: string
   link: string
   date: string
-  source: 'IE' | 'EU' | 'FSN' | 'FSAI' | 'Static'
+  source: 'IE' | 'EU' | 'FSN' | 'FSAI' | 'UK' | 'EFSA' | 'Static'
 }
 
 // ── RSS → JSON ────────────────────────────────────────────────────────────────
@@ -43,7 +43,7 @@ function extractTag(xml: string, tag: string): string {
   return plainMatch ? plainMatch[1].trim() : ''
 }
 
-function parseRSS(xml: string, source: 'IE' | 'EU' | 'FSN' | 'FSAI'): AlertItem[] {
+function parseRSS(xml: string, source: 'IE' | 'EU' | 'FSN' | 'FSAI' | 'UK' | 'EFSA'): AlertItem[] {
   const items: AlertItem[] = []
   const itemRegex = /<item>([\s\S]*?)<\/item>/gi
   let match: RegExpExecArray | null
@@ -64,7 +64,7 @@ function parseRSS(xml: string, source: 'IE' | 'EU' | 'FSN' | 'FSAI'): AlertItem[
   return items
 }
 
-async function fetchFeed(url: string, source: 'IE' | 'EU' | 'FSN' | 'FSAI'): Promise<AlertItem[]> {
+async function fetchFeed(url: string, source: 'IE' | 'EU' | 'FSN' | 'FSAI' | 'UK' | 'EFSA'): Promise<AlertItem[]> {
   const res = await fetch(url, {
     headers: {
       'User-Agent': 'AllyJen-AllergenPlatform/1.0 (food safety compliance tool)',
@@ -89,6 +89,8 @@ const EU_FEED_URL   = 'https://news.google.com/rss/search?q=RASFF+EU+food+recall
 const FSN_FEED_URL  = 'https://www.foodsafetynews.com/feed/'
 // FSAI do not publish a native RSS feed; we use a targeted Google News search instead
 const FSAI_FEED_URL = 'https://news.google.com/rss/search?q=%22Food+Safety+Authority+of+Ireland%22+OR+%22FSAI%22+food+alert+recall+allergen&hl=en-IE&gl=IE&ceid=IE:en'
+const UK_FEED_URL   = 'https://news.google.com/rss/search?q=%22Food+Standards+Agency%22+OR+%22FSA+recall%22+OR+%22Food+Alert+for+Action%22+allergen&hl=en-GB&gl=GB&ceid=GB:en'
+const EFSA_FEED_URL = 'https://news.google.com/rss/search?q=%22European+Food+Safety+Authority%22+OR+EFSA+allergen+warning+food+safety&hl=en&gl=EU&ceid=EU:en'
 
 const STATIC_FALLBACK: AlertItem[] = [
   {
@@ -124,25 +126,41 @@ export async function GET(request: NextRequest) {
       fetchFeed(EU_FEED_URL,   'EU'),
       fetchFeed(FSN_FEED_URL,  'FSN'),
       fetchFeed(FSAI_FEED_URL, 'FSAI'),
+      fetchFeed(UK_FEED_URL,   'UK'),
+      fetchFeed(EFSA_FEED_URL, 'EFSA'),
     ])
 
     const ieItems   = results[0].status === 'fulfilled' ? results[0].value : []
     const euItems   = results[1].status === 'fulfilled' ? results[1].value : []
     const fsnItems  = results[2].status === 'fulfilled' ? results[2].value : []
     const fsaiItems = results[3].status === 'fulfilled' ? results[3].value : []
+    const ukItems   = results[4].status === 'fulfilled' ? results[4].value : []
+    const efsaItems = results[5].status === 'fulfilled' ? results[5].value : []
 
-    // Interleave: IE first (most relevant to Irish users), EU second, FSN third, FSAI if available
-    // Cap each source so the ticker stays manageable (IE: 8, EU: 5, FSN: 5, FSAI: all)
+    // Interleave by priority: IE, FSAI, EU, EFSA, UK, FSN.
+    // Cap each source so the ticker stays manageable.
     const combined: AlertItem[] = []
     const ieSlice   = ieItems.slice(0, 8)
+    const fsaiSlice = fsaiItems.slice(0, 5)
     const euSlice   = euItems.slice(0, 5)
+    const efsaSlice = efsaItems.slice(0, 4)
+    const ukSlice   = ukItems.slice(0, 4)
     const fsnSlice  = fsnItems.slice(0, 5)
-    const maxLen = Math.max(ieSlice.length, euSlice.length, fsnSlice.length, fsaiItems.length)
+    const maxLen = Math.max(
+      ieSlice.length,
+      fsaiSlice.length,
+      euSlice.length,
+      efsaSlice.length,
+      ukSlice.length,
+      fsnSlice.length
+    )
     for (let i = 0; i < maxLen; i++) {
       if (ieSlice[i])   combined.push(ieSlice[i])
+      if (fsaiSlice[i]) combined.push(fsaiSlice[i])
       if (euSlice[i])   combined.push(euSlice[i])
+      if (efsaSlice[i]) combined.push(efsaSlice[i])
+      if (ukSlice[i])   combined.push(ukSlice[i])
       if (fsnSlice[i])  combined.push(fsnSlice[i])
-      if (fsaiItems[i]) combined.push(fsaiItems[i])
     }
 
     const alerts = combined.length > 0 ? combined : STATIC_FALLBACK
