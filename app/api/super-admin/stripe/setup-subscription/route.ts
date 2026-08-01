@@ -108,6 +108,14 @@ export async function POST(request: NextRequest) {
 
     const priceId = getStripePriceId(plan, billingCycle)
     const setupFeePriceId = getStripeSetupFeePriceId()
+
+    if (body?.chargeSetupFee === true && !setupFeePriceId) {
+      return NextResponse.json(
+        { error: 'Setup fee is enabled in the form, but STRIPE_PRICE_SETUP_FEE is not configured' },
+        { status: 400 }
+      )
+    }
+
     const shouldChargeSetupFee =
       body?.chargeSetupFee !== false &&
       Boolean(setupFeePriceId) &&
@@ -185,6 +193,26 @@ export async function POST(request: NextRequest) {
       const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
         default_payment_method: stripePaymentMethodId,
       })
+
+      let setupFeeInvoiceId: string | null = null
+      if (shouldChargeSetupFee && setupFeePriceId) {
+        await stripe.invoiceItems.create({
+          customer: customerId,
+          price: setupFeePriceId,
+          description: 'One-time device/setup fee',
+        })
+
+        const setupFeeInvoice = await stripe.invoices.create({
+          customer: customerId,
+          collection_method: 'charge_automatically',
+          auto_advance: true,
+          description: 'One-time device/setup fee',
+        })
+
+        setupFeeInvoiceId = setupFeeInvoice.id
+        await stripe.invoices.finalizeInvoice(setupFeeInvoice.id)
+      }
+
       const updatedPeriodEnd = updatedSubscription.items.data[0]?.current_period_end
         ? new Date(updatedSubscription.items.data[0].current_period_end * 1000).toISOString()
         : (currentSubscription?.stripeCurrentPeriodEnd || null)
@@ -200,6 +228,9 @@ export async function POST(request: NextRequest) {
           stripeSubscriptionId: subscriptionId,
           stripePaymentMethodId,
           stripeCurrentPeriodEnd: updatedPeriodEnd,
+          stripeSetupFeePriceId: shouldChargeSetupFee ? setupFeePriceId : currentSubscription?.stripeSetupFeePriceId,
+          setupFeeCharged: shouldChargeSetupFee || Boolean(currentSubscription?.setupFeeCharged),
+          setupFeeLastInvoiceId: setupFeeInvoiceId || currentSubscription?.setupFeeLastInvoiceId || null,
           paymentMethod: paymentMethodSummary,
           paymentMethodUpdatedAt: new Date().toISOString(),
         },
@@ -224,6 +255,8 @@ export async function POST(request: NextRequest) {
         customerId,
         subscriptionId,
         status: updatedSubscription.status,
+        setupFeeCharged: shouldChargeSetupFee,
+        setupFeeInvoiceId,
       })
     }
 

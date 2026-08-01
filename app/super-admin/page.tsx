@@ -116,6 +116,7 @@ export default function SuperAdminDashboard() {
   const [billingForm, setBillingForm] = useState({
     billingName: '',
     billingAddress: '',
+    chargeDeviceFee: false,
   })
   const billingCardRef = useRef<StripeCardElementHandle>(null)
 
@@ -555,6 +556,7 @@ export default function SuperAdminDashboard() {
     setBillingForm({
       billingName: business.contactName || '',
       billingAddress: business.address || '',
+      chargeDeviceFee: false,
     })
     setBillingError('')
     setShowBillingModal(true)
@@ -585,6 +587,7 @@ export default function SuperAdminDashboard() {
           plan: billingBusiness.plan,
           billingCycle: 'monthly',
           paymentMethodId: paymentMethodResult.paymentMethodId,
+          chargeSetupFee: billingForm.chargeDeviceFee,
           paymentMethod: {
             billingName: billingForm.billingName,
             billingAddress: billingForm.billingAddress,
@@ -602,8 +605,8 @@ export default function SuperAdminDashboard() {
       setActionNotice({
         type: 'success',
         text: result.mode === 'updated_payment_method'
-          ? `Billing details updated for ${billingBusiness.name}.`
-          : `Stripe subscription created for ${billingBusiness.name}.`,
+          ? `Billing details updated for ${billingBusiness.name}${result.setupFeeCharged ? ' and one-time device fee added.' : '.'}`
+          : `Stripe subscription created for ${billingBusiness.name}${result.setupFeeCharged ? ' with one-time device fee.' : '.'}`,
       })
     } catch (error: any) {
       setBillingError(error.message || 'Failed to save billing details.')
@@ -1289,6 +1292,23 @@ export default function SuperAdminDashboard() {
                   placeholder="Street, City, Postcode"
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
                 />
+              </div>
+              <div className="md:col-span-2 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="manageBillingChargeDeviceFee"
+                    checked={billingForm.chargeDeviceFee}
+                    onChange={e => setBillingForm(p => ({ ...p, chargeDeviceFee: e.target.checked }))}
+                    className="rounded border-gray-300 text-[#42b8ac] focus:ring-[#42b8ac]"
+                  />
+                  <label htmlFor="manageBillingChargeDeviceFee" className="text-sm text-gray-700 dark:text-gray-300">
+                    Add one-time device/setup fee now (optional)
+                  </label>
+                </div>
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  This charges once only and only applies if STRIPE_PRICE_SETUP_FEE is configured.
+                </p>
               </div>
             </div>
 
