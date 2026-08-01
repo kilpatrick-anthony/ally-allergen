@@ -679,8 +679,9 @@ export default function SuperAdminDashboard() {
   const openActionsMenu = (event: React.MouseEvent<HTMLButtonElement>, businessId: string) => {
     const rect = event.currentTarget.getBoundingClientRect()
     const menuWidth = 224
-    const left = Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8))
-    const top = Math.min(rect.bottom + 6, window.innerHeight - 12)
+    const menuHeightEstimate = 320
+    const left = Math.max(8, Math.min(event.clientX - menuWidth + 16, window.innerWidth - menuWidth - 8))
+    const top = Math.max(8, Math.min(event.clientY + 8, window.innerHeight - menuHeightEstimate - 8))
 
     if (openMenuId === businessId) {
       setOpenMenuId(null)
@@ -689,7 +690,7 @@ export default function SuperAdminDashboard() {
     }
 
     setOpenMenuId(businessId)
-    setMenuAnchor({ top, left })
+    setMenuAnchor({ top: Number.isFinite(top) ? top : rect.bottom + 6, left: Number.isFinite(left) ? left : rect.right - menuWidth })
   }
 
   if (loading) {
