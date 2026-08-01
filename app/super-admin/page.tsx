@@ -777,35 +777,6 @@ export default function SuperAdminDashboard() {
         </Card>
       </div>
 
-      <Card className="mb-8">
-        <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Platform Activity</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Latest businesses with kiosk activity.</p>
-          </div>
-          <Button variant="outline" size="sm" onClick={() => router.push('/super-admin/analytics')}>
-            Open Analytics
-          </Button>
-        </div>
-        <div className="p-5 grid grid-cols-1 md:grid-cols-5 gap-3">
-          {recentlyActiveBusinesses.length === 0 ? (
-            <div className="md:col-span-5 text-sm text-gray-500 dark:text-gray-400">No kiosk activity recorded yet.</div>
-          ) : (
-            recentlyActiveBusinesses.map(business => (
-              <button
-                key={business.id}
-                type="button"
-                className="text-left rounded-lg border border-gray-200 dark:border-gray-700 p-3 hover:border-[#42b8ac]/60 hover:bg-[#42b8ac]/5 transition-colors"
-                onClick={() => handleViewBusinessDetails(business)}
-              >
-                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{business.name}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{formatLastActivity(business.lastActivityAt)}</p>
-              </button>
-            ))
-          )}
-        </div>
-      </Card>
-
       {/* Quick Actions */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-8">
         <button
@@ -924,9 +895,14 @@ export default function SuperAdminDashboard() {
                 <tr key={business.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                   {/* Business name + plan + joined */}
                   <td className="px-4 py-3">
-                    <div className="font-medium text-sm text-gray-900 dark:text-white">{business.name}</div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="font-medium text-sm text-gray-900 dark:text-white">{business.name}</div>
+                      <Badge variant="primary" size="sm">
+                        {formatPlanName(business.plan)}
+                      </Badge>
+                    </div>
                     <div className="text-xs text-gray-400 mt-0.5">
-                      <span>{formatPlanName(business.plan)}</span> &middot; joined {new Date(business.createdAt).toLocaleDateString('en-IE', { day: 'numeric', month: 'short', year: '2-digit' })}
+                      joined {new Date(business.createdAt).toLocaleDateString('en-IE', { day: 'numeric', month: 'short', year: '2-digit' })}
                     </div>
                   </td>
 
@@ -1045,6 +1021,38 @@ export default function SuperAdminDashboard() {
             </p>
           </div>
         )}
+      </Card>
+
+      <Card className="mb-8">
+        <div className="p-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Platform Activity</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Latest businesses with kiosk activity.</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => router.push('/super-admin/analytics')}>
+            Open Analytics
+          </Button>
+        </div>
+        <div className="p-5 grid grid-cols-1 md:grid-cols-5 gap-3">
+          {recentlyActiveBusinesses.length === 0 ? (
+            <div className="md:col-span-5 text-sm text-gray-500 dark:text-gray-400">No kiosk activity recorded yet.</div>
+          ) : (
+            recentlyActiveBusinesses.map(business => (
+              <button
+                key={business.id}
+                type="button"
+                className="text-left rounded-lg border border-gray-200 dark:border-gray-700 p-3 hover:border-[#42b8ac]/60 hover:bg-[#42b8ac]/5 transition-colors"
+                onClick={() => handleViewBusinessDetails(business)}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{business.name}</p>
+                  <Badge variant="primary" size="sm">{formatPlanName(business.plan)}</Badge>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{formatLastActivity(business.lastActivityAt)}</p>
+              </button>
+            ))
+          )}
+        </div>
       </Card>
 
       {/* Demo Account Modal */}
