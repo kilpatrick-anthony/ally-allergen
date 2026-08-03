@@ -3,7 +3,9 @@ import { isPlanKey, type PlanKey } from '@/lib/plans'
 
 export type BillingCycle = 'monthly' | 'yearly'
 
-const PRICE_ENV_MAP: Record<Exclude<PlanKey, 'free'>, Record<BillingCycle, string | undefined>> = {
+type BillablePlan = 'starter' | 'pro' | 'enterprise'
+
+const PRICE_ENV_MAP: Record<BillablePlan, Record<BillingCycle, string | undefined>> = {
   starter: {
     monthly: process.env.STRIPE_PRICE_STARTER_MONTHLY || 'price_1TzhE70zJJbcSAh0KtwFIhXR',
     yearly: process.env.STRIPE_PRICE_STARTER_YEARLY,
@@ -38,8 +40,8 @@ export function getStripePriceId(plan: string, billingCycle: string) {
     throw new Error('Invalid plan for Stripe subscription')
   }
 
-  if (plan === 'free') {
-    throw new Error('Free plans do not require a Stripe subscription')
+  if (plan === 'free' || plan === 'demo') {
+    throw new Error('This plan does not require a Stripe subscription')
   }
 
   if (plan === 'enterprise') {
@@ -50,7 +52,7 @@ export function getStripePriceId(plan: string, billingCycle: string) {
     throw new Error('Invalid billing cycle for Stripe subscription')
   }
 
-  const priceId = PRICE_ENV_MAP[plan][billingCycle]
+  const priceId = PRICE_ENV_MAP[plan as BillablePlan][billingCycle]
   if (!priceId) {
     throw new Error(`Stripe price ID is not configured for ${plan} (${billingCycle})`)
   }

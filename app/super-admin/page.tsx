@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { Elements } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
 import { useRef } from 'react'
@@ -48,7 +47,7 @@ interface Business {
   phone?: string
   address?: string
   status: 'active' | 'inactive' | 'trial' | 'suspended'
-  plan: 'free' | 'starter' | 'pro' | 'enterprise'
+  plan: 'free' | 'demo' | 'starter' | 'pro' | 'enterprise'
   createdAt: string
   trialEndsAt?: string
   subscriptionStatus?: 'active' | 'past_due' | 'canceled' | 'trial'
@@ -151,7 +150,17 @@ export default function SuperAdminDashboard() {
         businessName: data.businessName,
         ownerEmail: data.ownerEmail,
       })
-      setActionNotice({ type: 'success', text: `Demo account "${data.businessName}" created with ${data.menuItemsSeeded} sample menu items. Password setup email sent to ${data.ownerEmail}.` })
+      const seedSummary = `${data.menuItemsSeeded ?? 0} menu items, ${data.ingredientsSeeded ?? 0} ingredients, ${data.suppliersSeeded ?? 0} suppliers, and ${data.ingredientLinksSeeded ?? 0} ingredient links`
+      const emailSummary = data.passwordSetupEmailSent
+        ? `Password setup email sent to ${data.ownerEmail}.`
+        : `Password setup email was not sent automatically. Use Reset Password for ${data.ownerEmail}.`
+      const warningSummary = Array.isArray(data.warnings) && data.warnings.length > 0
+        ? ` Warnings: ${data.warnings.join(' ')}`
+        : ''
+      setActionNotice({
+        type: data.passwordSetupEmailSent ? 'success' : 'error',
+        text: `Demo account "${data.businessName}" created with ${seedSummary}. ${emailSummary}${warningSummary}`,
+      })
       setShowDemoModal(false)
       setDemoForm({ ownerEmail: '', ownerName: '', businessName: '', locationName: '' })
     } catch (err: any) {
@@ -782,11 +791,12 @@ export default function SuperAdminDashboard() {
           >
             Create Demo
           </Button>
-          <Link href="/super-admin/training">
-            <Button variant="outline" icon={<Users className="h-4 w-4" />}>
+          <div className="flex flex-col items-start">
+            <Button variant="outline" icon={<Users className="h-4 w-4" />} disabled>
               Training Hub
             </Button>
-          </Link>
+            <span className="mt-1 text-[11px] font-medium text-gray-500 dark:text-gray-400">Coming soon</span>
+          </div>
           <Button
             variant="primary"
             icon={<Plus className="h-4 w-4" />}
@@ -931,12 +941,12 @@ export default function SuperAdminDashboard() {
           </div>
         </Card>
 
-        <Card className="self-start min-h-[360px] flex flex-col">
+        <Card className="min-h-[360px] h-full flex flex-col">
           <div className="p-5 border-b border-gray-100 dark:border-gray-800">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Customer Setup Flow</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">The fastest path for a new business user.</p>
           </div>
-          <div className="p-5 flex flex-1 flex-col">
+          <div className="p-5 flex flex-1 flex-col justify-between">
             <div className="space-y-4">
               {[
                 ['Create owner and business', 'Use Add Business to create the login and customer record.'],
@@ -955,7 +965,7 @@ export default function SuperAdminDashboard() {
                 </div>
               ))}
             </div>
-            <Button variant="primary" className="w-full mt-auto" onClick={() => setShowCreateModal(true)}>
+            <Button variant="primary" className="w-full mt-5" onClick={() => setShowCreateModal(true)}>
               Start New Business Setup
             </Button>
           </div>

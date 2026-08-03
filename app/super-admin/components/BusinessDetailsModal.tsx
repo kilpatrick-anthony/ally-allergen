@@ -30,7 +30,7 @@ interface Business {
   phone?: string
   address?: string
   status: 'active' | 'inactive' | 'trial' | 'suspended'
-  plan: 'free' | 'starter' | 'pro' | 'enterprise'
+  plan: 'free' | 'demo' | 'starter' | 'pro' | 'enterprise'
   createdAt: string
   trialEndsAt?: string
   subscriptionStatus?: 'active' | 'past_due' | 'canceled' | 'trial'

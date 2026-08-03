@@ -30,6 +30,11 @@ const PLAN_DETAILS: Record<string, PlanDetails> = {
     priceLabel: PLAN_DEFINITIONS.free.priceLabel,
     features: PLAN_DEFINITIONS.free.adminFeatures,
   },
+  demo: {
+    name: PLAN_DEFINITIONS.demo.title,
+    priceLabel: PLAN_DEFINITIONS.demo.priceLabel,
+    features: PLAN_DEFINITIONS.demo.adminFeatures,
+  },
   starter: {
     name: PLAN_DEFINITIONS.starter.title,
     priceLabel: PLAN_DEFINITIONS.starter.priceLabel.replace('EUR', '€'),
@@ -547,7 +552,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
               </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 {plan.priceLabel}
-                {key !== 'free' && key !== 'enterprise' && <span className="text-sm font-normal text-gray-600 dark:text-gray-400">/month</span>}
+                {key !== 'free' && key !== 'demo' && key !== 'enterprise' && <span className="text-sm font-normal text-gray-600 dark:text-gray-400">/month</span>}
               </div>
               <ul className="mt-3 text-sm text-gray-600 dark:text-gray-400 space-y-2 flex-1">
                 {plan.features.map((feature, index) => (

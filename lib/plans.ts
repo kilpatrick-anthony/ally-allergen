@@ -1,4 +1,4 @@
-export type PlanKey = 'free' | 'starter' | 'pro' | 'enterprise'
+export type PlanKey = 'free' | 'demo' | 'starter' | 'pro' | 'enterprise'
 
 export interface PlanDefinition {
   key: PlanKey
@@ -10,7 +10,7 @@ export interface PlanDefinition {
   adminFeatures: string[]
 }
 
-export const SUPER_ADMIN_PLAN_ORDER: PlanKey[] = ['free', 'starter', 'pro', 'enterprise']
+export const SUPER_ADMIN_PLAN_ORDER: PlanKey[] = ['free', 'demo', 'starter', 'pro', 'enterprise']
 export const HOME_PAGE_PLAN_ORDER: PlanKey[] = ['starter', 'pro', 'enterprise']
 
 export const PLAN_DEFINITIONS: Record<PlanKey, PlanDefinition> = {
@@ -25,6 +25,20 @@ export const PLAN_DEFINITIONS: Record<PlanKey, PlanDefinition> = {
       'Internal support or goodwill accounts',
       'Customer-facing allergen kiosk and QR code',
       'Basic allergen and menu management',
+      'No monthly billing',
+    ],
+  },
+  demo: {
+    key: 'demo',
+    title: 'Demo',
+    monthlyPrice: 0,
+    priceLabel: 'Demo',
+    priceSuffix: '',
+    mrrValue: 0,
+    adminFeatures: [
+      'Demo and sales walkthrough accounts',
+      'Customer-facing allergen kiosk and QR code',
+      'Sample data for training and demonstrations',
       'No monthly billing',
     ],
   },
@@ -73,7 +87,7 @@ export const PLAN_DEFINITIONS: Record<PlanKey, PlanDefinition> = {
 }
 
 export function isPlanKey(value: string | null | undefined): value is PlanKey {
-  return value === 'free' || value === 'starter' || value === 'pro' || value === 'enterprise'
+  return value === 'free' || value === 'demo' || value === 'starter' || value === 'pro' || value === 'enterprise'
 }
 
 export function getPlanDefinition(plan: string | null | undefined): PlanDefinition {

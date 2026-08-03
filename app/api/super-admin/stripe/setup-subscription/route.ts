@@ -58,8 +58,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid plan selected for Stripe setup' }, { status: 400 })
     }
 
-    if (plan === 'free') {
-      return NextResponse.json({ error: 'Free plans do not require Stripe billing' }, { status: 400 })
+    if (plan === 'free' || plan === 'demo') {
+      return NextResponse.json({ error: 'This plan does not require Stripe billing' }, { status: 400 })
     }
 
     if (plan === 'enterprise') {
