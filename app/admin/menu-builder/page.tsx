@@ -176,15 +176,16 @@ export default function MenuBuilderPage() {
 
   // Group filtered items by category
   const groupedMenuItems = filteredItems.reduce((acc, item) => {
-    const cat = item.category || 'Uncategorized'
+    const cat = item.category || t('admin.uncategorized')
     if (!acc[cat]) acc[cat] = []
     acc[cat].push(item)
     return acc
   }, {} as Record<string, typeof filteredItems>)
 
   const menuCategoryOrder = Object.keys(groupedMenuItems).sort((a, b) => {
-    if (a === 'Uncategorized') return 1
-    if (b === 'Uncategorized') return -1
+    const uncategorizedLabel = t('admin.uncategorized')
+    if (a === uncategorizedLabel) return 1
+    if (b === uncategorizedLabel) return -1
     return a.localeCompare(b)
   })
 
@@ -281,7 +282,7 @@ export default function MenuBuilderPage() {
         <Card className="hover:shadow-lg transition-all hover:border-[#42b8ac] hover:bg-gradient-to-br hover:from-[#42b8ac] hover:to-[#36948a] group cursor-pointer p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">Menu Items</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">{t('admin.menuItemsStat')}</p>
               <p className="text-2xl font-bold text-[#003842] dark:text-[#42b8ac] mt-1 group-hover:text-white transition-colors">{stats.total}</p>
             </div>
             <div className="p-3 bg-gradient-to-br from-[#42b8ac] to-[#36948a] rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-[#42b8ac] transition-all">
@@ -289,14 +290,14 @@ export default function MenuBuilderPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">Total managed items</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.totalManagedItems')}</div>
           </div>
         </Card>
 
         <Card className="hover:shadow-lg transition-all hover:border-amber-500 hover:bg-gradient-to-br hover:from-amber-500 hover:to-amber-600 group cursor-pointer p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">Ingredients</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">{t('admin.ingredients')}</p>
               <p className="text-2xl font-bold text-[#003842] dark:text-[#42b8ac] mt-1 group-hover:text-white transition-colors">{stats.ingredients}</p>
             </div>
             <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-amber-600 transition-all">
@@ -304,7 +305,7 @@ export default function MenuBuilderPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">Available ingredients</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.availableIngredients')}</div>
           </div>
         </Card>
 
@@ -312,7 +313,7 @@ export default function MenuBuilderPage() {
           <Card className="hover:shadow-lg transition-all hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-500 hover:to-blue-600 group cursor-pointer p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">Sites</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">{t('admin.sites')}</p>
               <p className="text-2xl font-bold text-[#003842] dark:text-[#42b8ac] mt-1 group-hover:text-white transition-colors">{stats.sites}</p>
             </div>
             <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-blue-600 transition-all">
@@ -320,7 +321,7 @@ export default function MenuBuilderPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">Managed sites</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.managedSites')}</div>
           </div>
         </Card>
         </Link>
@@ -347,7 +348,7 @@ export default function MenuBuilderPage() {
               icon={<FilterIcon className="h-4 w-4" />}
               onClick={() => setShowFilters(!showFilters)}
             >
-              Filters
+              {t('admin.filters')}
               {showFilters ? <ChevronDown className="ml-1 h-4 w-4 rotate-180" /> : <ChevronDown className="ml-1 h-4 w-4" />}
             </Button>
 
@@ -372,13 +373,13 @@ export default function MenuBuilderPage() {
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                 className="text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
               >
-                <option value="name">Name</option>
-                <option value="date">Date Added</option>
+                <option value="name">{t('admin.name')}</option>
+                <option value="date">{t('admin.dateAdded')}</option>
               </select>
               <button
                 onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
                 className="p-1.5 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
-                title={sortDir === 'asc' ? 'Ascending' : 'Descending'}
+                title={sortDir === 'asc' ? t('admin.ascending') : t('admin.descending')}
               >
                 {sortDir === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
               </button>
@@ -392,15 +393,15 @@ export default function MenuBuilderPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Scope
+                  {t('admin.scope')}
                 </label>
                 <select
                   value={scopeFilter}
                   onChange={(e) => setScopeFilter(e.target.value)}
                   className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                 >
-                  <option value="all">All scopes</option>
-                  <option value="global">Global only</option>
+                  <option value="all">{t('admin.allScopes')}</option>
+                  <option value="global">{t('admin.globalOnly')}</option>
                   {sites.map((site) => (
                     <option key={site.id} value={site.id}>
                       {site.name}
@@ -411,18 +412,18 @@ export default function MenuBuilderPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Category
+                  {t('admin.category')}
                 </label>
                 <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
                   className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                 >
-                  <option value="all">All categories</option>
+                  <option value="all">{t('admin.allCategories')}</option>
                   {uniqueMenuCategories.map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
-                  <option value="uncategorized">Uncategorized</option>
+                  <option value="uncategorized">{t('admin.uncategorized')}</option>
                 </select>
               </div>
             </div>
@@ -437,13 +438,13 @@ export default function MenuBuilderPage() {
             <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
               <ChefHat className="h-8 w-8 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No menu items found</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('admin.noMenuItemsFound')}</h3>
             <p className="text-gray-500 dark:text-gray-400 mb-6">
-              {searchTerm || scopeFilter !== 'all' ? 'Try adjusting your filters' : 'Create your first menu item to get started'}
+              {searchTerm || scopeFilter !== 'all' ? t('tryAdjustingFilters') : t('admin.createFirstMenuItemDesc')}
             </p>
             <Link href="/admin/menu-builder/new">
               <Button variant="primary" icon={<Plus className="h-4 w-4" />}>
-                Create First Menu Item
+                {t('admin.createFirstMenuItem')}
               </Button>
             </Link>
           </div>
@@ -538,7 +539,7 @@ export default function MenuBuilderPage() {
                 <tr className="border-b border-gray-200 dark:border-gray-700">
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Name</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Description</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Scope</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('admin.scope')}</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Status</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Allergens</th>
                   <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white">Actions</th>

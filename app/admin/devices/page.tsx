@@ -120,10 +120,10 @@ export default function DeviceMonitoringPage() {
   })
 
   const formatLastSeen = (heartbeat: string, minutes: number) => {
-    if (minutes < 1) return 'Just now'
-    if (minutes < 60) return `${Math.floor(minutes)} min ago`
-    if (minutes < 1440) return `${Math.floor(minutes / 60)} hours ago`
-    return `${Math.floor(minutes / 1440)} days ago`
+    if (minutes < 1) return t('admin.justNow')
+    if (minutes < 60) return `${Math.floor(minutes)} ${t('admin.minutesAgoSuffix')}`
+    if (minutes < 1440) return `${Math.floor(minutes / 60)} ${t('admin.hoursAgoSuffix')}`
+    return `${Math.floor(minutes / 1440)} ${t('admin.daysAgoSuffix')}`
   }
 
   const getDeviceIcon = (type: string) => {
@@ -158,7 +158,7 @@ export default function DeviceMonitoringPage() {
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
               <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
             </div>
-            <p className="text-gray-600 dark:text-gray-400 font-medium">Loading devices...</p>
+            <p className="text-gray-600 dark:text-gray-400 font-medium">{t('admin.loadingDevices')}</p>
           </div>
         </div>
       </Container>
@@ -176,7 +176,7 @@ export default function DeviceMonitoringPage() {
               {t('admin.deviceMonitoringDesc')}
             </p>
             <p className="text-sm text-gray-500 mt-1">
-              Need to add a device? Set it up from Sites so it can be assigned to a location.
+              {t('admin.needToAddDevice')}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -193,7 +193,7 @@ export default function DeviceMonitoringPage() {
               variant="outline"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
+              {t('admin.refresh')}
             </Button>
           </div>
         </div>
@@ -204,7 +204,7 @@ export default function DeviceMonitoringPage() {
             <div className="p-4 bg-red-50 border-l-4 border-red-500 flex items-start gap-3">
               <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div>
-                <h3 className="font-semibold text-red-900">Error Loading Devices</h3>
+                <h3 className="font-semibold text-red-900">{t('admin.errorLoadingDevices')}</h3>
                 <p className="text-sm text-red-700 mt-1">{error}</p>
               </div>
             </div>
@@ -229,7 +229,7 @@ export default function DeviceMonitoringPage() {
             <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Online</p>
+                  <p className="text-sm text-gray-500">{t('admin.online')}</p>
                   <p className="text-3xl font-bold text-green-600 mt-2">{stats.online}</p>
                 </div>
                 <Wifi className="h-10 w-10 text-green-400" />
@@ -241,7 +241,7 @@ export default function DeviceMonitoringPage() {
             <div className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">Offline</p>
+                  <p className="text-sm text-gray-500">{t('admin.offline')}</p>
                   <p className="text-3xl font-bold text-red-600 mt-2">{stats.offline}</p>
                 </div>
                 <WifiOff className="h-10 w-10 text-red-400" />
@@ -265,14 +265,14 @@ export default function DeviceMonitoringPage() {
         {/* Filters */}
         <Card>
           <div className="p-4 flex flex-wrap items-center gap-4">
-            <span className="text-sm font-medium text-gray-700">Filter:</span>
+            <span className="text-sm font-medium text-gray-700">{t('admin.filterBy')}</span>
             <div className="flex flex-wrap gap-2">
               <Button
                 variant={filter === 'all' ? 'primary' : 'outline'}
                 size="sm"
                 onClick={() => setFilter('all')}
               >
-                All ({stats.total})
+                {t('admin.all')} ({stats.total})
               </Button>
               <Button
                 variant={filter === 'online' ? 'primary' : 'outline'}
@@ -280,7 +280,7 @@ export default function DeviceMonitoringPage() {
                 onClick={() => setFilter('online')}
               >
                 <Wifi className="h-4 w-4 mr-1" />
-                Online ({stats.online})
+                {t('admin.online')} ({stats.online})
               </Button>
               <Button
                 variant={filter === 'offline' ? 'primary' : 'outline'}
@@ -288,7 +288,7 @@ export default function DeviceMonitoringPage() {
                 onClick={() => setFilter('offline')}
               >
                 <WifiOff className="h-4 w-4 mr-1" />
-                Offline ({stats.offline})
+                {t('admin.offline')} ({stats.offline})
               </Button>
             </div>
           </div>
@@ -302,14 +302,14 @@ export default function DeviceMonitoringPage() {
                 <Monitor className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                 <p className="text-gray-500">{t('admin.noData')}</p>
                 <p className="text-sm text-gray-400 mt-2">
-                  Devices will appear here once kiosks are accessed
+                  {t('admin.devicesAppearHere')}
                 </p>
                 <Link
                   href="/admin/sites"
                   className="inline-flex items-center justify-center mt-4 rounded-lg border border-[#42b8ac] px-4 py-2 text-sm font-medium text-[#42b8ac] hover:bg-[#f0f9f8]"
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Create Device and Assign Location
+                  {t('admin.createDeviceAssignLocation')}
                 </Link>
               </div>
             </Card>
@@ -346,15 +346,15 @@ export default function DeviceMonitoringPage() {
                           : 'bg-green-50 text-green-700'
                       }`}>
                         {isOffline
-                          ? <><WifiOff className="h-3 w-3" /> Offline</>
-                          : <><Wifi className="h-3 w-3" /> Online</>
+                          ? <><WifiOff className="h-3 w-3" /> {t('admin.offline')}</>
+                          : <><Wifi className="h-3 w-3" /> {t('admin.online')}</>
                         }
                       </span>
 
                       {device.active_alerts > 0 && (
                         <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full bg-amber-50 text-amber-700 flex-shrink-0">
                           <Bell className="h-3 w-3" />
-                          {device.active_alerts} alert{device.active_alerts > 1 ? 's' : ''}
+                          {device.active_alerts} {device.active_alerts > 1 ? t('admin.alerts') : t('admin.alert')}
                         </span>
                       )}
                     </div>
@@ -377,22 +377,22 @@ export default function DeviceMonitoringPage() {
 
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                        <span className="truncate">Last seen: {formatLastSeen(device.last_heartbeat, device.minutes_since_heartbeat)}</span>
+                        <span className="truncate">{t('admin.lastSeenLabel')}: {formatLastSeen(device.last_heartbeat, device.minutes_since_heartbeat)}</span>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <Activity className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                        <span>{device.total_sessions || 0} sessions</span>
+                        <span>{device.total_sessions || 0} {t('admin.sessions')}</span>
                       </div>
 
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                        <span>Since {new Date(device.first_seen).toLocaleDateString()}</span>
+                        <span>{t('admin.since')} {new Date(device.first_seen).toLocaleDateString()}</span>
                       </div>
 
                       {kioskUrl && (
                         <div className="sm:col-span-2 rounded-lg border border-[#42b8ac]/30 bg-[#f0faf9] p-2.5 mt-1">
-                          <p className="text-[11px] font-semibold text-[#003842] uppercase tracking-wide mb-1">Kiosk URL</p>
+                          <p className="text-[11px] font-semibold text-[#003842] uppercase tracking-wide mb-1">{t('admin.kioskUrl')}</p>
                           <p className="text-xs text-gray-700 break-all leading-relaxed mb-2">{kioskUrl}</p>
                           <div className="flex items-center gap-2">
                             <button
@@ -402,7 +402,7 @@ export default function DeviceMonitoringPage() {
                               {copiedKioskFor === device.id
                                 ? <Check className="h-3.5 w-3.5 mr-1.5 text-green-600" />
                                 : <Copy className="h-3.5 w-3.5 mr-1.5" />}
-                              {copiedKioskFor === device.id ? 'Copied' : 'Copy URL'}
+                              {copiedKioskFor === device.id ? t('admin.copied') : t('admin.copyUrl')}
                             </button>
                             <a
                               href={kioskUrl}
@@ -411,7 +411,7 @@ export default function DeviceMonitoringPage() {
                               className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-white transition-colors"
                             >
                               <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-                              Open
+                              {t('admin.open')}
                             </a>
                           </div>
                         </div>
@@ -419,7 +419,7 @@ export default function DeviceMonitoringPage() {
 
                       {typeof device.is_on_expected_screen === 'boolean' && (
                         <div className="sm:col-span-2 rounded-lg border border-gray-200 bg-white p-2.5 mt-1">
-                          <p className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide mb-1">Screen Check</p>
+                          <p className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide mb-1">{t('admin.screenCheck')}</p>
                           <span
                             className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold ${
                               device.is_on_expected_screen
@@ -427,7 +427,7 @@ export default function DeviceMonitoringPage() {
                                 : 'bg-red-100 text-red-700'
                             }`}
                           >
-                            {device.is_on_expected_screen ? 'Correct kiosk screen' : 'Wrong screen'}
+                            {device.is_on_expected_screen ? t('admin.correctKioskScreen') : t('admin.wrongScreen')}
                           </span>
                           {device.last_page_url && (
                             <p className="text-xs text-gray-600 break-all mt-2">{device.last_page_url}</p>
@@ -439,20 +439,20 @@ export default function DeviceMonitoringPage() {
                     {/* ── Stale warning ── */}
                     {!isOffline && isStale && (
                       <div className="mb-4 p-3 bg-amber-50 border-l-4 border-amber-500 rounded text-sm text-amber-800">
-                        No heartbeat for {Math.floor(device.minutes_since_heartbeat)} min — possible connectivity issue.
+                        {t('admin.heartbeatWarningPrefix')} {Math.floor(device.minutes_since_heartbeat)} {t('admin.heartbeatWarningSuffix')}
                       </div>
                     )}
 
                     {/* ── Alert emails ── */}
                     {(device.site_email || device.admin_email) && (
                       <div className="mb-4 pt-3 border-t border-gray-100">
-                        <p className="text-xs text-gray-400 mb-1.5">Offline alerts sent to:</p>
+                        <p className="text-xs text-gray-400 mb-1.5">{t('admin.offlineAlertsSentTo')}</p>
                         <div className="flex flex-wrap gap-2">
                           {device.site_email && (
-                            <Badge variant="info">Site: {device.site_email}</Badge>
+                            <Badge variant="info">{t('admin.siteLabel')}: {device.site_email}</Badge>
                           )}
                           {device.admin_email && (
-                            <Badge variant="info">Admin: {device.admin_email}</Badge>
+                            <Badge variant="info">{t('admin.adminLabel')}: {device.admin_email}</Badge>
                           )}
                         </div>
                       </div>
@@ -465,7 +465,7 @@ export default function DeviceMonitoringPage() {
                           href={`/admin/sites/${device.site_slug}?tab=devices`}
                           className="inline-flex items-center gap-1.5 rounded-lg border border-[#42b8ac] px-3 py-1.5 text-xs font-medium text-[#42b8ac] hover:bg-[#f0faf9] transition-colors"
                         >
-                          Manage in Location
+                          {t('admin.manageInLocation')}
                         </Link>
                       </div>
                     )}

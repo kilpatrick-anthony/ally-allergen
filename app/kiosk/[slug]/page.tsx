@@ -1101,11 +1101,11 @@ export default function KioskPage() {
 
             <div className="mt-10 sm:mt-12 lg:mt-14">
               <p className="text-white/95 text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 tracking-tight">
-                Interactive Allergen Guide
+                {t.readyWhenYouAre}
               </p>
 
               <p className="text-white/85 text-lg sm:text-xl lg:text-2xl font-semibold leading-snug">
-                Check allergens, ingredients, and menu details in seconds.
+                {t.servingConfidenceDesc}
               </p>
             </div>
 

@@ -44,14 +44,14 @@ export default function SitesPage() {
   }, [])
 
   const getTimeSince = (dateString?: string | null) => {
-    if (!dateString) return 'Never'
+    if (!dateString) return t('admin.noData')
     const date = new Date(dateString)
     const seconds = Math.floor((Date.now() - date.getTime()) / 1000)
 
-    if (seconds < 60) return 'Just now'
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
-    return `${Math.floor(seconds / 86400)}d ago`
+    if (seconds < 60) return t('admin.justNow')
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} ${t('admin.minutesAgoSuffix')}`
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} ${t('admin.hoursAgoSuffix')}`
+    return `${Math.floor(seconds / 86400)} ${t('admin.daysAgoSuffix')}`
   }
 
   const loadSites = async () => {
@@ -142,7 +142,7 @@ export default function SitesPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
             <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
           </div>
-          <p className="text-gray-600 dark:text-gray-400">Loading sites...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('admin.loadingSites')}</p>
         </div>
       </div>
     )
@@ -166,10 +166,10 @@ export default function SitesPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="primary" icon={<Building className="h-3 w-3" />}>
-              {stats.total} sites
+              {stats.total} {t('admin.sites').toLowerCase()}
             </Badge>
             <Badge variant={stats.online === stats.active ? 'success' : 'warning'} icon={<Wifi className="h-3 w-3" />}>
-              {stats.online} online
+              {stats.online} {t('admin.online').toLowerCase()}
             </Badge>
           </div>
         </div>
@@ -205,14 +205,14 @@ export default function SitesPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">Across all locations</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.acrossAllLocations')}</div>
           </div>
         </Card>
 
         <Card className="hover:shadow-lg transition-all hover:border-emerald-500 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-emerald-600 group cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Active</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.active')}</p>
               <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">{stats.active}</p>
             </div>
             <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-emerald-600 transition-all">
@@ -220,7 +220,7 @@ export default function SitesPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">Currently operating</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.currentlyOperating')}</div>
           </div>
         </Card>
 
@@ -228,7 +228,7 @@ export default function SitesPage() {
           <Card className="hover:shadow-lg transition-all hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-500 hover:to-blue-600 group cursor-pointer">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Online Kiosks</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.onlineKiosks')}</p>
                 <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">{stats.online}</p>
               </div>
               <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-blue-600 transition-all">
@@ -236,7 +236,7 @@ export default function SitesPage() {
               </div>
             </div>
             <div className="mt-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">Click to view all devices →</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.clickToViewAllDevices')}</div>
             </div>
           </Card>
         </Link>
@@ -262,9 +262,9 @@ export default function SitesPage() {
               onChange={(e) => setSelectedStatus(e.target.value)}
               className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
             >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
+              <option value="all">{t('admin.allStatus')}</option>
+              <option value="active">{t('admin.active')}</option>
+              <option value="inactive">{t('admin.inactive')}</option>
             </select>
           </div>
         </div>
@@ -287,10 +287,10 @@ export default function SitesPage() {
                     </h3>
                     <div className="flex items-center gap-2 mt-1">
                       <Badge variant={site.status === 'active' ? 'success' : 'default'}>
-                        {site.status}
+                        {site.status === 'active' ? t('admin.active') : t('admin.inactive')}
                       </Badge>
                       <Badge variant={site.kioskStatus === 'online' ? 'success' : 'error'} icon={<Wifi className="h-3 w-3" />}>
-                        {site.kioskStatus}
+                        {site.kioskStatus === 'online' ? t('admin.online') : t('admin.offline')}
                       </Badge>
                     </div>
                   </div>
@@ -301,11 +301,11 @@ export default function SitesPage() {
               <div className="space-y-3 mb-4">
                 <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                   <MapPin className="h-4 w-4 mr-2 text-gray-400" />
-                  {site.address || 'Address not set'}{site.city ? `, ${site.city}` : ''}
+                  {site.address || t('admin.addressNotSet')}{site.city ? `, ${site.city}` : ''}
                 </div>
                 <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                   <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                  {site.phone || 'Phone not set'}
+                  {site.phone || t('admin.phoneNotSet')}
                 </div>
                 {site.email && (
                   <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
@@ -315,7 +315,7 @@ export default function SitesPage() {
                 )}
                 <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                   <Clock className="h-4 w-4 mr-2 text-gray-400" />
-                  Last sync: {site.lastSync}
+                  {t('admin.lastSync')}: {site.lastSync}
                 </div>
               </div>
 
@@ -327,7 +327,7 @@ export default function SitesPage() {
                     size="sm"
                     icon={<Eye className="h-4 w-4" />}
                   >
-                    View Site
+                    {t('admin.viewSite')}
                   </Button>
                 </Link>
               </div>
@@ -342,15 +342,15 @@ export default function SitesPage() {
           <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <Building className="h-8 w-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No sites found</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('admin.noSitesFound')}</h3>
           <p className="text-gray-500 dark:text-gray-400 mb-6">
             {searchTerm || selectedStatus !== 'all'
-              ? 'Try adjusting your search or filters'
-              : 'Get started by adding your first site'}
+              ? t('admin.tryAdjustingSearchOrFilters')
+              : t('admin.getStartedFirstSite')}
           </p>
           <Link href="/admin/sites/new">
             <Button variant="primary" icon={<Plus className="h-4 w-4" />}>
-              Add First Site
+              {t('admin.addFirstSite')}
             </Button>
           </Link>
         </Card>
@@ -364,15 +364,15 @@ export default function SitesPage() {
               <Building className="h-6 w-6 text-white" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-[#003842] text-lg mb-3">Add Your First Site</h3>
+              <h3 className="font-semibold text-[#003842] text-lg mb-3">{t('admin.addFirstSite')}</h3>
               <p className="text-[#003842]/80 mb-4">
-                Get started by adding your first business location. You'll be able to manage menus, track compliance, and monitor your kiosks.
+                {t('admin.addFirstSiteDesc')}
               </p>
               
               <Link href="/admin/sites/new">
                 <Button variant="primary">
                   <Plus className="h-4 w-4 mr-2" />
-                  Add First Site
+                  {t('admin.addFirstSite')}
                 </Button>
               </Link>
             </div>

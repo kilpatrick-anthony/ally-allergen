@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useNotification } from '@/lib/hooks/useNotification'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 import {
   ArrowLeft, Save, X, Plus, ScanLine, Trash2,
   Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck, FileText, CheckCircle
@@ -72,6 +73,7 @@ const PRESET_MENU_ICONS = [
 const isImageIcon = (icon?: string) => Boolean(icon && /^https?:\/\//.test(icon))
 
 export default function EditMenuItemPage() {
+  const { t } = useTranslation()
   const { showNotification } = useNotification()
   const router = useRouter()
   const params = useParams()
@@ -563,13 +565,13 @@ export default function EditMenuItemPage() {
             className="inline-flex items-center gap-2 text-[#42b8ac] hover:text-[#003842] dark:hover:text-[#42b8ac] font-medium mb-4"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Menu Builder
+            {t('admin.backToMenuBuilder')}
           </Link>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            Edit Menu Item
+            {t('admin.editMenuItem')}
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
-            Update the details for: <strong>{menuItem.name}</strong>
+            {t('admin.updateDetailsFor')}: <strong>{menuItem.name}</strong>
           </p>
         </div>
 
@@ -580,7 +582,7 @@ export default function EditMenuItemPage() {
             {/* Menu Item Name */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Menu Item Name *
+                {t('admin.menuItemName')} *
               </label>
               <input
                 type="text"
@@ -593,7 +595,7 @@ export default function EditMenuItemPage() {
             {/* Site Scope */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Site Scope
+                {t('admin.siteScope')}
               </label>
               <select
                 value={menuItem.site_id ?? 'global'}
@@ -603,7 +605,7 @@ export default function EditMenuItemPage() {
                 })}
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
-                <option value="global">Global (all sites)</option>
+                <option value="global">{t('admin.globalAllSites')}</option>
                 {sites.map((site) => (
                   <option key={site.id} value={site.id}>
                     {site.name}
@@ -615,10 +617,10 @@ export default function EditMenuItemPage() {
             {/* Status Toggle */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                Visibility Status
+                {t('admin.visibilityStatus')}
               </label>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                Active items appear on public reports and kiosk menus. Draft items are hidden.
+                {t('admin.visibilityStatusDesc')}
               </p>
               <div className="flex gap-3">
                 <button
@@ -629,7 +631,7 @@ export default function EditMenuItemPage() {
                       : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
-                  Active
+                  {t('admin.active')}
                 </button>
                 <button
                   onClick={() => setMenuItem({ ...menuItem, status: 'draft' })}
@@ -639,7 +641,7 @@ export default function EditMenuItemPage() {
                       : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
                   }`}
                 >
-                  Draft
+                  {t('admin.draft')}
                 </button>
               </div>
             </Card>
@@ -647,18 +649,18 @@ export default function EditMenuItemPage() {
             {/* Compliance Status */}
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-[#003842]">Compliance Status</h2>
+                <h2 className="text-xl font-semibold text-[#003842]">{t('admin.complianceStatus')}</h2>
                 <Button
                   onClick={handleMarkReviewed}
                   disabled={marking || loadingCompliance}
                   className="bg-emerald-500 text-white hover:bg-emerald-600 text-sm"
                 >
-                  {marking ? 'Marking...' : 'Mark as Reviewed'}
+                  {marking ? t('admin.marking') : t('admin.markAsReviewed')}
                 </Button>
               </div>
               
               {loadingCompliance ? (
-                <div className="text-gray-500 text-sm">Loading compliance status...</div>
+                <div className="text-gray-500 text-sm">{t('admin.loadingComplianceStatus')}</div>
               ) : compliance ? (
                 <div className="space-y-3">
                   <div
@@ -674,8 +676,8 @@ export default function EditMenuItemPage() {
                       color: compliance.status === 'compliant' ? '#16a34a' : 
                             compliance.status === 'warning' ? '#f59e0b' : '#dc2626'
                     }}>
-                      {compliance.status === 'compliant' ? '✓ Compliant' : 
-                       compliance.status === 'warning' ? '⚠ Review Due Soon' : '✕ Not Compliant'}
+                      {compliance.status === 'compliant' ? `✓ ${t('admin.compliant')}` : 
+                       compliance.status === 'warning' ? `⚠ ${t('admin.reviewDueSoon')}` : `✕ ${t('admin.notCompliant')}`}
                     </div>
                   </div>
                   
@@ -692,19 +694,19 @@ export default function EditMenuItemPage() {
                   
                   {compliance.lastReviewedAt && (
                     <div className="text-xs text-gray-500 pt-2 border-t">
-                      Last reviewed: {new Date(compliance.lastReviewedAt).toLocaleDateString()}
+                      {t('admin.lastSeenLabel')}: {new Date(compliance.lastReviewedAt).toLocaleDateString()}
                     </div>
                   )}
                 </div>
               ) : (
-                <div className="text-gray-500 text-sm">Unable to load compliance status</div>
+                <div className="text-gray-500 text-sm">{t('admin.unableLoadComplianceStatus')}</div>
               )}
             </Card>
 
             {/* Category */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Category
+                {t('admin.category')}
               </label>
               <input
                 type="text"
@@ -712,7 +714,7 @@ export default function EditMenuItemPage() {
                 value={menuItem.category}
                 onChange={(e) => setMenuItem({ ...menuItem, category: e.target.value })}
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                placeholder="e.g., Starters, Mains, Desserts"
+                placeholder={t('admin.categoryPlaceholder')}
               />
               <datalist id="menu-item-categories">
                 {categoryOptions.map(opt => (
@@ -724,7 +726,7 @@ export default function EditMenuItemPage() {
             {/* Description */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Description *
+                {t('admin.itemDescription')} *
               </label>
               <textarea
                 value={menuItem.description}
@@ -737,10 +739,10 @@ export default function EditMenuItemPage() {
             {/* Tile Colour */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Tile Colour <span className="text-gray-400 font-normal">(optional)</span>
+                {t('admin.tileColour')} <span className="text-gray-400 font-normal">({t('admin.optional')})</span>
               </label>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                Choose a background colour for this item's tile on the kiosk. Leave blank to use the default white tile.
+                {t('admin.tileColourDesc')}
               </p>
               <div className="flex items-center gap-4">
                 <input
@@ -753,7 +755,7 @@ export default function EditMenuItemPage() {
                   className="flex-1 h-10 rounded-lg border border-gray-200 flex items-center px-3 text-sm font-medium transition-colors"
                   style={{ backgroundColor: menuItem.color || '#ffffff', color: menuItem.color ? '#fff' : '#374151', border: menuItem.color ? 'none' : undefined }}
                 >
-                  {menuItem.color ? menuItem.color : 'No colour selected (default white)'}
+                  {menuItem.color ? menuItem.color : t('admin.noColorSelected')}
                 </div>
                 {menuItem.color && (
                   <button
@@ -761,7 +763,7 @@ export default function EditMenuItemPage() {
                     onClick={() => setMenuItem({ ...menuItem, color: '' })}
                     className="text-xs text-gray-500 hover:text-red-600 underline whitespace-nowrap"
                   >
-                    Clear
+                    {t('admin.clear')}
                   </button>
                 )}
               </div>
@@ -770,7 +772,7 @@ export default function EditMenuItemPage() {
             {/* Menu Item Icon/Image */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                Icon or Picture <span className="text-gray-400 font-normal">(optional)</span>
+                Icon or Picture <span className="text-gray-400 font-normal">({t('admin.optional')})</span>
               </label>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
                 Add an icon or picture to this menu item. Choose from preset icons or upload a custom image. This will be displayed on the kiosk menu.
@@ -778,7 +780,7 @@ export default function EditMenuItemPage() {
               
               {/* Upload Custom Image */}
               <div className="mb-5 pb-5 border-b border-gray-200 dark:border-gray-600">
-                <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Upload Custom Image</p>
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{t('admin.uploadCustomImage')}</p>
                 <input
                   type="file"
                   accept="image/*"
@@ -790,7 +792,7 @@ export default function EditMenuItemPage() {
                   className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#42b8ac] file:text-white hover:file:bg-[#3aa89e]"
                 />
                 {uploadingIcon && (
-                  <p className="mt-2 text-xs text-[#0f766e] font-medium">Uploading image...</p>
+                  <p className="mt-2 text-xs text-[#0f766e] font-medium">{t('admin.uploadingImage')}</p>
                 )}
               </div>
 
@@ -805,8 +807,8 @@ export default function EditMenuItemPage() {
                       )}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[#003842]">Selected icon</p>
-                      <p className="truncate text-xs text-gray-500">{isImageIcon(menuItem.icon) ? 'Custom uploaded image' : 'Preset icon'}</p>
+                      <p className="text-sm font-semibold text-[#003842]">{t('admin.selectedIcon')}</p>
+                      <p className="truncate text-xs text-gray-500">{isImageIcon(menuItem.icon) ? t('admin.customUploadedImage') : t('admin.presetIcon')}</p>
                     </div>
                   </div>
                   <button
@@ -814,13 +816,13 @@ export default function EditMenuItemPage() {
                     onClick={() => setMenuItem({ ...menuItem, icon: '' })}
                     className="text-xs text-gray-500 hover:text-red-600 underline whitespace-nowrap"
                   >
-                    Clear
+                    {t('admin.clear')}
                   </button>
                 </div>
               )}
 
               {/* Preset Icons */}
-              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-3">Or choose from preset icons:</p>
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-3">{t('admin.choosePresetIcons')}</p>
               <div className="grid grid-cols-4 gap-3">
                 {PRESET_MENU_ICONS.map(preset => (
                   <button
@@ -844,17 +846,17 @@ export default function EditMenuItemPage() {
             <Card className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Selected Ingredients
+                  {t('admin.selectedIngredients')}
                 </label>
                 <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {menuItem.ingredients.length} selected
+                  {menuItem.ingredients.length} {t('admin.selected')}
                 </span>
               </div>
 
               <div className="min-h-[100px] border border-gray-300 dark:border-gray-600 rounded-lg p-4 mb-4 bg-gray-50 dark:bg-gray-800">
                 {menuItem.ingredients.length === 0 ? (
                   <div className="text-center text-gray-500 dark:text-gray-400 py-4">
-                    No ingredients selected
+                    {t('admin.noIngredientsSelected')}
                   </div>
                 ) : (
                   <div className="flex flex-wrap gap-2">
@@ -886,14 +888,14 @@ export default function EditMenuItemPage() {
                 icon={<Plus className="h-4 w-4" />}
                 fullWidth
               >
-                {menuItem.ingredients.length === 0 ? 'Add Ingredients' : 'Add More Ingredients'}
+                {menuItem.ingredients.length === 0 ? t('admin.addIngredients') : t('admin.addMoreIngredients')}
               </Button>
             </Card>
 
             {/* Dietary Attributes */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-                Dietary Attributes & Certifications
+                {t('admin.dietaryAttributesCertifications')}
               </label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
                 {dietaryOptions.map(dietary => {
@@ -960,7 +962,7 @@ export default function EditMenuItemPage() {
                 onClick={() => setShowCustomDietaryInput(!showCustomDietaryInput)}
                 className="w-full text-left px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                + Add Custom Attribute
+                + {t('admin.addCustomAttribute')}
               </button>
 
               {showCustomDietaryInput && (
@@ -970,7 +972,7 @@ export default function EditMenuItemPage() {
                     value={customDietaryInput}
                     onChange={(e) => setCustomDietaryInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && addCustomDietary()}
-                    placeholder="Enter custom attribute"
+                    placeholder={t('admin.enterCustomAttribute')}
                     className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                   />
                   <Button
@@ -978,14 +980,14 @@ export default function EditMenuItemPage() {
                     onClick={addCustomDietary}
                     disabled={!customDietaryInput.trim()}
                   >
-                    Add
+                    {t('admin.add')}
                   </Button>
                 </div>
               )}
 
               {menuItem.dietary.filter(d => isCustomDietary(d)).length > 0 && (
                 <div className="mt-4">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Custom Attributes:</p>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('admin.customAttributes')}</p>
                   <div className="flex flex-wrap gap-2">
                     {menuItem.dietary.filter(d => isCustomDietary(d)).map(dietary => (
                       <span
@@ -1010,10 +1012,10 @@ export default function EditMenuItemPage() {
             {/* Allergen Information */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Allergen Information
+                {t('admin.allergenInformation')}
               </label>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                Set allergen levels for this menu item. If you select ingredients above, levels are calculated automatically and can be adjusted here.
+                {t('admin.allergenInformationDescMenuItem')}
               </p>
               <AllergenWarningSelector
                 value={menuItem.allergen_warnings}
@@ -1024,10 +1026,10 @@ export default function EditMenuItemPage() {
             {/* Datasheets */}
             <Card className="p-6">
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                Menu Item Specific Datasheets
+                {t('admin.menuItemSpecificDatasheets')}
               </h3>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                Upload datasheets specific to this menu item. Note: ingredient-specific datasheets will appear here automatically once the menu item is saved.
+                {t('admin.menuItemDatasheetsDesc')}
               </p>
               <DatasheetUploader
                 entityType="menu_item"
@@ -1072,7 +1074,7 @@ export default function EditMenuItemPage() {
                 size="lg"
                 disabled={saving || !menuItem.name || !menuItem.description}
               >
-                {saving ? 'Saving...' : 'Save Menu Item'}
+                {saving ? t('admin.savingMenuItem') : t('admin.saveMenuItem')}
               </Button>
               <Link href="/admin/menu-builder">
                 <Button
@@ -1081,7 +1083,7 @@ export default function EditMenuItemPage() {
                   size="lg"
                   className="mt-3"
                 >
-                  Cancel
+                  {t('admin.cancel')}
                 </Button>
               </Link>
               <button
@@ -1091,7 +1093,7 @@ export default function EditMenuItemPage() {
                 className="w-full mt-3 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-red-300 text-red-600 text-sm font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors"
               >
                 <Trash2 className="h-4 w-4" />
-                {deleting ? 'Deleting...' : 'Delete Menu Item'}
+                {deleting ? t('admin.deletingMenuItem') : t('admin.delete') + ' ' + t('admin.menuItemsStat')}
               </button>
             </Card>
 
@@ -1100,7 +1102,7 @@ export default function EditMenuItemPage() {
               <ReviewFrequencySelector 
                 value={menuItem?.preferred_review_months || 3}
                 onChange={(months) => setMenuItem(prev => prev ? { ...prev, preferred_review_months: months } : prev)}
-                label="Review Frequency"
+                label={t('admin.reviewFrequency')}
               />
             </Card>
 
@@ -1110,7 +1112,7 @@ export default function EditMenuItemPage() {
                 <div className="p-2 bg-emerald-600 rounded-lg">
                   <CheckCircle className="h-5 w-5 text-white" />
                 </div>
-                <h3 className="font-semibold text-emerald-900 dark:text-emerald-200">Allergen Summary</h3>
+                <h3 className="font-semibold text-emerald-900 dark:text-emerald-200">{t('admin.allergenSummary')}</h3>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
                 <AllergenWarningDisplay
@@ -1131,8 +1133,8 @@ export default function EditMenuItemPage() {
             <div className="p-6 border-b dark:border-gray-700">
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">Select Ingredients</h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Choose ingredients for your menu item</p>
+                  <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">{t('admin.selectIngredientsTitle')}</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.chooseIngredientsForMenuItem')}</p>
                 </div>
                 <button
                   onClick={() => setShowIngredientSelector(false)}
@@ -1149,7 +1151,7 @@ export default function EditMenuItemPage() {
                   type="text"
                   value={ingredientSearch}
                   onChange={(e) => setIngredientSearch(e.target.value)}
-                  placeholder="Search ingredients..."
+                  placeholder={t('admin.searchIngredients')}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>

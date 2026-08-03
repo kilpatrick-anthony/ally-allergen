@@ -90,17 +90,17 @@ export default function DownloadsPage() {
 
   const handleGenerateBusinessGuide = async () => {
     if (!dataLoaded) {
-      setGuideError('Loading business data, please wait...')
+      setGuideError(t('admin.loadingBusinessData'))
       return
     }
 
     if (!business) {
-      setGuideError('No business found. Please contact support if this persists.')
+      setGuideError(t('admin.noBusinessFoundSupport'))
       return
     }
 
     if (menuItems.length === 0 && ingredients.length === 0) {
-      setGuideError('No active menu items or ingredients found for this business.')
+      setGuideError(t('admin.noActiveItemsBusiness'))
       return
     }
 
@@ -120,7 +120,7 @@ export default function DownloadsPage() {
       const result = await response.json()
 
       if (!response.ok || !result.allowed) {
-        throw new Error(result.error || 'PDF download limit reached.')
+        throw new Error(result.error || t('admin.pdfDownloadLimitReached'))
       }
 
       // Combine menu items and ingredients with type indicators
@@ -135,7 +135,7 @@ export default function DownloadsPage() {
         await generateAllergenTablePDF({
           business,
           items: combinedItems,
-          title: 'Complete Allergen Guide',
+          title: t('admin.completeAllergenGuide'),
           showLegend: true
         })
       } catch (pdfError: any) {
@@ -143,7 +143,7 @@ export default function DownloadsPage() {
         throw new Error(`PDF generation failed: ${pdfError.message}`)
       }
     } catch (err: any) {
-      setGuideError(err?.message || 'Failed to generate allergen guide.')
+      setGuideError(err?.message || t('admin.failedGenerateAllergenGuide'))
     } finally {
       setGuideLoading(false)
     }
@@ -151,17 +151,17 @@ export default function DownloadsPage() {
 
   const handleGenerateSiteGuide = async () => {
     if (!dataLoaded) {
-      setGuideError('Loading business data, please wait...')
+      setGuideError(t('admin.loadingBusinessData'))
       return
     }
 
     if (!business) {
-      setGuideError('No business found. Please contact support if this persists.')
+      setGuideError(t('admin.noBusinessFoundSupport'))
       return
     }
 
     if (!selectedSiteId) {
-      setGuideError('Select a site to generate a site guide.')
+      setGuideError(t('admin.selectSiteGenerateGuide'))
       return
     }
 
@@ -171,7 +171,7 @@ export default function DownloadsPage() {
     )
 
     if (siteItems.length === 0 && ingredients.length === 0) {
-      setGuideError('No active menu items or ingredients found for this site.')
+      setGuideError(t('admin.noActiveItemsSite'))
       return
     }
 
@@ -191,7 +191,7 @@ export default function DownloadsPage() {
       const result = await response.json()
 
       if (!response.ok || !result.allowed) {
-        throw new Error(result.error || 'PDF download limit reached.')
+        throw new Error(result.error || t('admin.pdfDownloadLimitReached'))
       }
 
       // Combine site menu items and all ingredients with type indicators
@@ -203,13 +203,13 @@ export default function DownloadsPage() {
       await generateAllergenTablePDF({
         business,
         items: combinedItems,
-        title: `${site?.name || 'Site'} Complete Allergen Guide`,
+        title: `${site?.name || t('admin.sites')} ${t('admin.completeAllergenGuide')}`,
         showLegend: true
       })
 
       setSiteGuideOpen(false)
     } catch (err: any) {
-      setGuideError(err?.message || 'Failed to generate site allergen guide.')
+      setGuideError(err?.message || t('admin.failedGenerateSiteGuide'))
     } finally {
       setSiteGuideLoading(false)
     }
@@ -217,17 +217,17 @@ export default function DownloadsPage() {
 
   const handleGenerateIngredientsReport = async () => {
     if (!dataLoaded) {
-      setGuideError('Loading business data, please wait...')
+      setGuideError(t('admin.loadingBusinessData'))
       return
     }
 
     if (!business) {
-      setGuideError('No business found. Please contact support if this persists.')
+      setGuideError(t('admin.noBusinessFoundSupport'))
       return
     }
 
     if (ingredients.length === 0) {
-      setGuideError('No ingredients found for this business.')
+      setGuideError(t('admin.noIngredientsBusiness'))
       return
     }
 
@@ -247,7 +247,7 @@ export default function DownloadsPage() {
       const result = await response.json()
 
       if (!response.ok || !result.allowed) {
-        throw new Error(result.error || 'PDF download limit reached.')
+        throw new Error(result.error || t('admin.pdfDownloadLimitReached'))
       }
 
       // Generate ingredients report PDF
@@ -257,7 +257,7 @@ export default function DownloadsPage() {
       })
 
     } catch (err: any) {
-      setGuideError(err?.message || 'Failed to generate ingredients report.')
+      setGuideError(err?.message || t('admin.failedGenerateIngredientsReport'))
     } finally {
       setIngredientsReportLoading(false)
     }
@@ -265,17 +265,17 @@ export default function DownloadsPage() {
 
   const handleGenerateMenuItemsReport = async () => {
     if (!dataLoaded) {
-      setGuideError('Loading business data, please wait...')
+      setGuideError(t('admin.loadingBusinessData'))
       return
     }
 
     if (!business) {
-      setGuideError('No business found. Please contact support if this persists.')
+      setGuideError(t('admin.noBusinessFoundSupport'))
       return
     }
 
     if (menuItems.length === 0) {
-      setGuideError('No menu items found for this business.')
+      setGuideError(t('admin.noMenuItemsBusiness'))
       return
     }
 
@@ -295,7 +295,7 @@ export default function DownloadsPage() {
       const result = await response.json()
 
       if (!response.ok || !result.allowed) {
-        throw new Error(result.error || 'PDF download limit reached.')
+        throw new Error(result.error || t('admin.pdfDownloadLimitReached'))
       }
 
       // Generate menu items report PDF
@@ -305,7 +305,7 @@ export default function DownloadsPage() {
       })
 
     } catch (err: any) {
-      setGuideError(err?.message || 'Failed to generate menu items report.')
+      setGuideError(err?.message || t('admin.failedGenerateMenuItemsReport'))
     } finally {
       setMenuItemsReportLoading(false)
     }
@@ -313,17 +313,17 @@ export default function DownloadsPage() {
 
   const handleGenerateSuppliersReport = async () => {
     if (!dataLoaded) {
-      setGuideError('Loading business data, please wait...')
+      setGuideError(t('admin.loadingBusinessData'))
       return
     }
 
     if (!business) {
-      setGuideError('No business found. Please contact support if this persists.')
+      setGuideError(t('admin.noBusinessFoundSupport'))
       return
     }
 
     if (suppliers.length === 0) {
-      setGuideError('No suppliers found for this business.')
+      setGuideError(t('admin.noSuppliersBusiness'))
       return
     }
 
@@ -343,7 +343,7 @@ export default function DownloadsPage() {
       const result = await response.json()
 
       if (!response.ok || !result.allowed) {
-        throw new Error(result.error || 'PDF download limit reached.')
+        throw new Error(result.error || t('admin.pdfDownloadLimitReached'))
       }
 
       // Generate suppliers report PDF
@@ -353,7 +353,7 @@ export default function DownloadsPage() {
       })
 
     } catch (err: any) {
-      setGuideError(err?.message || 'Failed to generate suppliers report.')
+      setGuideError(err?.message || t('admin.failedGenerateSuppliersReport'))
     } finally {
       setSuppliersReportLoading(false)
     }
@@ -361,17 +361,17 @@ export default function DownloadsPage() {
 
   const handleGenerateComplianceReport = async () => {
     if (!dataLoaded) {
-      setGuideError('Loading business data, please wait...')
+      setGuideError(t('admin.loadingBusinessData'))
       return
     }
 
     if (!business) {
-      setGuideError('No business found. Please contact support if this persists.')
+      setGuideError(t('admin.noBusinessFoundSupport'))
       return
     }
 
     if (ingredients.length === 0) {
-      setGuideError('No ingredients found for compliance check.')
+      setGuideError(t('admin.noIngredientsCompliance'))
       return
     }
 
@@ -391,7 +391,7 @@ export default function DownloadsPage() {
       const result = await response.json()
 
       if (!response.ok || !result.allowed) {
-        throw new Error(result.error || 'PDF download limit reached.')
+        throw new Error(result.error || t('admin.pdfDownloadLimitReached'))
       }
 
       // Generate compliance report PDF
@@ -401,7 +401,7 @@ export default function DownloadsPage() {
       })
 
     } catch (err: any) {
-      setGuideError(err?.message || 'Failed to generate compliance report.')
+      setGuideError(err?.message || t('admin.failedGenerateComplianceReport'))
     } finally {
       setComplianceReportLoading(false)
     }
@@ -409,12 +409,12 @@ export default function DownloadsPage() {
 
   const handleGenerateSiteOverviewReport = async () => {
     if (!dataLoaded) {
-      setGuideError('Loading business data, please wait...')
+      setGuideError(t('admin.loadingBusinessData'))
       return
     }
 
     if (!business) {
-      setGuideError('No business found. Please contact support if this persists.')
+      setGuideError(t('admin.noBusinessFoundSupport'))
       return
     }
 
@@ -434,7 +434,7 @@ export default function DownloadsPage() {
       const result = await response.json()
 
       if (!response.ok || !result.allowed) {
-        throw new Error(result.error || 'PDF download limit reached.')
+        throw new Error(result.error || t('admin.pdfDownloadLimitReached'))
       }
 
       // Generate site overview report PDF
@@ -446,7 +446,7 @@ export default function DownloadsPage() {
       })
 
     } catch (err: any) {
-      setGuideError(err?.message || 'Failed to generate site overview report.')
+      setGuideError(err?.message || t('admin.failedGenerateSiteOverviewReport'))
     } finally {
       setSiteOverviewReportLoading(false)
     }
@@ -501,7 +501,7 @@ export default function DownloadsPage() {
         <Card className="hover:shadow-lg transition-all hover:border-[#42b8ac] hover:bg-gradient-to-br hover:from-[#42b8ac] hover:to-[#36948a] group cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Business Sites</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.businessSites')}</p>
               <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">{stats.sites}</p>
             </div>
             <div className="p-3 bg-gradient-to-br from-[#42b8ac] to-[#36948a] rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-[#42b8ac] transition-all">
@@ -509,14 +509,14 @@ export default function DownloadsPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">Locations configured</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.locationsConfigured')}</div>
           </div>
         </Card>
 
         <Card className="hover:shadow-lg transition-all hover:border-emerald-500 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-emerald-600 group cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Menu Items</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.menuItemsStat')}</p>
               <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">{stats.menuItems}</p>
             </div>
             <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-emerald-600 transition-all">
@@ -524,14 +524,14 @@ export default function DownloadsPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">Active menu items</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.activeMenuItemsLabel')}</div>
           </div>
         </Card>
 
         <Card className="hover:shadow-lg transition-all hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-500 hover:to-blue-600 group cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Ingredients</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.ingredients')}</p>
               <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">{stats.ingredients}</p>
             </div>
             <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-blue-600 transition-all">
@@ -539,14 +539,14 @@ export default function DownloadsPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">Ingredients tracked</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.ingredientsTracked')}</div>
           </div>
         </Card>
 
         <Card className="hover:shadow-lg transition-all hover:border-purple-500 hover:bg-gradient-to-br hover:from-purple-500 hover:to-purple-600 group cursor-pointer">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Suppliers</p>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.suppliers')}</p>
               <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">{stats.suppliers}</p>
             </div>
             <div className="p-3 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-purple-600 transition-all">
@@ -554,7 +554,7 @@ export default function DownloadsPage() {
             </div>
           </div>
           <div className="mt-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">Active suppliers</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.activeSuppliers')}</div>
           </div>
         </Card>
       </div>
@@ -590,7 +590,7 @@ export default function DownloadsPage() {
                   <Building className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   {t('admin.businessWideGuide')}
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Complete allergen guide for all menu items and ingredients across your entire business</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.businessWideGuideDesc')}</p>
                 <Button
                   variant="primary"
                   icon={<FileText className="h-4 w-4" />}
@@ -609,7 +609,7 @@ export default function DownloadsPage() {
                   <MapPin className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                   {t('admin.siteSpecificGuide')}
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Customised allergen guide for a specific location, including global items plus site-specific menu items</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.siteSpecificGuideDesc')}</p>
                 <div className="flex gap-2">
                   <select
                     value={selectedSiteId}
@@ -630,7 +630,7 @@ export default function DownloadsPage() {
                     onClick={handleGenerateSiteGuide}
                     disabled={siteGuideLoading || !selectedSiteId}
                   >
-                    {siteGuideLoading ? 'Generating...' : 'Generate'}
+                    {siteGuideLoading ? t('admin.generating') : t('admin.generate')}
                   </Button>
                 </div>
               </div>
@@ -646,8 +646,8 @@ export default function DownloadsPage() {
                 <BarChart3 className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Business Reports</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Detailed reports for inventory management and compliance</p>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('admin.businessReports')}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.businessReportsDesc')}</p>
               </div>
             </div>
           </div>
@@ -657,9 +657,9 @@ export default function DownloadsPage() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Package className="h-5 w-5 text-blue-500" />
-                    <h3 className="font-medium text-gray-900 dark:text-white">Ingredients Inventory</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-white">{t('admin.ingredientsInventory')}</h3>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Complete list of all ingredients with allergen information and supplier details</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.ingredientsInventoryDesc')}</p>
                 </div>
                 <Button
                   variant="secondary"
@@ -669,7 +669,7 @@ export default function DownloadsPage() {
                   onClick={handleGenerateIngredientsReport}
                   disabled={ingredientsReportLoading}
                 >
-                  {ingredientsReportLoading ? 'Generating...' : 'Generate Report'}
+                  {ingredientsReportLoading ? t('admin.generating') : t('admin.generateReport')}
                 </Button>
               </div>
 
@@ -677,9 +677,9 @@ export default function DownloadsPage() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <ChefHat className="h-5 w-5 text-orange-500" />
-                    <h3 className="font-medium text-gray-900 dark:text-white">Menu Items Catalog</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-white">{t('admin.menuItemsCatalog')}</h3>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Comprehensive catalog of all menu items with ingredients and allergen details</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.menuItemsCatalogDesc')}</p>
                 </div>
                 <Button
                   variant="secondary"
@@ -689,7 +689,7 @@ export default function DownloadsPage() {
                   onClick={handleGenerateMenuItemsReport}
                   disabled={menuItemsReportLoading}
                 >
-                  {menuItemsReportLoading ? 'Generating...' : 'Generate Report'}
+                  {menuItemsReportLoading ? t('admin.generating') : t('admin.generateReport')}
                 </Button>
               </div>
 
@@ -697,9 +697,9 @@ export default function DownloadsPage() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Users className="h-5 w-5 text-green-500" />
-                    <h3 className="font-medium text-gray-900 dark:text-white">Suppliers Directory</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-white">{t('admin.suppliersDirectory')}</h3>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Contact information and details for all ingredient suppliers</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.suppliersDirectoryDesc')}</p>
                 </div>
                 <Button
                   variant="secondary"
@@ -709,7 +709,7 @@ export default function DownloadsPage() {
                   onClick={handleGenerateSuppliersReport}
                   disabled={suppliersReportLoading}
                 >
-                  {suppliersReportLoading ? 'Generating...' : 'Generate Report'}
+                  {suppliersReportLoading ? t('admin.generating') : t('admin.generateReport')}
                 </Button>
               </div>
             </div>
@@ -724,8 +724,8 @@ export default function DownloadsPage() {
                 <Shield className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Compliance & Analytics</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Regulatory compliance reports and business insights</p>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('admin.complianceAnalytics')}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.complianceAnalyticsDesc')}</p>
               </div>
             </div>
           </div>
@@ -735,9 +735,9 @@ export default function DownloadsPage() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Shield className="h-5 w-5 text-purple-500" />
-                    <h3 className="font-medium text-gray-900 dark:text-white">Compliance Report</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-white">{t('admin.complianceReportTitle')}</h3>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Regulatory compliance check for all ingredients and allergen declarations</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.complianceReportDesc')}</p>
                 </div>
                 <Button
                   variant="secondary"
@@ -747,7 +747,7 @@ export default function DownloadsPage() {
                   onClick={handleGenerateComplianceReport}
                   disabled={complianceReportLoading}
                 >
-                  {complianceReportLoading ? 'Generating...' : 'Generate Report'}
+                  {complianceReportLoading ? t('admin.generating') : t('admin.generateReport')}
                 </Button>
               </div>
 
@@ -755,9 +755,9 @@ export default function DownloadsPage() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Building className="h-5 w-5 text-indigo-500" />
-                    <h3 className="font-medium text-gray-900 dark:text-white">Site Overview</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-white">{t('admin.siteOverview')}</h3>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Business overview with site locations, menu items, and ingredient counts</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.siteOverviewDesc')}</p>
                 </div>
                 <Button
                   variant="secondary"

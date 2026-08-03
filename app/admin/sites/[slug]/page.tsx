@@ -9,8 +9,10 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay';
 import Link from 'next/link';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 export default function SiteKioskPage() {
+  const { t } = useTranslation();
   const params = useParams();
   const searchParams = useSearchParams();
   const slug = params.slug as string;
@@ -132,7 +134,7 @@ export default function SiteKioskPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
             <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
           </div>
-          <p className="text-gray-600 dark:text-gray-400 font-medium">Loading site...</p>
+          <p className="text-gray-600 dark:text-gray-400 font-medium">{t('admin.loadingSite')}</p>
         </div>
       </div>
     );
@@ -143,13 +145,13 @@ export default function SiteKioskPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Building className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Site Not Found</h1>
-          <p className="text-gray-600 mb-6">{error || 'The requested site could not be found.'}</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">{t('admin.siteNotFound')}</h1>
+          <p className="text-gray-600 mb-6">{error || t('admin.requestedSiteNotFound')}</p>
           <a 
             href="/admin/sites" 
             className="inline-block px-6 py-3 bg-[#003842] text-white rounded-lg hover:bg-[#003842]/90"
           >
-            Return to Sites
+            {t('admin.returnToSites')}
           </a>
         </div>
       </div>
@@ -176,7 +178,7 @@ export default function SiteKioskPage() {
             
             <Link href={`/admin/sites/${slug}/edit`} className="self-start sm:self-auto flex-shrink-0">
               <Button variant="primary" icon={<Edit className="h-4 w-4" />}>
-                Edit Site
+                {t('admin.edit')} {t('admin.sites').slice(0, -1)}
               </Button>
             </Link>
           </div>
@@ -184,9 +186,9 @@ export default function SiteKioskPage() {
           {/* Location + Map Preview */}
           {(site.address || site.city || site.country || site.eircode) && (
             <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200 mb-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Location</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('admin.location')}</h3>
               <p className="text-sm text-gray-600 mb-4">
-                {site.address || 'Address not set'}
+                {site.address || t('admin.addressNotSet')}
                 {site.city ? `, ${site.city}` : ''}
                 {site.country ? `, ${site.country}` : ''}
               </p>
@@ -267,7 +269,7 @@ export default function SiteKioskPage() {
                 }`}
               >
                 <Tablet className="h-4 w-4" />
-                Devices & Kiosks
+                {t('admin.devicesKiosks')}
               </button>
               <button
                 onClick={() => setActiveTab('menu')}
@@ -277,7 +279,7 @@ export default function SiteKioskPage() {
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                Menu Items
+                {t('admin.menuItemsStat')}
               </button>
             </nav>
           </div>
@@ -294,9 +296,9 @@ export default function SiteKioskPage() {
             <div>
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Menu Items</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">{t('admin.menuItemsStat')}</h3>
                   <p className="text-sm text-gray-600">
-                    Global items plus site-specific items for {site.name}
+                    {t('admin.globalItemsPlusSite')} {site.name}
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -306,7 +308,7 @@ export default function SiteKioskPage() {
                       type="text"
                       value={menuSearch}
                       onChange={(e) => setMenuSearch(e.target.value)}
-                      placeholder="Search menu items..."
+                      placeholder={t('admin.searchMenuItems')}
                       className="pl-9 pr-3 py-2 w-full sm:w-56 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                     />
                   </div>
@@ -315,13 +317,13 @@ export default function SiteKioskPage() {
                     onChange={(e) => setMenuScope(e.target.value as typeof menuScope)}
                     className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                   >
-                    <option value="all">Filter</option>
-                    <option value="global">Global only</option>
-                    <option value="site">{site.name} only</option>
+                    <option value="all">{t('admin.filter')}</option>
+                    <option value="global">{t('admin.globalOnly')}</option>
+                    <option value="site">{site.name} {t('admin.siteOnly').toLowerCase()}</option>
                   </select>
                   <Link href={`/admin/menu-builder?site_id=${site.id}`}>
                     <Button variant="primary" icon={<Edit className="h-4 w-4" />}>
-                      Open Menu Builder
+                      {t('admin.openMenuBuilder')}
                     </Button>
                   </Link>
                 </div>
@@ -330,7 +332,7 @@ export default function SiteKioskPage() {
               {menuLoading ? (
                 <div className="flex items-center gap-3 text-gray-600">
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  Loading menu items...
+                  {t('admin.loadingMenuItems')}
                 </div>
               ) : menuError ? (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
@@ -341,9 +343,9 @@ export default function SiteKioskPage() {
                   <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
                     <ChefHat className="h-6 w-6 text-gray-400" />
                   </div>
-                  <h4 className="text-base font-semibold text-gray-900">No menu items yet</h4>
+                  <h4 className="text-base font-semibold text-gray-900">{t('admin.noMenuItemsYet')}</h4>
                   <p className="text-sm text-gray-500">
-                    Add a global item or a site-specific item for {site.name}.
+                    {t('admin.addGlobalOrSiteItem')} {site.name}.
                   </p>
                 </div>
               ) : (
@@ -357,12 +359,12 @@ export default function SiteKioskPage() {
                         <div>
                           <h4 className="font-semibold text-gray-900">{item.name}</h4>
                           <div className="flex flex-wrap items-center gap-2 mt-2">
-                            <Badge variant="default">{item.category || 'Uncategorized'}</Badge>
+                            <Badge variant="default">{item.category || t('admin.uncategorized')}</Badge>
                             <Badge variant={item.site_id ? 'primary' : 'default'}>
-                              {item.site_id ? site.name : 'Global'}
+                              {item.site_id ? site.name : t('admin.globalLabel')}
                             </Badge>
                             <Badge variant={item.is_active ? 'success' : 'warning'}>
-                              {item.is_active ? 'active' : 'draft'}
+                              {item.is_active ? t('admin.active') : t('admin.draft')}
                             </Badge>
                           </div>
                         </div>
@@ -380,7 +382,7 @@ export default function SiteKioskPage() {
                       </div>
 
                       <p className="text-sm text-gray-600 mb-4">
-                        {item.description || 'No description provided.'}
+                        {item.description || t('admin.noDescriptionProvided')}
                       </p>
 
                       <div className="mb-3">
@@ -392,7 +394,7 @@ export default function SiteKioskPage() {
                       </div>
 
                       <div className="text-xs text-gray-500">
-                        {(item.ingredients || []).length} ingredient{(item.ingredients || []).length !== 1 ? 's' : ''}
+                        {(item.ingredients || []).length} {t('admin.ingredientCountLabel')}
                       </div>
                     </div>
                   ))}
