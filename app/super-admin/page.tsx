@@ -150,7 +150,7 @@ export default function SuperAdminDashboard() {
         businessName: data.businessName,
         ownerEmail: data.ownerEmail,
       })
-      const seedSummary = `${data.menuItemsSeeded ?? 0} menu items, ${data.ingredientsSeeded ?? 0} ingredients, ${data.suppliersSeeded ?? 0} suppliers, and ${data.ingredientLinksSeeded ?? 0} ingredient links`
+      const seedSummary = `${data.menuItemsSeeded ?? 0} menu items, ${data.ingredientsSeeded ?? 0} ingredients, ${data.suppliersSeeded ?? 0} suppliers, ${data.ingredientLinksSeeded ?? 0} ingredient links, ${data.analyticsEventsSeeded ?? 0} analytics events, and ${data.pdfDownloadEventsSeeded ?? 0} PDF download events`
       const emailSummary = data.passwordSetupEmailSent
         ? `Password setup email sent to ${data.ownerEmail}.`
         : `Password setup email was not sent automatically. Use Reset Password for ${data.ownerEmail}.`

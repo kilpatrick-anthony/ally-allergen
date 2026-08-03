@@ -221,6 +221,13 @@ const buildWarnings = (partial?: Record<string, string | undefined>) => ({
   ...Object.fromEntries(Object.entries(partial || {}).filter(([, value]) => typeof value === 'string')),
 })
 
+const createTimestampDaysAgo = (daysAgo: number, minuteOffset = 0) => {
+  const timestamp = new Date()
+  timestamp.setDate(timestamp.getDate() - daysAgo)
+  timestamp.setHours(12, 0 + minuteOffset, 0, 0)
+  return timestamp.toISOString()
+}
+
 export async function POST(request: NextRequest) {
   try {
     const admin = await getAuthenticatedSuperAdmin()
@@ -502,7 +509,178 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 10. Send password setup email
+    // 10. Seed analytics demo data for admin analytics dashboards
+    let analyticsEventsSeeded = 0
+    let pdfDownloadEventsSeeded = 0
+
+    const currentSearchQueries = [
+      'gluten free',
+      'milk',
+      'peanuts',
+      'vegan',
+      'sesame',
+      'dairy free',
+      'eggs',
+      'fish',
+      'mustard',
+      'celery',
+    ]
+
+    const previousSearchQueries = [
+      'gluten',
+      'milk',
+      'fish',
+      'vegan',
+      'soy',
+      'nuts',
+    ]
+
+    const currentDietaryFilters = ['vegan', 'vegetarian', 'gluten-free', 'dairy-free']
+    const currentAllergenFilters = ['contains_peanuts', 'contains_milk', 'contains_eggs', 'contains_sesame']
+
+    const analyticsRows: Array<{
+      business_id: string
+      site_id: string | null
+      slug: string
+      event_type: string
+      search_query: string | null
+      selected_allergens: string[]
+      download_type: string | null
+      scan_source: string | null
+      time_on_page: number | null
+      created_at: string
+    }> = []
+
+    // Populate last 7 days with stronger activity to give positive trend deltas.
+    for (let day = 0; day <= 6; day += 1) {
+      analyticsRows.push({
+        business_id: business.id,
+        site_id: site?.id || null,
+        slug,
+        event_type: 'page_view',
+        search_query: null,
+        selected_allergens: [],
+        download_type: null,
+        scan_source: null,
+        time_on_page: 35 + day,
+        created_at: createTimestampDaysAgo(day, 1),
+      })
+
+      const searchCount = 3 + (day % 2)
+      for (let i = 0; i < searchCount; i += 1) {
+        analyticsRows.push({
+          business_id: business.id,
+          site_id: site?.id || null,
+          slug,
+          event_type: 'search',
+          search_query: currentSearchQueries[(day + i) % currentSearchQueries.length],
+          selected_allergens: [],
+          download_type: null,
+          scan_source: null,
+          time_on_page: null,
+          created_at: createTimestampDaysAgo(day, 8 + i),
+        })
+      }
+
+      analyticsRows.push({
+        business_id: business.id,
+        site_id: site?.id || null,
+        slug,
+        event_type: 'filter',
+        search_query: `dietary:${currentDietaryFilters[day % currentDietaryFilters.length]}`,
+        selected_allergens: [currentAllergenFilters[day % currentAllergenFilters.length]],
+        download_type: null,
+        scan_source: null,
+        time_on_page: null,
+        created_at: createTimestampDaysAgo(day, 20),
+      })
+    }
+
+    // Populate previous 7-day period with lighter activity for meaningful % changes.
+    for (let day = 8; day <= 14; day += 1) {
+      analyticsRows.push({
+        business_id: business.id,
+        site_id: site?.id || null,
+        slug,
+        event_type: 'page_view',
+        search_query: null,
+        selected_allergens: [],
+        download_type: null,
+        scan_source: null,
+        time_on_page: 22 + day,
+        created_at: createTimestampDaysAgo(day, 2),
+      })
+
+      const searchCount = 1 + (day % 2)
+      for (let i = 0; i < searchCount; i += 1) {
+        analyticsRows.push({
+          business_id: business.id,
+          site_id: site?.id || null,
+          slug,
+          event_type: 'search',
+          search_query: previousSearchQueries[(day + i) % previousSearchQueries.length],
+          selected_allergens: [],
+          download_type: null,
+          scan_source: null,
+          time_on_page: null,
+          created_at: createTimestampDaysAgo(day, 9 + i),
+        })
+      }
+    }
+
+    const { data: insertedAnalyticsRows, error: analyticsSeedError } = await supabase
+      .from('kiosk_analytics_events')
+      .insert(analyticsRows)
+      .select('id')
+
+    if (analyticsSeedError) {
+      warnings.push(`Analytics seed warning: ${analyticsSeedError.message}`)
+      console.warn('Analytics seed failed (non-fatal):', analyticsSeedError.message)
+    } else {
+      analyticsEventsSeeded = insertedAnalyticsRows?.length || analyticsRows.length
+    }
+
+    const pdfRows: Array<{
+      business_id: string
+      site_id: string | null
+      user_id: string
+      download_type: string
+      created_at: string
+    }> = []
+
+    for (let day = 0; day <= 6; day += 1) {
+      pdfRows.push({
+        business_id: business.id,
+        site_id: site?.id || null,
+        user_id: userId,
+        download_type: day % 2 === 0 ? 'allergen-guide' : 'menu-report',
+        created_at: createTimestampDaysAgo(day, 40),
+      })
+    }
+
+    for (let day = 8; day <= 12; day += 1) {
+      pdfRows.push({
+        business_id: business.id,
+        site_id: site?.id || null,
+        user_id: userId,
+        download_type: 'allergen-guide',
+        created_at: createTimestampDaysAgo(day, 42),
+      })
+    }
+
+    const { data: insertedPdfRows, error: pdfSeedError } = await supabase
+      .from('pdf_download_events')
+      .insert(pdfRows)
+      .select('id')
+
+    if (pdfSeedError) {
+      warnings.push(`PDF download seed warning: ${pdfSeedError.message}`)
+      console.warn('PDF download seed failed (non-fatal):', pdfSeedError.message)
+    } else {
+      pdfDownloadEventsSeeded = insertedPdfRows?.length || pdfRows.length
+    }
+
+    // 11. Send password setup email
     const { error: resetError } = await supabase.auth.resetPasswordForEmail(ownerEmail, {
       redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://allyjen.ie'}/auth/update-password`,
     })
@@ -524,9 +702,11 @@ export async function POST(request: NextRequest) {
       ingredientsSeeded,
       suppliersSeeded,
       ingredientLinksSeeded,
+      analyticsEventsSeeded,
+      pdfDownloadEventsSeeded,
       passwordSetupEmailSent,
       warnings,
-      message: `Demo account "${businessName}" created with ${menuItemsSeeded} menu items, ${ingredientsSeeded} ingredients, and ${ingredientLinksSeeded} ingredient links.`,
+      message: `Demo account "${businessName}" created with ${menuItemsSeeded} menu items, ${ingredientsSeeded} ingredients, ${ingredientLinksSeeded} ingredient links, and seeded analytics activity.`,
     })
   } catch (err) {
     console.error('Demo account creation error:', err)
