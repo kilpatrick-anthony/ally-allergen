@@ -429,16 +429,24 @@ export async function POST(request: NextRequest) {
       const supplierRows = supplierNames.map((supplierName) => ({
         business_id: business.id,
         name: supplierName,
-        status: 'active',
-        type: 'general',
         ingredient_count: SAMPLE_INGREDIENTS.filter((ingredient) => ingredient.suppliers.includes(supplierName)).length,
         created_by: admin.userId,
       }))
 
-      const { data: insertedSuppliers, error: suppliersError } = await supabase
+      let { data: insertedSuppliers, error: suppliersError } = await supabase
         .from('suppliers')
         .upsert(supplierRows, { onConflict: 'business_id,name' })
         .select('id')
+
+      if (suppliersError && suppliersError.code === 'PGRST204') {
+        const fallbackRows = supplierRows.map(({ ingredient_count: _ingredientCount, created_by: _createdBy, ...rest }) => rest)
+        const fallbackResult = await supabase
+          .from('suppliers')
+          .upsert(fallbackRows, { onConflict: 'business_id,name' })
+          .select('id')
+        insertedSuppliers = fallbackResult.data
+        suppliersError = fallbackResult.error
+      }
 
       if (suppliersError) {
         warnings.push(`Supplier seed warning: ${suppliersError.message}`)
