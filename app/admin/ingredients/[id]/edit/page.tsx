@@ -531,16 +531,19 @@ export default function EditIngredientPage() {
             </div>
           </Card>
 
-          {/* Allergen Information — hidden when suppliers have their own profiles */}
-          {ingredient.suppliers.length === 0 && (
+          {/* Allergen Information */}
           <Card>
             <h2 className="text-xl font-semibold text-[#003842] mb-4">Allergen Information</h2>
+            {ingredient.suppliers.length > 0 && (
+              <p className="text-sm text-gray-500 mb-4">
+                These are the effective allergen warnings for this ingredient. Supplier profiles below are optional and can be used for per-supplier tracking.
+              </p>
+            )}
             <AllergenWarningSelector
               value={ingredient.allergen_warnings}
               onChange={(warnings) => setIngredient({ ...ingredient, allergen_warnings: warnings })}
             />
           </Card>
-          )}
 
           {/* Status Toggle */}
           <Card>

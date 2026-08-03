@@ -157,12 +157,17 @@ export async function PUT(
     // Allergens: worst-case union across all suppliers (safest for food safety)
     // Certifications: strict intersection across all suppliers (only certify if all suppliers comply)
     const profiles = supplier_profiles ? Object.values(supplier_profiles as Record<string, { allergen_warnings: any; certifications: string[] }>) : []
-    const effectiveAllergens = profiles.length > 0
+    const computedAllergensFromProfiles = profiles.length > 0
       ? computeWorstCaseAllergens(profiles.map(p => p.allergen_warnings).filter(Boolean) as Parameters<typeof computeWorstCaseAllergens>[0])
-      : (allergen_warnings || {})
-    const effectiveCertifications = profiles.length > 0
+      : undefined
+    const computedCertificationsFromProfiles = profiles.length > 0
       ? profiles.map(p => p.certifications || []).reduce((acc, certs) => acc.filter(c => certs.includes(c)))
-      : (certifications || [])
+      : undefined
+
+    // Preserve explicit manual values from the editor. Supplier profile aggregation is a fallback
+    // for clients that only submit supplier profile data.
+    const effectiveAllergens = allergen_warnings ?? computedAllergensFromProfiles ?? {}
+    const effectiveCertifications = certifications ?? computedCertificationsFromProfiles ?? []
 
     // Update ingredient
     const updatePayload = {
