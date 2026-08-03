@@ -1071,7 +1071,7 @@ export default function KioskPage() {
   if (!kioskStarted) {
     return (
       <div
-        className="min-h-screen relative overflow-hidden"
+        className="min-h-[100svh] md:min-h-screen relative overflow-hidden"
         style={{ background: 'linear-gradient(145deg, #42b8ac 0%, #1a6e8a 55%, #001a20 100%)' }}
         data-context="kiosk"
         onClick={enterFullscreen}
@@ -1091,7 +1091,7 @@ export default function KioskPage() {
 
         <AccessibilityPanel />
 
-        <div className="relative z-10 min-h-screen flex items-center justify-center px-8 py-12 lg:px-16">
+        <div className="relative z-10 min-h-[100svh] md:min-h-screen flex items-center justify-center px-6 py-6 sm:px-8 sm:py-10 lg:px-16 lg:py-12">
           <div className="w-full max-w-6xl rounded-3xl border border-white/20 bg-white/10 backdrop-blur-md shadow-2xl p-8 sm:p-12 lg:p-16 text-center">
             <img
               src={ADMIN_WORDMARK_SRC}
