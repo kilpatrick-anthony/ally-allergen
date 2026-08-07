@@ -9,8 +9,9 @@ import {
   BarChart3, TrendingUp, Eye,
   Download, Package, ChefHat, Building, Calendar,
   RefreshCw, ArrowUpRight, ArrowDownRight,
-  LineChart, Target, Leaf
+  LineChart, Target
 } from 'lucide-react'
+import { getAllergenIconForLabel, getDietaryIconForLabel } from '@/lib/allergens'
 
 // Import design system components
 import { Container } from '@/components/layout/Container'
@@ -613,25 +614,28 @@ export default function AnalyticsPage() {
               {analyticsData.topAllergens && analyticsData.topAllergens.length === 0 ? (
                 <div className="text-sm text-gray-500 dark:text-gray-400">No allergen search data yet.</div>
               ) : (
-                analyticsData.topAllergens?.map((item: any, index: number) => (
-                  <div key={index} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                        <Target className="h-4 w-4 text-red-600 dark:text-red-400" />
+                analyticsData.topAllergens?.map((item: any, index: number) => {
+                  const { icon: AllergenIcon, color } = getAllergenIconForLabel(item.name)
+                  return (
+                    <div key={index} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg" style={{ backgroundColor: `${color}1f` }}>
+                          <AllergenIcon className="h-4 w-4" style={{ color }} />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{item.searches?.toLocaleString() || 0} searches</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{item.searches?.toLocaleString() || 0} searches</div>
-                      </div>
+                      <Badge
+                        variant={item.change?.startsWith('+') ? 'success' : 'error'}
+                        icon={item.change?.startsWith('+') ? ArrowUpRight : ArrowDownRight}
+                      >
+                        {item.change || '0%'}
+                      </Badge>
                     </div>
-                    <Badge
-                      variant={item.change?.startsWith('+') ? 'success' : 'error'}
-                      icon={item.change?.startsWith('+') ? ArrowUpRight : ArrowDownRight}
-                    >
-                      {item.change || '0%'}
-                    </Badge>
-                  </div>
-                ))
+                  )
+                })
               )}
             </div>
           </div>
@@ -655,25 +659,28 @@ export default function AnalyticsPage() {
               {analyticsData.topDietary && analyticsData.topDietary.length === 0 ? (
                 <div className="text-sm text-gray-500 dark:text-gray-400">No dietary filter data yet.</div>
               ) : (
-                analyticsData.topDietary?.map((item: any, index: number) => (
-                  <div key={index} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                        <Leaf className="h-4 w-4 text-green-600 dark:text-green-400" />
+                analyticsData.topDietary?.map((item: any, index: number) => {
+                  const { icon: DietaryIcon, color } = getDietaryIconForLabel(item.name)
+                  return (
+                    <div key={index} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg" style={{ backgroundColor: `${color}1f` }}>
+                          <DietaryIcon className="h-4 w-4" style={{ color }} />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{item.clicks?.toLocaleString() || 0} clicks</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{item.clicks?.toLocaleString() || 0} clicks</div>
-                      </div>
+                      <Badge
+                        variant={item.change?.startsWith('+') ? 'success' : 'error'}
+                        icon={item.change?.startsWith('+') ? ArrowUpRight : ArrowDownRight}
+                      >
+                        {item.change || '0%'}
+                      </Badge>
                     </div>
-                    <Badge
-                      variant={item.change?.startsWith('+') ? 'success' : 'error'}
-                      icon={item.change?.startsWith('+') ? ArrowUpRight : ArrowDownRight}
-                    >
-                      {item.change || '0%'}
-                    </Badge>
-                  </div>
-                ))
+                  )
+                })
               )}
             </div>
           </div>
@@ -699,19 +706,27 @@ export default function AnalyticsPage() {
             <div className="space-y-4">
               {analyticsData.trends.length === 0 ? (
                 <div className="text-sm text-gray-500 dark:text-gray-400">No engagement data yet.</div>
-              ) : (
-                analyticsData.trends.map((day, index) => (
+              ) : (() => {
+                // Scale bars against the highest value actually in this range,
+                // rather than a fixed denominator — otherwise small businesses
+                // with low daily counts get bars too thin to see.
+                const maxViews = Math.max(1, ...analyticsData.trends.map((d: any) => d.views || 0))
+                const maxSearches = Math.max(1, ...analyticsData.trends.map((d: any) => d.searches || 0))
+                const barWidth = (value: number, max: number) =>
+                  value > 0 ? Math.max(4, (value / max) * 100) : 0
+
+                return analyticsData.trends.map((day, index) => (
                   <div key={index} className="flex items-center justify-between">
                     <div className="text-sm font-medium text-gray-700 dark:text-gray-300 w-16">{day.day}</div>
                     <div className="flex-1 mx-4">
                       <div className="flex items-center h-8">
                         <div
                           className="bg-gradient-to-r from-[#42b8ac] to-[#36948a] h-4 rounded"
-                          style={{ width: `${(day.views / 5200) * 100}%` }}
+                          style={{ width: `${barWidth(day.views, maxViews)}%` }}
                         ></div>
                         <div
                           className="bg-gradient-to-r from-[#003842] to-[#001f26] h-4 rounded ml-1"
-                          style={{ width: `${(day.searches / 850) * 100}%` }}
+                          style={{ width: `${barWidth(day.searches, maxSearches)}%` }}
                         ></div>
                       </div>
                     </div>
@@ -720,7 +735,7 @@ export default function AnalyticsPage() {
                     </div>
                   </div>
                 ))
-              )}
+              })()}
             </div>
             <div className="mt-6 flex items-center gap-4 text-sm">
               <div className="flex items-center">
