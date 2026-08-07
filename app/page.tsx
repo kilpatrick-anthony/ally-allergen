@@ -35,19 +35,19 @@ export default function LandingPage() {
   const publicPlans = [
     {
       ...getPlanDefinition('qr_lite'),
-      badge: null,
+      badge: 'Most Popular',
       desc: 'The lowest-cost way to get compliant. We send QR codes straight to your business — no device needed.',
       features: [
-        'QR codes sent to your business',
+        'Everything in Self-Managed',
+        'Ready to use QR code signage shipped to your business',
         'No hardware needed',
         'Printed paper allergen guides still required on site',
         'Only €1 a day',
         'Self-managed',
         '12 month contract',
-        'Everything in Self-Managed',
       ],
       cta: 'Get Started',
-      highlight: false,
+      highlight: true,
       priceFrom: false,
       setupFeeNote: false,
     },
@@ -74,7 +74,7 @@ export default function LandingPage() {
     },
     {
       ...getPlanDefinition('pro'),
-      badge: 'Most Popular',
+      badge: null,
       desc: 'Everything in Self-Managed, plus our team handles your menu and platform management for you.',
       features: [
         'Everything in Self-Managed',
@@ -87,7 +87,7 @@ export default function LandingPage() {
         'Seasonal menu change assistance',
       ],
       cta: 'Get Started',
-      highlight: true,
+      highlight: false,
       priceFrom: true,
       setupFeeNote: true,
     },
@@ -397,7 +397,7 @@ export default function LandingPage() {
           <div className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-extrabold text-[#003842] mb-3">Everything You Need, Nothing You Don&apos;t</h2>
             <p className="text-gray-500 text-lg max-w-xl mx-auto">
-              Pick the plan that fits your business — every plan includes the customer-facing kiosk and full allergen compliance toolkit.
+              Pick the plan that fits your business
             </p>
           </div>
 
