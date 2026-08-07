@@ -38,7 +38,10 @@ export function Navigation() {
     fetch('/api/auth/session')
       .then(r => r.json())
       .then(data => {
-        if (data?.user?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL) {
+        if (
+          data?.user?.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL ||
+          data?.user?.role === 'super_admin'
+        ) {
           setIsSuperAdmin(true)
         }
       })

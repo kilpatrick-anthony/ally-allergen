@@ -44,8 +44,11 @@ export default function ProtectedRoute({
         const user = data.user
         console.log('🔒 User authenticated:', user.id)
 
-        // Super admin bypasses all role checks
-        const isSuperAdmin = user.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL
+        // Super admin bypasses all role checks — matches both the configured
+        // super admin email and any user with role='super_admin' in the DB.
+        const isSuperAdmin =
+          user.email === process.env.NEXT_PUBLIC_SUPER_ADMIN_EMAIL ||
+          user.role === 'super_admin'
 
         // If role is required, check it (super admin is always allowed)
         if (requireRole && !isSuperAdmin) {
