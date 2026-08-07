@@ -2376,6 +2376,10 @@ export default function KioskPage() {
                           <p>{emailError}</p>
                         </div>
                       )}
+                      <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs sm:text-sm text-amber-800">
+                        <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-600" />
+                        <p>{t.emailFreshnessWarning}</p>
+                      </div>
                     </>
                   )}
               </div>
