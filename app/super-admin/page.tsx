@@ -47,7 +47,7 @@ interface Business {
   phone?: string
   address?: string
   status: 'active' | 'inactive' | 'trial' | 'suspended'
-  plan: 'free' | 'demo' | 'starter' | 'pro' | 'enterprise'
+  plan: 'free' | 'demo' | 'qr_lite' | 'starter' | 'pro' | 'enterprise'
   createdAt: string
   trialEndsAt?: string
   subscriptionStatus?: 'active' | 'past_due' | 'canceled' | 'trial'
@@ -1494,6 +1494,7 @@ export default function SuperAdminDashboard() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
                 >
                   <option value="free">Free</option>
+                  <option value="qr_lite">QR Lite</option>
                   <option value="starter">Self-Managed</option>
                   <option value="pro">Fully Managed</option>
                   <option value="enterprise">Enterprise</option>

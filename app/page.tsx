@@ -34,6 +34,24 @@ export default function LandingPage() {
   const [submitted, setSubmitted] = useState(false)
   const publicPlans = [
     {
+      ...getPlanDefinition('qr_lite'),
+      badge: null,
+      desc: 'The lowest-cost way to get compliant. We send QR codes straight to your business — no device needed.',
+      features: [
+        'QR codes sent to your business',
+        'No hardware needed',
+        'Printed paper allergen guides still required on site',
+        'Only €1 a day',
+        'Self-managed',
+        '12 month contract',
+        'Everything in Self-Managed',
+      ],
+      cta: 'Get Started',
+      highlight: false,
+      priceFrom: false,
+      setupFeeNote: false,
+    },
+    {
       ...getPlanDefinition('starter'),
       badge: null,
       desc: 'Full access to the AllyJen platform. You keep your menu up to date; we power the technology.',
@@ -51,6 +69,8 @@ export default function LandingPage() {
       ],
       cta: 'Get Started',
       highlight: false,
+      priceFrom: true,
+      setupFeeNote: true,
     },
     {
       ...getPlanDefinition('pro'),
@@ -68,6 +88,8 @@ export default function LandingPage() {
       ],
       cta: 'Get Started',
       highlight: true,
+      priceFrom: true,
+      setupFeeNote: true,
     },
     {
       ...getPlanDefinition('enterprise'),
@@ -84,6 +106,8 @@ export default function LandingPage() {
       ],
       cta: 'Contact Us',
       highlight: false,
+      priceFrom: false,
+      setupFeeNote: false,
     },
   ]
 
@@ -371,43 +395,13 @@ export default function LandingPage() {
       <section id="pricing" className="py-24 bg-white">
         <Container>
           <div className="text-center mb-14">
-            <span className="inline-block mb-3 text-[#42b8ac] text-xs font-bold uppercase tracking-widest">Simple, Transparent Pricing</span>
             <h2 className="text-3xl md:text-4xl font-extrabold text-[#003842] mb-3">Everything You Need, Nothing You Don&apos;t</h2>
             <p className="text-gray-500 text-lg max-w-xl mx-auto">
-              €299 one-time setup per location, then a simple monthly subscription with no minimum contract.
+              Pick the plan that fits your business — every plan includes the customer-facing kiosk and full allergen compliance toolkit.
             </p>
           </div>
 
-          {/* ── ONE-TIME SETUP FEE BANNER ── */}
-          <div className="max-w-3xl mx-auto mb-12">
-            <div className="relative rounded-2xl bg-[#003842] text-white p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl overflow-hidden">
-              {/* subtle decorative ring */}
-              <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-[#42b8ac]/10 pointer-events-none" />
-              <div className="absolute -right-4 -bottom-10 w-32 h-32 rounded-full bg-[#42b8ac]/10 pointer-events-none" />
-              <div className="relative z-10">
-                <p className="text-[#42b8ac] text-xs font-bold uppercase tracking-widest mb-1">One-Time Setup Fee</p>
-                <h3 className="text-2xl font-extrabold mb-2">New Device Configuration &amp; Shipping</h3>
-                <ul className="space-y-1 text-sm text-white/80">
-                  <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac] flex-shrink-0" /> New device configured and shipped directly to your location.</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac] flex-shrink-0" /> All you need to do is connect it to WiFi and it's good to go.</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac] flex-shrink-0" /> Platform onboarding &amp; initial configuration.</li>
-                  <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac] flex-shrink-0" /> Remote training and walkthrough.</li>
-                </ul>
-              </div>
-              <div className="relative z-10 text-center sm:text-right flex-shrink-0 max-w-[240px]">
-                <div className="text-5xl font-extrabold text-white">€299</div>
-                <div className="text-white/60 text-sm mt-1">One-time setup fee.</div>
-                <div className="text-white/60 text-sm mt-2">Additional devices at the same location can be added for a reduced price.</div>
-              </div>
-            </div>
-          </div>
-
-          {/* ── SUBSCRIPTION PLANS ── */}
-          <div className="text-center mb-8">
-            <p className="text-[#003842] font-semibold text-sm uppercase tracking-widest">Then choose your monthly plan</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {publicPlans.map((plan, i) => (
               <div
                 key={i}
@@ -426,11 +420,20 @@ export default function LandingPage() {
                 )}
                 <div className="mb-5">
                   <p className="text-sm font-bold text-[#42b8ac] uppercase tracking-widest mb-1">{plan.title}</p>
-                  <div className="flex items-end gap-1 mb-3 flex-wrap">
+                  <div className="flex items-end gap-1.5 mb-1 flex-wrap">
+                    {plan.priceFrom && <span className="text-gray-400 text-sm font-semibold mb-1.5">From</span>}
                     <span className="text-4xl font-extrabold text-[#003842]">{plan.priceLabel.replace('EUR', '€')}</span>
                     {plan.priceSuffix && <span className="text-gray-400 text-sm mb-1">{plan.priceSuffix}</span>}
+                    {plan.cta !== 'Contact Us' && (
+                      <span className="text-[10px] font-bold text-gray-400 border border-gray-200 rounded-full px-1.5 py-0.5 mb-1.5">+ VAT</span>
+                    )}
                   </div>
-                  <p className="text-gray-500 text-sm leading-relaxed">{plan.desc}</p>
+                  {plan.setupFeeNote && (
+                    <p className="text-xs text-gray-400 mb-3">
+                      + €299 one-time device setup fee. Additional devices at the same location cost less.
+                    </p>
+                  )}
+                  <p className={`text-gray-500 text-sm leading-relaxed ${plan.setupFeeNote ? '' : 'mt-3'}`}>{plan.desc}</p>
                 </div>
                 <ul className="space-y-2.5 flex-1 mb-7">
                   {plan.features.map((f, j) => (
@@ -464,7 +467,7 @@ export default function LandingPage() {
           </div>
 
           <p className="text-center text-sm text-gray-400 mt-10">
-            The €299 setup fee covers a single device per location. Additional devices in the same location are available for a reduced price.{' '}
+            Not sure which plan is right for you?{' '}
             <button
               type="button"
               onClick={() => document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })}
@@ -472,7 +475,7 @@ export default function LandingPage() {
             >
               Contact us
             </button>
-            {' '}if you want help choosing the right plan.
+            {' '}and we'll help you choose.
           </p>
         </Container>
       </section>

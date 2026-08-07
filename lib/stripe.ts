@@ -40,7 +40,7 @@ export function getStripePriceId(plan: string, billingCycle: string) {
     throw new Error('Invalid plan for Stripe subscription')
   }
 
-  if (plan === 'free' || plan === 'demo') {
+  if (plan === 'free' || plan === 'demo' || plan === 'qr_lite') {
     throw new Error('This plan does not require a Stripe subscription')
   }
 

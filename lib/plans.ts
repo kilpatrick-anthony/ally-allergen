@@ -1,4 +1,4 @@
-export type PlanKey = 'free' | 'demo' | 'starter' | 'pro' | 'enterprise'
+export type PlanKey = 'free' | 'demo' | 'qr_lite' | 'starter' | 'pro' | 'enterprise'
 
 export interface PlanDefinition {
   key: PlanKey
@@ -10,8 +10,8 @@ export interface PlanDefinition {
   adminFeatures: string[]
 }
 
-export const SUPER_ADMIN_PLAN_ORDER: PlanKey[] = ['free', 'demo', 'starter', 'pro', 'enterprise']
-export const HOME_PAGE_PLAN_ORDER: PlanKey[] = ['starter', 'pro', 'enterprise']
+export const SUPER_ADMIN_PLAN_ORDER: PlanKey[] = ['free', 'demo', 'qr_lite', 'starter', 'pro', 'enterprise']
+export const HOME_PAGE_PLAN_ORDER: PlanKey[] = ['qr_lite', 'starter', 'pro', 'enterprise']
 
 export const PLAN_DEFINITIONS: Record<PlanKey, PlanDefinition> = {
   free: {
@@ -42,13 +42,30 @@ export const PLAN_DEFINITIONS: Record<PlanKey, PlanDefinition> = {
       'No monthly billing',
     ],
   },
+  qr_lite: {
+    key: 'qr_lite',
+    title: 'QR Lite',
+    monthlyPrice: 30.42,
+    priceLabel: 'EUR 1',
+    priceSuffix: '/day',
+    mrrValue: 30.42,
+    adminFeatures: [
+      'QR codes sent to your business',
+      'No hardware needed',
+      'Printed paper allergen guides still required on site',
+      'Only €1 a day',
+      'Self-managed',
+      '12 month contract',
+      'Everything in Self-Managed',
+    ],
+  },
   starter: {
     key: 'starter',
     title: 'Self-Managed',
-    monthlyPrice: 19.99,
-    priceLabel: 'EUR 19.99',
+    monthlyPrice: 39.99,
+    priceLabel: 'EUR 39.99',
     priceSuffix: '/month per location',
-    mrrValue: 19.99,
+    mrrValue: 39.99,
     adminFeatures: [
       'Full AllyJen platform access',
       'Customer-facing allergen kiosk and QR code',
@@ -59,10 +76,10 @@ export const PLAN_DEFINITIONS: Record<PlanKey, PlanDefinition> = {
   pro: {
     key: 'pro',
     title: 'Fully Managed',
-    monthlyPrice: 39.99,
-    priceLabel: 'EUR 39.99',
+    monthlyPrice: 79.99,
+    priceLabel: 'EUR 79.99',
     priceSuffix: '/month per location',
-    mrrValue: 39.99,
+    mrrValue: 79.99,
     adminFeatures: [
       'Everything in Self-Managed',
       'Menu management by our team',
@@ -87,7 +104,7 @@ export const PLAN_DEFINITIONS: Record<PlanKey, PlanDefinition> = {
 }
 
 export function isPlanKey(value: string | null | undefined): value is PlanKey {
-  return value === 'free' || value === 'demo' || value === 'starter' || value === 'pro' || value === 'enterprise'
+  return value === 'free' || value === 'demo' || value === 'qr_lite' || value === 'starter' || value === 'pro' || value === 'enterprise'
 }
 
 export function getPlanDefinition(plan: string | null | undefined): PlanDefinition {

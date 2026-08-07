@@ -35,6 +35,11 @@ const PLAN_DETAILS: Record<string, PlanDetails> = {
     priceLabel: PLAN_DEFINITIONS.demo.priceLabel,
     features: PLAN_DEFINITIONS.demo.adminFeatures,
   },
+  qr_lite: {
+    name: PLAN_DEFINITIONS.qr_lite.title,
+    priceLabel: PLAN_DEFINITIONS.qr_lite.priceLabel.replace('EUR', '€'),
+    features: PLAN_DEFINITIONS.qr_lite.adminFeatures,
+  },
   starter: {
     name: PLAN_DEFINITIONS.starter.title,
     priceLabel: PLAN_DEFINITIONS.starter.priceLabel.replace('EUR', '€'),
@@ -602,7 +607,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
             </div>
             {!canSetUpStripe && (
               <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                Stripe setup is only available for Self-Managed and Fully Managed plans. Free and Enterprise are not auto-billed here.
+                Stripe setup is only available for Self-Managed and Fully Managed plans. Free, Demo, QR Lite and Enterprise are not auto-billed here.
               </p>
             )}
             {canSetUpStripe && (
