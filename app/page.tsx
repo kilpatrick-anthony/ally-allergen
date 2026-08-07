@@ -38,11 +38,11 @@ export default function LandingPage() {
       badge: 'Most Popular',
       desc: 'The lowest-cost way to get compliant. We send QR codes straight to your business — no device needed.',
       features: [
-        'Everything in Self-Managed',
+        'Full AllyJen platform access — all 14 EU-mandated allergens, sub-allergen &amp; multilingual tracking',
+        'Real-time menu updates, audit-ready reports, analytics &amp; email support',
         'Ready to use QR code signage shipped to your business',
         'No hardware needed',
         'Printed allergen guide still required on-site — print your PDF directly from the AllyJen admin portal',
-        'Only €1 a day',
         'Self-managed',
         '12 month contract',
       ],
