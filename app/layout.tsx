@@ -86,7 +86,7 @@ export async function generateMetadata(): Promise<Metadata> {
       type: 'website',
       url: BASE_URL,
       siteName: 'AllyJen',
-      title: 'AllyJen | Allergen Management Software for Restaurants',
+      title: 'AllyJen | Serving Confidence',
       description:
         'AllyJen helps restaurants and food businesses in Ireland manage allergens digitally. Real-time kiosk displays, staff tools, and full EU allergen regulation compliance.',
       images: [
@@ -101,7 +101,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     twitter: {
       card: 'summary_large_image',
-      title: 'AllyJen | Allergen Management Software for Restaurants',
+      title: 'AllyJen | Serving Confidence',
       description:
         'AllyJen helps restaurants and food businesses in Ireland manage allergens digitally. Real-time kiosk displays and EU allergen compliance tools.',
       images: ['/AllyJen Logo (1200 x 630 px).png'],
