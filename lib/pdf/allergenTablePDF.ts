@@ -277,6 +277,82 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
     // ── Table headers (col 0 label set per section) ─────────────────────────
     const allergenHeaders = ALLERGENS.map(a => a.shortName || a.name)
 
+    // ── Item/ingredient name cell layout ─────────────────────────────────────
+    // Shared by didParseCell (row-height measurement) and didDrawCell (actual
+    // drawing) so the two can never disagree about how many lines a cell needs —
+    // that mismatch previously caused the last warning line to be clipped by
+    // the next row.
+    const NAME_CELL_PAD_TOP = 2.5
+    const NAME_CELL_PAD_BOTTOM = 3.5
+    const NAME_CELL_LINE_HEIGHT = 4.2
+
+    interface NameCellSegment {
+      text: string
+      font: 'normal' | 'bold' | 'italic'
+      size: number
+    }
+    interface NameCellLine {
+      segments: NameCellSegment[]
+    }
+
+    function layoutNameCellLines(doc: jsPDF, rawLines: string[], textWidth: number): NameCellLine[] {
+      const lines: NameCellLine[] = []
+      const markLines = rawLines.filter(l => l.startsWith(WARN_PREFIX))
+      const ingredientLines = rawLines.filter(l => !l.startsWith(WARN_PREFIX) && l.startsWith('Ingredients: '))
+      const nameLines = rawLines.filter(l => !l.startsWith(WARN_PREFIX) && !l.startsWith('Ingredients: '))
+
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(9)
+      for (const line of nameLines) {
+        for (const wl of doc.splitTextToSize(line, textWidth)) {
+          lines.push({ segments: [{ text: wl, font: 'normal', size: 9 }] })
+        }
+      }
+
+      doc.setFont('helvetica', 'italic')
+      doc.setFontSize(7)
+      for (const line of ingredientLines) {
+        for (const wl of doc.splitTextToSize(line, textWidth)) {
+          lines.push({ segments: [{ text: wl, font: 'italic', size: 7 }] })
+        }
+      }
+
+      doc.setFontSize(7)
+      for (const line of markLines) {
+        const text = line.replace(WARN_PREFIX, '')
+        const prefix = text.startsWith('Contains: ')
+          ? 'Contains: '
+          : text.startsWith('May contain: ')
+          ? 'May contain: '
+          : ''
+        const value = text.slice(prefix.length)
+
+        doc.setFont('helvetica', 'normal')
+        const prefixWidth = prefix ? doc.getTextWidth(prefix) : 0
+
+        // Only the first line shares its width with the prefix — continuation
+        // lines start at the left margin and get the full cell width.
+        doc.setFont('helvetica', 'bold')
+        const firstChunk = doc.splitTextToSize(value, Math.max(1, textWidth - prefixWidth))
+        const firstLine = firstChunk[0] || ''
+        const remainder = value.slice(firstLine.length).trim()
+        const restLines = remainder ? doc.splitTextToSize(remainder, textWidth) : []
+
+        if (prefix) {
+          const segments: NameCellSegment[] = [{ text: prefix, font: 'normal', size: 7 }]
+          if (firstLine) segments.push({ text: firstLine, font: 'bold', size: 7 })
+          lines.push({ segments })
+        } else if (firstLine) {
+          lines.push({ segments: [{ text: firstLine, font: 'bold', size: 7 }] })
+        }
+        for (const rl of restLines) {
+          lines.push({ segments: [{ text: rl, font: 'bold', size: 7 }] })
+        }
+      }
+
+      return lines
+    }
+
     // ── Helper: render one section table ─────────────────────────────────────
     const renderSection = (
       sectionItems: MenuItem[],
@@ -414,81 +490,30 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
 
           if (data.section === 'body' && data.column.index === 0) {
             const rawLines = (tableData[data.row.index]?.[0] as string || '').split('\n')
-            const markLines = rawLines.filter(l => l.startsWith(WARN_PREFIX))
-            const ingredientLines = rawLines.filter(
-              l => !l.startsWith(WARN_PREFIX) && l.startsWith('Ingredients: ')
-            )
-            const nameLines = rawLines.filter(
-              l => !l.startsWith(WARN_PREFIX) && !l.startsWith('Ingredients: ')
-            )
-            if (nameLines.length === 0 && ingredientLines.length === 0 && markLines.length === 0) return
+            if (rawLines.every(l => l.trim() === '')) return
 
             const cell = data.cell
-            const padTop   = 2.5
             const padLeft  = 3
             const padRight = 3
             const textWidth = cell.width - padLeft - padRight
-            const lineH = 3.8
 
             const bgColor: [number, number, number] = data.row.index % 2 === 0 ? [249, 250, 251] : [255, 255, 255]
             doc.setFillColor(...bgColor)
             doc.rect(cell.x + 0.16, cell.y + 0.16, cell.width - 0.32, cell.height - 0.32, 'F')
 
-            let drawY = cell.y + padTop + lineH * 0.75
+            const cellLines = layoutNameCellLines(doc, rawLines, textWidth)
 
-            doc.setFont('helvetica', 'normal')
-            doc.setFontSize(9)
-            doc.setTextColor(0, 0, 0)
-            for (const line of nameLines) {
-              const wrapped = doc.splitTextToSize(line, textWidth)
-              for (const wl of wrapped) {
-                doc.text(wl, cell.x + padLeft, drawY)
-                drawY += lineH
+            let drawY = cell.y + NAME_CELL_PAD_TOP + NAME_CELL_LINE_HEIGHT * 0.75
+            for (const line of cellLines) {
+              let drawX = cell.x + padLeft
+              for (const seg of line.segments) {
+                doc.setFont('helvetica', seg.font)
+                doc.setFontSize(seg.size)
+                doc.setTextColor(seg.font === 'italic' ? 55 : 0, seg.font === 'italic' ? 65 : 0, seg.font === 'italic' ? 81 : 0)
+                doc.text(seg.text, drawX, drawY)
+                drawX += doc.getTextWidth(seg.text)
               }
-            }
-
-            if (ingredientLines.length > 0) {
-              doc.setFont('helvetica', 'italic')
-              doc.setFontSize(7)
-              doc.setTextColor(55, 65, 81)
-              for (const line of ingredientLines) {
-                const wrapped = doc.splitTextToSize(line, textWidth)
-                for (const wl of wrapped) {
-                  doc.text(wl, cell.x + padLeft, drawY)
-                  drawY += lineH
-                }
-              }
-              doc.setFont('helvetica', 'normal')
-              doc.setFontSize(7)
-              doc.setTextColor(0, 0, 0)
-            }
-
-            doc.setFontSize(7)
-            for (const line of markLines) {
-              const text = line.replace(WARN_PREFIX, '')
-              const prefix = text.startsWith('Contains: ')
-                ? 'Contains: '
-                : text.startsWith('May contain: ')
-                ? 'May contain: '
-                : ''
-              const value = text.slice(prefix.length)
-
-              doc.setFont('helvetica', 'normal')
-              const prefixWidth = doc.getTextWidth(prefix)
-              const valueLines = doc.splitTextToSize(value, Math.max(1, textWidth - prefixWidth))
-
-              if (prefix) {
-                doc.text(prefix, cell.x + padLeft, drawY)
-              }
-              doc.setFont('helvetica', 'bold')
-              if (valueLines.length > 0) {
-                doc.text(valueLines[0], cell.x + padLeft + prefixWidth, drawY)
-                drawY += lineH
-              }
-              for (let i = 1; i < valueLines.length; i += 1) {
-                doc.text(valueLines[i], cell.x + padLeft, drawY)
-                drawY += lineH
-              }
+              drawY += NAME_CELL_LINE_HEIGHT
             }
 
             doc.setFont('helvetica', 'normal')
@@ -508,18 +533,10 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
 
             const rawLines = (tableData[data.row.index]?.[0] as string || '').split('\n')
             const textWidth = nameColWidth - 6
-            const lineH     = 4.2
-            const padTop    = 2.5
-            const padBottom = 3.5
+            const cellLines = layoutNameCellLines(data.doc as jsPDF, rawLines, textWidth)
 
-            let totalLines = 0
-            for (const line of rawLines) {
-              const cleaned = line.replace(WARN_PREFIX, '')
-              const wrapped = (data.doc as jsPDF).splitTextToSize(cleaned, textWidth)
-              totalLines += Math.max(1, wrapped.length)
-            }
-
-            data.cell.styles.minCellHeight = padTop + padBottom + totalLines * lineH
+            data.cell.styles.minCellHeight =
+              NAME_CELL_PAD_TOP + NAME_CELL_PAD_BOTTOM + Math.max(1, cellLines.length) * NAME_CELL_LINE_HEIGHT
           }
         },
       })
