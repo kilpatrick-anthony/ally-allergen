@@ -1099,8 +1099,8 @@ export default function KioskPage() {
               className="h-20 sm:h-24 lg:h-28 xl:h-32 w-auto mx-auto"
             />
 
-            <div className="mt-4 sm:mt-5 lg:mt-6">
-              <p className="text-white/85 text-lg sm:text-xl lg:text-2xl font-semibold leading-snug">
+            <div className="mt-4 sm:mt-5 lg:mt-6 max-w-lg mx-auto">
+              <p className="text-white/85 text-sm sm:text-base lg:text-lg font-semibold leading-snug">
                 {t.servingConfidenceDesc}
               </p>
             </div>
