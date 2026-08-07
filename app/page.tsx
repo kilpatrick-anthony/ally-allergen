@@ -41,15 +41,14 @@ export default function LandingPage() {
         'Everything in Self-Managed',
         'Ready to use QR code signage shipped to your business',
         'No hardware needed',
-        'Printed paper allergen guides still required on site',
+        'Printed allergen guide still required on-site — print your PDF directly from the AllyJen admin portal',
         'Only €1 a day',
         'Self-managed',
         '12 month contract',
       ],
       cta: 'Get Started',
       highlight: true,
-      priceFrom: false,
-      setupFeeNote: false,
+      priceFrom: true,
     },
     {
       ...getPlanDefinition('starter'),
@@ -70,7 +69,6 @@ export default function LandingPage() {
       cta: 'Get Started',
       highlight: false,
       priceFrom: true,
-      setupFeeNote: true,
     },
     {
       ...getPlanDefinition('pro'),
@@ -89,7 +87,6 @@ export default function LandingPage() {
       cta: 'Get Started',
       highlight: false,
       priceFrom: true,
-      setupFeeNote: true,
     },
     {
       ...getPlanDefinition('enterprise'),
@@ -107,7 +104,6 @@ export default function LandingPage() {
       cta: 'Contact Us',
       highlight: false,
       priceFrom: false,
-      setupFeeNote: false,
     },
   ]
 
@@ -428,12 +424,7 @@ export default function LandingPage() {
                       <span className="text-[10px] font-bold text-gray-400 border border-gray-200 rounded-full px-1.5 py-0.5 mb-1.5">+ VAT</span>
                     )}
                   </div>
-                  {plan.setupFeeNote && (
-                    <p className="text-xs text-gray-400 mb-3">
-                      + €299 one-time device setup fee. Additional devices at the same location cost less.
-                    </p>
-                  )}
-                  <p className={`text-gray-500 text-sm leading-relaxed ${plan.setupFeeNote ? '' : 'mt-3'}`}>{plan.desc}</p>
+                  <p className="text-gray-500 text-sm leading-relaxed mt-3">{plan.desc}</p>
                 </div>
                 <ul className="space-y-2.5 flex-1 mb-7">
                   {plan.features.map((f, j) => (
