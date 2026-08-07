@@ -202,6 +202,33 @@ function drawParentheses(
   doc.text(')', cx + 1.6, cy + 0.6)
 }
 
+/**
+ * Solid warning-triangle glyph for "contains" cells — visually distinct
+ * (shape + weight, not just colour) from the "may contain" checkmark so the
+ * two remain distinguishable when printed in black & white.
+ */
+function drawWarningTriangle(
+  doc: jsPDF,
+  cellX: number, cellY: number, cellW: number, cellH: number
+): void {
+  const cx = cellX + cellW / 2
+  const cy = cellY + cellH / 2
+  const s = 1.5
+  doc.setFillColor(153, 27, 27)
+  doc.setDrawColor(153, 27, 27)
+  doc.triangle(
+    cx, cy - s * 0.8,
+    cx - s * 0.9, cy + s * 0.6,
+    cx + s * 0.9, cy + s * 0.6,
+    'F'
+  )
+  doc.setDrawColor(255, 255, 255)
+  doc.setLineWidth(0.4)
+  doc.line(cx, cy - s * 0.1, cx, cy + s * 0.15)
+  doc.setFillColor(255, 255, 255)
+  doc.circle(cx, cy + s * 0.4, 0.2, 'F')
+}
+
 // ---------- main export ------------------------------------------------------
 
 export async function generateAllergenTablePDF(options: PDFOptions): Promise<string | void> {
@@ -484,7 +511,11 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
             if (level) {
               const { x, y, width, height } = data.cell
               const high = getAllergenSeverity(level) === 'high'
-              drawCheckmark(doc, x, y, width, height, high)
+              if (high) {
+                drawWarningTriangle(doc, x, y, width, height)
+              } else {
+                drawCheckmark(doc, x, y, width, height, high)
+              }
             }
           }
 

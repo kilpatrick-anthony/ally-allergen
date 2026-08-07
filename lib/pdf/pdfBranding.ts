@@ -20,6 +20,36 @@ function drawLegendCheckmark(
   doc.line(cx - s * 0.1, cy + s * 0.9, cx + s, cy - s * 0.5)
 }
 
+/**
+ * Solid warning-triangle glyph (used for "Contains") — visually distinct from
+ * the "May contain" checkmark by shape and weight, not just colour, so the
+ * two remain legible when a report is printed in black & white.
+ */
+function drawLegendWarningTriangle(
+  doc: jsPDF,
+  cellX: number,
+  cellY: number,
+  cellW: number,
+  cellH: number
+): void {
+  const cx = cellX + cellW / 2
+  const cy = cellY + cellH / 2
+  const s = 1.6
+  doc.setFillColor(153, 27, 27)
+  doc.setDrawColor(153, 27, 27)
+  doc.triangle(
+    cx, cy - s * 0.8,
+    cx - s * 0.95, cy + s * 0.6,
+    cx + s * 0.95, cy + s * 0.6,
+    'F'
+  )
+  doc.setDrawColor(255, 255, 255)
+  doc.setLineWidth(0.4)
+  doc.line(cx, cy - s * 0.1, cx, cy + s * 0.15)
+  doc.setFillColor(255, 255, 255)
+  doc.circle(cx, cy + s * 0.42, 0.2, 'F')
+}
+
 /** AllyJen default primary colour [r, g, b] */
 export const ALLYJEN_PRIMARY: [number, number, number] = [0, 56, 66]   // #003842
 
@@ -113,9 +143,10 @@ export async function drawPageFooters(
   const pageCount = doc.getNumberOfPages()
   const pw = doc.internal.pageSize.getWidth()
   const ph = doc.internal.pageSize.getHeight()
-  const legendY = ph - 16
   const bottomY = ph - 8
   const timestampY = bottomY - 4
+  const ficNoteY = timestampY - 6
+  const legendY = ficNoteY - 6
 
   const legendItems: { fill: [number, number, number]; high: boolean | null; text: string }[] = [
     { fill: [254, 202, 202], high: true,  text: 'Contains (high severity)' },
@@ -130,14 +161,6 @@ export async function drawPageFooters(
     doc.setTextColor(160, 160, 160)
 
     if (showLegend) {
-      // FIC / regulation note — sits just above the legend, centred, subtle italic
-      if (ficNote) {
-        doc.setFont('helvetica', 'italic')
-        doc.setFontSize(5.5)
-        doc.setTextColor(140, 140, 140)
-        doc.text(ficNote, pw / 2, legendY - 7, { align: 'center', maxWidth: pw - 20 })
-      }
-
       // Measure text widths so the whole legend block can be centred
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(7)
@@ -154,7 +177,9 @@ export async function drawPageFooters(
         doc.setFillColor(...item.fill)
         doc.setDrawColor(180, 180, 180)
         doc.rect(x, legendY - 4, boxW, 5, 'FD')
-        if (item.high !== null) {
+        if (item.high === true) {
+          drawLegendWarningTriangle(doc, x, legendY - 4, boxW, 5)
+        } else if (item.high === false) {
           drawLegendCheckmark(doc, x, legendY - 4, boxW, 5, item.high)
         }
         doc.setFont('helvetica', 'normal')
@@ -163,6 +188,14 @@ export async function drawPageFooters(
         doc.text(item.text, x + boxW + boxTextGap, legendY)
         startX += itemWidths[index] + interItemGap
       })
+
+      // FIC / regulation note — sits just below the legend, centred, subtle italic
+      if (ficNote) {
+        doc.setFont('helvetica', 'italic')
+        doc.setFontSize(5.5)
+        doc.setTextColor(140, 140, 140)
+        doc.text(ficNote, pw / 2, ficNoteY, { align: 'center', maxWidth: pw - 20 })
+      }
     }
 
     // Page number — bottom left
