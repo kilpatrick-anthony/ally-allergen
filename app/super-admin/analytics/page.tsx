@@ -11,6 +11,7 @@ import {
   RefreshCw, ArrowUpRight, ArrowDownRight,
   Target, Leaf, Users
 } from 'lucide-react'
+import { getAllergenIconForLabel, getDietaryIconForLabel } from '@/lib/allergens'
 
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
@@ -517,25 +518,28 @@ export default function SuperAdminAnalyticsPage() {
               {analyticsData.topAllergens.length === 0 ? (
                 <div className="text-sm text-gray-500 dark:text-gray-400">No allergen search data yet.</div>
               ) : (
-                analyticsData.topAllergens.map((item: any, index: number) => (
-                  <div key={index} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                        <Target className="h-4 w-4 text-red-600 dark:text-red-400" />
+                analyticsData.topAllergens.map((item: any, index: number) => {
+                  const { icon: AllergenIcon, color } = getAllergenIconForLabel(item.name)
+                  return (
+                    <div key={index} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg" style={{ backgroundColor: `${color}1f` }}>
+                          <AllergenIcon className="h-4 w-4" style={{ color }} />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{item.searches?.toLocaleString() || 0} searches</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{item.searches?.toLocaleString() || 0} searches</div>
-                      </div>
+                      <Badge
+                        variant={item.change?.startsWith('+') ? 'success' : 'error'}
+                        icon={item.change?.startsWith('+') ? ArrowUpRight : ArrowDownRight}
+                      >
+                        {item.change || '0%'}
+                      </Badge>
                     </div>
-                    <Badge
-                      variant={item.change?.startsWith('+') ? 'success' : 'error'}
-                      icon={item.change?.startsWith('+') ? ArrowUpRight : ArrowDownRight}
-                    >
-                      {item.change || '0%'}
-                    </Badge>
-                  </div>
-                ))
+                  )
+                })
               )}
             </div>
           </div>
@@ -555,25 +559,28 @@ export default function SuperAdminAnalyticsPage() {
               {analyticsData.topDietary.length === 0 ? (
                 <div className="text-sm text-gray-500 dark:text-gray-400">No dietary filter data yet.</div>
               ) : (
-                analyticsData.topDietary.map((item: any, index: number) => (
-                  <div key={index} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                        <Leaf className="h-4 w-4 text-green-600 dark:text-green-400" />
+                analyticsData.topDietary.map((item: any, index: number) => {
+                  const { icon: DietaryIcon, color } = getDietaryIconForLabel(item.name)
+                  return (
+                    <div key={index} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg" style={{ backgroundColor: `${color}1f` }}>
+                          <DietaryIcon className="h-4 w-4" style={{ color }} />
+                        </div>
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{item.clicks?.toLocaleString() || 0} uses</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{item.clicks?.toLocaleString() || 0} uses</div>
-                      </div>
+                      <Badge
+                        variant={item.change?.startsWith('+') ? 'success' : 'error'}
+                        icon={item.change?.startsWith('+') ? ArrowUpRight : ArrowDownRight}
+                      >
+                        {item.change || '0%'}
+                      </Badge>
                     </div>
-                    <Badge
-                      variant={item.change?.startsWith('+') ? 'success' : 'error'}
-                      icon={item.change?.startsWith('+') ? ArrowUpRight : ArrowDownRight}
-                    >
-                      {item.change || '0%'}
-                    </Badge>
-                  </div>
-                ))
+                  )
+                })
               )}
             </div>
           </div>
