@@ -1099,14 +1099,14 @@ export default function KioskPage() {
               className="h-20 sm:h-24 lg:h-28 xl:h-32 w-auto mx-auto"
             />
 
-            <div className="mt-10 sm:mt-12 lg:mt-14">
+            <div className="mt-4 sm:mt-5 lg:mt-6">
               <p className="text-white/85 text-lg sm:text-xl lg:text-2xl font-semibold leading-snug">
                 {t.servingConfidenceDesc}
               </p>
             </div>
 
             {(kioskDisplayName || businessName) && (
-              <p className="mt-6 text-white/75 text-base sm:text-lg lg:text-xl font-semibold uppercase tracking-[0.2em]">
+              <p className="mt-10 sm:mt-12 lg:mt-14 text-white/90 text-2xl sm:text-3xl lg:text-4xl font-bold uppercase tracking-wide">
                 {kioskDisplayName || businessName}
               </p>
             )}
