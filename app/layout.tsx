@@ -49,7 +49,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     metadataBase: new URL(BASE_URL),
     title: {
-      default: 'AllyJen | Allergen Management Software for Restaurants',
+      default: 'AllyJen | Serving Confidence',
       template: '%s | AllyJen',
     },
     description:
