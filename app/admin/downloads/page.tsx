@@ -25,6 +25,7 @@ import { generateMenuItemsReportPDF } from '@/lib/pdf/menuItemsReportPDF'
 import { generateSuppliersReportPDF } from '@/lib/pdf/suppliersReportPDF'
 import { generateComplianceReportPDF } from '@/lib/pdf/complianceReportPDF'
 import { generateSiteOverviewReportPDF } from '@/lib/pdf/siteOverviewReportPDF'
+import { generateAuditLogReportPDF } from '@/lib/pdf/auditLogReportPDF'
 
 export default function DownloadsPage() {
   const { t } = useTranslation()
@@ -47,6 +48,7 @@ export default function DownloadsPage() {
   const [suppliersReportLoading, setSuppliersReportLoading] = useState(false)
   const [complianceReportLoading, setComplianceReportLoading] = useState(false)
   const [siteOverviewReportLoading, setSiteOverviewReportLoading] = useState(false)
+  const [auditReportLoading, setAuditReportLoading] = useState(false)
 
   const [dataLoaded, setDataLoaded] = useState(false)
 
@@ -452,6 +454,55 @@ export default function DownloadsPage() {
     }
   }
 
+  const handleGenerateAuditLogReport = async () => {
+    if (!dataLoaded) {
+      setGuideError(t('admin.loadingBusinessData'))
+      return
+    }
+
+    if (!business) {
+      setGuideError(t('admin.noBusinessFoundSupport'))
+      return
+    }
+
+    try {
+      setAuditReportLoading(true)
+      setGuideError(null)
+
+      const response = await fetch('/api/pdf/track-download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          downloadType: 'audit_log_report',
+          siteId: null
+        })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok || !result.allowed) {
+        throw new Error(result.error || t('admin.pdfDownloadLimitReached'))
+      }
+
+      const auditResponse = await fetch('/api/audit-log?limit=1000')
+      const auditData = await auditResponse.json()
+
+      if (!auditResponse.ok) {
+        throw new Error(auditData.error || 'Failed to load audit trail')
+      }
+
+      await generateAuditLogReportPDF({
+        business,
+        entries: auditData.entries || []
+      })
+
+    } catch (err: any) {
+      setGuideError(err?.message || 'Failed to generate audit trail report')
+    } finally {
+      setAuditReportLoading(false)
+    }
+  }
+
   const downloads: any[] = []
 
   const stats = {
@@ -730,7 +781,7 @@ export default function DownloadsPage() {
             </div>
           </div>
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="flex flex-col justify-between space-y-3 min-h-[120px]">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
@@ -770,7 +821,28 @@ export default function DownloadsPage() {
                   {siteOverviewReportLoading ? 'Generating...' : 'Generate Report'}
                 </Button>
               </div>
+
+              <div className="flex flex-col justify-between space-y-3 min-h-[120px]">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-teal-500" />
+                    <h3 className="font-medium text-gray-900 dark:text-white">Audit Trail Report</h3>
+                  </div>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Full history of every ingredient and menu item edit, with who changed what and when.</p>
+                </div>
+                <Button
+                  variant="secondary"
+                  icon={<Clock className="h-4 w-4" />}
+                  size="md"
+                  fullWidth
+                  onClick={handleGenerateAuditLogReport}
+                  disabled={auditReportLoading}
+                >
+                  {auditReportLoading ? t('admin.generating') : t('admin.generateReport')}
+                </Button>
+              </div>
             </div>
+
 
             <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">

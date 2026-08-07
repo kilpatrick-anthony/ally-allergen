@@ -15,6 +15,7 @@ import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { ALLERGEN_LIST } from '@/types/allergen'
+import { EditHistory } from '@/components/admin/EditHistory'
 
 const isImageIcon = (icon?: string) => Boolean(icon && /^https?:\/\//.test(icon))
 
@@ -627,6 +628,8 @@ export default function ViewMenuItemPage() {
               </div>
             </div>
           </Card>
+
+          <EditHistory entityType="menu_item" entityId={menuItemId} />
         </div>
       </div>
     </Container>

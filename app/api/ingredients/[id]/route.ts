@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import { computeWorstCaseAllergens } from '@/types/allergen'
+import { recordAuditLog, diffRecordFields, INGREDIENT_AUDIT_FIELDS } from '@/lib/audit'
 
 const normalizeSupplierNames = (suppliers: string[]) => {
   const names: string[] = []
@@ -151,6 +152,14 @@ export async function PUT(
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
+    // Snapshot the current row before updating, so we can diff for the audit trail
+    const { data: previousIngredient } = await supabase
+      .from('ingredients')
+      .select('*')
+      .eq('id', id)
+      .eq('business_id', userBusiness.business_id)
+      .single()
+
     await upsertSuppliers(supabase, userBusiness.business_id, suppliers || [], userId)
 
     // If per-supplier profiles are provided, compute effective allergen/cert values from them.
@@ -206,6 +215,17 @@ export async function PUT(
       console.error('Error updating ingredient:', error)
       return NextResponse.json({ error: 'Failed to update ingredient' }, { status: 500 })
     }
+
+    await recordAuditLog(supabase, {
+      businessId: userBusiness.business_id,
+      entityType: 'ingredient',
+      entityId: id,
+      entityName: ingredient.name,
+      action: 'updated',
+      changes: diffRecordFields(previousIngredient || null, ingredient, INGREDIENT_AUDIT_FIELDS),
+      userId,
+      userEmail: payload.email as string,
+    })
 
     // Cascade: recompute dietary on all menu items that contain this ingredient
     try {
@@ -327,6 +347,14 @@ export async function DELETE(
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
+    // Snapshot the row before deleting so we can record its name in the audit trail
+    const { data: ingredientToDelete } = await supabase
+      .from('ingredients')
+      .select('name')
+      .eq('id', id)
+      .eq('business_id', userBusiness.business_id)
+      .single()
+
     // Delete ingredient
     const { error } = await supabase
       .from('ingredients')
@@ -338,6 +366,17 @@ export async function DELETE(
       console.error('Error deleting ingredient:', error)
       return NextResponse.json({ error: 'Failed to delete ingredient' }, { status: 500 })
     }
+
+    await recordAuditLog(supabase, {
+      businessId: userBusiness.business_id,
+      entityType: 'ingredient',
+      entityId: id,
+      entityName: ingredientToDelete?.name || 'Unknown ingredient',
+      action: 'deleted',
+      changes: [],
+      userId,
+      userEmail: payload.email as string,
+    })
 
     return NextResponse.json({ success: true })
 

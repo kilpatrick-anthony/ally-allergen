@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
+import { recordAuditLog, diffRecordFields, MENU_ITEM_AUDIT_FIELDS } from '@/lib/audit'
 
 const getUserBusinessId = async (
   supabase: ReturnType<typeof createServiceClient>,
@@ -117,6 +118,14 @@ export async function PUT(
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
+    // Snapshot the current row before updating, so we can diff for the audit trail
+    const { data: previousMenuItem } = await supabase
+      .from('menu_items')
+      .select('*')
+      .eq('id', id)
+      .eq('business_id', businessId)
+      .single()
+
     const updatePayload = {
       name: body.name,
       description: body.description || '',
@@ -178,6 +187,17 @@ export async function PUT(
         code: error.code
       }, { status: 500 })
     }
+
+    await recordAuditLog(supabase, {
+      businessId,
+      entityType: 'menu_item',
+      entityId: id,
+      entityName: menuItem.name,
+      action: 'updated',
+      changes: diffRecordFields(previousMenuItem || null, menuItem, MENU_ITEM_AUDIT_FIELDS),
+      userId,
+      userEmail: payload.email as string,
+    })
 
     const ingredients = Array.isArray(body.ingredients) ? body.ingredients : []
 
@@ -260,6 +280,14 @@ export async function DELETE(
       console.error('Error deleting menu item ingredients:', ingredientError)
     }
 
+    // Snapshot the row before deleting so we can record its name in the audit trail
+    const { data: menuItemToDelete } = await supabase
+      .from('menu_items')
+      .select('name')
+      .eq('id', id)
+      .eq('business_id', businessId)
+      .single()
+
     const { error } = await supabase
       .from('menu_items')
       .delete()
@@ -270,6 +298,17 @@ export async function DELETE(
       console.error('Error deleting menu item:', error)
       return NextResponse.json({ error: 'Failed to delete menu item' }, { status: 500 })
     }
+
+    await recordAuditLog(supabase, {
+      businessId,
+      entityType: 'menu_item',
+      entityId: id,
+      entityName: menuItemToDelete?.name || 'Unknown menu item',
+      action: 'deleted',
+      changes: [],
+      userId,
+      userEmail: payload.email as string,
+    })
 
     return NextResponse.json({ success: true })
   } catch (error: any) {

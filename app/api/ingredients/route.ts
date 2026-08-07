@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import { computeWorstCaseAllergens } from '@/types/allergen'
+import { recordAuditLog, diffRecordFields, INGREDIENT_AUDIT_FIELDS } from '@/lib/audit'
 
 const normalizeSupplierNames = (suppliers: string[]) => {
   const names: string[] = []
@@ -196,6 +197,17 @@ export async function POST(request: NextRequest) {
       console.error('Error creating ingredient:', error)
       return NextResponse.json({ error: 'Failed to create ingredient' }, { status: 500 })
     }
+
+    await recordAuditLog(supabase, {
+      businessId: userBusiness.business_id,
+      entityType: 'ingredient',
+      entityId: ingredient.id,
+      entityName: ingredient.name,
+      action: 'created',
+      changes: diffRecordFields(null, ingredient, INGREDIENT_AUDIT_FIELDS),
+      userId,
+      userEmail: payload.email as string,
+    })
 
     return NextResponse.json({ ingredient })
 

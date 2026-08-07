@@ -15,6 +15,7 @@ import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { ALLERGEN_LIST } from '@/types/allergen'
+import { EditHistory } from '@/components/admin/EditHistory'
 
 export default function ViewIngredientPage() {
   const { showNotification } = useNotification()
@@ -510,6 +511,8 @@ export default function ViewIngredientPage() {
               </div>
             </div>
           </Card>
+
+          <EditHistory entityType="ingredient" entityId={ingredientId} />
         </div>
       </div>
     </Container>

@@ -3,6 +3,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
+import { recordAuditLog, diffRecordFields, MENU_ITEM_AUDIT_FIELDS } from '@/lib/audit'
 
 const getUserBusinessId = async (
   supabase: ReturnType<typeof createServiceClient>,
@@ -197,6 +198,17 @@ export async function POST(request: NextRequest) {
         code: error.code
       }, { status: 500 })
     }
+
+    await recordAuditLog(supabase, {
+      businessId,
+      entityType: 'menu_item',
+      entityId: menuItem.id,
+      entityName: menuItem.name,
+      action: 'created',
+      changes: diffRecordFields(null, menuItem, MENU_ITEM_AUDIT_FIELDS),
+      userId,
+      userEmail: payload.email as string,
+    })
 
     const ingredients = Array.isArray(body.ingredients) ? body.ingredients : []
 
