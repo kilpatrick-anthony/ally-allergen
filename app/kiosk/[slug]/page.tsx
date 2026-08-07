@@ -1100,7 +1100,7 @@ export default function KioskPage() {
             />
 
             <div className="mt-4 sm:mt-5 lg:mt-6 max-w-lg mx-auto">
-              <p className="text-white/85 text-sm sm:text-base lg:text-lg font-semibold leading-snug">
+              <p className="text-white/85 text-[11px] sm:text-sm lg:text-base font-semibold leading-snug whitespace-nowrap">
                 {t.servingConfidenceDesc}
               </p>
             </div>
