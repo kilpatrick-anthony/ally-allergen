@@ -6,9 +6,9 @@ import Link from 'next/link'
 import { Container } from '@/components/layout/Container'
 import { ArrowRight, Menu, X } from 'lucide-react'
 
-const TEAM: { initials: string; name: string; role: string; bio: React.ReactNode[] }[] = [
+const TEAM: { photo: string; name: string; role: string; bio: React.ReactNode[] }[] = [
   {
-    initials: 'AK',
+    photo: '/Anthony.png',
     name: 'Anthony Kilpatrick',
     role: 'Co-Founder',
     bio: [
@@ -21,7 +21,7 @@ const TEAM: { initials: string; name: string; role: string; bio: React.ReactNode
     ],
   },
   {
-    initials: 'AG',
+    photo: '/Alvin.png',
     name: 'Alvin Galligan',
     role: 'Co-Founder',
     bio: [
@@ -32,7 +32,7 @@ const TEAM: { initials: string; name: string; role: string; bio: React.ReactNode
     ],
   },
   {
-    initials: 'JO',
+    photo: '/James.png',
     name: "James O'Brien",
     role: 'Sales and Accounts Manager',
     bio: [
@@ -181,11 +181,12 @@ export default function AboutPage() {
           <div className="max-w-4xl mx-auto space-y-12">
             {TEAM.map((member) => (
               <div key={member.name} className="flex flex-col sm:flex-row gap-6 bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
-                {/* Placeholder avatar — swap for a real photo once provided */}
                 <div className="flex-shrink-0 mx-auto sm:mx-0">
-                  <div className="w-24 h-24 rounded-full bg-[#003842] flex items-center justify-center text-white text-2xl font-bold">
-                    {member.initials}
-                  </div>
+                  <img
+                    src={member.photo}
+                    alt={member.name}
+                    className="w-24 h-24 rounded-full object-cover"
+                  />
                 </div>
                 <div className="text-center sm:text-left">
                   <h2 className="text-xl font-bold text-[#003842]">{member.name}</h2>
