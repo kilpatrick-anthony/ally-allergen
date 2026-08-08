@@ -73,8 +73,8 @@ export default function AboutPage() {
               <Link href="/#how-it-works" className={navItemClass}>How It Works</Link>
               <Link href="/#pricing" className={navItemClass}>Pricing</Link>
               <Link href="/#contact-form" className={navItemClass}>Contact</Link>
-              <Link href="/careers" className={navItemClass}>Careers</Link>
               <Link href="/about" className="inline-flex h-10 items-center text-[#42b8ac] font-semibold text-sm leading-none">About</Link>
+              <Link href="/careers" className={navItemClass}>Careers</Link>
             </nav>
 
             {/* Mobile menu toggle */}
@@ -111,7 +111,6 @@ export default function AboutPage() {
               { label: 'How It Works', href: '/#how-it-works' },
               { label: 'Pricing', href: '/#pricing' },
               { label: 'Contact', href: '/#contact-form' },
-              { label: 'Careers', href: '/careers' },
             ].map(({ label, href }) => (
               <Link
                 key={label}
@@ -128,6 +127,13 @@ export default function AboutPage() {
               className="px-6 py-3 text-left text-[#42b8ac] hover:bg-white/5 transition-colors font-semibold text-sm"
             >
               About
+            </Link>
+            <Link
+              href="/careers"
+              onClick={() => setIsNavOpen(false)}
+              className="px-6 py-3 text-left text-white hover:text-[#42b8ac] hover:bg-white/5 transition-colors font-medium text-sm"
+            >
+              Careers
             </Link>
             <Link
               href="/auth/signin"
@@ -149,7 +155,7 @@ export default function AboutPage() {
           <div className="relative py-16 lg:py-20 text-center max-w-3xl mx-auto">
             <span className="inline-block mb-3 text-[#42b8ac] text-xs font-bold uppercase tracking-widest">Meet the Team</span>
             <h1 className="text-3xl md:text-4xl xl:text-5xl font-extrabold text-white leading-tight mb-4 tracking-tight">
-              The people behind <span className="text-[#42b8ac]">AllyJen.</span>
+              The people behind Ally<span className="text-[#42b8ac]">Jen.</span>
             </h1>
           </div>
         </Container>

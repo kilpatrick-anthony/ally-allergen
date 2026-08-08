@@ -210,11 +210,11 @@ export default function LandingPage() {
               >
                 Contact
               </button>
-              <Link href="/careers" className={navItemClass}>
-                Careers
-              </Link>
               <Link href="/about" className={navItemClass}>
                 About
+              </Link>
+              <Link href="/careers" className={navItemClass}>
+                Careers
               </Link>
             </nav>
             
@@ -271,18 +271,18 @@ export default function LandingPage() {
               </button>
             ))}
             <Link
-              href="/careers"
-              onClick={() => setIsNavOpen(false)}
-              className="px-6 py-3 text-left text-white hover:text-[#42b8ac] hover:bg-white/5 transition-colors font-medium text-sm"
-            >
-              Careers
-            </Link>
-            <Link
               href="/about"
               onClick={() => setIsNavOpen(false)}
               className="px-6 py-3 text-left text-white hover:text-[#42b8ac] hover:bg-white/5 transition-colors font-medium text-sm"
             >
               About
+            </Link>
+            <Link
+              href="/careers"
+              onClick={() => setIsNavOpen(false)}
+              className="px-6 py-3 text-left text-white hover:text-[#42b8ac] hover:bg-white/5 transition-colors font-medium text-sm"
+            >
+              Careers
             </Link>
             <Link
               href="/auth/signin"
