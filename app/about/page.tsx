@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Container } from '@/components/layout/Container'
 import { ArrowRight, Menu, X } from 'lucide-react'
 
-const TEAM = [
+const TEAM: { initials: string; name: string; role: string; bio: React.ReactNode[] }[] = [
   {
     initials: 'AK',
     name: 'Anthony Kilpatrick',
@@ -25,10 +25,10 @@ const TEAM = [
     name: 'Alvin Galligan',
     role: 'Co-Founder',
     bio: [
-      "Alvin is a Co-Founder of AllyJen and an entrepreneur and business leader with more than 15 years' experience across operations, commercial strategy and business development.",
-      "Throughout his career, Alvin has worked at the point where good ideas have to become viable businesses, developing operations, managing teams, identifying commercial opportunities and creating strategies for sustainable growth.",
-      "When Anthony's original allergen management tool began to take shape, the pair saw the potential to develop it beyond its original purpose and create something that could solve the same problem for other businesses.",
-      "At AllyJen, Alvin brings the commercial and operational experience needed to turn that idea into a growing business. His focus includes strategy, operations, partnerships and growth, while helping ensure that the platform continues to solve a genuine, everyday problem for the businesses using it.",
+      <>Alvin is a Co-Founder of AllyJen, bringing together more than 15 years of entrepreneurial and business leadership experience with a strong academic background in health. He holds a <strong className="text-[#003842]">Master's degree in Immunisation and Global Health</strong>, adding valuable health-focused knowledge and perspective to the AllyJen team.</>,
+      "Throughout his career, Alvin has built extensive experience across operations, commercial strategy and business development, with a particular focus on turning ideas into practical, sustainable businesses.",
+      "When Anthony's original allergen management tool began to take shape, Alvin immediately recognised its wider potential. Together, they saw an opportunity to transform a solution to an everyday operational problem into a platform that could help food businesses manage allergen information more effectively.",
+      "Today, Alvin plays a key role in AllyJen's strategy, operations, partnerships and growth. His combination of commercial experience and postgraduate education in health brings a valuable perspective to AllyJen as the company continues to develop technology designed to support businesses, strengthen allergen management and help protect their customers.",
     ],
   },
   {
