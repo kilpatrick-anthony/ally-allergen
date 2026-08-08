@@ -167,8 +167,8 @@ export default function AboutPage() {
           <div className="max-w-3xl mx-auto space-y-5 text-gray-700 text-base leading-relaxed text-justify">
             <p>AllyJen started with a problem we knew all too well.</p>
             <p>After years working across retail, hospitality and customer-facing businesses, we'd seen first-hand how difficult it can be to keep allergen information accurate and up to date.</p>
-            <p>Through his consultancy work, Anthony regularly created and maintained allergen guides of 30 pages or more, manually tracking changes to products, ingredients and suppliers. Keeping everything accurate was essential, but the process was far more complicated and time-consuming than it needed to be.</p>
-            <p>So, Anthony started building an app to make the job easier.</p>
+            <p>Through their consultancy work, Anthony and Alvin regularly created and maintained allergen guides for businesses, manually tracking changes to products, ingredients and suppliers. Keeping everything accurate was essential, but the process was far more complicated and time-consuming than it needed to be.</p>
+            <p>So, they started building an app to make the job easier.</p>
             <p>As the idea developed, Anthony and Alvin realised this wasn't just their problem; businesses everywhere faced the same challenge. What began as a simple internal tool became the starting point for AllyJen.</p>
             <p>Today, AllyJen combines practical experience with technology to replace spreadsheets, bulky allergen guides and repetitive manual updates with a simpler way to manage allergen information, helping businesses save time, reduce risk and give their customers greater confidence.</p>
           </div>
