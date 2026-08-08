@@ -12,12 +12,12 @@ const TEAM: { photo: string; name: string; role: string; bio: React.ReactNode[] 
     name: 'Anthony Kilpatrick',
     role: 'Co-Founder',
     bio: [
-      "Anthony is a Co-Founder of AllyJen, bringing a varied background spanning business management, technology, training, consultancy and customer experience.",
-      "A graduate of the University of Limerick, Anthony spent many years in management and leadership roles within the cinema industry, including as an award-winning General Manager with ODEON Cinemas. That experience gave him a strong understanding of the realities of running busy, customer-facing operations, where processes need to be practical, teams need the right information, and getting the details right matters.",
+      "Anthony is a Co-Founder of AllyJen, with a background spanning 20+ years in business management, technology, training, consultancy and customer experience.",
+      "A graduate of the University of Limerick, Anthony spent 17 years in management and leadership roles at ODEON Cinemas, and was awarded the Barry Souber Award for General Manager of the Year UK & Ireland in 2020. That experience gave him a strong understanding of the realities of running busy, customer-facing operations, where processes need to be practical, teams need the right information, and getting the details right matters.",
       "After moving into consultancy, Anthony worked closely with businesses across areas including operations, customer experience and compliance. Part of that work involved creating and maintaining detailed allergen guides, and it was here that the original idea for AllyJen began.",
-      "Faced with manually managing allergen guides of 30 pages or more, and constantly updating them as products, ingredients and supplier information changed, Anthony began developing a digital tool that could make the process easier to manage.",
+      "Faced with manually managing significantly large allergen guides and constantly updating them as products, ingredients and supplier information changed, Anthony began developing a digital tool that could make the process easier to manage.",
       "What started as a solution to his own problem ultimately became AllyJen.",
-      "Today, Anthony works across product development, technology, customer experience and the continued development of the platform. Having experienced the problem AllyJen solves first-hand, his focus remains on ensuring that the technology stays practical, intuitive and genuinely useful for the people who have to manage allergen information every day.",
+      "Today, Anthony works across product development, technology, customer experience and the continued development of the platform. Having experienced the problem AllyJen solves first-hand, his focus remains on ensuring that the technology stays practical, affordable and genuinely useful for the people who have to manage allergen information every day.",
     ],
   },
   {
