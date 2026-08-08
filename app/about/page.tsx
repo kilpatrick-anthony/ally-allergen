@@ -13,8 +13,8 @@ const TEAM = [
     role: 'Co-Founder',
     bio: [
       "Anthony is a Co-Founder of AllyJen, bringing a varied background spanning business management, technology, training, consultancy and customer experience.",
-      "A graduate of the University of Limerick, Anthony spent many years in management and leadership roles within the cinema industry, including as an award-winning General Manager with ODEON Cinemas. That experience gave him a strong understanding of the realities of running busy, customer-facing operations — where processes need to be practical, teams need the right information, and getting the details right matters.",
-      "After moving into consultancy, Anthony worked closely with businesses across areas including operations, customer experience and compliance. Part of that work involved creating and maintaining detailed allergen guides — and it was here that the original idea for AllyJen began.",
+      "A graduate of the University of Limerick, Anthony spent many years in management and leadership roles within the cinema industry, including as an award-winning General Manager with ODEON Cinemas. That experience gave him a strong understanding of the realities of running busy, customer-facing operations, where processes need to be practical, teams need the right information, and getting the details right matters.",
+      "After moving into consultancy, Anthony worked closely with businesses across areas including operations, customer experience and compliance. Part of that work involved creating and maintaining detailed allergen guides, and it was here that the original idea for AllyJen began.",
       "Faced with manually managing allergen guides of 30 pages or more, and constantly updating them as products, ingredients and supplier information changed, Anthony began developing a digital tool that could make the process easier to manage.",
       "What started as a solution to his own problem ultimately became AllyJen.",
       "Today, Anthony works across product development, technology, customer experience and the continued development of the platform. Having experienced the problem AllyJen solves first-hand, his focus remains on ensuring that the technology stays practical, intuitive and genuinely useful for the people who have to manage allergen information every day.",
@@ -26,7 +26,7 @@ const TEAM = [
     role: 'Co-Founder',
     bio: [
       "Alvin is a Co-Founder of AllyJen and an entrepreneur and business leader with more than 15 years' experience across operations, commercial strategy and business development.",
-      "Throughout his career, Alvin has worked at the point where good ideas have to become viable businesses — developing operations, managing teams, identifying commercial opportunities and creating strategies for sustainable growth.",
+      "Throughout his career, Alvin has worked at the point where good ideas have to become viable businesses, developing operations, managing teams, identifying commercial opportunities and creating strategies for sustainable growth.",
       "When Anthony's original allergen management tool began to take shape, the pair saw the potential to develop it beyond its original purpose and create something that could solve the same problem for other businesses.",
       "At AllyJen, Alvin brings the commercial and operational experience needed to turn that idea into a growing business. His focus includes strategy, operations, partnerships and growth, while helping ensure that the platform continues to solve a genuine, everyday problem for the businesses using it.",
     ],
@@ -34,12 +34,12 @@ const TEAM = [
   {
     initials: 'JO',
     name: "James O'Brien",
-    role: 'Sales & Accounts Manager',
+    role: 'Sales and Accounts Manager',
     bio: [
-      "James is AllyJen's Sales & Accounts Manager and is often one of the first people our customers get to know.",
+      "James is AllyJen's Sales and Accounts Manager and is often one of the first people our customers get to know.",
       "His role is centred around people: understanding how a business currently manages its allergen information, identifying where AllyJen can make life easier, and helping customers find the right solution for their operation.",
       "From the first conversation through to becoming an AllyJen customer, James works closely with businesses to make the process straightforward and personal. He also supports our existing accounts, building long-term customer relationships and ensuring our customers continue to get real value from the platform.",
-      "For James, sales isn't simply about bringing new businesses on board — it's about listening, understanding what each customer actually needs and building relationships that last.",
+      "For James, sales isn't simply about bringing new businesses on board. It's about listening, understanding what each customer actually needs and building relationships that last.",
     ],
   },
 ]
@@ -160,14 +160,11 @@ export default function AboutPage() {
         <Container>
           <div className="max-w-3xl mx-auto space-y-5 text-gray-700 text-base leading-relaxed">
             <p>AllyJen started with a problem we knew all too well.</p>
-            <p>After many years working across retail, hospitality and customer-facing businesses, we'd seen first-hand just how difficult it can be to keep allergen information accurate and up to date.</p>
-            <p>For Anthony, that challenge became particularly apparent through his consultancy work, where one of his responsibilities was creating and maintaining allergen guides for businesses. These could run to more than 30 pages, with individual products, ingredients and allergens needing to be manually tracked and updated whenever a supplier changed a recipe, an ingredient was substituted or a new product was introduced.</p>
-            <p>Keeping everything accurate was essential — but the process behind it was far more complicated and time-consuming than it needed to be.</p>
-            <p>So Anthony started building an app to make the job easier.</p>
-            <p>What began as a tool to solve his own frustration gradually developed into something much bigger. As Anthony and Alvin discussed the idea and began developing it further, they realised the same problem was being faced by food businesses everywhere.</p>
-            <p>That simple internal tool became the starting point for AllyJen.</p>
-            <p>Today, we're building AllyJen around the same principle that inspired it in the first place: <strong className="text-[#003842]">allergen management should be accurate, dependable and easy to manage.</strong></p>
-            <p>By combining practical experience with technology, we want to take away the spreadsheets, oversized allergen folders and repetitive manual updates, giving businesses a simpler way to manage their allergen information — and giving their customers greater confidence in the information they're receiving.</p>
+            <p>After years working across retail, hospitality and customer-facing businesses, we'd seen first-hand how difficult it can be to keep allergen information accurate and up to date.</p>
+            <p>Through his consultancy work, Anthony regularly created and maintained allergen guides of 30 pages or more, manually tracking changes to products, ingredients and suppliers. Keeping everything accurate was essential, but the process was far more complicated and time-consuming than it needed to be.</p>
+            <p>So, Anthony started building an app to make the job easier.</p>
+            <p>As the idea developed, Anthony and Alvin realised this wasn't just their problem; businesses everywhere faced the same challenge. What began as a simple internal tool became the starting point for AllyJen.</p>
+            <p>Today, AllyJen combines practical experience with technology to replace spreadsheets, bulky allergen guides and repetitive manual updates with a simpler way to manage allergen information, helping businesses save time, reduce risk and give their customers greater confidence.</p>
           </div>
         </Container>
       </section>
