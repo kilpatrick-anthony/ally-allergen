@@ -520,6 +520,24 @@ export default function LandingPage() {
         </Container>
       </section>
 
+      {/* ── ABOUT TEASER ── */}
+      <section className="py-16 bg-gray-50">
+        <Container>
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-2xl md:text-3xl font-bold text-[#003842] mb-3">Built by people who've faced this problem first-hand</h2>
+            <p className="text-gray-500 text-base leading-relaxed mb-6">
+              AllyJen was founded by a team who experienced the challenges of allergen management up close, and built a platform to solve it properly.
+            </p>
+            <Link
+              href="/about"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#003842] text-white font-semibold text-sm hover:bg-[#004d5c] transition-colors"
+            >
+              Meet the Team <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </Container>
+      </section>
+
       {/* ── CONTACT FORM ── */}
       <section id="contact-form" className="py-12 bg-white">
         <Container>

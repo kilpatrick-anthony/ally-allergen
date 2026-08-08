@@ -164,7 +164,7 @@ export default function AboutPage() {
       {/* ── OUR STORY ── */}
       <section className="py-16 bg-white">
         <Container>
-          <div className="max-w-3xl mx-auto space-y-5 text-gray-700 text-base leading-relaxed">
+          <div className="max-w-3xl mx-auto space-y-5 text-gray-700 text-base leading-relaxed text-justify">
             <p>AllyJen started with a problem we knew all too well.</p>
             <p>After years working across retail, hospitality and customer-facing businesses, we'd seen first-hand how difficult it can be to keep allergen information accurate and up to date.</p>
             <p>Through his consultancy work, Anthony regularly created and maintained allergen guides of 30 pages or more, manually tracking changes to products, ingredients and suppliers. Keeping everything accurate was essential, but the process was far more complicated and time-consuming than it needed to be.</p>
@@ -191,7 +191,7 @@ export default function AboutPage() {
                 <div className="text-center sm:text-left">
                   <h2 className="text-xl font-bold text-[#003842]">{member.name}</h2>
                   <p className="text-[#42b8ac] font-semibold text-sm mb-4">{member.role}</p>
-                  <div className="space-y-3 text-gray-600 text-sm leading-relaxed">
+                  <div className="space-y-3 text-gray-600 text-sm leading-relaxed text-justify">
                     {member.bio.map((para, i) => (
                       <p key={i}>{para}</p>
                     ))}
@@ -208,7 +208,7 @@ export default function AboutPage() {
         <Container>
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-6">Built from experience. Built for real businesses.</h2>
-            <div className="space-y-4 text-white/70 text-base leading-relaxed text-left">
+            <div className="space-y-4 text-white/70 text-base leading-relaxed text-justify">
               <p>AllyJen wasn't created around a hypothetical problem. It came from experiencing that problem ourselves.</p>
               <p>We understand the responsibility businesses carry when providing allergen information, but we also understand the operational reality behind keeping that information accurate when products, recipes and suppliers are constantly changing.</p>
               <p>That's why we've built AllyJen to make the process simpler.</p>
