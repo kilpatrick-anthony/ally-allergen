@@ -374,7 +374,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
               { step: '01', title: 'Get in Touch', desc: 'Fill out the contact form below and tell us about your business. We\'ll respond within one business day.' },
-              { step: '02', title: 'We Get You Running', desc: 'We configure your allergen system, prepare your kiosk, and ship it ready to go. Just connect to WiFi and the platform is live.' },
+              { step: '02', title: 'We Get You Running', desc: 'We configure your allergen system. If you order a kiosk device, we\'ll prepare and ship it ready to go — just connect to WiFi. QR Lite customers get their QR code signage shipped directly instead.' },
               { step: '03', title: 'Go Live with Confidence', desc: 'Launch AllyJen, manage allergens, and show customers the information they need.' },
             ].map((s, i) => (
               <div key={i} className="relative pl-6 border-l-2 border-[#42b8ac]">
