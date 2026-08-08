@@ -116,6 +116,7 @@ export default function CareersPage() {
               <Link href="/#pricing" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Pricing</Link>
               <Link href="/#contact-form" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Contact</Link>
               <Link href="/careers" className="inline-flex items-center text-[#42b8ac] font-semibold text-sm">Careers</Link>
+              <Link href="/about" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">About</Link>
             </nav>
 
             {/* Mobile menu toggle */}
@@ -168,6 +169,13 @@ export default function CareersPage() {
               className="px-6 py-3 text-left text-[#42b8ac] hover:bg-white/5 transition-colors font-semibold text-sm"
             >
               Careers
+            </Link>
+            <Link
+              href="/about"
+              onClick={() => setIsNavOpen(false)}
+              className="px-6 py-3 text-left text-white hover:text-[#42b8ac] hover:bg-white/5 transition-colors font-medium text-sm"
+            >
+              About
             </Link>
           </nav>
         </div>
