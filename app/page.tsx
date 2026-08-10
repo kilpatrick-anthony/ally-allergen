@@ -35,7 +35,7 @@ export default function LandingPage() {
   const publicPlans = [
     {
       ...getPlanDefinition('qr_lite'),
-      badge: 'Most Popular',
+      badge: null,
       desc: 'The lowest-cost way to get compliant. We send QR codes straight to your business — no device needed.',
       features: [
         'Full AllyJen platform access — all 14 EU-mandated allergens, sub-allergen &amp; multilingual tracking',
@@ -47,12 +47,12 @@ export default function LandingPage() {
         '12 month contract',
       ],
       cta: 'Get Started',
-      highlight: true,
+      highlight: false,
       priceFrom: true,
     },
     {
       ...getPlanDefinition('starter'),
-      badge: null,
+      badge: 'Most Popular',
       desc: 'Full access to the AllyJen platform. You keep your menu up to date; we power the technology.',
       features: [
         'Full AllyJen platform access',
@@ -67,7 +67,7 @@ export default function LandingPage() {
         'Email support',
       ],
       cta: 'Get Started',
-      highlight: false,
+      highlight: true,
       priceFrom: true,
     },
     {
