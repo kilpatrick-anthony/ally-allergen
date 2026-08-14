@@ -63,7 +63,7 @@ export function JenCoach() {
           onClick={() => setOpen((current) => !current)}
           className="relative flex h-[56px] cursor-pointer items-center gap-0 overflow-visible rounded-full shadow-2xl transition-all duration-200 hover:scale-[1.03] hover:shadow-teal-400/30 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 active:scale-[0.97] sm:h-[62px]"
           style={{ background: open ? 'linear-gradient(135deg, #003842 0%, #005a6e 100%)' : 'linear-gradient(135deg, #003842 0%, #00616e 60%, #42b8ac 100%)', paddingRight: open ? '0' : '18px' }}
-          aria-label={open ? `Close ${characterName} message form` : `Message ${characterName}`}
+          aria-label={open ? `Close ${characterName} message form` : 'Contact Us'}
         >
           <span className="relative -my-1 -ml-1 shrink-0 sm:-my-3">
             <Image src={avatar} alt="" width={78} height={78} className="block h-[52px] w-[52px] rounded-full ring-2 ring-white/40 sm:h-[78px] sm:w-[78px]" />
@@ -71,7 +71,7 @@ export function JenCoach() {
           {open ? (
             <span className="ml-1 mr-1 flex h-10 w-10 items-center justify-center"><X size={20} className="text-white" /></span>
           ) : (
-            <span className="ml-2 hidden text-[15px] font-bold tracking-wide text-white sm:block">Message {characterName}</span>
+            <span className="ml-2 hidden text-[15px] font-bold tracking-wide text-white sm:block">Contact Us</span>
           )}
         </button>
       )}
