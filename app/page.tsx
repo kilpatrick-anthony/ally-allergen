@@ -14,6 +14,7 @@ import {
   Building,
   BarChart,
   Mail,
+  Phone,
   Send,
   ChevronDown,
   Menu,
@@ -671,6 +672,10 @@ export default function LandingPage() {
                     <Mail className="h-4 w-4 text-[#42b8ac] flex-shrink-0" />
                     info@allyjen.ie
                   </a>
+                  <a href="tel:+353896580997" className="mt-2 inline-flex items-center gap-2 text-sm text-white hover:text-[#42b8ac] transition-colors">
+                    <Phone className="h-4 w-4 text-[#42b8ac] flex-shrink-0" />
+                    James: +353 89 658 0997
+                  </a>
                 </div>
               </div>
             </div>
@@ -684,6 +689,9 @@ export default function LandingPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <img src="/Logo-AllyJen.svg" alt="AllyJen" className="h-24 w-auto" />
             <div className="flex flex-col items-center md:items-end gap-3">
+              <a href="tel:+353896580997" className="text-sm font-medium text-white/70 transition-colors hover:text-[#42b8ac]">
+                James: +353 89 658 0997
+              </a>
               <a
                 href="https://www.linkedin.com/company/allyjen/"
                 target="_blank"

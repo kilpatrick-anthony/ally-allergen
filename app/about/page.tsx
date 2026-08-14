@@ -4,9 +4,9 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { Container } from '@/components/layout/Container'
-import { ArrowRight, Menu, X } from 'lucide-react'
+import { ArrowRight, Menu, Phone, X } from 'lucide-react'
 
-const TEAM: { photo: string; name: string; role: string; bio: React.ReactNode[] }[] = [
+const TEAM: { photo: string; name: string; role: string; phone?: string; phoneHref?: string; bio: React.ReactNode[] }[] = [
   {
     photo: '/Anthony.png',
     name: 'Anthony Kilpatrick',
@@ -35,6 +35,8 @@ const TEAM: { photo: string; name: string; role: string; bio: React.ReactNode[] 
     photo: '/James.png',
     name: "James O'Brien",
     role: 'Sales and Accounts Manager',
+    phone: '+353 89 658 0997',
+    phoneHref: 'tel:+353896580997',
     bio: [
       "James is AllyJen's Sales and Accounts Manager and is often one of the first people our customers get to know.",
       "His role is centred around people: understanding how a business currently manages its allergen information, identifying where AllyJen can make life easier, and helping customers find the right solution for their operation.",
@@ -191,6 +193,12 @@ export default function AboutPage() {
                 <div className="text-center sm:text-left">
                   <h2 className="text-xl font-bold text-[#003842]">{member.name}</h2>
                   <p className="text-[#42b8ac] font-semibold text-sm mb-4">{member.role}</p>
+                  {member.phone && member.phoneHref && (
+                    <a href={member.phoneHref} className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#e8f7f5] px-3 py-2 text-sm font-semibold text-[#0e7066] transition-colors hover:bg-[#d4f0ed]">
+                      <Phone className="h-4 w-4" />
+                      {member.phone}
+                    </a>
+                  )}
                   <div className="space-y-3 text-gray-600 text-sm leading-relaxed text-justify">
                     {member.bio.map((para, i) => (
                       <p key={i}>{para}</p>
@@ -224,6 +232,9 @@ export default function AboutPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <img src="/Logo-AllyJen.svg" alt="AllyJen" className="h-24 w-auto" />
             <div className="flex flex-col items-center md:items-end gap-3">
+              <a href="tel:+353896580997" className="text-sm font-medium text-white/70 transition-colors hover:text-[#42b8ac]">
+                James: +353 89 658 0997
+              </a>
               <a
                 href="https://www.linkedin.com/company/allyjen/"
                 target="_blank"

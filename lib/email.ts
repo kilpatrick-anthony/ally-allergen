@@ -21,12 +21,14 @@ interface Attachment {
 
 export async function sendMail({
   to,
+  replyTo,
   subject,
   text,
   html,
   attachments,
 }: {
   to: string
+  replyTo?: string
   subject: string
   text?: string
   html?: string
@@ -35,6 +37,7 @@ export async function sendMail({
   const info = await transporter.sendMail({
     from: process.env.EMAIL_FROM,
     to,
+    replyTo,
     subject,
     text,
     html,
