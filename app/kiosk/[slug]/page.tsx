@@ -2398,8 +2398,8 @@ export default function KioskPage() {
       )}
       </Container>
 
-      {/* Ally — AI chat assistant for allergy queries (temporarily disabled) */}
-      {/* <AllyChat menuItems={menuItems ?? []} businessName={business?.name ?? ''} /> */}
+      {/* Ally — customer messaging to the AllyJen team */}
+      <AllyChat businessName={business?.name ?? ''} />
 
       {/* EU Compliance Footer */}
       <div className="mt-8 border-t border-gray-200 bg-gray-50 py-5 px-4">

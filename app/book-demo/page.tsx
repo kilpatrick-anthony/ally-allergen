@@ -283,6 +283,9 @@ export default function BookDemoPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <img src="/Logo-AllyJen.svg" alt="AllyJen" className="h-24 w-auto" />
             <div className="flex flex-col items-center md:items-end gap-3">
+              <a href="tel:+353896580997" className="text-sm font-medium text-white/70 transition-colors hover:text-[#42b8ac]">
+                James: +353 89 658 0997
+              </a>
               <a
                 href="https://www.linkedin.com/company/allyjen/"
                 target="_blank"
