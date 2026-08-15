@@ -30,7 +30,6 @@ import { Badge } from '@/components/ui/Badge'
 // Import offline functionality
 import { useOfflineKioskData, type Business, type MenuItem } from '@/lib/hooks/useOfflineKioskData'
 import OfflineIndicator from '@/components/kiosk/OfflineIndicator'
-import { AllyChat } from '@/components/kiosk/AllyChat'
 import { useDeviceHeartbeat } from '@/lib/hooks/useDeviceHeartbeat'
 
 // ===== TRACKING FUNCTIONS =====
@@ -2397,9 +2396,6 @@ export default function KioskPage() {
         </div>
       )}
       </Container>
-
-      {/* Ally — customer messaging to the AllyJen team */}
-      <AllyChat businessName={business?.name ?? ''} />
 
       {/* EU Compliance Footer */}
       <div className="mt-8 border-t border-gray-200 bg-gray-50 py-5 px-4">
