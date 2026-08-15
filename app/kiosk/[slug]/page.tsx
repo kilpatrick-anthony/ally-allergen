@@ -230,6 +230,59 @@ const DIETARY_OPTIONS = [
   { name: 'Coeliac-Friendly', color: '#ec4899', icon: ShieldCheck },
 ]
 
+type FilterOptionLabels = {
+  contains: string
+  allergens: Record<string, string>
+  dietary: Record<string, string>
+  glutenTypes: Record<GlutenType, string>
+  treeNutTypes: Record<TreeNutType, string>
+}
+
+const KIOSK_FILTER_LABELS: Record<LanguageCode, FilterOptionLabels> = {
+  en: {
+    contains: 'Contains',
+    allergens: { contains_cereals_gluten: 'Gluten', contains_crustaceans: 'Crustaceans', contains_eggs: 'Eggs', contains_fish: 'Fish', contains_peanuts: 'Peanuts', contains_soybeans: 'Soybeans', contains_milk: 'Milk', contains_nuts: 'Tree Nuts', contains_celery: 'Celery', contains_mustard: 'Mustard', contains_sesame: 'Sesame', contains_sulphites: 'Sulphites', contains_lupin: 'Lupin', contains_molluscs: 'Molluscs' },
+    dietary: { Vegan: 'Vegan', Vegetarian: 'Vegetarian', 'Gluten-Free': 'Gluten-Free', Halal: 'Halal', Kosher: 'Kosher', Organic: 'Organic', 'Fair Trade': 'Fair Trade', 'Lactose-Free': 'Lactose-Free', 'Coeliac-Friendly': 'Coeliac-Friendly' },
+    glutenTypes: { wheat: 'Wheat', rye: 'Rye', barley: 'Barley', oats: 'Oats', spelt: 'Spelt', kamut: 'Kamut' },
+    treeNutTypes: { almonds: 'Almonds', hazelnuts: 'Hazelnuts', walnuts: 'Walnuts', cashews: 'Cashews', pecans: 'Pecans', brazil_nuts: 'Brazil nuts', pistachios: 'Pistachios', macadamia: 'Macadamia nuts' },
+  },
+  ga: {
+    contains: 'Tá ann',
+    allergens: { contains_cereals_gluten: 'Glútan', contains_crustaceans: 'Crústaigh', contains_eggs: 'Uibheacha', contains_fish: 'Iasc', contains_peanuts: 'Píseanna talún', contains_soybeans: 'Pónairí soighe', contains_milk: 'Bainne', contains_nuts: 'Cnónna crainn', contains_celery: 'Soilire', contains_mustard: 'Mustaird', contains_sesame: 'Síolta seasamain', contains_sulphites: 'Sulfítí', contains_lupin: 'Lúipín', contains_molluscs: 'Moilisc' },
+    dietary: { Vegan: 'Veigeánach', Vegetarian: 'Feoilséantach', 'Gluten-Free': 'Saor ó ghlútan', Halal: 'Halal', Kosher: 'Cóisir', Organic: 'Orgánach', 'Fair Trade': 'Cóirthrádáil', 'Lactose-Free': 'Saor ó lachtós', 'Coeliac-Friendly': 'Oiriúnach do chéiliaigh' },
+    glutenTypes: { wheat: 'Cruithneacht', rye: 'Seagal', barley: 'Eorna', oats: 'Coirce', spelt: 'Speilt', kamut: 'Kamut' },
+    treeNutTypes: { almonds: 'Almóinní', hazelnuts: 'Cnónna coill', walnuts: 'Gallchnónna', cashews: 'Cnónna caisiú', pecans: 'Cnónna peacán', brazil_nuts: 'Cnónna Brasaíle', pistachios: 'Pistéisí', macadamia: 'Cnónna macadamia' },
+  },
+  pt: {
+    contains: 'Contém',
+    allergens: { contains_cereals_gluten: 'Glúten', contains_crustaceans: 'Crustáceos', contains_eggs: 'Ovos', contains_fish: 'Peixe', contains_peanuts: 'Amendoins', contains_soybeans: 'Soja', contains_milk: 'Leite', contains_nuts: 'Frutos de casca rija', contains_celery: 'Aipo', contains_mustard: 'Mostarda', contains_sesame: 'Sésamo', contains_sulphites: 'Sulfitos', contains_lupin: 'Tremoço', contains_molluscs: 'Moluscos' },
+    dietary: { Vegan: 'Vegan', Vegetarian: 'Vegetariano', 'Gluten-Free': 'Sem glúten', Halal: 'Halal', Kosher: 'Kosher', Organic: 'Biológico', 'Fair Trade': 'Comércio justo', 'Lactose-Free': 'Sem lactose', 'Coeliac-Friendly': 'Adequado para celíacos' },
+    glutenTypes: { wheat: 'Trigo', rye: 'Centeio', barley: 'Cevada', oats: 'Aveia', spelt: 'Espelta', kamut: 'Kamut' },
+    treeNutTypes: { almonds: 'Amêndoas', hazelnuts: 'Avelãs', walnuts: 'Nozes', cashews: 'Cajus', pecans: 'Nozes-pecã', brazil_nuts: 'Castanhas-do-pará', pistachios: 'Pistácios', macadamia: 'Nozes de macadâmia' },
+  },
+  fr: {
+    contains: 'Contient',
+    allergens: { contains_cereals_gluten: 'Gluten', contains_crustaceans: 'Crustacés', contains_eggs: 'Œufs', contains_fish: 'Poisson', contains_peanuts: 'Arachides', contains_soybeans: 'Soja', contains_milk: 'Lait', contains_nuts: 'Fruits à coque', contains_celery: 'Céleri', contains_mustard: 'Moutarde', contains_sesame: 'Sésame', contains_sulphites: 'Sulfites', contains_lupin: 'Lupin', contains_molluscs: 'Mollusques' },
+    dietary: { Vegan: 'Végane', Vegetarian: 'Végétarien', 'Gluten-Free': 'Sans gluten', Halal: 'Halal', Kosher: 'Casher', Organic: 'Biologique', 'Fair Trade': 'Commerce équitable', 'Lactose-Free': 'Sans lactose', 'Coeliac-Friendly': 'Adapté aux cœliaques' },
+    glutenTypes: { wheat: 'Blé', rye: 'Seigle', barley: 'Orge', oats: 'Avoine', spelt: 'Épeautre', kamut: 'Kamut' },
+    treeNutTypes: { almonds: 'Amandes', hazelnuts: 'Noisettes', walnuts: 'Noix', cashews: 'Noix de cajou', pecans: 'Noix de pécan', brazil_nuts: 'Noix du Brésil', pistachios: 'Pistaches', macadamia: 'Noix de macadamia' },
+  },
+  es: {
+    contains: 'Contiene',
+    allergens: { contains_cereals_gluten: 'Gluten', contains_crustaceans: 'Crustáceos', contains_eggs: 'Huevos', contains_fish: 'Pescado', contains_peanuts: 'Cacahuetes', contains_soybeans: 'Soja', contains_milk: 'Leche', contains_nuts: 'Frutos de cáscara', contains_celery: 'Apio', contains_mustard: 'Mostaza', contains_sesame: 'Sésamo', contains_sulphites: 'Sulfitos', contains_lupin: 'Altramuces', contains_molluscs: 'Moluscos' },
+    dietary: { Vegan: 'Vegano', Vegetarian: 'Vegetariano', 'Gluten-Free': 'Sin gluten', Halal: 'Halal', Kosher: 'Kosher', Organic: 'Ecológico', 'Fair Trade': 'Comercio justo', 'Lactose-Free': 'Sin lactosa', 'Coeliac-Friendly': 'Apto para celíacos' },
+    glutenTypes: { wheat: 'Trigo', rye: 'Centeno', barley: 'Cebada', oats: 'Avena', spelt: 'Espelta', kamut: 'Kamut' },
+    treeNutTypes: { almonds: 'Almendras', hazelnuts: 'Avellanas', walnuts: 'Nueces', cashews: 'Anacardos', pecans: 'Nueces pecanas', brazil_nuts: 'Nueces de Brasil', pistachios: 'Pistachos', macadamia: 'Nueces de macadamia' },
+  },
+  de: {
+    contains: 'Enthält',
+    allergens: { contains_cereals_gluten: 'Gluten', contains_crustaceans: 'Krebstiere', contains_eggs: 'Eier', contains_fish: 'Fisch', contains_peanuts: 'Erdnüsse', contains_soybeans: 'Sojabohnen', contains_milk: 'Milch', contains_nuts: 'Schalenfrüchte', contains_celery: 'Sellerie', contains_mustard: 'Senf', contains_sesame: 'Sesam', contains_sulphites: 'Sulfite', contains_lupin: 'Lupinen', contains_molluscs: 'Weichtiere' },
+    dietary: { Vegan: 'Vegan', Vegetarian: 'Vegetarisch', 'Gluten-Free': 'Glutenfrei', Halal: 'Halal', Kosher: 'Koscher', Organic: 'Bio', 'Fair Trade': 'Fairer Handel', 'Lactose-Free': 'Laktosefrei', 'Coeliac-Friendly': 'Für Zöliakie geeignet' },
+    glutenTypes: { wheat: 'Weizen', rye: 'Roggen', barley: 'Gerste', oats: 'Hafer', spelt: 'Dinkel', kamut: 'Kamut' },
+    treeNutTypes: { almonds: 'Mandeln', hazelnuts: 'Haselnüsse', walnuts: 'Walnüsse', cashews: 'Cashewkerne', pecans: 'Pekannüsse', brazil_nuts: 'Paranüsse', pistachios: 'Pistazien', macadamia: 'Macadamianüsse' },
+  },
+}
+
 const CATEGORY_NAMES: Record<string, string> = {
   'acai_bowls': 'Açai Bowls',
   'smoothies': 'Smoothies',
@@ -345,6 +398,7 @@ export default function KioskPage() {
   const [showInactivityWarning, setShowInactivityWarning] = useState(false)
   const [remainingSeconds, setRemainingSeconds] = useState(0)
   const [activeView, setActiveView] = useState<'landing' | 'filters' | 'menu'>('landing')
+  const [showFilterResults, setShowFilterResults] = useState(false)
   const [emailInput, setEmailInput] = useState('')
   const [showEmailInput, setShowEmailInput] = useState(false)
   const [sendingEmail, setSendingEmail] = useState(false)
@@ -362,9 +416,13 @@ export default function KioskPage() {
   const [keyboardOffset, setKeyboardOffset] = useState(0)
   
   const t = translations[currentLanguage] as typeof translations.en
+  const filterLabels = KIOSK_FILTER_LABELS[currentLanguage]
+  const getAllergenDisplayName = (id: string, fallback: string) => filterLabels.allergens[id] || fallback.replace(/^\d+\.\s*/, '')
+  const getDietaryDisplayName = (name: string) => filterLabels.dietary[name] || name
   const businessName = business?.name?.trim() || ''
   const kioskDisplayName = business?.kiosk_display_name?.trim() || ''
   const totalActiveFilters = selectedAllergens.length + selectedGlutenTypes.length + selectedTreeNutTypes.length + selectedDietary.length
+  const allergenSelectionCount = selectedAllergens.length + selectedGlutenTypes.length + selectedTreeNutTypes.length
   
   // Refs for timeout management
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -580,6 +638,7 @@ export default function KioskPage() {
     console.log('⏱️ [Kiosk] Inactivity timeout - Returning to home screen')
     setKioskStarted(false)
     setActiveView('menu')
+    setShowFilterResults(false)
     setShowInactivityWarning(false)
     setRemainingSeconds(0)
     setCurrentLanguage('en')
@@ -652,17 +711,21 @@ export default function KioskPage() {
   }, [kioskStarted])
 
   function toggleAllergen(allergenId: string) {
-    // If it's gluten or tree nuts, also expand the sub-type panel
-    if (allergenId === 'contains_cereals_gluten' || allergenId === 'contains_nuts') {
-      setExpandedAllergens(prev => 
-        prev.includes(allergenId)
-          ? prev.filter(id => id !== allergenId)
-          : [...prev, allergenId]
-      )
-      // Fall through to also toggle in selectedAllergens for top-level filtering
-    }
-    
-    setSelectedAllergens(prev => 
+    const willSelect = !selectedAllergens.includes(allergenId)
+
+    setSelectedAllergens(prev =>
+      prev.includes(allergenId)
+        ? prev.filter(id => id !== allergenId)
+        : [...prev, allergenId]
+    )
+
+    // A broad selection and subtype selections are mutually exclusive.
+    if (willSelect && allergenId === 'contains_cereals_gluten') setSelectedGlutenTypes([])
+    if (willSelect && allergenId === 'contains_nuts') setSelectedTreeNutTypes([])
+  }
+
+  function toggleAllergenDetails(allergenId: string) {
+    setExpandedAllergens(prev =>
       prev.includes(allergenId)
         ? prev.filter(id => id !== allergenId)
         : [...prev, allergenId]
@@ -670,6 +733,7 @@ export default function KioskPage() {
   }
 
   function toggleGlutenType(glutenType: GlutenType) {
+    setSelectedAllergens(prev => prev.filter(id => id !== 'contains_cereals_gluten'))
     setSelectedGlutenTypes(prev =>
       prev.includes(glutenType)
         ? prev.filter(t => t !== glutenType)
@@ -678,6 +742,7 @@ export default function KioskPage() {
   }
 
   function toggleTreeNutType(nutType: TreeNutType) {
+    setSelectedAllergens(prev => prev.filter(id => id !== 'contains_nuts'))
     setSelectedTreeNutTypes(prev =>
       prev.includes(nutType)
         ? prev.filter(t => t !== nutType)
@@ -686,6 +751,7 @@ export default function KioskPage() {
   }
 
   function selectAllGlutenTypes() {
+    setSelectedAllergens(prev => prev.filter(id => id !== 'contains_cereals_gluten'))
     const allGlutenKeys = GLUTEN_TYPES.map(g => g.key)
     if (selectedGlutenTypes.length === allGlutenKeys.length) {
       // All selected, deselect all
@@ -697,6 +763,7 @@ export default function KioskPage() {
   }
 
   function selectAllTreeNutTypes() {
+    setSelectedAllergens(prev => prev.filter(id => id !== 'contains_nuts'))
     const allNutKeys = TREE_NUT_TYPES.map(n => n.key)
     if (selectedTreeNutTypes.length === allNutKeys.length) {
       // All selected, deselect all
@@ -714,6 +781,11 @@ export default function KioskPage() {
     setSelectedTreeNutTypes([])
     setExpandedAllergens([])
     setSearchQuery('')
+  }
+
+  function openFilterSelection() {
+    setActiveView('filters')
+    setShowFilterResults(false)
   }
 
   function getAllergensForItem(item: MenuItem): string[] {
@@ -1222,7 +1294,7 @@ export default function KioskPage() {
 
                 {/* Filter allergens */}
                 <button
-                  onClick={() => { setActiveView(activeView === 'filters' ? 'menu' : 'filters'); setShowMobileMenu(false) }}
+                  onClick={() => { activeView === 'filters' ? setActiveView('menu') : openFilterSelection(); setShowMobileMenu(false) }}
                   className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-white/30 text-white hover:bg-white/10 transition text-sm font-medium"
                 >
                   <Filter className="h-4 w-4 shrink-0" />
@@ -1298,7 +1370,7 @@ export default function KioskPage() {
                     size="sm"
                     icon={<Filter className="h-4 w-4" />}
                     className="text-white border-white/40 hover:text-white hover:border-white/60"
-                    onClick={() => setActiveView(activeView === 'filters' ? 'menu' : 'filters')}
+                    onClick={() => activeView === 'filters' ? setActiveView('menu') : openFilterSelection()}
                   >
                     {activeView === 'filters' ? t.browseFullMenu : t.filterByAllergens}
                   </Button>
@@ -1368,7 +1440,7 @@ export default function KioskPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 xl:gap-5 mb-8">
               {/* Search by Allergen Tile */}
               <button
-                onClick={() => setActiveView('filters')}
+                onClick={openFilterSelection}
                 className="group text-left flex flex-col h-full transition-transform md:hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#dc2626] rounded-2xl"
               >
                 <Card className="relative overflow-hidden p-6 sm:p-7 bg-[#fff7f6] border-2 border-[#dc2626] shadow-md hover:shadow-lg transition-all h-full min-h-[170px]">
@@ -1502,59 +1574,81 @@ export default function KioskPage() {
         {/* Allergen Filter View */}
         {activeView === 'filters' && (
           <>
-            {/* Page Title */}
-            <div className="mb-8">
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">{t.avoidAllergens || 'Avoid Allergens'}</h1>
-              <p className="text-gray-600 text-lg">{t.avoidAllergensDesc || 'Select the allergens you want to avoid, and we\'ll hide menu items containing them.'}</p>
+            <div className="mb-6 sm:mb-8">
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+                {showFilterResults ? t.filterResultsTitle : t.allergenFinderTitle}
+              </h1>
+              <p className="max-w-3xl text-gray-600 text-base sm:text-lg">
+                {showFilterResults ? t.filterResultsIntro : t.allergenFinderIntro}
+              </p>
             </div>
 
-            {/* Allergen Filter Section */}
-            <Card className="mb-8">
-              <div className="p-6">
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Filter className="h-4 w-4 text-red-600" />
-                    <span className="text-sm font-semibold text-red-800">Filter by Allergens</span>
-                    <span className="text-xs text-red-500 font-normal">— hides items containing these allergens</span>
-                  </div>
-                <div className="flex flex-wrap gap-3">
+            {!showFilterResults && (
+              <>
+                <Card className="mb-5 overflow-hidden border border-slate-200 shadow-lg">
+                  <div className="p-4 sm:p-6 lg:p-8">
+                    <div className="mb-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-950">
+                      <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+                      <p className="text-sm sm:text-base leading-relaxed">{t.allergenSafetyReminder}</p>
+                    </div>
+
+                    <section aria-labelledby="allergen-selection-title" className="rounded-2xl border border-red-200 bg-red-50/70 p-4 sm:p-5">
+                      <div className="mb-4">
+                        <h2 id="allergen-selection-title" className="flex items-center gap-2 text-lg font-bold text-red-900">
+                          <Filter className="h-5 w-5 text-red-600" />
+                          {t.allergensToAvoidTitle}
+                        </h2>
+                        <p className="mt-1 text-sm text-red-800">{t.allergensToAvoidHelp}</p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                   {ALLERGENS.map(allergen => {
                     const isSelected = selectedAllergens.includes(allergen.id)
                     const isExpanded = expandedAllergens.includes(allergen.id)
                     const hasSubtypes = allergen.id === 'contains_cereals_gluten' || allergen.id === 'contains_nuts'
+                    const allergenNumber = ALLERGENS.findIndex(item => item.id === allergen.id) + 1
+                    const allergenDisplayName = `${allergenNumber}. ${getAllergenDisplayName(allergen.id, allergen.name)}`
                     
                     return (
-                      <div key={allergen.id} className="contents">
-                        <button
-                          onClick={() => toggleAllergen(allergen.id)}
-                          className={`inline-flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium border-2 transition-all ${
-                            isSelected || isExpanded
-                              ? 'shadow-md ring-2'
-                              : 'border-gray-300 hover:shadow-lg hover:scale-105'
-                          }`}
-                          style={{
-                            backgroundColor: (isSelected || isExpanded) ? `${allergen.bgColor}20` : '#fff',
-                            color: (isSelected || isExpanded) ? allergen.bgColor : '#374151',
-                            borderColor: (isSelected || isExpanded) ? allergen.bgColor : '#d1d5db'
-                          }}
-                        >
-                          <span style={{ color: allergen.bgColor }}>{React.createElement(allergen.icon as unknown as React.ComponentType<{className: string}>, { className: 'w-4 h-4' })}</span>
-                          <span className="font-semibold">{allergen.name}</span>
+                      <React.Fragment key={allergen.id}>
+                        <div className={`flex min-w-0 overflow-hidden rounded-xl border-2 bg-white transition-all ${isSelected ? 'border-red-600 bg-red-100 shadow-sm ring-2 ring-red-200' : 'border-slate-300 hover:border-red-300'}`}>
+                          <button
+                            type="button"
+                            onClick={() => toggleAllergen(allergen.id)}
+                            aria-pressed={isSelected}
+                            className="flex min-h-14 min-w-0 flex-1 items-center gap-2 px-3 py-3 text-left text-sm font-semibold text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red-600 sm:px-4"
+                          >
+                            <span style={{ color: allergen.bgColor }}>{React.createElement(allergen.icon as unknown as React.ComponentType<{className: string}>, { className: 'h-4 w-4 shrink-0' })}</span>
+                            <span className="min-w-0 leading-tight">{allergenDisplayName}</span>
+                            {isSelected && <Check className="ml-auto h-4 w-4 shrink-0 text-red-700" />}
+                          </button>
                           {hasSubtypes && (
-                            isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />
+                            <button
+                              type="button"
+                              onClick={() => toggleAllergenDetails(allergen.id)}
+                              aria-expanded={isExpanded}
+                              aria-label={`${t.chooseSpecificTypes}: ${allergenDisplayName}`}
+                              title={t.chooseSpecificTypes}
+                              className="flex w-11 shrink-0 items-center justify-center border-l border-slate-300 text-slate-600 hover:bg-white/70 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red-600"
+                            >
+                              {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                            </button>
                           )}
-                          {!hasSubtypes && isSelected && <X className="h-4 w-4 ml-1" style={{ color: allergen.bgColor }} />}
-                        </button>
+                        </div>
                         
                         {/* Gluten Subtypes */}
                         {allergen.id === 'contains_cereals_gluten' && isExpanded && (
-                          <div className="w-full ml-8 flex flex-wrap gap-2 mt-2 mb-2">
+                          <div className="col-span-full rounded-xl border border-amber-200 bg-white/80 p-4">
+                            <p className="mb-3 text-sm font-semibold text-amber-900">{t.chooseSpecificTypes}</p>
+                            <div className="flex flex-wrap gap-2">
                             {GLUTEN_TYPES.map(glutenType => {
                               const isGlutenSelected = selectedGlutenTypes.includes(glutenType.key)
                               return (
                                 <button
+                                  type="button"
                                   key={glutenType.key}
                                   onClick={() => toggleGlutenType(glutenType.key)}
+                                  aria-pressed={isGlutenSelected}
                                   className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
                                     isGlutenSelected
                                       ? 'shadow-sm'
@@ -1567,13 +1661,13 @@ export default function KioskPage() {
                                   }}
                                 >
                                   <Wheat className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
-                                  <span>{glutenType.name}</span>
-                                  {isGlutenSelected && <X className="h-3 w-3" />}
+                                  <span>{filterLabels.glutenTypes[glutenType.key]}</span>
+                                  {isGlutenSelected && <Check className="h-3 w-3" />}
                                 </button>
                               )
                             })}
-                            {/* Select All Button */}
                             <button
+                              type="button"
                               onClick={selectAllGlutenTypes}
                               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border-2 transition-all hover:shadow-md"
                               style={{
@@ -1586,27 +1680,32 @@ export default function KioskPage() {
                               {selectedGlutenTypes.length === GLUTEN_TYPES.length ? (
                                 <>
                                   <CheckSquare className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
-                                  <span>Deselect All</span>
+                                  <span>{t.deselectAll}</span>
                                 </>
                               ) : (
                                 <>
                                   <Square className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
-                                  <span>Select All</span>
+                                  <span>{t.selectAll}</span>
                                 </>
                               )}
                             </button>
+                            </div>
                           </div>
                         )}
                         
                         {/* Tree Nut Subtypes */}
                         {allergen.id === 'contains_nuts' && isExpanded && (
-                          <div className="w-full ml-8 flex flex-wrap gap-2 mt-2 mb-2">
+                          <div className="col-span-full rounded-xl border border-amber-200 bg-white/80 p-4">
+                            <p className="mb-3 text-sm font-semibold text-amber-900">{t.chooseSpecificTypes}</p>
+                            <div className="flex flex-wrap gap-2">
                             {TREE_NUT_TYPES.map(nutType => {
                               const isNutSelected = selectedTreeNutTypes.includes(nutType.key)
                               return (
                                 <button
+                                  type="button"
                                   key={nutType.key}
                                   onClick={() => toggleTreeNutType(nutType.key)}
+                                  aria-pressed={isNutSelected}
                                   className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
                                     isNutSelected
                                       ? 'shadow-sm'
@@ -1619,13 +1718,13 @@ export default function KioskPage() {
                                   }}
                                 >
                                   <Nut className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
-                                  <span>{nutType.name}</span>
-                                  {isNutSelected && <X className="h-3 w-3" />}
+                                  <span>{filterLabels.treeNutTypes[nutType.key]}</span>
+                                  {isNutSelected && <Check className="h-3 w-3" />}
                                 </button>
                               )
                             })}
-                            {/* Select All Button */}
                             <button
+                              type="button"
                               onClick={selectAllTreeNutTypes}
                               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border-2 transition-all hover:shadow-md"
                               style={{
@@ -1638,175 +1737,111 @@ export default function KioskPage() {
                               {selectedTreeNutTypes.length === TREE_NUT_TYPES.length ? (
                                 <>
                                   <CheckSquare className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
-                                  <span>Deselect All</span>
+                                  <span>{t.deselectAll}</span>
                                 </>
                               ) : (
                                 <>
                                   <Square className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
-                                  <span>Select All</span>
+                                  <span>{t.selectAll}</span>
                                 </>
                               )}
                             </button>
+                            </div>
                           </div>
                         )}
-                      </div>
+                      </React.Fragment>
                     )
                   })}
-                </div>
-                </div>
+                      </div>
+                    </section>
 
-                {/* Dietary Preference Filter */}
-                <div className="mt-4">
-                  <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Salad className="h-4 w-4 text-green-600" />
-                    <span className="text-sm font-semibold text-green-800">Filter by Dietary Preference</span>
-                    <span className="text-xs text-green-600 font-normal">— shows only items with these attributes</span>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
+                    <section aria-labelledby="dietary-selection-title" className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4 sm:p-5">
+                      <div className="mb-4">
+                        <h2 id="dietary-selection-title" className="flex items-center gap-2 text-lg font-bold text-emerald-900">
+                          <Salad className="h-5 w-5 text-emerald-700" />
+                          {t.dietaryPreferencesTitle}
+                        </h2>
+                        <p className="mt-1 text-sm text-emerald-800">{t.dietaryPreferencesHelp}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                     {DIETARY_OPTIONS.map(option => {
                       const isSelected = selectedDietary.includes(option.name)
                       const IconComp = option.icon as unknown as React.ComponentType<{className: string}>
                       return (
                         <button
+                          type="button"
                           key={option.name}
                           onClick={() => setSelectedDietary(prev =>
                             prev.includes(option.name)
                               ? prev.filter(d => d !== option.name)
                               : [...prev, option.name]
                           )}
-                          className="inline-flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium border-2 transition-all"
-                          style={{
-                            backgroundColor: isSelected ? `${option.color}20` : '#fff',
-                            color: isSelected ? option.color : '#374151',
-                            borderColor: isSelected ? option.color : '#d1d5db',
-                            boxShadow: isSelected ? `0 0 0 2px ${option.color}40` : undefined
-                          }}
+                          aria-pressed={isSelected}
+                          className={`flex min-h-14 w-full items-center gap-2 rounded-xl border-2 px-3 py-3 text-left text-sm font-semibold transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 sm:px-4 ${isSelected ? 'border-emerald-600 bg-emerald-100 text-emerald-900 shadow-sm ring-2 ring-emerald-200' : 'border-slate-300 bg-white text-slate-800 hover:border-emerald-300'}`}
                         >
                           <span style={{ color: option.color }}><IconComp className="w-4 h-4" /></span>
-                          <span className="font-semibold">{option.name}</span>
-                          {isSelected && <X className="h-4 w-4 ml-1" style={{ color: option.color }} />}
+                          <span className="font-semibold">{getDietaryDisplayName(option.name)}</span>
+                          {isSelected && <Check className="ml-auto h-4 w-4 shrink-0 text-emerald-700" />}
                         </button>
                       )
                     })}
-                  </div>
-                  </div>
-                </div>
-
-                {/* Allergen exclusion summary — red */}
-                {(selectedAllergens.length > 0 || selectedGlutenTypes.length > 0 || selectedTreeNutTypes.length > 0) && (
-                  <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-2">
-                        <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <span className="font-semibold text-red-800 text-sm">Hiding items that contain:</span>
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {selectedAllergens.map(id => {
-                              const allergen = ALLERGENS.find(a => a.id === id)
-                              return allergen ? (
-                                <span
-                                  key={id}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border"
-                                  style={{ backgroundColor: `${allergen.bgColor}15`, color: allergen.bgColor, borderColor: `${allergen.bgColor}40` }}
-                                >
-                                  <span style={{ color: allergen.bgColor }}>{React.createElement(allergen.icon as unknown as React.ComponentType<{className: string}>, { className: 'w-4 h-4' })}</span>
-                                  {allergen.name}
-                                </span>
-                              ) : null
-                            })}
-                            {selectedGlutenTypes.map(glutenType => {
-                              const gluten = GLUTEN_TYPES.find(g => g.key === glutenType)
-                              const allergen = ALLERGENS.find(a => a.id === 'contains_cereals_gluten')
-                              return gluten && allergen ? (
-                                <span
-                                  key={glutenType}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border"
-                                  style={{ backgroundColor: `${allergen.bgColor}15`, color: allergen.bgColor, borderColor: `${allergen.bgColor}40` }}
-                                >
-                                  <Wheat className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
-                                  {gluten.name}
-                                </span>
-                              ) : null
-                            })}
-                            {selectedTreeNutTypes.map(nutType => {
-                              const nut = TREE_NUT_TYPES.find(n => n.key === nutType)
-                              const allergen = ALLERGENS.find(a => a.id === 'contains_nuts')
-                              return nut && allergen ? (
-                                <span
-                                  key={nutType}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border"
-                                  style={{ backgroundColor: `${allergen.bgColor}15`, color: allergen.bgColor, borderColor: `${allergen.bgColor}40` }}
-                                >
-                                  <Nut className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
-                                  {nut.name}
-                                </span>
-                              ) : null
-                            })}
-                          </div>
-                        </div>
                       </div>
-                      <button
-                        onClick={() => { setSelectedAllergens([]); setSelectedGlutenTypes([]); setSelectedTreeNutTypes([]) }}
-                        className="shrink-0 inline-flex items-center gap-1 text-xs text-red-600 hover:text-red-800 font-medium"
-                      >
-                        <X className="h-3.5 w-3.5" /> Clear
-                      </button>
-                    </div>
+                    </section>
                   </div>
-                )}
+                </Card>
 
-                {/* Dietary inclusion summary — green */}
-                {selectedDietary.length > 0 && (
-                  <div className="mt-3 p-4 bg-green-50 border border-green-200 rounded-xl">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-start gap-2">
-                        <Salad className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
-                        <div>
-                          <span className="font-semibold text-green-800 text-sm">Showing only items suitable for:</span>
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            {selectedDietary.map(name => {
-                              const opt = DIETARY_OPTIONS.find(o => o.name === name)
-                              if (!opt) return null
-                              const IconComp = opt.icon as unknown as React.ComponentType<{className: string}>
-                              return (
-                                <span
-                                  key={name}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border"
-                                  style={{ backgroundColor: `${opt.color}15`, color: opt.color, borderColor: `${opt.color}40` }}
-                                >
-                                  <IconComp className="w-3.5 h-3.5" />
-                                  {name}
-                                </span>
-                              )
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => setSelectedDietary([])}
-                        className="shrink-0 inline-flex items-center gap-1 text-xs text-green-700 hover:text-green-900 font-medium"
-                      >
-                        <X className="h-3.5 w-3.5" /> Clear
-                      </button>
-                    </div>
+                <div className="sticky bottom-4 z-30 rounded-2xl border border-[#42b8ac]/40 bg-[#003842] p-4 text-white shadow-2xl sm:flex sm:items-center sm:justify-between sm:gap-6">
+                  <div>
+                    <p className="text-lg font-bold">{filteredItems.length} {t.matchingDishes}</p>
+                    <p className="mt-1 text-sm text-white/75">
+                      {allergenSelectionCount} {t.allergenSelections} · {selectedDietary.length} {t.dietarySelections}
+                    </p>
                   </div>
-                )}
-
-                {/* Clear all — only shown when both types active */}
-                {(selectedAllergens.length > 0 || selectedGlutenTypes.length > 0 || selectedTreeNutTypes.length > 0) && selectedDietary.length > 0 && (
-                  <div className="mt-2 flex justify-end">
-                    <button onClick={clearFilters} className="text-xs text-gray-500 hover:text-gray-700 underline">
-                      Clear all filters
+                  <div className="mt-4 flex items-center gap-3 sm:mt-0">
+                    {totalActiveFilters > 0 && (
+                      <button type="button" onClick={clearFilters} className="px-3 py-2 text-sm font-semibold text-white/80 hover:text-white">
+                        {t.clearSelections}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => { setShowFilterResults(true); window.scrollTo(0, 0) }}
+                      className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#42b8ac] px-5 py-3 text-base font-bold text-[#003842] shadow-lg transition hover:bg-[#69ccc3] sm:flex-none"
+                    >
+                      {t.viewMatchingDishes} ({filteredItems.length})
+                      <ArrowRight className="h-5 w-5" />
                     </button>
                   </div>
-                )}
-              </div>
-            </Card>
+                </div>
+              </>
+            )}
+
+            {showFilterResults && (
+              <Card className="mb-6 border border-[#42b8ac]/30 bg-[#f0f9f8] p-4 shadow-sm sm:p-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xl font-bold text-[#003842]">{filteredItems.length} {t.matchingDishes}</p>
+                    <p className="mt-1 text-sm text-[#0f4f4a]">
+                      {allergenSelectionCount} {t.allergenSelections} · {selectedDietary.length} {t.dietarySelections}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setShowFilterResults(false); window.scrollTo(0, 0) }}
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border-2 border-[#0f766e] bg-white px-4 py-2 text-sm font-bold text-[#0f4f4a] hover:bg-[#e8f7f5]"
+                  >
+                    <Filter className="h-4 w-4" />
+                    {t.editSelections}
+                  </button>
+                </div>
+              </Card>
+            )}
 
             {/* Menu Items in Filter View */}
+            {showFilterResults && (
+            <>
             <div className="mb-8">
-              <h2 className="text-2xl font-bold text-[#003842] mb-6">Menu Items</h2>
+              <h2 className="text-2xl font-bold text-[#003842] mb-6">{t.menuItems}</h2>
 
               {filteredItems.length === 0 ? (
                 <Card className="text-center py-12">
@@ -1814,8 +1849,8 @@ export default function KioskPage() {
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">{t.noItemsMatch}</h3>
                   <p className="text-gray-600 mb-4">{t.tryAdjustingFilters}</p>
                     {totalActiveFilters > 0 && (
-                    <Button variant="primary" onClick={clearFilters} className="mx-auto">
-                      {t.clearAllergenFilters}
+                    <Button variant="primary" onClick={() => { clearFilters(); setShowFilterResults(false) }} className="mx-auto">
+                      {t.clearSelections}
                     </Button>
                   )}
                 </Card>
@@ -1854,7 +1889,7 @@ export default function KioskPage() {
 
                                   {allergenDetails.length > 0 && (
                                     <div className="mt-4 pt-4 border-t border-gray-200">
-                                      <p className="text-sm font-medium text-gray-700 mb-2">Contains:</p>
+                                      <p className="text-sm font-medium text-gray-700 mb-2">{filterLabels.contains}:</p>
                                       <div className="flex flex-wrap gap-2">
                                         {allergenDetails.map(allergen => (
                                           <div 
@@ -1867,7 +1902,7 @@ export default function KioskPage() {
                                             }}
                                           >
                                             <span style={{ color: allergen.bgColor }}>{React.createElement(allergen.icon as unknown as React.ComponentType<{className: string}>, { className: 'w-4 h-4' })}</span>
-                                            <span>{allergen.name}</span>
+                                            <span>{getAllergenDisplayName(allergen.id, allergen.name)}</span>
                                           </div>
                                         ))}
                                       </div>
@@ -1890,7 +1925,7 @@ export default function KioskPage() {
                                             }}
                                           >
                                             <IconComp className="w-3 h-3" />
-                                            {d}
+                                            {getDietaryDisplayName(d)}
                                           </span>
                                         )
                                       })}
@@ -1908,47 +1943,6 @@ export default function KioskPage() {
               )}
             </div>
 
-            {/* Info Section - Moved to Bottom */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-              <Card className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">{t.totalMenuItems}</p>
-                    <p className="text-2xl font-bold text-[#003842]">{menuItems.length}</p>
-                  </div>
-                  <div className="p-3 bg-[#f0f9f8] rounded-lg">
-                    <Package className="h-6 w-6 text-[#42b8ac]" />
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">{t.itemsAvailable}</p>
-                    <p className="text-2xl font-bold text-[#003842]">
-                      {filteredItems.length}
-                    </p>
-                  </div>
-                  <div className="p-3 bg-green-100 rounded-lg">
-                    <Check className="h-6 w-6 text-green-600" />
-                  </div>
-                </div>
-              </Card>
-
-              <Card className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">{t.currentFilters}</p>
-                      <p className="text-2xl font-bold text-[#003842]">{totalActiveFilters}</p>
-                  </div>
-                  <div className="p-3 bg-amber-100 rounded-lg">
-                    <Filter className="h-6 w-6 text-amber-600" />
-                  </div>
-                </div>
-              </Card>
-            </div>
-
             {/* Back to Menu Button - Bottom Left */}
             <div className="mt-8 flex items-center gap-4">
               <button
@@ -1959,6 +1953,8 @@ export default function KioskPage() {
                 {t.backToMenu}
               </button>
             </div>
+            </>
+            )}
           </>
         )}
 
@@ -2067,7 +2063,7 @@ export default function KioskPage() {
 
                                   {allergenDetails.length > 0 && (
                                     <div className="mt-4 pt-4 border-t border-gray-200">
-                                      <p className="text-sm font-medium text-gray-700 mb-2">Contains:</p>
+                                      <p className="text-sm font-medium text-gray-700 mb-2">{filterLabels.contains}:</p>
                                       <div className="flex flex-wrap gap-2">
                                         {allergenDetails.map(allergen => (
                                           <div 
@@ -2080,7 +2076,7 @@ export default function KioskPage() {
                                             }}
                                           >
                                             <span style={{ color: allergen.bgColor }}>{React.createElement(allergen.icon as unknown as React.ComponentType<{className: string}>, { className: 'w-4 h-4' })}</span>
-                                            <span>{allergen.name}</span>
+                                            <span>{getAllergenDisplayName(allergen.id, allergen.name)}</span>
                                           </div>
                                         ))}
                                       </div>
@@ -2103,7 +2099,7 @@ export default function KioskPage() {
                                             }}
                                           >
                                             <IconComp className="w-3 h-3" />
-                                            {d}
+                                            {getDietaryDisplayName(d)}
                                           </span>
                                         )
                                       })}
