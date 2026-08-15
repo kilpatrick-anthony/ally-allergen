@@ -627,8 +627,9 @@ export default function HelpPage() {
 
   return (
     <Container>
+      <div className="flex flex-col">
       {/* Header */}
-      <div className="mb-8 rounded-2xl border border-gray-200/70 bg-white/70 p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800/70">
+      <div className="order-0 mb-8 rounded-2xl border border-gray-200/70 bg-white/70 p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800/70">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-3 mb-3">
@@ -650,7 +651,7 @@ export default function HelpPage() {
       </div>
 
       {/* Quick Links */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8 auto-rows-fr">
+      <div className="order-4 mt-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8 auto-rows-fr">
         {quickLinks.map((link, index) => (
           <a
             key={index}
@@ -692,7 +693,7 @@ export default function HelpPage() {
       </div>
 
       {/* Feedback Form */}
-      <section id="feedback-form" className="mb-8">
+      <section id="feedback-form" className="order-5 mb-8">
         <Card className="overflow-hidden border border-gray-200/80 shadow-sm bg-gradient-to-br from-[#003842] to-[#0f4f5a] text-white">
           <div className="grid gap-8 lg:grid-cols-[1.05fr_0.95fr] p-6 lg:p-8">
             <div className="space-y-4">
@@ -818,7 +819,7 @@ export default function HelpPage() {
       </section>
 
       {/* Search and Categories */}
-      <Card className="mb-8 border border-gray-200/80 shadow-sm">
+      <Card className="order-1 mb-8 border border-gray-200/80 shadow-sm">
         <div className="p-6">
           <div className="relative mb-6">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -859,13 +860,14 @@ export default function HelpPage() {
       </Card>
 
       {/* Help Topics */}
-      <div className="mb-6" id="help-topics">
+      <div className="order-2 mb-6" id="help-topics">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
           {activeCategory === 'all' ? (categoryNamesByLanguage[language]?.all || 'All Topics') : localizedCategories.find(c => c.id === activeCategory)?.name}
           <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">({filteredTopics.length})</span>
         </h2>
       </div>
 
+      <div className="order-3">
       {filteredTopics.length === 0 ? (
         <Card>
           <div className="text-center py-12">
@@ -943,9 +945,10 @@ export default function HelpPage() {
           })}
         </div>
       )}
+      </div>
 
       {/* Contact Support Section */}
-      <Card className="mt-8 bg-gradient-to-br from-[#42b8ac]/10 to-[#003842]/10 border border-[#42b8ac]/20 shadow-sm">
+      <Card className="order-6 mt-8 bg-gradient-to-br from-[#42b8ac]/10 to-[#003842]/10 border border-[#42b8ac]/20 shadow-sm">
         <div className="text-center">
           <MessageCircle className="h-12 w-12 text-[#42b8ac] mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-[#003842] dark:text-white mb-2">
@@ -969,6 +972,7 @@ export default function HelpPage() {
         </div>
       </Card>
 
+      </div>
     </Container>
   )
 }
