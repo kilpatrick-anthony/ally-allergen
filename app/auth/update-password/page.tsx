@@ -32,15 +32,15 @@ function UpdatePasswordContent() {
       const token = params.get('access_token')
       const type = params.get('type')
       window.history.replaceState(null, '', window.location.pathname)
-      if (token && type === 'recovery') {
+      if (token && (type === 'recovery' || type === 'invite')) {
         setAccessToken(token)
         setFormReady(true)
       } else {
-        setError('Invalid reset link. Please request a new one.')
+        setError('Invalid or expired password link. Please request a new one.')
         setFormReady(true)
       }
     } else {
-      setError('No reset token found. Please request a new password reset link.')
+      setError('No password token found. Please request a new invitation or password reset link.')
       setFormReady(true)
     }
   }, [])

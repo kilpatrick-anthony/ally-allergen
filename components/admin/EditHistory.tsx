@@ -19,6 +19,7 @@ interface AuditLogEntry {
   action: 'created' | 'updated' | 'deleted'
   changes: AuditChange[]
   changed_by_email: string | null
+  changed_by_name: string | null
   created_at: string
 }
 
@@ -75,10 +76,13 @@ export function EditHistory({ entityType, entityId }: { entityType: 'ingredient'
                     <span className="font-semibold text-gray-900">{meta.label}</span>
                     <span className="text-gray-400">•</span>
                     <span className="text-gray-500">{new Date(entry.created_at).toLocaleString()}</span>
-                    {entry.changed_by_email && (
+                    {(entry.changed_by_name || entry.changed_by_email) && (
                       <>
                         <span className="text-gray-400">•</span>
-                        <span className="text-gray-500 truncate">{entry.changed_by_email}</span>
+                        <span className="text-gray-500 truncate">
+                          {entry.changed_by_name || entry.changed_by_email}
+                          {entry.changed_by_name && entry.changed_by_email ? ` (${entry.changed_by_email})` : ''}
+                        </span>
                       </>
                     )}
                   </div>

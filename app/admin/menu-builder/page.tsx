@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay'
 import type { AllergenWarnings } from '@/types/allergen'
+import { useContentPermissions } from '@/lib/hooks/useContentPermissions'
 
 // Types
 interface MenuItem {
@@ -55,6 +56,7 @@ function MenuItemIcon({ icon, size = 'md' }: { icon?: string; size?: 'sm' | 'md'
 }
 
 export default function MenuBuilderPage() {
+  const { canDeleteContent } = useContentPermissions()
     const { t } = useTranslation()
   const { showNotification } = useNotification()
   const [loading, setLoading] = useState(true)
@@ -517,13 +519,9 @@ export default function MenuBuilderPage() {
                       onClick={() => handleDuplicate(item)}
                       title="Duplicate"
                     />
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      icon={<Trash2 className="h-4 w-4" />}
-                      onClick={() => handleDelete(item.id)}
-                      title="Delete"
-                    />
+                    {canDeleteContent && (
+                      <Button variant="ghost" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => handleDelete(item.id)} title="Delete" />
+                    )}
                   </div>
                 </div>
               </div>
@@ -599,13 +597,9 @@ export default function MenuBuilderPage() {
                           onClick={() => handleDuplicate(item)}
                           title="Duplicate"
                         />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          icon={<Trash2 className="h-4 w-4" />}
-                          onClick={() => handleDelete(item.id)}
-                          title="Delete"
-                        />
+                        {canDeleteContent && (
+                          <Button variant="ghost" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => handleDelete(item.id)} title="Delete" />
+                        )}
                       </div>
                     </td>
                   </tr>

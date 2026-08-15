@@ -22,6 +22,7 @@ import { ReviewFrequencySelector } from '@/components/admin/ReviewFrequencySelec
 import { LabelScanModal } from '@/components/admin/LabelScanModal'
 import type { AllergenWarnings } from '@/types/allergen'
 import { computeWorstCaseAllergens } from '@/types/allergen'
+import { useContentPermissions } from '@/lib/hooks/useContentPermissions'
 
 interface MenuItem {
   id: string
@@ -73,6 +74,7 @@ const PRESET_MENU_ICONS = [
 const isImageIcon = (icon?: string) => Boolean(icon && /^https?:\/\//.test(icon))
 
 export default function EditMenuItemPage() {
+  const { canDeleteContent } = useContentPermissions()
   const { t } = useTranslation()
   const { showNotification } = useNotification()
   const router = useRouter()
@@ -1086,15 +1088,12 @@ export default function EditMenuItemPage() {
                   {t('admin.cancel')}
                 </Button>
               </Link>
-              <button
-                type="button"
-                onClick={handleDelete}
-                disabled={deleting}
-                className="w-full mt-3 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-red-300 text-red-600 text-sm font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors"
-              >
-                <Trash2 className="h-4 w-4" />
-                {deleting ? t('admin.deletingMenuItem') : t('admin.delete') + ' ' + t('admin.menuItemsStat')}
-              </button>
+              {canDeleteContent && (
+                <button type="button" onClick={handleDelete} disabled={deleting} className="w-full mt-3 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-red-300 text-red-600 text-sm font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
+                  <Trash2 className="h-4 w-4" />
+                  {deleting ? t('admin.deletingMenuItem') : t('admin.delete') + ' ' + t('admin.menuItemsStat')}
+                </button>
+              )}
             </Card>
 
             {/* Review Frequency */}

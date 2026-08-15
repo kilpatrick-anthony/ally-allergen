@@ -26,6 +26,7 @@ import { ALLERGEN_LIST } from '@/types/allergen'
 import DatasheetViewer from '@/components/admin/DatasheetViewer'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { checkIngredientCompliance } from '@/lib/compliance'
+import { useContentPermissions } from '@/lib/hooks/useContentPermissions'
 
 // No mock data - production ready
 
@@ -116,6 +117,7 @@ const renderIcon = (Component: any, className: string) => {
 export default function IngredientsPage() {
   const { showNotification } = useNotification()
   const { t } = useTranslation()
+  const { canDeleteContent } = useContentPermissions()
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -707,14 +709,11 @@ export default function IngredientsPage() {
               >
                 {t('admin.archive')}
               </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                icon={Trash2}
-                onClick={handleBulkDelete}
-              >
-                {t('admin.delete')}
-              </Button>
+              {canDeleteContent && (
+                <Button variant="danger" size="sm" icon={Trash2} onClick={handleBulkDelete}>
+                  {t('admin.delete')}
+                </Button>
+              )}
             </div>
           </div>
         </Card>
@@ -1036,13 +1035,9 @@ export default function IngredientsPage() {
                         onClick={() => handleDuplicate(ingredient.id, ingredient.name)}
                         title="Duplicate"
                       />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        icon={Trash2}
-                        onClick={() => handleDelete(ingredient.id)}
-                        title={t('admin.deleteIngredient')}
-                      />
+                      {canDeleteContent && (
+                        <Button variant="ghost" size="sm" icon={Trash2} onClick={() => handleDelete(ingredient.id)} title={t('admin.deleteIngredient')} />
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -1117,13 +1112,9 @@ export default function IngredientsPage() {
                   onClick={() => handleDuplicate(ingredient.id, ingredient.name)}
                   title="Duplicate"
                 />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  icon={Trash2}
-                  onClick={() => handleDelete(ingredient.id)}
-                  title={t('admin.delete')}
-                />
+                {canDeleteContent && (
+                  <Button variant="ghost" size="sm" icon={Trash2} onClick={() => handleDelete(ingredient.id)} title={t('admin.delete')} />
+                )}
               </div>
             </div>
           ))}

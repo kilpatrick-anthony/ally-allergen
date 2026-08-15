@@ -339,12 +339,19 @@ export async function DELETE(
     // Get user's business
     const { data: userBusiness } = await supabase
       .from('user_businesses')
-      .select('business_id')
+      .select('business_id, role')
       .eq('user_id', userId)
       .single()
 
     if (!userBusiness) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
+    }
+
+    if (userBusiness.role === 'staff') {
+      return NextResponse.json(
+        { error: 'Staff members cannot delete ingredients' },
+        { status: 403 }
+      )
     }
 
     // Snapshot the row before deleting so we can record its name in the audit trail

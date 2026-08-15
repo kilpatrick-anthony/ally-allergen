@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Select } from '@/components/ui/Select'
 import { useTranslation } from '@/lib/hooks/useTranslation'
+import TeamMembersPanel from '@/components/team/TeamMembersPanel'
 
 const ChangePasswordModal = dynamic(() => import('./ChangePasswordModal'), { ssr: false })
 const TwoFactorModal = dynamic(() => import('./TwoFactorModal'), { ssr: false })
@@ -327,6 +328,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('general')
   const [businessId, setBusinessId] = useState<string | null>(null)
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null)
   const [logoUploading, setLogoUploading] = useState(false)
   const [logoUploadSuccess, setLogoUploadSuccess] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
@@ -401,6 +403,7 @@ export default function SettingsPage() {
           }
           return;
         }
+        setCurrentUserRole(sessionData.user.role || null)
         if (sessionData?.user?.businessId) {
           setBusinessId(sessionData.user.businessId);
           // Fetch business info
@@ -451,7 +454,7 @@ export default function SettingsPage() {
     fetchDefaults();
     // Set active tab from URL parameter if present
     const tab = searchParams.get('tab')
-    if (tab && ['general', 'branding', 'security', 'notifications'].includes(tab)) {
+    if (tab && ['general', 'branding', 'security', 'accessibility', 'team'].includes(tab)) {
       setActiveTab(tab)
     }
 
@@ -637,6 +640,7 @@ export default function SettingsPage() {
   const tabs = [
     { id: 'general', label: t('admin.settings'), icon: Settings },
     { id: 'branding', label: t('admin.branding'), icon: Palette },
+    ...(currentUserRole === 'owner' ? [{ id: 'team', label: 'Team', icon: Users }] : []),
     { id: 'security', label: t('admin.security'), icon: Shield },
     { id: 'accessibility', label: 'Accessibility', icon: Eye },
 
@@ -737,6 +741,10 @@ export default function SettingsPage() {
 
         {/* Main Content */}
         <div className="flex-1">
+          {activeTab === 'team' && currentUserRole === 'owner' && (
+            <TeamMembersPanel mode="owner" />
+          )}
+
           {/* General Settings */}
           {activeTab === 'general' && (
             <div className="space-y-6">

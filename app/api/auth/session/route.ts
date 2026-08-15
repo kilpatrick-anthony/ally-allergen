@@ -31,7 +31,7 @@ export async function GET(_request: NextRequest) {
     const [{ data: userBusiness }, { data: userRoleData }, { data: userData }] = await Promise.all([
       supabase
         .from('user_businesses')
-        .select('business_id, role')
+        .select('business_id, role, display_name')
         .eq('user_id', userId)
         .maybeSingle(),
       supabase
@@ -43,9 +43,13 @@ export async function GET(_request: NextRequest) {
     ])
 
     const userDetails = userData?.user
-    const fullName = userDetails?.user_metadata?.full_name || email?.split('@')[0] || 'User'
+    const fullName = userBusiness?.display_name || userDetails?.user_metadata?.full_name || email?.split('@')[0] || 'User'
     const twoFactorEnabled = userDetails?.user_metadata?.twoFactorEnabled || false
-    const role = payload.role || userRoleData?.role || userBusiness?.role || null
+    const isSuperAdmin = userRoleData?.role === 'super_admin' || payload.role === 'super_admin'
+    // Normal business access always comes from the live membership row. This
+    // makes role changes and removals effective immediately, even if an older
+    // signed session token still contains the previous role.
+    const role = isSuperAdmin ? 'super_admin' : userBusiness?.role || null
 
     return NextResponse.json({
       user: {
@@ -53,7 +57,7 @@ export async function GET(_request: NextRequest) {
         email: email,
         name: fullName,
         role,
-        businessId: payload.businessId || userBusiness?.business_id || null,
+        businessId: isSuperAdmin ? (payload.businessId || null) : (userBusiness?.business_id || null),
         twoFactorEnabled,
         isImpersonating: Boolean(payload.isImpersonating),
         impersonatedByEmail: payload.impersonatedByEmail || null,

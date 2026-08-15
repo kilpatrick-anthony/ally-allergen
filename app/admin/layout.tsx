@@ -157,7 +157,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }, [handleLogout])
 
   return (
-    <ProtectedRoute requireRole="owner">
+    <ProtectedRoute allowedRoles={['owner', 'manager', 'staff']}>
       <SpeechController />
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900" data-context="admin">
         {/* Mobile header */}

@@ -10,6 +10,7 @@ interface AuditLogEntry {
   action: 'created' | 'updated' | 'deleted'
   changes: { label: string; from: string; to: string }[]
   changed_by_email: string | null
+  changed_by_name: string | null
   created_at: string
 }
 
@@ -82,7 +83,9 @@ export async function generateAuditLogReportPDF(options: AuditLogReportOptions) 
       entry.changes.length > 0
         ? entry.changes.map((c) => `${c.label}: ${c.from} -> ${c.to}`).join('\n')
         : '-',
-      entry.changed_by_email || 'Unknown',
+      entry.changed_by_name
+        ? `${entry.changed_by_name}${entry.changed_by_email ? `\n${entry.changed_by_email}` : ''}`
+        : entry.changed_by_email || 'Unknown',
     ])
 
     autoTable(doc, {

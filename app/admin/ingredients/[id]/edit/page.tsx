@@ -20,6 +20,7 @@ import DatasheetUploader from '@/components/admin/DatasheetUploader'
 import { ReviewFrequencySelector } from '@/components/admin/ReviewFrequencySelector'
 import type { AllergenWarnings } from '@/types/allergen'
 import { computeWorstCaseAllergens } from '@/types/allergen'
+import { useContentPermissions } from '@/lib/hooks/useContentPermissions'
 
 type SupplierProfile = {
   allergen_warnings: AllergenWarnings
@@ -28,6 +29,7 @@ type SupplierProfile = {
 
 export default function EditIngredientPage() {
   const { showNotification } = useNotification()
+  const { canDeleteContent } = useContentPermissions()
   const router = useRouter()
   const params = useParams()
   const ingredientId = params.id as string
@@ -796,15 +798,12 @@ export default function EditIngredientPage() {
             >
               Cancel
             </button>
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={deleting}
-              className="w-full mt-3 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-red-300 text-red-600 text-sm font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors"
-            >
-              <Trash2 className="h-4 w-4" />
-              {deleting ? 'Deleting...' : 'Delete Ingredient'}
-            </button>
+            {canDeleteContent && (
+              <button type="button" onClick={handleDelete} disabled={deleting} className="w-full mt-3 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-red-300 text-red-600 text-sm font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
+                <Trash2 className="h-4 w-4" />
+                {deleting ? 'Deleting...' : 'Delete Ingredient'}
+              </button>
+            )}
           </Card>
 
           {/* Review Frequency */}

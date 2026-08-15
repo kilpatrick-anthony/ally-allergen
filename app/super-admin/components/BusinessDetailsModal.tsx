@@ -21,6 +21,7 @@ import Modal from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { getPlanDefinition } from '@/lib/plans'
+import TeamMembersPanel from '@/components/team/TeamMembersPanel'
 
 interface Business {
   id: string
@@ -365,6 +366,8 @@ export function BusinessDetailsModal({
             </div>
           </div>
         </div>
+
+        <TeamMembersPanel mode="super-admin" businessId={business.id} />
 
         {/* Plan Features */}
         <div className="space-y-4">

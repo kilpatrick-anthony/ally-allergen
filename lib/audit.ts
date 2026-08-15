@@ -23,6 +23,7 @@ export interface AuditLogEntry {
   changes: AuditChange[]
   changed_by: string | null
   changed_by_email: string | null
+  changed_by_name: string | null
   created_at: string
 }
 
@@ -99,7 +100,13 @@ export async function recordAuditLog(
   if (entry.action === 'updated' && entry.changes.length === 0) return
 
   try {
-    await supabase.from('audit_log').insert({
+    const { data: membership } = await supabase
+      .from('user_businesses')
+      .select('display_name')
+      .eq('business_id', entry.businessId)
+      .eq('user_id', entry.userId)
+      .maybeSingle()
+    const { error } = await supabase.from('audit_log').insert({
       business_id: entry.businessId,
       entity_type: entry.entityType,
       entity_id: entry.entityId,
@@ -108,7 +115,9 @@ export async function recordAuditLog(
       changes: entry.changes,
       changed_by: entry.userId,
       changed_by_email: entry.userEmail || null,
+      changed_by_name: membership?.display_name || null,
     })
+    if (error) throw error
   } catch (err) {
     console.error('[audit] Failed to record audit log entry:', err)
   }

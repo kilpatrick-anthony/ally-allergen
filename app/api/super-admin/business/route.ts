@@ -295,7 +295,13 @@ export async function POST(request: NextRequest) {
     // 3. Link owner to business
     const { error: linkError } = await supabase
       .from('user_businesses')
-      .insert({ user_id: userData.user.id, business_id: business.id, role: 'owner' })
+      .insert({
+        user_id: userData.user.id,
+        business_id: business.id,
+        role: 'owner',
+        display_name: String(ownerName).trim(),
+        invited_by: admin.userId,
+      })
 
     if (linkError) {
       console.error('Failed to link owner to business:', linkError)

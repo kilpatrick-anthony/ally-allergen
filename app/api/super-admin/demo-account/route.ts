@@ -293,6 +293,7 @@ export async function POST(request: NextRequest) {
       user_id: userId,
       business_id: business.id,
       role: 'owner',
+      display_name: String(ownerName).trim(),
     })
 
     if (linkError) {

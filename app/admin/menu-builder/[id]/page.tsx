@@ -16,11 +16,13 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { ALLERGEN_LIST } from '@/types/allergen'
 import { EditHistory } from '@/components/admin/EditHistory'
+import { useContentPermissions } from '@/lib/hooks/useContentPermissions'
 
 const isImageIcon = (icon?: string) => Boolean(icon && /^https?:\/\//.test(icon))
 
 export default function ViewMenuItemPage() {
   const { showNotification } = useNotification()
+  const { canDeleteContent } = useContentPermissions()
   const router = useRouter()
   const params = useParams()
   const menuItemId = params.id as string
@@ -226,14 +228,11 @@ export default function ViewMenuItemPage() {
               Edit
             </Button>
           </Link>
-          <Button 
-            variant="outline"
-            onClick={handleDelete}
-            icon={<Trash2 />}
-            className="text-red-600 hover:text-red-700 hover:border-red-300"
-          >
-            Delete
-          </Button>
+          {canDeleteContent && (
+            <Button variant="outline" onClick={handleDelete} icon={<Trash2 />} className="text-red-600 hover:text-red-700 hover:border-red-300">
+              Delete
+            </Button>
+          )}
         </div>
       </div>
 

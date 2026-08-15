@@ -9,14 +9,17 @@ import { createClient } from '@/lib/supabase/client'
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireRole?: 'owner' | 'admin' | 'manager' | 'staff';
+  allowedRoles?: Array<'owner' | 'admin' | 'manager' | 'staff'>;
   redirectTo?: string;
 }
 
 export default function ProtectedRoute({ 
   children, 
   requireRole,
+  allowedRoles,
   redirectTo = '/auth/signin'
 }: ProtectedRouteProps) {
+  const allowedRolesKey = allowedRoles?.join(',')
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthorized, setIsAuthorized] = useState(false)
   const router = useRouter()
@@ -61,6 +64,11 @@ export default function ProtectedRoute({
           }
         }
 
+        if (allowedRoles && !isSuperAdmin && (!user.role || !allowedRoles.includes(user.role))) {
+          router.replace('/unauthorized')
+          return
+        }
+
         console.log('🔒 Authorization successful')
         setIsAuthorized(true)
       } catch (error) {
@@ -72,7 +80,7 @@ export default function ProtectedRoute({
     }
 
     checkAuth()
-  }, [router, redirectTo, requireRole])
+  }, [router, redirectTo, requireRole, allowedRolesKey])
 
   if (isLoading) {
     return (

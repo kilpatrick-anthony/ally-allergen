@@ -265,10 +265,22 @@ export async function DELETE(
     }
 
     const supabase = createServiceClient()
-    const businessId = await getUserBusinessId(supabase, userId)
+    const { data: membership } = await supabase
+      .from('user_businesses')
+      .select('business_id, role')
+      .eq('user_id', userId)
+      .single()
+    const businessId = membership?.business_id || null
 
     if (!businessId) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
+    }
+
+    if (membership?.role === 'staff') {
+      return NextResponse.json(
+        { error: 'Staff members cannot delete menu items' },
+        { status: 403 }
+      )
     }
 
     const { error: ingredientError } = await supabase

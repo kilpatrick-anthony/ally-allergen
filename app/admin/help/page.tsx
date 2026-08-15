@@ -35,6 +35,7 @@ export default function HelpPage() {
   const categories = [
     { id: 'all', name: 'All topics', icon: Book },
     { id: 'getting-started', name: 'Getting started', icon: Zap },
+    { id: 'team', name: 'Team and user roles', icon: Users },
     { id: 'ingredients', name: 'Ingredients', icon: Package },
     { id: 'menu', name: 'Menu builder', icon: ChefHat },
     { id: 'sites', name: 'Sites and kiosks', icon: Building },
@@ -46,6 +47,7 @@ export default function HelpPage() {
     ga: {
       all: 'Gach Ábhar',
       'getting-started': 'Ag Tús',
+      team: 'Foireann agus Róil Úsáideora',
       ingredients: 'Comhábhair',
       menu: 'Tógálaí Biachláir',
       sites: 'Suíomhanna & Kiosks',
@@ -55,6 +57,7 @@ export default function HelpPage() {
     pt: {
       all: 'Todos os Tópicos',
       'getting-started': 'Primeiros Passos',
+      team: 'Equipa e Funções de Utilizador',
       ingredients: 'Ingredientes',
       menu: 'Construtor de Menu',
       sites: 'Locais e Quiosques',
@@ -64,6 +67,7 @@ export default function HelpPage() {
     fr: {
       all: 'Tous les Sujets',
       'getting-started': 'Démarrage',
+      team: 'Équipe et Rôles Utilisateur',
       ingredients: 'Ingrédients',
       menu: 'Constructeur de Menu',
       sites: 'Sites et Bornes',
@@ -73,6 +77,7 @@ export default function HelpPage() {
     es: {
       all: 'Todos los Temas',
       'getting-started': 'Primeros Pasos',
+      team: 'Equipo y Roles de Usuario',
       ingredients: 'Ingredientes',
       menu: 'Constructor de Menú',
       sites: 'Sitios y Quioscos',
@@ -82,6 +87,7 @@ export default function HelpPage() {
     de: {
       all: 'Alle Themen',
       'getting-started': 'Erste Schritte',
+      team: 'Team und Benutzerrollen',
       ingredients: 'Zutaten',
       menu: 'Menü-Builder',
       sites: 'Standorte und Kioske',
@@ -106,6 +112,14 @@ export default function HelpPage() {
       description: 'See the main features and how to move around the admin dashboard with ease.',
       icon: Book,
       color: 'blue'
+    },
+    {
+      id: 16,
+      category: 'team',
+      title: 'Creating users and choosing roles',
+      description: 'Invite a team member, choose the right access level, and understand what each role can do.',
+      icon: Users,
+      color: 'indigo'
     },
     {
       id: 3,
@@ -422,6 +436,15 @@ export default function HelpPage() {
         'Staff can bypass the sleep screen by tapping it 5 times rapidly — this unlocks the kiosk for 30 minutes.',
         'Save your changes — the schedule takes effect immediately on all paired kiosks for that site.',
       ],
+      16: [
+        'Only an Owner can manage team access. Open Settings and select the Team tab.',
+        'Select Add team member, then enter the person’s full name and email address.',
+        'Choose a role: Owner has full access and can manage users; Manager has full operational access, including deleting ingredients and menu items, but cannot manage users; Staff can create and edit operational content but cannot manage users or delete ingredients and menu items.',
+        'Select Send invite. The person receives an email link where they can choose their password, then sign in to the business portal.',
+        'To change access later, return to Settings → Team and use Edit beside the person’s name. Owners can also remove someone from the business without deleting their underlying account.',
+        'Every ingredient or menu-item change is recorded against the team member’s name in the audit history and audit report.',
+        'AllyJen prevents the final Owner from being removed or changed to another role, so the business always keeps an account that can manage access.',
+      ],
     },
     ga: {
       1: ['Cruthaigh do chuntas agus deimhnigh do sheoladh ríomhphoist.','Socraigh do chéad láithreán (suíomh) faoi Láithreáin & Suíomhanna → Cuir Láithreán Leis.','Cuir do chéad chomhábhair le faisnéis ailléirginigh leis sa rannóg Comhábhair.','Úsáid Menu Builder chun comhábhair a chomhcheangal in míreanna biachláir — ríomhtar ailléirgine go huathoibríoch.','Péireáil gléas ciosca le láithreán ag baint úsáide as an gcód péireála atá le fáil i Socruithe Láithreáin → Gléasanna.','Athbhreithnigh d\'achoimre clúdach ailléirginigh sa rannóg Anailísíocht.'],
@@ -505,7 +528,10 @@ export default function HelpPage() {
       13: ['Navigieren Sie zu Downloads & Berichte.','Wählen Sie aus: Allergenmatrix (alle Menüpunkte vs. alle Allergene), Vollständiger Zutatenbericht, oder Compliance-Zusammenfassung.','Wenden Sie Filter nach Standort, Kategorie oder Datumsbereich an, um den Berichtsumfang einzugrenzen.','Laden Sie Berichte als PDF zum Drucken oder als CSV zur Tabellenkalkulationsnutzung herunter.','Gedruckte Allergenmatrizen sind ein praktisches Compliance-Werkzeug zur Anzeige für Personal und Kunden im Betrieb.'],
       14: ['Gehen Sie zu Downloads → Alle Datenblätter für eine zentrale Übersicht aller hochgeladenen Spezifikationsblätter über alle Zutaten hinweg.','Filtern Sie nach Status: Aktuell, Zur Überprüfung fällig, Überfällig, oder Fehlend.','Klicken Sie auf einen beliebigen Datenblatteintrag, um das Original-PDF zu öffnen oder herunterzuladen.','Verwenden Sie die Massenexport-Option, um alle Datenblätter als ZIP-Datei herunterzuladen — nützlich für Audits oder externe Überprüfungen.','Fehlende Datenblätter (Zutaten ohne hochgeladenes Spezifikationsblatt) werden hervorgehoben, damit Sie mit den Lieferanten nachfassen können.'],      15: ['Wählen Sie unter Standorte & Filialen einen Standort aus und klicken Sie auf Bearbeiten, dann scrollen Sie zum Abschnitt Kiosk-Öffnungszeiten.','Aktivieren Sie Öffnungszeiten aktivieren, um den Zeitplan zu aktivieren — wenn deaktiviert, läuft der Kiosk 24/7.','Legen Sie für jeden Wochentag eine Öffnungszeit, eine Schließzeit fest, oder setzen Sie ein Häkchen bei Den ganzen Tag geschlossen, wenn der Betrieb an diesem Tag geschlossen ist.','Außerhalb der geplanten Zeiten zeigt der Kiosk einen Geschlossen-Bildschirm mit der nächsten Öffnungszeit.','Mitarbeiter können den Schlafbildschirm umgehen, indem sie ihn 5 Mal schnell antippen — dies entsperrt den Kiosk für 30 Minuten.','Speichern Sie Ihre Änderungen — der Zeitplan tritt sofort auf allen gekoppelten Kiosken für diesen Standort in Kraft.'],    },
   }
-  const topicDetails = topicDetailsByLang[language] ?? topicDetailsByLang['en']
+  const topicDetails = {
+    ...topicDetailsByLang['en'],
+    ...(topicDetailsByLang[language] ?? {}),
+  }
 
   const localizedCategories = categories.map((category) => ({
     ...category,
