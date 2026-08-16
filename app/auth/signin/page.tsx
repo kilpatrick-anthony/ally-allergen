@@ -5,7 +5,7 @@ import { useState, useEffect, Suspense, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Mail, Lock, CheckCircle } from 'lucide-react'
+import { Mail, Lock, CheckCircle, ShieldCheck } from 'lucide-react'
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
@@ -18,6 +18,8 @@ function SignInContent() {
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
+  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false)
+  const [twoFactorCode, setTwoFactorCode] = useState('')
   const router = useRouter()
   const supabaseRef = useRef(createClient())
 
@@ -57,6 +59,7 @@ function SignInContent() {
           email,
           password,
           rememberMe,
+          twoFactorCode: requiresTwoFactor ? twoFactorCode : undefined,
         })
       })
 
@@ -64,6 +67,12 @@ function SignInContent() {
       
       const result = await response.json()
       console.log('📋 Sign-in response:', result)
+
+      if (result.requiresTwoFactor) {
+        setRequiresTwoFactor(true)
+        setLoading(false)
+        return
+      }
 
       if (!response.ok) {
         throw new Error(result.error || 'Invalid email or password')
@@ -139,7 +148,7 @@ function SignInContent() {
                   {error}
                 </div>
               )}
-              <div>
+              {!requiresTwoFactor && <div>
                 <label htmlFor="email" className="block text-base font-semibold text-gray-800 mb-2">
                   Email Address
                 </label>
@@ -157,8 +166,8 @@ function SignInContent() {
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-lg text-gray-900"
                   />
                 </div>
-              </div>
-              <div>
+              </div>}
+              {!requiresTwoFactor && <div>
                 <label htmlFor="password" className="block text-base font-semibold text-gray-800 mb-2">
                   Password
                 </label>
@@ -176,8 +185,32 @@ function SignInContent() {
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-lg text-gray-900"
                   />
                 </div>
-              </div>
-              <div className="flex items-center justify-between">
+              </div>}
+              {requiresTwoFactor && (
+                <div>
+                  <div className="mb-5 rounded-xl border border-[#42b8ac]/30 bg-[#42b8ac]/10 p-4 text-sm text-[#003842]">
+                    <div className="mb-1 flex items-center gap-2 font-bold">
+                      <ShieldCheck className="h-5 w-5" /> Two-factor verification
+                    </div>
+                    Enter the 6-digit code from your authenticator app, or one unused backup code.
+                  </div>
+                  <label htmlFor="twoFactorCode" className="block text-base font-semibold text-gray-800 mb-2">
+                    Authenticator code
+                  </label>
+                  <input
+                    id="twoFactorCode"
+                    value={twoFactorCode}
+                    onChange={(event) => setTwoFactorCode(event.target.value)}
+                    required
+                    autoFocus
+                    autoComplete="one-time-code"
+                    inputMode="numeric"
+                    placeholder="000000"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center font-mono text-2xl tracking-[0.35em] text-gray-900 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
+                  />
+                </div>
+              )}
+              {!requiresTwoFactor && <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
                     type="checkbox"
@@ -187,15 +220,24 @@ function SignInContent() {
                   />
                   <span className="text-sm text-gray-600">Remember me</span>
                 </label>
-              </div>
+              </div>}
               <Button
                 type="submit"
                 variant="primary"
                 className="w-full py-3 text-base font-bold bg-[#003842] hover:bg-[#42b8ac] text-white rounded-lg transition-colors"
                 disabled={loading}
               >
-                {loading ? 'Signing in…' : 'Sign In'}
+                {loading ? 'Verifying…' : requiresTwoFactor ? 'Verify and sign in' : 'Sign In'}
               </Button>
+              {requiresTwoFactor && (
+                <button
+                  type="button"
+                  onClick={() => { setRequiresTwoFactor(false); setTwoFactorCode(''); setError('') }}
+                  className="w-full text-sm font-semibold text-gray-500 hover:text-[#003842]"
+                >
+                  Use a different account
+                </button>
+              )}
               <div className="text-center space-y-2">
                 <div>
                   <Link href="/auth/reset-password" className="text-sm text-[#42b8ac] hover:text-[#003842] font-semibold">

@@ -41,7 +41,7 @@ export default function AdminNavbar({ brandColors }: AdminNavbarProps) {
     { href: '/admin/downloads', label: 'Downloads', IconComponent: Download },
     { href: '/admin/analytics', label: 'Analytics', IconComponent: BarChart3 },
     { href: '/admin/sites', label: 'Sites', IconComponent: Building },
-    { href: '/admin/devices', label: 'Devices', IconComponent: Monitor },
+    { href: '/admin/qr-codes', label: 'Access Points', IconComponent: Monitor },
     { href: '/admin/settings', label: 'Settings', IconComponent: Settings },
   ];
 

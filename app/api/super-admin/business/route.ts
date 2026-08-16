@@ -3,7 +3,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
-import { getMonthlyRevenueForPlan, isPlanKey } from '@/lib/plans'
+import { isPlanKey } from '@/lib/plans'
+import { getDealTerms, getDiscountedMonthlyRevenue } from '@/lib/deal-terms'
 
 async function getAuthenticatedSuperAdmin() {
   const cookieStore = await cookies()
@@ -164,7 +165,11 @@ export async function GET() {
         setupFeeLastInvoiceId: subscription?.setupFeeLastInvoiceId || null,
         paymentMethodUpdatedAt: subscription?.paymentMethodUpdatedAt || null,
         lastInvoiceStatus: subscription?.lastInvoiceStatus || null,
-        revenue: getMonthlyRevenueForPlan(b.plan_type),
+        discountPercent: Number(subscription?.discountPercent || 0),
+        contractLengthMonths: subscription?.contractLengthMonths || null,
+        discountReason: subscription?.discountReason || '',
+        dealTermsUpdatedAt: subscription?.dealTermsUpdatedAt || null,
+        revenue: getDiscountedMonthlyRevenue(b.plan_type, Number(subscription?.discountPercent || 0)),
         setupMilestones: {
           sitesCount: siteCountsByBusiness[b.id] || 0,
           devicesCount: deviceCountsByBusiness[b.id] || 0,
@@ -208,6 +213,9 @@ export async function POST(request: NextRequest) {
       sitePostalCode,
       siteCountry,
       plan,
+      discountPercent,
+      contractLengthMonths,
+      discountReason,
       sendWelcomeEmail,
     } = body
 
@@ -221,6 +229,17 @@ export async function POST(request: NextRequest) {
     if (plan && !isPlanKey(plan)) {
       return NextResponse.json(
         { error: 'Please select a valid plan before continuing' },
+        { status: 400 }
+      )
+    }
+
+    const selectedPlan = plan || 'starter'
+    let dealTerms
+    try {
+      dealTerms = getDealTerms(selectedPlan, { discountPercent, contractLengthMonths, discountReason })
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Invalid deal terms' },
         { status: 400 }
       )
     }
@@ -266,7 +285,7 @@ export async function POST(request: NextRequest) {
         description: businessDescription || '',
         slug,
         status: 'active',
-        plan_type: plan || 'starter',
+        plan_type: selectedPlan,
         trial_started_at: null,
         trial_ends_at: null,
         subscription_started_at: new Date().toISOString(),
@@ -280,7 +299,14 @@ export async function POST(request: NextRequest) {
             country: businessCountry || '',
             phone: ownerPhone || ''
           },
-          subscription: { plan: plan || 'starter', status: 'active' }
+          subscription: {
+            plan: selectedPlan,
+            status: 'active',
+            ...dealTerms,
+            billingManagement: 'manual_stripe',
+            dealTermsUpdatedAt: new Date().toISOString(),
+            dealTermsUpdatedBy: admin.userEmail,
+          }
         }
       })
       .select()

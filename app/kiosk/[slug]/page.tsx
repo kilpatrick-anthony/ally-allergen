@@ -355,6 +355,7 @@ export default function KioskPage() {
   const searchParams = useSearchParams()
   const slug = params.slug as string
   const siteIdParam = searchParams.get('site_id')
+  const qrDeploymentCode = searchParams.get('qr')
   const pdfAutoDownload = searchParams.get('pdf')
 
   // Persist slug so the PWA start_url (/kiosk) can redirect back here
@@ -665,6 +666,19 @@ export default function KioskPage() {
       trackPageView(slug, siteIdParam)
     }
   }, [slug, siteIdParam])
+
+  useEffect(() => {
+    if (!qrDeploymentCode) return
+    const sessionKey = `allyjen_qr_scan_${qrDeploymentCode}`
+    if (sessionStorage.getItem(sessionKey)) return
+    sessionStorage.setItem(sessionKey, '1')
+    fetch('/api/qr-codes/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: qrDeploymentCode }),
+    }).catch(() => undefined)
+    trackQRScan(slug, `deployment:${qrDeploymentCode}`, siteIdParam)
+  }, [qrDeploymentCode, siteIdParam, slug])
 
   // Track search queries
   useEffect(() => {
@@ -1601,7 +1615,7 @@ export default function KioskPage() {
                         <p className="mt-1 text-sm text-red-800">{t.allergensToAvoidHelp}</p>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
                   {ALLERGENS.map(allergen => {
                     const isSelected = selectedAllergens.includes(allergen.id)
                     const isExpanded = expandedAllergens.includes(allergen.id)
@@ -1763,7 +1777,7 @@ export default function KioskPage() {
                         </h2>
                         <p className="mt-1 text-sm text-emerald-800">{t.dietaryPreferencesHelp}</p>
                       </div>
-                      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
                     {DIETARY_OPTIONS.map(option => {
                       const isSelected = selectedDietary.includes(option.name)
                       const IconComp = option.icon as unknown as React.ComponentType<{className: string}>
@@ -1790,26 +1804,26 @@ export default function KioskPage() {
                   </div>
                 </Card>
 
-                <div className="sticky bottom-4 z-30 rounded-2xl border border-[#42b8ac]/40 bg-[#003842] p-4 text-white shadow-2xl sm:flex sm:items-center sm:justify-between sm:gap-6">
+                <div className="sticky bottom-3 z-30 rounded-xl border border-[#42b8ac]/40 bg-[#003842] p-3 text-white shadow-2xl sm:bottom-4 sm:flex sm:items-center sm:justify-between sm:gap-6 sm:rounded-2xl sm:p-4">
                   <div>
-                    <p className="text-lg font-bold">{filteredItems.length} {t.matchingDishes}</p>
-                    <p className="mt-1 text-sm text-white/75">
+                    <p className="text-base font-bold sm:text-lg">{filteredItems.length} {t.matchingDishes}</p>
+                    <p className="mt-0.5 text-xs text-white/75 sm:mt-1 sm:text-sm">
                       {allergenSelectionCount} {t.allergenSelections} · {selectedDietary.length} {t.dietarySelections}
                     </p>
                   </div>
-                  <div className="mt-4 flex items-center gap-3 sm:mt-0">
+                  <div className="mt-2 flex items-center gap-2 sm:mt-0 sm:gap-3">
                     {totalActiveFilters > 0 && (
-                      <button type="button" onClick={clearFilters} className="px-3 py-2 text-sm font-semibold text-white/80 hover:text-white">
+                      <button type="button" onClick={clearFilters} className="px-2 py-1.5 text-xs font-semibold text-white/80 hover:text-white sm:px-3 sm:py-2 sm:text-sm">
                         {t.clearSelections}
                       </button>
                     )}
                     <button
                       type="button"
                       onClick={() => { setShowFilterResults(true); window.scrollTo(0, 0) }}
-                      className="flex min-h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-[#42b8ac] px-5 py-3 text-base font-bold text-[#003842] shadow-lg transition hover:bg-[#69ccc3] sm:flex-none"
+                      className="flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#42b8ac] px-3 py-2 text-sm font-bold text-[#003842] shadow-lg transition hover:bg-[#69ccc3] sm:min-h-12 sm:flex-none sm:gap-2 sm:rounded-xl sm:px-5 sm:py-3 sm:text-base"
                     >
                       {t.viewMatchingDishes} ({filteredItems.length})
-                      <ArrowRight className="h-5 w-5" />
+                      <ArrowRight className="h-4 w-4 shrink-0 sm:h-5 sm:w-5" />
                     </button>
                   </div>
                 </div>

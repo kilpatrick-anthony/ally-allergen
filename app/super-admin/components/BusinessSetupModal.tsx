@@ -9,6 +9,7 @@ import { useRef } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { PLAN_DEFINITIONS, SUPER_ADMIN_PLAN_ORDER, type PlanKey } from '@/lib/plans'
+import { MAX_SALES_DISCOUNT_PERCENT, QR_LITE_CONTRACT_MONTHS } from '@/lib/deal-terms'
 import StripeCardElementField, { type StripeCardElementHandle } from '@/components/stripe/StripeCardElementField'
 
 interface BusinessSetupModalProps {
@@ -37,7 +38,7 @@ const PLAN_DETAILS: Record<string, PlanDetails> = {
   },
   qr_lite: {
     name: PLAN_DEFINITIONS.qr_lite.title,
-    priceLabel: PLAN_DEFINITIONS.qr_lite.priceLabel.replace('EUR', '€'),
+    priceLabel: '€365',
     features: PLAN_DEFINITIONS.qr_lite.adminFeatures,
   },
   starter: {
@@ -95,6 +96,9 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
     plan: 'starter' as PlanKey,
     subscriptionStatus: 'active',
     billingCycle: 'monthly',
+    discountPercent: 0,
+    contractLengthMonths: 12,
+    discountReason: '',
     setupStripePayment: true,
     chargeDeviceFee: false,
     sendWelcomeEmail: true,
@@ -106,7 +110,8 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
   })
 
   const selectedPlan = PLAN_DETAILS[formData.plan]
-  const canSetUpStripe = formData.plan === 'starter' || formData.plan === 'pro'
+  const isFlexibleDeal = formData.plan !== 'free' && formData.plan !== 'demo' && formData.plan !== 'qr_lite'
+  const canSetUpStripe = (formData.plan === 'starter' || formData.plan === 'pro') && Number(formData.discountPercent) === 0
   const totalSteps = canSetUpStripe ? 4 : 3
 
   const validateStep = () => {
@@ -225,6 +230,9 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
         plan: 'starter' as PlanKey,
         subscriptionStatus: 'active',
         billingCycle: 'monthly',
+        discountPercent: 0,
+        contractLengthMonths: 12,
+        discountReason: '',
         setupStripePayment: true,
         chargeDeviceFee: false,
         sendWelcomeEmail: true,
@@ -547,8 +555,11 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
               onClick={() => setFormData(prev => ({
                 ...prev,
                 plan: key,
-                setupStripePayment: key === 'starter' || key === 'pro',
-                billingCycle: 'monthly'
+                setupStripePayment: (key === 'starter' || key === 'pro') && Number(prev.discountPercent) === 0,
+                billingCycle: 'monthly',
+                discountPercent: key === 'qr_lite' || key === 'free' || key === 'demo' ? 0 : prev.discountPercent,
+                contractLengthMonths: key === 'qr_lite' ? QR_LITE_CONTRACT_MONTHS : (key === 'free' || key === 'demo' ? 12 : prev.contractLengthMonths),
+                discountReason: key === 'qr_lite' || key === 'free' || key === 'demo' ? '' : prev.discountReason,
               }))}
             >
               <div className="flex items-center justify-between mb-2">
@@ -557,7 +568,11 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
               </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 {plan.priceLabel}
-                {key !== 'free' && key !== 'demo' && key !== 'enterprise' && <span className="text-sm font-normal text-gray-600 dark:text-gray-400">/month</span>}
+                {(key === 'qr_lite' || PLAN_DEFINITIONS[key].priceSuffix) && (
+                  <span className="ml-1 text-sm font-normal text-gray-600 dark:text-gray-400">
+                    {key === 'qr_lite' ? '+ VAT upfront / 12 months' : PLAN_DEFINITIONS[key].priceSuffix}
+                  </span>
+                )}
               </div>
               <ul className="mt-3 text-sm text-gray-600 dark:text-gray-400 space-y-2 flex-1">
                 {plan.features.map((feature, index) => (
@@ -571,6 +586,79 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
             )
           })}
         </div>
+
+        {formData.plan !== 'free' && formData.plan !== 'demo' && (
+          <div className="mb-6 rounded-lg border border-[#42b8ac]/30 bg-[#42b8ac]/5 p-4">
+            <div className="mb-4">
+              <h4 className="font-semibold text-gray-900 dark:text-white">Sales deal terms</h4>
+              <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                These terms are recorded in AllyJen for the sales team. Apply the same terms in Stripe manually before billing the customer.
+              </p>
+            </div>
+
+            {formData.plan === 'qr_lite' ? (
+              <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+                <strong>Fixed QR Lite offer:</strong> €365 + VAT paid upfront for a 12-month contract. This is advertised as €1 per day and cannot be discounted here.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Discount percentage
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      name="discountPercent"
+                      min="0"
+                      max={MAX_SALES_DISCOUNT_PERCENT}
+                      step="0.01"
+                      value={formData.discountPercent}
+                      onChange={handleChange}
+                      className="w-full px-3 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                    <span className="absolute right-3 top-2 text-gray-500">%</span>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">Maximum salesperson discount: {MAX_SALES_DISCOUNT_PERCENT}%.</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Contract length (months)
+                  </label>
+                  <input
+                    type="number"
+                    name="contractLengthMonths"
+                    min="1"
+                    step="1"
+                    value={formData.contractLengthMonths}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Discount reason / deal notes
+                  </label>
+                  <textarea
+                    name="discountReason"
+                    value={formData.discountReason}
+                    onChange={handleChange}
+                    rows={2}
+                    maxLength={500}
+                    placeholder="For example: launch customer, multi-site agreement, or competitor match"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+                {PLAN_DEFINITIONS[formData.plan].monthlyPrice !== null && (
+                  <div className="md:col-span-2 rounded-md bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                    Agreed monthly price before VAT: <strong>€{(PLAN_DEFINITIONS[formData.plan].monthlyPrice! * (1 - Number(formData.discountPercent || 0) / 100)).toFixed(2)}</strong>
+                    {' '}for {formData.contractLengthMonths} month{Number(formData.contractLengthMonths) === 1 ? '' : 's'}.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -596,7 +684,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
                 type="checkbox"
                 id="setupStripePayment"
                 name="setupStripePayment"
-                checked={formData.setupStripePayment}
+                checked={canSetUpStripe}
                 onChange={handleChange}
                 disabled
                 className="rounded border-gray-300 text-[#42b8ac] focus:ring-[#42b8ac]"
@@ -607,7 +695,9 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
             </div>
             {!canSetUpStripe && (
               <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                Stripe setup is only available for Self-Managed and Fully Managed plans. Free, Demo, QR Lite and Enterprise are not auto-billed here.
+                {isFlexibleDeal && Number(formData.discountPercent) > 0
+                  ? 'Discounted deals are recorded here and must be set up manually in Stripe.'
+                  : 'Stripe setup is only available for undiscounted Self-Managed and Fully Managed plans. Other deals are handled manually in Stripe.'}
               </p>
             )}
             {canSetUpStripe && (

@@ -1,14 +1,14 @@
-// app/admin/suppliers/[id]/page.tsx
 'use client'
 
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, Truck, Save, FileText, AlertCircle, MessageSquare } from 'lucide-react'
-
+import { AlertCircle, ArrowLeft, Edit, FileText, Globe, Mail, MessageSquare, Package, Phone, Truck } from 'lucide-react'
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay'
 
 interface Supplier {
   id: string
@@ -20,261 +20,111 @@ interface Supplier {
   ingredient_count: number
 }
 
-interface SupplierForm {
-  name: string
-  contact: string
-  phone: string
-  email: string
-  website: string
-}
-
 interface SupplierNote {
   id: string
   note: string
   created_at: string
-  updated_at?: string
-  created_by?: string
+}
+
+interface SupplierIngredientVariant {
+  ingredient_id: string
+  allergen_warnings: Record<string, unknown>
+  assessment_status: 'needs_review' | 'assessed'
+  ingredient: { id: string; name: string; category?: string } | Array<{ id: string; name: string; category?: string }>
 }
 
 export default function SupplierDetailPage() {
-  const params = useParams()
-  const supplierId = params.id as string
-
+  const supplierId = useParams().id as string
   const [supplier, setSupplier] = useState<Supplier | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [ingredients, setIngredients] = useState<SupplierIngredientVariant[]>([])
   const [notes, setNotes] = useState<SupplierNote[]>([])
-  const [notesLoading, setNotesLoading] = useState(true)
-  const [form, setForm] = useState<SupplierForm | null>(null)
-  const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const fetchSupplier = async () => {
       try {
         setLoading(true)
-        const response = await fetch(`/api/suppliers/${supplierId}`)
-        const data = await response.json()
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to fetch supplier')
-        }
-
-        setSupplier(data.supplier)
-        setForm({
-          name: data.supplier.name || '',
-          contact: data.supplier.contact || '',
-          phone: data.supplier.phone || '',
-          email: data.supplier.email || '',
-          website: data.supplier.website || ''
-        })
-
-        const notesResponse = await fetch(`/api/suppliers/${supplierId}/notes`)
-        const notesData = await notesResponse.json()
-
-        if (!notesResponse.ok) {
-          throw new Error(notesData.error || 'Failed to fetch supplier notes')
-        }
-
-        setNotes(notesData.notes || [])
-      } catch (error: any) {
+        const [supplierResponse, notesResponse] = await Promise.all([
+          fetch(`/api/suppliers/${supplierId}`),
+          fetch(`/api/suppliers/${supplierId}/notes`),
+        ])
+        const [supplierData, notesData] = await Promise.all([supplierResponse.json(), notesResponse.json()])
+        if (!supplierResponse.ok) throw new Error(supplierData.error || 'Failed to fetch supplier')
+        setSupplier(supplierData.supplier)
+        setIngredients(supplierData.ingredients || [])
+        setNotes(notesResponse.ok ? notesData.notes || [] : [])
+      } catch (error) {
         console.error('Error fetching supplier:', error)
         setSupplier(null)
-        setForm(null)
-        setNotes([])
       } finally {
         setLoading(false)
-        setNotesLoading(false)
       }
     }
-
     fetchSupplier()
   }, [supplierId])
 
   if (loading) {
-    return (
-      <Container>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <div className="relative h-12 w-12 mx-auto mb-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
-              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
-            </div>
-            <p className="text-gray-600">Loading supplier...</p>
-          </div>
-        </div>
-      </Container>
-    )
+    return <Container><div className="flex min-h-[60vh] items-center justify-center text-center"><div><div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-[#42b8ac]/20 border-t-[#42b8ac]" /><p className="text-gray-600">Loading supplier…</p></div></div></Container>
   }
 
-  if (!supplier || !form) {
-    return (
-      <Container>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <p className="text-gray-600">Supplier not found</p>
-            <Link href="/admin/suppliers">
-              <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} className="mt-4">
-                Back to Suppliers
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </Container>
-    )
+  if (!supplier) {
+    return <Container><div className="flex min-h-[60vh] items-center justify-center text-center"><div><AlertCircle className="mx-auto mb-4 h-12 w-12 text-red-500" /><p className="text-gray-600">Supplier not found</p><Link href="/admin/suppliers"><Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} className="mt-4">Back to Suppliers</Button></Link></div></div></Container>
   }
 
   return (
     <Container>
       <div className="py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <Link href="/admin/suppliers">
-            <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />}>
-              Back to Suppliers
-            </Button>
-          </Link>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button variant="outline" icon={<Save className="h-4 w-4" />} onClick={async () => {
-              if (!supplier) return
-              if (!form.name.trim()) {
-                alert('Supplier name is required')
-                return
-              }
-
-              try {
-                setSaving(true)
-                const response = await fetch(`/api/suppliers/${supplierId}`, {
-                  method: 'PUT',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    ...form,
-                    ingredient_count: supplier.ingredient_count
-                  })
-                })
-
-                const data = await response.json()
-
-                if (!response.ok) {
-                  throw new Error(data.error || 'Failed to update supplier')
-                }
-
-                setSupplier(data.supplier)
-              } catch (error: any) {
-                console.error('Error updating supplier:', error)
-                alert(error.message || 'Failed to update supplier')
-              } finally {
-                setSaving(false)
-              }
-            }} disabled={saving}>
-              {saving ? 'Saving...' : 'Save'}
-            </Button>
-            <Link href={`/admin/suppliers/${supplierId}/docs`}>
-              <Button variant="primary" icon={<FileText className="h-4 w-4" />}>
-                Documents
-              </Button>
-            </Link>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <Link href="/admin/suppliers"><Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />}>Back to Suppliers</Button></Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href={`/admin/suppliers/${supplierId}/edit`}><Button variant="outline" icon={<Edit className="h-4 w-4" />}>Edit supplier</Button></Link>
+            <Link href={`/admin/suppliers/${supplierId}/docs`}><Button variant="primary" icon={<FileText className="h-4 w-4" />}>Documents</Button></Link>
           </div>
         </div>
 
         <Card className="mt-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Truck className="h-6 w-6 text-blue-600" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-[#003842] dark:text-white">{supplier.name}</h1>
-            </div>
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="rounded-xl bg-blue-100 p-3"><Truck className="h-6 w-6 text-blue-600" /></div>
+            <div className="min-w-0"><h1 className="truncate text-3xl font-bold text-[#003842] dark:text-white">{supplier.name}</h1><p className="text-sm text-gray-500">{supplier.ingredient_count} linked ingredient{supplier.ingredient_count === 1 ? '' : 's'}</p></div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm text-gray-500">Name</label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-gray-500">Contact</label>
-                <input
-                  type="text"
-                  value={form.contact}
-                  onChange={(e) => setForm({ ...form, contact: e.target.value })}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-gray-500">Phone</label>
-                <input
-                  type="text"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm text-gray-500">Email</label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-gray-500">Website</label>
-                <input
-                  type="text"
-                  value={form.website}
-                  onChange={(e) => setForm({ ...form, website: e.target.value })}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                />
-              </div>
-            </div>
-          </div>
+          <dl className="mt-6 grid gap-4 border-t border-gray-200 pt-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div><dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">Contact</dt><dd className="mt-1 text-sm text-gray-900">{supplier.contact || 'Not set'}</dd></div>
+            <div><dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">Phone</dt><dd className="mt-1 flex items-center gap-2 text-sm text-gray-900"><Phone className="h-4 w-4 text-gray-400" />{supplier.phone || 'Not set'}</dd></div>
+            <div><dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">Email</dt><dd className="mt-1 flex items-center gap-2 text-sm text-gray-900"><Mail className="h-4 w-4 text-gray-400" />{supplier.email || 'Not set'}</dd></div>
+            <div><dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">Website</dt><dd className="mt-1 flex items-center gap-2 text-sm text-gray-900"><Globe className="h-4 w-4 text-gray-400" />{supplier.website || 'Not set'}</dd></div>
+          </dl>
         </Card>
 
         <Card className="mt-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-3 bg-emerald-100 rounded-lg">
-              <MessageSquare className="h-6 w-6 text-emerald-600" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Supplier Notes</h2>
-              <p className="text-gray-600 dark:text-gray-300">Latest notes recorded for this supplier.</p>
-            </div>
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3"><div className="rounded-lg bg-amber-100 p-2.5"><Package className="h-5 w-5 text-amber-700" /></div><div><h2 className="text-xl font-bold text-gray-900 dark:text-white">Linked ingredients</h2><p className="text-sm text-gray-600 dark:text-gray-300">Allergen data supplied by this company.</p></div></div>
+            <Link href="/admin/ingredients/new"><Button variant="outline">Add ingredient</Button></Link>
           </div>
-
-          {notesLoading ? (
-            <p className="text-sm text-gray-500">Loading notes...</p>
-          ) : notes.length === 0 ? (
-            <p className="text-sm text-gray-500">No notes yet.</p>
+          {ingredients.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 py-10 text-center"><Package className="mx-auto mb-3 h-9 w-9 text-gray-300" /><p className="text-sm font-medium text-gray-700">No ingredients use this supplier yet.</p></div>
           ) : (
-            <div className="space-y-4">
-              {notes.map((note) => {
-                const createdAt = new Date(note.created_at).toLocaleString()
-                const updatedAt = note.updated_at && note.updated_at !== note.created_at
-                  ? new Date(note.updated_at).toLocaleString()
-                  : null
-
+            <div className="space-y-3">
+              {ingredients.map((variant) => {
+                const ingredient = Array.isArray(variant.ingredient) ? variant.ingredient[0] : variant.ingredient
+                if (!ingredient) return null
+                const assessed = variant.assessment_status === 'assessed'
                 return (
-                  <div key={note.id} className="rounded-lg border border-gray-200 p-4">
-                    <p className="text-sm text-gray-900 whitespace-pre-wrap">{note.note}</p>
-                    <div className="mt-2 text-xs text-gray-500">
-                      <span>Created {createdAt}</span>
-                      {updatedAt && <span className="ml-2">Updated {updatedAt}</span>}
-                      {note.created_by && <span className="ml-2">By {note.created_by}</span>}
+                  <div key={variant.ingredient_id} className="rounded-xl border border-gray-200 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0"><Link href={`/admin/ingredients/${ingredient.id}`} className="font-semibold text-[#003842] hover:underline">{ingredient.name}</Link><p className="mt-0.5 text-xs text-gray-500">{ingredient.category || 'Uncategorised'}</p></div>
+                      <div className="flex items-center gap-2"><Badge variant={assessed ? 'success' : 'warning'}>{assessed ? 'Reviewed' : 'Needs review'}</Badge><Link href={`/admin/ingredients/${ingredient.id}/edit`}><Button variant="ghost" size="sm">Edit profile</Button></Link></div>
                     </div>
+                    <div className="mt-3 border-t border-gray-100 pt-3"><AllergenWarningDisplay warnings={variant.allergen_warnings as any} compact={true} showNone={true} /></div>
                   </div>
                 )
               })}
             </div>
           )}
+        </Card>
+
+        <Card className="mt-6">
+          <div className="mb-5 flex items-center gap-3"><div className="rounded-lg bg-emerald-100 p-2.5"><MessageSquare className="h-5 w-5 text-emerald-700" /></div><div><h2 className="text-xl font-bold text-gray-900 dark:text-white">Supplier notes</h2><p className="text-sm text-gray-600 dark:text-gray-300">Manage notes from the Edit supplier screen.</p></div></div>
+          {notes.length === 0 ? <p className="text-sm text-gray-500">No notes yet.</p> : <div className="space-y-3">{notes.map((note) => <div key={note.id} className="rounded-lg border border-gray-200 p-4"><p className="whitespace-pre-wrap text-sm text-gray-900">{note.note}</p><p className="mt-2 text-xs text-gray-500">Created {new Date(note.created_at).toLocaleString()}</p></div>)}</div>}
         </Card>
       </div>
     </Container>

@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import { QRCodeSVG } from 'qrcode.react'
+import { Check, Copy, ShieldCheck } from 'lucide-react'
 
 interface TwoFactorModalProps {
   isOpen: boolean
@@ -19,6 +20,7 @@ export default function TwoFactorModal({ isOpen, onClose, onSuccess }: TwoFactor
   const [secret, setSecret] = useState<string>('')
   const [verificationCode, setVerificationCode] = useState('')
   const [backupCodes, setBackupCodes] = useState<string[]>([])
+  const [copied, setCopied] = useState(false)
 
   const enableTwoFactor = async () => {
     setLoading(true)
@@ -68,7 +70,6 @@ export default function TwoFactorModal({ isOpen, onClose, onSuccess }: TwoFactor
       }
 
       setBackupCodes(data.backupCodes)
-      onSuccess()
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -83,6 +84,20 @@ export default function TwoFactorModal({ isOpen, onClose, onSuccess }: TwoFactor
     setSecret('')
     setVerificationCode('')
     setBackupCodes([])
+    setCopied(false)
+  }
+
+  const copyBackupCodes = async () => {
+    try {
+      await navigator.clipboard.writeText(backupCodes.join('\n'))
+      setCopied(true)
+    } catch {
+      setError('Could not copy automatically. Please select and copy the codes manually.')
+    }
+  }
+
+  const finishSetup = () => {
+    onSuccess()
   }
 
   useEffect(() => {
@@ -94,10 +109,12 @@ export default function TwoFactorModal({ isOpen, onClose, onSuccess }: TwoFactor
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+      <div role="dialog" aria-modal="true" aria-labelledby="two-factor-title" className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-white p-6 shadow-lg">
         <h2 className="text-xl font-semibold mb-4">
-          {step === 'setup' ? 'Enable Two-Factor Authentication' : 'Verify Setup'}
+          <span id="two-factor-title">
+            {backupCodes.length > 0 ? 'Save Your Backup Codes' : step === 'setup' ? 'Enable Two-Factor Authentication' : 'Verify Setup'}
+          </span>
         </h2>
 
         {error && <div className="mb-4 text-red-600 text-sm">{error}</div>}
@@ -114,7 +131,7 @@ export default function TwoFactorModal({ isOpen, onClose, onSuccess }: TwoFactor
           </div>
         )}
 
-        {step === 'verify' && (
+        {step === 'verify' && backupCodes.length === 0 && (
           <div className="space-y-4">
             <div className="text-center">
               <div className="bg-gray-100 p-4 rounded-lg inline-block mb-4">
@@ -150,29 +167,32 @@ export default function TwoFactorModal({ isOpen, onClose, onSuccess }: TwoFactor
 
         {backupCodes.length > 0 && (
           <div className="space-y-4">
-            <div className="text-green-600 font-medium">✓ Two-factor authentication enabled!</div>
+            <div className="flex items-center gap-2 rounded-lg bg-green-50 p-3 font-medium text-green-700">
+              <ShieldCheck className="h-5 w-5" /> Two-factor authentication is enabled
+            </div>
             <div>
-              <h3 className="font-medium mb-2">Backup Codes</h3>
               <p className="text-sm text-gray-600 mb-3">
-                Save these backup codes in a safe place. You can use them to access your account if you lose your device.
+                Each code works once. Save them in your password manager now—you will not be able to view them again after closing this window.
               </p>
-              <div className="bg-gray-100 p-3 rounded font-mono text-sm">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-2 rounded-lg border border-gray-200 bg-gray-50 p-4 font-mono text-sm" aria-label="Backup codes">
                 {backupCodes.map((code, index) => (
-                  <div key={index} className="mb-1">{code}</div>
+                  <div key={index}>{code}</div>
                 ))}
               </div>
             </div>
-            <Button onClick={onClose} className="w-full">
-              Done
+            <Button variant="outline" onClick={copyBackupCodes} className="w-full">
+              {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+              {copied ? 'Copied' : 'Copy all backup codes'}
             </Button>
+            <Button onClick={finishSetup} className="w-full">I have saved my codes</Button>
           </div>
         )}
 
-        <div className="flex justify-end gap-2 mt-4">
+        {backupCodes.length === 0 && <div className="flex justify-end gap-2 mt-4">
           <Button variant="ghost" onClick={onClose} disabled={loading}>
-            {backupCodes.length > 0 ? 'Close' : 'Cancel'}
+            Cancel
           </Button>
-        </div>
+        </div>}
       </div>
     </div>
   )

@@ -55,7 +55,7 @@ export async function GET(
 
     const { data: site, error } = await supabase
       .from('sites')
-      .select('*, business:businesses(name)')
+      .select('*, business:businesses(name, slug, plan_type)')
       .eq('slug', slug)
       .eq('business_id', businessId)
       .single()

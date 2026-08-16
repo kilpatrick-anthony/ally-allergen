@@ -1,4 +1,4 @@
-import { verifySessionToken } from '@/lib/auth'
+import { hasSuperAdminAccess, verifySessionToken } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
@@ -44,8 +44,14 @@ export async function GET(_request: NextRequest) {
 
     const userDetails = userData?.user
     const fullName = userBusiness?.display_name || userDetails?.user_metadata?.full_name || email?.split('@')[0] || 'User'
-    const twoFactorEnabled = userDetails?.user_metadata?.twoFactorEnabled || false
-    const isSuperAdmin = userRoleData?.role === 'super_admin' || payload.role === 'super_admin'
+    const twoFactorEnabled = Boolean(
+      userDetails?.app_metadata?.twoFactorEnabled || userDetails?.user_metadata?.twoFactorEnabled
+    )
+    const isSuperAdmin = await hasSuperAdminAccess({
+      userId,
+      userEmail: email,
+      supabase,
+    })
     // Normal business access always comes from the live membership row. This
     // makes role changes and removals effective immediately, even if an older
     // signed session token still contains the previous role.

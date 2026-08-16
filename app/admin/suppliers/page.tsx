@@ -36,33 +36,12 @@ export default function SuppliersPage() {
     const fetchSuppliers = async () => {
       try {
         setLoading(true)
-        const [suppliersResponse, ingredientsResponse] = await Promise.all([
-          fetch('/api/suppliers'),
-          fetch('/api/ingredients')
-        ])
-
+        const suppliersResponse = await fetch('/api/suppliers')
         const data = await suppliersResponse.json()
-        const ingredientsData = await ingredientsResponse.json()
 
         if (!suppliersResponse.ok) {
           throw new Error(data.error || 'Failed to fetch suppliers')
         }
-
-        if (!ingredientsResponse.ok) {
-          throw new Error(ingredientsData.error || 'Failed to fetch ingredients')
-        }
-
-        const ingredientCounts = new Map<string, number>()
-        ;(ingredientsData.ingredients || []).forEach((ingredient: any) => {
-          const suppliers = Array.isArray(ingredient.suppliers) ? ingredient.suppliers : []
-          suppliers.forEach((supplierName: string) => {
-            const normalized = supplierName.trim().toLowerCase()
-            if (!normalized) {
-              return
-            }
-            ingredientCounts.set(normalized, (ingredientCounts.get(normalized) || 0) + 1)
-          })
-        })
 
         const mappedSuppliers = (data.suppliers || []).map((supplier: any) => ({
           id: supplier.id,
@@ -71,7 +50,7 @@ export default function SuppliersPage() {
           phone: supplier.phone || 'Not set',
           email: supplier.email || 'Not set',
           website: supplier.website || 'Not set',
-          ingredientCount: ingredientCounts.get((supplier.name || '').trim().toLowerCase()) || 0
+          ingredientCount: supplier.ingredient_count || 0
         }))
 
         setSuppliers(mappedSuppliers)

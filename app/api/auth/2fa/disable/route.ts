@@ -34,7 +34,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Update user metadata to disable 2FA
+    // Remove sensitive factor data from server-controlled app metadata and any
+    // legacy copy that may still exist in user metadata.
+    const currentAppMetadata = userData.user.app_metadata || {}
     const currentMetadata = userData.user.user_metadata || {}
     const updatedMetadata = {
       ...currentMetadata,
@@ -44,6 +46,12 @@ export async function POST(request: NextRequest) {
     }
 
     const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
+      app_metadata: {
+        ...currentAppMetadata,
+        twoFactorEnabled: false,
+        twoFactorSecret: null,
+        backupCodeHashes: null,
+      },
       user_metadata: updatedMetadata,
     })
 

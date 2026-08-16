@@ -774,13 +774,26 @@ export default function NewMenuItemPage() {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 {t('admin.allergenInformation')}
               </label>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                Set allergen levels for this menu item. If you select ingredients above, levels are calculated automatically and can be adjusted here.
-              </p>
-              <AllergenWarningSelector
-                value={menuItem.allergen_warnings}
-                onChange={(warnings) => setMenuItem({ ...menuItem, allergen_warnings: warnings })}
-              />
+              {menuItem.ingredients.length > 0 ? (
+                <>
+                  <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+                    Calculated automatically from the selected ingredients. Edit an ingredient or its supplier profile to change this result.
+                  </p>
+                  <div className="rounded-xl border border-[#42b8ac]/30 bg-[#42b8ac]/5 p-4">
+                    <AllergenWarningDisplay warnings={menuItem.allergen_warnings} showNone={true} />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+                    No ingredients are linked, so set this menu item's allergen information manually.
+                  </p>
+                  <AllergenWarningSelector
+                    value={menuItem.allergen_warnings}
+                    onChange={(warnings) => setMenuItem({ ...menuItem, allergen_warnings: warnings })}
+                  />
+                </>
+              )}
             </Card>
 
             {/* Datasheets */}
@@ -915,7 +928,12 @@ export default function NewMenuItemPage() {
                       onChange={() => handleIngredientSelect(ingredient.id)}
                       className="w-4 h-4 rounded border-gray-300 text-[#42b8ac] focus:ring-[#42b8ac]"
                     />
-                    <span className="ml-3 text-gray-900 dark:text-white">{ingredient.name}</span>
+                    <span className="ml-3 min-w-0">
+                      <span className="block text-gray-900 dark:text-white">{ingredient.name}</span>
+                      <span className="block truncate text-xs text-gray-500">
+                        {ingredient.suppliers.length > 0 ? ingredient.suppliers.join(', ') : 'No supplier linked'}
+                      </span>
+                    </span>
                   </label>
                 ))
               )}

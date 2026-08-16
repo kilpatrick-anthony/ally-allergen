@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/Badge'
 import { ALLERGEN_LIST } from '@/types/allergen'
 import { EditHistory } from '@/components/admin/EditHistory'
 import { useContentPermissions } from '@/lib/hooks/useContentPermissions'
+import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay'
 
 export default function ViewIngredientPage() {
   const { showNotification } = useNotification()
@@ -361,15 +362,36 @@ export default function ViewIngredientPage() {
               <h2 className="text-xl font-semibold text-[#003842] mb-4">Suppliers</h2>
               
               <div className="space-y-2">
-                {ingredient.suppliers.map((supplier: string, index: number) => (
-                  <div
-                    key={index}
-                    className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
-                  >
-                    <Truck className="h-5 w-5 text-gray-400" />
-                    <span className="text-gray-900">{supplier}</span>
-                  </div>
-                ))}
+                {ingredient.suppliers.map((supplier: string) => {
+                  const profile = ingredient.supplier_profiles?.[supplier]
+                  const isAssessed = profile?.assessment_status === 'assessed'
+                  const header = (
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Truck className="h-5 w-5 shrink-0 text-[#0f766e]" />
+                      <span className="truncate font-semibold text-gray-900">{supplier}</span>
+                    </div>
+                  )
+
+                  return (
+                    <div key={supplier} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        {profile?.supplier_id ? (
+                          <Link href={`/admin/suppliers/${profile.supplier_id}`} className="min-w-0 hover:underline">
+                            {header}
+                          </Link>
+                        ) : header}
+                        <Badge variant={isAssessed ? 'success' : 'warning'}>
+                          {isAssessed ? 'Reviewed' : 'Needs review'}
+                        </Badge>
+                      </div>
+                      {profile?.allergen_warnings && (
+                        <div className="mt-3 border-t border-gray-200 pt-3">
+                          <AllergenWarningDisplay warnings={profile.allergen_warnings} compact={true} showNone={true} />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </Card>
           )}

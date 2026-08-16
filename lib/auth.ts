@@ -13,12 +13,16 @@ export interface SessionTokenPayload extends JWTPayload {
   impersonatedByUserId?: string
   impersonatedByEmail?: string
   impersonatedByRole?: string | null
+  mfaVerified?: boolean
+  mfaVerifiedAt?: number
 }
 
 export function getJwtSecret(): Uint8Array {
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY
+  // A dedicated secret lets Supabase keys be rotated without invalidating every
+  // AllyJen session. The fallback keeps existing deployments compatible.
+  const secret = process.env.AUTH_SESSION_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!secret) {
-    throw new Error('Missing required environment variable SUPABASE_SERVICE_ROLE_KEY')
+    throw new Error('Missing required environment variable AUTH_SESSION_SECRET')
   }
   return new TextEncoder().encode(secret)
 }
@@ -71,24 +75,23 @@ export async function hasSuperAdminAccess({
     return true
   }
 
-  if (userRole && userRole.toLowerCase() === 'super_admin') {
-    return true
-  }
-
   if (!userId) {
-    return false
+    return Boolean(userRole && userRole.toLowerCase() === 'super_admin')
   }
 
   const client = supabase ?? createServiceClient()
-  const { data, error } = await client
-    .from('users')
-    .select('role')
-    .eq('id', userId)
-    .maybeSingle()
+  const [{ data, error }, { data: internalMember }] = await Promise.all([
+    client.from('users').select('role').eq('id', userId).maybeSingle(),
+    client
+      .from('internal_members')
+      .select('platform_super_admin, internal_access')
+      .eq('user_id', userId)
+      .maybeSingle(),
+  ])
 
-  if (error) {
-    return false
+  if (!error && data?.role === 'super_admin') {
+    return true
   }
 
-  return data?.role === 'super_admin'
+  return Boolean(internalMember?.internal_access && internalMember?.platform_super_admin)
 }

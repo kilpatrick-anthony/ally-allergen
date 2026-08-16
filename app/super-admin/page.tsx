@@ -37,6 +37,7 @@ import { Select } from '@/components/ui/Select'
 import { BusinessSetupModal } from './components/BusinessSetupModal'
 import { BusinessDetailsModal } from './components/BusinessDetailsModal'
 import { getMonthlyRevenueForPlan, getPlanDefinition, SUPER_ADMIN_PLAN_ORDER } from '@/lib/plans'
+import { MAX_SALES_DISCOUNT_PERCENT, QR_LITE_CONTRACT_MONTHS } from '@/lib/deal-terms'
 import StripeCardElementField, { type StripeCardElementHandle } from '@/components/stripe/StripeCardElementField'
 
 interface Business {
@@ -61,6 +62,10 @@ interface Business {
   setupFeeCharged?: boolean
   setupFeeLastInvoiceId?: string | null
   lastInvoiceStatus?: string | null
+  discountPercent?: number
+  contractLengthMonths?: number | null
+  discountReason?: string
+  dealTermsUpdatedAt?: string | null
   revenue?: number
   setupMilestones?: {
     sitesCount?: number
@@ -104,7 +109,10 @@ export default function SuperAdminDashboard() {
     phone: '',
     address: '',
     plan: 'starter',
-    status: 'active'
+    status: 'active',
+    discountPercent: 0,
+    contractLengthMonths: 12,
+    discountReason: '',
   })
   const [editError, setEditError] = useState('')
   const [actionNotice, setActionNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -419,7 +427,10 @@ export default function SuperAdminDashboard() {
       phone: business.phone || '',
       address: business.address || '',
       plan: business.plan || 'starter',
-      status: business.status || 'active'
+      status: business.status || 'active',
+      discountPercent: business.discountPercent || 0,
+      contractLengthMonths: business.contractLengthMonths || 12,
+      discountReason: business.discountReason || '',
     })
     setEditError('')
     setShowEditModal(true)
@@ -444,7 +455,10 @@ export default function SuperAdminDashboard() {
           phone: editForm.phone.trim(),
           address: editForm.address.trim(),
           plan: editForm.plan,
-          status: editForm.status
+          status: editForm.status,
+          discountPercent: editForm.discountPercent,
+          contractLengthMonths: editForm.contractLengthMonths,
+          discountReason: editForm.discountReason,
         })
       })
       const data = await response.json()
@@ -602,6 +616,11 @@ export default function SuperAdminDashboard() {
       return
     }
 
+    if ((business.discountPercent || 0) > 0) {
+      setActionNotice({ type: 'error', text: 'This is a discounted deal. Apply its agreed discount and contract terms manually in Stripe.' })
+      return
+    }
+
     setBillingBusiness(business)
     setBillingForm({
       billingName: business.contactName || '',
@@ -668,12 +687,14 @@ export default function SuperAdminDashboard() {
   const handleExportData = () => {
     // In a real implementation, this would export business data
     const csvContent = [
-      ['Name', 'Email', 'Status', 'Plan', 'Revenue', 'Created'],
+      ['Name', 'Email', 'Status', 'Plan', 'Discount Percent', 'Contract Months', 'Monthly Revenue', 'Created'],
       ...filteredBusinesses.map(b => [
         b.name,
         b.contactEmail,
         b.status,
         b.plan,
+        String(b.discountPercent || 0),
+        String(b.contractLengthMonths || ''),
         b.revenue?.toString() || '0',
         b.createdAt
       ])
@@ -759,7 +780,7 @@ export default function SuperAdminDashboard() {
   const suspendedCount = businesses.filter(b => b.status === 'suspended').length
   const estimatedMRR = businesses
     .filter(b => b.status === 'active')
-    .reduce((sum, b) => sum + getMonthlyRevenueForPlan(b.plan), 0)
+    .reduce((sum, b) => sum + (b.revenue ?? getMonthlyRevenueForPlan(b.plan)), 0)
   const newThisMonth = businesses.filter(b => new Date(b.createdAt) >= firstOfMonth).length
   const needsSetupCount = businesses.filter(b => getSetupProgress(b).completed < 3).length
   const offlineDeviceCount = businesses.reduce((sum, b) => sum + (b.deviceStatus?.offline || 0), 0)
@@ -1101,6 +1122,12 @@ export default function SuperAdminDashboard() {
                     <div className="text-xs text-gray-400 mt-0.5">
                       joined {new Date(business.createdAt).toLocaleDateString('en-IE', { day: 'numeric', month: 'short', year: '2-digit' })}
                     </div>
+                    {(business.discountPercent || business.contractLengthMonths) && (
+                      <div className="text-xs text-[#287f77] mt-1">
+                        {business.discountPercent ? `${business.discountPercent}% discount · ` : ''}
+                        {business.contractLengthMonths} month contract
+                      </div>
+                    )}
                   </td>
 
                   {/* Owner email */}
@@ -1490,7 +1517,16 @@ export default function SuperAdminDashboard() {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Plan</label>
                 <select
                   value={editForm.plan}
-                  onChange={e => setEditForm(p => ({ ...p, plan: e.target.value }))}
+                  onChange={e => {
+                    const plan = e.target.value
+                    setEditForm(p => ({
+                      ...p,
+                      plan,
+                      discountPercent: plan === 'qr_lite' || plan === 'free' || plan === 'demo' ? 0 : p.discountPercent,
+                      contractLengthMonths: plan === 'qr_lite' ? QR_LITE_CONTRACT_MONTHS : p.contractLengthMonths,
+                      discountReason: plan === 'qr_lite' || plan === 'free' || plan === 'demo' ? '' : p.discountReason,
+                    }))
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
                 >
                   <option value="free">Free</option>
@@ -1513,6 +1549,53 @@ export default function SuperAdminDashboard() {
                   <option value="suspended">Suspended</option>
                 </select>
               </div>
+              {editForm.plan === 'qr_lite' ? (
+                <div className="md:col-span-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+                  <strong>Fixed QR Lite offer:</strong> €365 + VAT paid upfront for 12 months, advertised as €1 per day. Discounts are disabled.
+                </div>
+              ) : editForm.plan !== 'free' && editForm.plan !== 'demo' ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sales Discount</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        max={MAX_SALES_DISCOUNT_PERCENT}
+                        step="0.01"
+                        value={editForm.discountPercent}
+                        onChange={e => setEditForm(p => ({ ...p, discountPercent: Number(e.target.value) }))}
+                        className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                      />
+                      <span className="absolute right-3 top-2 text-gray-500">%</span>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-500">Maximum {MAX_SALES_DISCOUNT_PERCENT}%.</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contract Length (months)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={editForm.contractLengthMonths}
+                      onChange={e => setEditForm(p => ({ ...p, contractLengthMonths: Number(e.target.value) }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Discount Reason / Deal Notes</label>
+                    <textarea
+                      rows={2}
+                      maxLength={500}
+                      value={editForm.discountReason}
+                      onChange={e => setEditForm(p => ({ ...p, discountReason: e.target.value }))}
+                      placeholder="Why was this discount agreed?"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
+                    />
+                    <p className="mt-1 text-xs text-amber-700">Deal terms must also be updated manually in Stripe.</p>
+                  </div>
+                </>
+              ) : null}
             </div>
 
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">

@@ -55,7 +55,25 @@ export async function GET(
       return NextResponse.json({ error: 'Supplier not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ supplier })
+    const { data: variants, error: variantsError } = await supabase
+      .from('ingredient_supplier_variants')
+      .select('ingredient_id, allergen_warnings, certifications, assessment_status, last_reviewed_at, ingredient:ingredients(id, name, category, status)')
+      .eq('business_id', businessId)
+      .eq('supplier_id', id)
+      .order('created_at', { ascending: false })
+
+    if (variantsError) {
+      console.error('Error fetching supplier ingredients:', variantsError)
+      return NextResponse.json({ error: 'Failed to load supplier ingredients' }, { status: 500 })
+    }
+
+    return NextResponse.json({
+      supplier: {
+        ...supplier,
+        ingredient_count: variants?.length || 0,
+      },
+      ingredients: variants || [],
+    })
   } catch (error: any) {
     console.error('Unexpected error:', error)
     return NextResponse.json(
@@ -109,7 +127,6 @@ export async function PUT(
         email: body.email || '',
         website: body.website || '',
         notes: body.notes || '',
-        ingredient_count: typeof body.ingredient_count === 'number' ? body.ingredient_count : 0,
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
@@ -119,7 +136,10 @@ export async function PUT(
 
     if (error) {
       console.error('Error updating supplier:', error)
-      return NextResponse.json({ error: 'Failed to update supplier' }, { status: 500 })
+      const message = error.code === '23505'
+        ? 'A supplier with this name already exists'
+        : 'Failed to update supplier'
+      return NextResponse.json({ error: message }, { status: error.code === '23505' ? 409 : 500 })
     }
 
     return NextResponse.json({ supplier })

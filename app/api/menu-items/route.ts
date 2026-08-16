@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import { recordAuditLog, diffRecordFields, MENU_ITEM_AUDIT_FIELDS } from '@/lib/audit'
+import { deriveMenuItemSafety, normalizeIngredientIds, replaceMenuItemIngredients } from '@/lib/server/menu-item-safety'
 
 const getUserBusinessId = async (
   supabase: ReturnType<typeof createServiceClient>,
@@ -144,6 +145,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
+    const ingredients = normalizeIngredientIds(body.ingredients)
+    let safety
+    try {
+      safety = await deriveMenuItemSafety(
+        supabase,
+        businessId,
+        ingredients,
+        body.allergen_warnings || {},
+        Array.isArray(body.dietary) ? body.dietary : []
+      )
+    } catch (validationError: any) {
+      return NextResponse.json({ error: validationError.message }, { status: 400 })
+    }
+
     const insertPayload = {
       business_id: businessId,
       name: body.name,
@@ -152,8 +167,8 @@ export async function POST(request: NextRequest) {
       site_id: typeof body.site_id === 'string' && body.site_id.trim() !== ''
         ? body.site_id
         : null,
-      allergen_warnings: body.allergen_warnings || {},
-      dietary: Array.isArray(body.dietary) ? body.dietary : [],
+      allergen_warnings: safety.allergenWarnings,
+      dietary: safety.dietary,
       color: typeof body.color === 'string' && body.color.trim() !== '' ? body.color : null,
       icon: typeof body.icon === 'string' && body.icon.trim() !== '' ? body.icon : null,
       is_active: body.status ? body.status === 'active' : body.is_active ?? true,
@@ -199,6 +214,14 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
+    try {
+      await replaceMenuItemIngredients(supabase, menuItem.id, ingredients)
+    } catch (ingredientError: any) {
+      await supabase.from('menu_items').delete().eq('id', menuItem.id).eq('business_id', businessId)
+      console.error('Error linking menu item ingredients:', ingredientError)
+      return NextResponse.json({ error: ingredientError.message }, { status: 500 })
+    }
+
     await recordAuditLog(supabase, {
       businessId,
       entityType: 'menu_item',
@@ -209,25 +232,6 @@ export async function POST(request: NextRequest) {
       userId,
       userEmail: payload.email as string,
     })
-
-    const ingredients = Array.isArray(body.ingredients) ? body.ingredients : []
-
-    if (ingredients.length > 0) {
-      const ingredientRows = ingredients.map((ingredientId: string) => ({
-        menu_item_id: menuItem.id,
-        ingredient_id: ingredientId,
-        quantity: '',
-        is_optional: false
-      }))
-
-      const { error: ingredientError } = await supabase
-        .from('menu_item_ingredients')
-        .insert(ingredientRows)
-
-      if (ingredientError) {
-        console.error('Error linking menu item ingredients:', ingredientError)
-      }
-    }
 
     return NextResponse.json({
       menuItem: {

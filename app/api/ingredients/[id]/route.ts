@@ -6,48 +6,17 @@ import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import { computeWorstCaseAllergens } from '@/types/allergen'
 import { recordAuditLog, diffRecordFields, INGREDIENT_AUDIT_FIELDS } from '@/lib/audit'
-
-const normalizeSupplierNames = (suppliers: string[]) => {
-  const names: string[] = []
-  suppliers.forEach((supplier) => {
-    const trimmed = supplier.trim()
-    if (trimmed !== '' && !names.includes(trimmed)) {
-      names.push(trimmed)
-    }
-  })
-  return names
-}
-
-const upsertSuppliers = async (
-  supabase: ReturnType<typeof createServiceClient>,
-  businessId: string,
-  suppliers: string[],
-  userId: string
-) => {
-  const names = normalizeSupplierNames(suppliers)
-  if (names.length === 0) {
-    return
-  }
-
-  const rows = names.map((name) => ({
-    business_id: businessId,
-    name,
-    contact: '',
-    phone: '',
-    email: '',
-    website: '',
-    ingredient_count: 0,
-    created_by: userId
-  }))
-
-  const { error } = await supabase
-    .from('suppliers')
-    .upsert(rows, { onConflict: 'business_id,name' })
-
-  if (error) {
-    throw error
-  }
-}
+import {
+  buildCompleteSupplierProfiles,
+  deriveEffectiveIngredientSafety,
+  normalizeSupplierNames,
+  profilesFromVariantRows,
+  type SupplierProfileMap,
+} from '@/lib/ingredient-supplier-profiles'
+import {
+  ensureSupplierRecords,
+  syncIngredientSupplierVariants,
+} from '@/lib/server/ingredient-supplier-variants'
 
 export async function GET(
   request: NextRequest,
@@ -98,7 +67,27 @@ export async function GET(
       return NextResponse.json({ error: 'Ingredient not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ ingredient })
+    const { data: variants, error: variantsError } = await supabase
+      .from('ingredient_supplier_variants')
+      .select('supplier_id, allergen_warnings, certifications, assessment_status, notes, last_reviewed_at, supplier:suppliers(id, name)')
+      .eq('business_id', userBusiness.business_id)
+      .eq('ingredient_id', id)
+
+    if (variantsError) {
+      console.error('Error fetching ingredient supplier variants:', variantsError)
+      return NextResponse.json({ error: 'Failed to load supplier profiles' }, { status: 500 })
+    }
+
+    const normalizedProfiles = profilesFromVariantRows(variants || [])
+
+    return NextResponse.json({
+      ingredient: {
+        ...ingredient,
+        supplier_profiles: Object.keys(normalizedProfiles).length > 0
+          ? normalizedProfiles
+          : ingredient.supplier_profiles || {},
+      }
+    })
 
   } catch (error: any) {
     console.error('Unexpected error:', error)
@@ -160,23 +149,25 @@ export async function PUT(
       .eq('business_id', userBusiness.business_id)
       .single()
 
-    await upsertSuppliers(supabase, userBusiness.business_id, suppliers || [], userId)
-
-    // If per-supplier profiles are provided, compute effective allergen/cert values from them.
-    // Allergens: worst-case union across all suppliers (safest for food safety)
-    // Certifications: strict intersection across all suppliers (only certify if all suppliers comply)
-    const profiles = supplier_profiles ? Object.values(supplier_profiles as Record<string, { allergen_warnings: any; certifications: string[] }>) : []
-    const computedAllergensFromProfiles = profiles.length > 0
-      ? computeWorstCaseAllergens(profiles.map(p => p.allergen_warnings).filter(Boolean) as Parameters<typeof computeWorstCaseAllergens>[0])
-      : undefined
-    const computedCertificationsFromProfiles = profiles.length > 0
-      ? profiles.map(p => p.certifications || []).reduce((acc, certs) => acc.filter(c => certs.includes(c)))
-      : undefined
-
-    // Preserve explicit manual values from the editor. Supplier profile aggregation is a fallback
-    // for clients that only submit supplier profile data.
-    const effectiveAllergens = allergen_warnings ?? computedAllergensFromProfiles ?? {}
-    const effectiveCertifications = certifications ?? computedCertificationsFromProfiles ?? []
+    const normalizedSuppliers = normalizeSupplierNames(Array.isArray(suppliers) ? suppliers : [])
+    const supplierRecords = await ensureSupplierRecords(
+      supabase,
+      userBusiness.business_id,
+      normalizedSuppliers,
+      userId
+    )
+    const completeProfiles = buildCompleteSupplierProfiles(
+      normalizedSuppliers,
+      supplier_profiles as SupplierProfileMap | undefined,
+      previousIngredient?.allergen_warnings || allergen_warnings || {},
+      previousIngredient?.certifications || certifications || []
+    )
+    for (const [supplierName, supplier] of supplierRecords) {
+      completeProfiles[supplierName].supplier_id = supplier.id
+    }
+    const derivedSafety = deriveEffectiveIngredientSafety(completeProfiles)
+    const effectiveAllergens = derivedSafety?.allergen_warnings || allergen_warnings || {}
+    const effectiveCertifications = derivedSafety?.certifications || certifications || []
 
     // Update ingredient
     const updatePayload = {
@@ -184,14 +175,14 @@ export async function PUT(
       description: description || '',
       category: category || '',
       allergen_warnings: effectiveAllergens,
-      suppliers: suppliers || [],
+      suppliers: normalizedSuppliers,
       certifications: effectiveCertifications,
-      supplier_profiles: supplier_profiles || {},
+      supplier_profiles: completeProfiles,
       preferred_review_months: preferred_review_months || 3,
       updated_at: new Date().toISOString()
     }
 
-    let { data: ingredient, error } = await supabase
+    const { data: ingredient, error } = await supabase
       .from('ingredients')
       .update(updatePayload)
       .eq('id', id)
@@ -199,21 +190,39 @@ export async function PUT(
       .select()
       .single()
 
-    // Fallback: if supplier_profiles column doesn't exist yet (migration not run), retry without it
-    if (error && error.message?.includes('supplier_profiles')) {
-      const { supplier_profiles: _sp, ...fallbackPayload } = updatePayload;
-      ({ data: ingredient, error } = await supabase
-        .from('ingredients')
-        .update(fallbackPayload)
-        .eq('id', id)
-        .eq('business_id', userBusiness.business_id)
-        .select()
-        .single())
-    }
-
     if (error) {
       console.error('Error updating ingredient:', error)
       return NextResponse.json({ error: 'Failed to update ingredient' }, { status: 500 })
+    }
+
+    try {
+      await syncIngredientSupplierVariants(
+        supabase,
+        userBusiness.business_id,
+        id,
+        supplierRecords,
+        completeProfiles,
+        userId
+      )
+    } catch (variantError) {
+      if (previousIngredient) {
+        await supabase
+          .from('ingredients')
+          .update({
+            name: previousIngredient.name,
+            description: previousIngredient.description,
+            category: previousIngredient.category,
+            allergen_warnings: previousIngredient.allergen_warnings,
+            suppliers: previousIngredient.suppliers,
+            certifications: previousIngredient.certifications,
+            supplier_profiles: previousIngredient.supplier_profiles,
+            preferred_review_months: previousIngredient.preferred_review_months,
+            updated_at: previousIngredient.updated_at,
+          })
+          .eq('id', id)
+          .eq('business_id', userBusiness.business_id)
+      }
+      throw variantError
     }
 
     await recordAuditLog(supabase, {

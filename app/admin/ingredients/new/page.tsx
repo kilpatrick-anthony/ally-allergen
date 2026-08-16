@@ -8,7 +8,6 @@ import { useNotification } from '@/lib/hooks/useNotification'
 import { 
   Package, ArrowLeft, Save, X, AlertCircle, Plus, Trash2,
   Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck, ScanLine,
-  ChevronDown, ChevronRight
 } from 'lucide-react'
 
 import { Container } from '@/components/layout/Container'
@@ -18,13 +17,12 @@ import { Badge } from '@/components/ui/Badge'
 import AllergenWarningSelector from '@/components/admin/AllergenWarningSelector'
 import DatasheetUploader from '@/components/admin/DatasheetUploader'
 import { LabelScanModal } from '@/components/admin/LabelScanModal'
+import IngredientSupplierVariantsEditor from '@/components/admin/IngredientSupplierVariantsEditor'
 import type { AllergenWarnings } from '@/types/allergen'
-import { computeWorstCaseAllergens } from '@/types/allergen'
-
-type SupplierProfile = {
-  allergen_warnings: AllergenWarnings
-  certifications: string[]
-}
+import {
+  deriveEffectiveIngredientSafety,
+  type SupplierProfileMap,
+} from '@/lib/ingredient-supplier-profiles'
 
 export default function NewIngredientPage() {
   const { showNotification } = useNotification()
@@ -57,22 +55,13 @@ export default function NewIngredientPage() {
     certifications: [] as string[]
   })
 
-  const [newSupplier, setNewSupplier] = useState('')
-  const [selectedSupplier, setSelectedSupplier] = useState('')
   const [availableSuppliers, setAvailableSuppliers] = useState<string[]>([])
   const [loadingSuppliers, setLoadingSuppliers] = useState(false)
   const [customCertInput, setCustomCertInput] = useState('')
   const [showCustomCertInput, setShowCustomCertInput] = useState(false)
 
   // Per-supplier profiles
-  const defaultAllergenWarnings: AllergenWarnings = {
-    cereals_gluten: 'none', crustaceans: 'none', eggs: 'none', fish: 'none',
-    peanuts: 'none', soybeans: 'none', milk: 'none', nuts: 'none',
-    celery: 'none', mustard: 'none', sesame: 'none', sulphites: 'none',
-    lupin: 'none', molluscs: 'none'
-  }
-  const [supplierProfiles, setSupplierProfiles] = useState<Record<string, SupplierProfile>>({})
-  const [expandedSuppliers, setExpandedSuppliers] = useState<Set<string>>(new Set())
+  const [supplierProfiles, setSupplierProfiles] = useState<SupplierProfileMap>({})
 
   const parseJsonSafely = async (response: Response) => {
     const contentType = response.headers.get('content-type') || ''
@@ -251,47 +240,16 @@ export default function NewIngredientPage() {
     }
   }
 
-  const addSupplierByName = (supplierName: string) => {
-    const trimmed = supplierName.trim()
-    if (trimmed && !ingredient.suppliers.includes(trimmed)) {
-      setIngredient({
-        ...ingredient,
-        suppliers: [...ingredient.suppliers, trimmed]
-      })
-      setExpandedSuppliers(prev => { const next = new Set(prev); next.add(trimmed); return next })
-    }
-  }
-
-  const addSupplier = () => {
-    if (!newSupplier.trim()) {
-      return
-    }
-    addSupplierByName(newSupplier)
-    setNewSupplier('')
-  }
-
-  const removeSupplier = (supplier: string) => {
-    setIngredient({
-      ...ingredient,
-      suppliers: ingredient.suppliers.filter(s => s !== supplier)
-    })
-    setSupplierProfiles(prev => { const { [supplier]: _, ...rest } = prev; return rest })
-    setExpandedSuppliers(prev => { const next = new Set(prev); next.delete(supplier); return next })
-  }
-
-  const toggleSupplierExpanded = (name: string) => {
-    setExpandedSuppliers(prev => {
-      const next = new Set(prev)
-      if (next.has(name)) next.delete(name)
-      else next.add(name)
-      return next
-    })
-  }
-
-  const updateSupplierProfile = (name: string, updates: Partial<SupplierProfile>) => {
-    setSupplierProfiles(prev => ({
-      ...prev,
-      [name]: { ...(prev[name] || { allergen_warnings: { ...defaultAllergenWarnings }, certifications: [] }), ...updates }
+  const handleSupplierVariantsChange = (suppliers: string[], profiles: SupplierProfileMap) => {
+    const derived = deriveEffectiveIngredientSafety(profiles)
+    setSupplierProfiles(profiles)
+    setIngredient((current) => ({
+      ...current,
+      suppliers,
+      ...(derived ? {
+        allergen_warnings: derived.allergen_warnings,
+        certifications: derived.certifications,
+      } : {}),
     }))
   }
 
@@ -425,7 +383,8 @@ export default function NewIngredientPage() {
                 </datalist>
               </div>
 
-              {/* Certifications */}
+              {/* Certifications are entered per supplier once supplier variants exist. */}
+              {ingredient.suppliers.length === 0 && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">
                   Certifications & Dietary Attributes
@@ -563,6 +522,7 @@ export default function NewIngredientPage() {
                   </div>
                 )}
               </div>
+              )}
 
               {/* Description */}
               <div>
@@ -578,130 +538,21 @@ export default function NewIngredientPage() {
                 />
               </div>
 
-              {/* Supplier */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Supplier
-                </label>
-                <p className="text-xs text-gray-500 mb-2">Add one or more suppliers for this ingredient. Each supplier can have its own allergen and dietary profile — the worst-case allergen data across all suppliers is used for reports and the kiosk.</p>
-                <div className="mb-3">
-                  <select
-                    value={selectedSupplier}
-                    onChange={(e) => {
-                      const val = e.target.value
-                      if (val) {
-                        addSupplierByName(val)
-                        setSelectedSupplier('')
-                      }
-                    }}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                  >
-                    <option value="">
-                      {loadingSuppliers ? 'Loading suppliers...' : 'Select existing supplier'}
-                    </option>
-                    {availableSuppliers.map((supplier) => (
-                      <option key={supplier} value={supplier}>
-                        {supplier}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <p className="text-xs text-gray-500 mb-1">Or create a new supplier:</p>
-                <div className="flex gap-2 mb-3">
-                  <input
-                    type="text"
-                    value={newSupplier}
-                    onChange={(e) => setNewSupplier(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addSupplier()}
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                    placeholder="Type new supplier name..."
-                  />
-                  <Button
-                    onClick={addSupplier}
-                    variant="outline"
-                    icon={<Plus className="h-4 w-4" />}
-                  >
-                    Add
-                  </Button>
-                </div>
-                
-                {ingredient.suppliers.length > 0 && (
-                  <div className="space-y-2 mt-2">
-                    {ingredient.suppliers.map(supplier => (
-                      <div key={supplier} className="border border-gray-200 rounded-lg overflow-hidden">
-                        <div className="flex items-center justify-between p-3 bg-gray-50">
-                          <span className="font-medium text-gray-800">{supplier}</span>
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => toggleSupplierExpanded(supplier)}
-                              className="flex items-center gap-1 text-xs text-[#42b8ac] hover:text-[#003842] transition-colors"
-                            >
-                              {expandedSuppliers.has(supplier)
-                                ? <><ChevronDown className="h-4 w-4" /><span>Hide profile</span></>
-                                : <><ChevronRight className="h-4 w-4" /><span>Set allergens &amp; certs</span></>}
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => removeSupplier(supplier)}
-                              className="text-gray-500 hover:text-red-600"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
-                        </div>
-                        {expandedSuppliers.has(supplier) && (
-                          <div className="p-4 border-t border-gray-200 space-y-5">
-                            <div>
-                              <h4 className="text-sm font-semibold text-gray-700 mb-3">Allergens for {supplier}</h4>
-                              <AllergenWarningSelector
-                                value={supplierProfiles[supplier]?.allergen_warnings || { ...defaultAllergenWarnings }}
-                                onChange={(warnings) => updateSupplierProfile(supplier, { allergen_warnings: warnings })}
-                              />
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-semibold text-gray-700 mb-3">Dietary certifications for {supplier}</h4>
-                              <div className="space-y-2">
-                                {certificationOptions.map((cert) => {
-                                  const Icon = cert.icon
-                                  const isSelected = (supplierProfiles[supplier]?.certifications || []).includes(cert.name)
-                                  return (
-                                    <button
-                                      key={cert.name}
-                                      type="button"
-                                      onClick={() => {
-                                        const current = supplierProfiles[supplier]?.certifications || []
-                                        updateSupplierProfile(supplier, {
-                                          certifications: isSelected
-                                            ? current.filter(c => c !== cert.name)
-                                            : [...current, cert.name]
-                                        })
-                                      }}
-                                      className={`w-full flex items-center gap-3 p-2.5 rounded-lg border-2 transition-all text-sm ${
-                                        isSelected ? 'border-current shadow-sm' : 'border-gray-200 hover:border-gray-300'
-                                      }`}
-                                      style={{
-                                        borderColor: isSelected ? cert.color : undefined,
-                                        backgroundColor: isSelected ? `${cert.color}15` : undefined,
-                                        color: isSelected ? cert.color : '#6b7280'
-                                      }}
-                                    >
-                                      {React.createElement(Icon as React.ComponentType<{className: string}>, { className: 'h-4 w-4' })}
-                                      <span className="font-medium">{cert.name}</span>
-                                    </button>
-                                  )
-                                })}
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             </div>
           </div>
+        </Card>
+
+        <Card className="mb-8 p-6">
+          <IngredientSupplierVariantsEditor
+            suppliers={ingredient.suppliers}
+            profiles={supplierProfiles}
+            availableSuppliers={availableSuppliers}
+            loadingSuppliers={loadingSuppliers}
+            fallbackAllergens={ingredient.allergen_warnings}
+            fallbackCertifications={ingredient.certifications}
+            certificationOptions={certificationOptions}
+            onChange={handleSupplierVariantsChange}
+          />
         </Card>
 
         {/* Allergen Information — hidden when suppliers have their own profiles */}

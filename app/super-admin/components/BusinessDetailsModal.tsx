@@ -46,6 +46,10 @@ interface Business {
   setupFeeLastInvoiceId?: string | null
   paymentMethodUpdatedAt?: string | null
   lastInvoiceStatus?: string | null
+  discountPercent?: number
+  contractLengthMonths?: number | null
+  discountReason?: string
+  dealTermsUpdatedAt?: string | null
   revenue?: number
   setupMilestones?: {
     sitesCount?: number
@@ -296,6 +300,36 @@ export function BusinessDetailsModal({
                   {planDetails.priceSuffix ? ` ${planDetails.priceSuffix}` : ''}
                 </span>
               </div>
+              {(business.discountPercent || 0) > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Sales Discount:</span>
+                  <span className="font-semibold text-green-600">{business.discountPercent}%</span>
+                </div>
+              )}
+              {business.contractLengthMonths && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Contract:</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">
+                    {business.contractLengthMonths} month{business.contractLengthMonths === 1 ? '' : 's'}
+                  </span>
+                </div>
+              )}
+              {business.plan === 'qr_lite' && (
+                <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-900">
+                  €365 + VAT is paid upfront for the full 12-month term and advertised as €1 per day.
+                </div>
+              )}
+              {business.discountReason && (
+                <div className="rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700">
+                  <span className="font-semibold">Deal notes:</span> {business.discountReason}
+                </div>
+              )}
+              {business.dealTermsUpdatedAt && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600 dark:text-gray-400">Terms Updated:</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{formatDateTime(business.dealTermsUpdatedAt)}</span>
+                </div>
+              )}
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400">Status:</span>
                 {getSubscriptionBadge(business.subscriptionStatus)}

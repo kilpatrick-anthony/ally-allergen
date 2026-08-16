@@ -16,7 +16,6 @@ interface SupplierForm {
   phone: string
   email: string
   website: string
-  ingredient_count: number
 }
 
 interface SupplierNote {
@@ -58,8 +57,7 @@ export default function SupplierEditPage() {
           contact: data.supplier.contact || '',
           phone: data.supplier.phone || '',
           email: data.supplier.email || '',
-          website: data.supplier.website || '',
-          ingredient_count: typeof data.supplier.ingredient_count === 'number' ? data.supplier.ingredient_count : 0
+          website: data.supplier.website || ''
         })
         await fetchNotes()
       } catch (error: any) {
@@ -93,7 +91,7 @@ export default function SupplierEditPage() {
     fetchSupplier()
   }, [supplierId])
 
-  const handleChange = (field: keyof SupplierForm, value: string | number) => {
+  const handleChange = (field: keyof SupplierForm, value: string) => {
     if (!form) return
     setForm({ ...form, [field]: value })
   }
@@ -110,10 +108,7 @@ export default function SupplierEditPage() {
       const response = await fetch(`/api/suppliers/${supplierId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...form,
-          ingredient_count: Number(form.ingredient_count) || 0
-        })
+        body: JSON.stringify(form)
       })
 
       const data = await response.json()
@@ -342,17 +337,9 @@ export default function SupplierEditPage() {
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-gray-600">Ingredient Count</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={form.ingredient_count}
-                  onChange={(e) => handleChange('ingredient_count', Number(e.target.value))}
-                  className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                />
-              </div>
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+              Ingredient totals are calculated automatically from the ingredients linked to this supplier.
+              Renaming the supplier will safely update its existing ingredient references.
             </div>
           </div>
         </Card>

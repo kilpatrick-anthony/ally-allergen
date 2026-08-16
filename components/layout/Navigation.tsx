@@ -56,7 +56,7 @@ export function Navigation() {
     { name: t('admin.suppliers'),   href: '/admin/suppliers',    icon: ShoppingBag },
     { name: t('admin.analytics'),   href: '/admin/analytics',    icon: BarChart },
     { name: t('admin.downloads'),   href: '/admin/downloads',    icon: Download },
-    { name: t('admin.devices'),     href: '/admin/devices',      icon: Monitor },
+    { name: 'Access Points',        href: '/admin/qr-codes',     icon: Monitor },
     { name: 'Compliance',           href: '/admin/compliance',   icon: CheckCircle2 },
     { name: 'Food Safety',          href: '/admin/food-safety',  icon: AlertTriangle },
     { name: t('admin.settings'),    href: '/admin/settings',     icon: Settings },

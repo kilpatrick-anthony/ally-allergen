@@ -9,7 +9,7 @@ import {
   Calendar, CheckCircle, XCircle, AlertCircle,
   Plus, Search, Filter, Edit, Trash2, Eye,
   Download, BarChart, Settings, ChevronRight,
-  Wifi, Printer, Tablet, Shield, Clock
+  Wifi, Printer, Tablet, Shield, Clock, QrCode, Monitor
 } from 'lucide-react'
 
 // Import design system components
@@ -28,8 +28,10 @@ interface SiteView {
   email: string | null
   is_active: boolean
   status: 'active' | 'inactive'
-  kioskStatus: 'online' | 'offline'
-  lastSync: string
+  onlineDevices: number
+  totalDevices: number
+  activeQRCodes: number
+  lastSync: string | null
 }
 
 export default function SitesPage() {
@@ -56,13 +58,15 @@ export default function SitesPage() {
 
   const loadSites = async () => {
     try {
-      const [sitesResponse, devicesResponse] = await Promise.all([
+      const [sitesResponse, devicesResponse, qrResponse] = await Promise.all([
         fetch('/api/sites'),
-        fetch('/api/devices')
+        fetch('/api/devices'),
+        fetch('/api/qr-codes')
       ])
 
       const sitesData = await sitesResponse.json()
       const devicesData = await devicesResponse.json()
+      const qrData = await qrResponse.json()
 
       if (!sitesResponse.ok) {
         throw new Error(sitesData.error || 'Failed to fetch sites')
@@ -70,6 +74,10 @@ export default function SitesPage() {
 
       if (!devicesResponse.ok) {
         throw new Error(devicesData.error || 'Failed to fetch devices')
+      }
+
+      if (!qrResponse.ok) {
+        throw new Error(qrData.error || 'Failed to fetch QR codes')
       }
 
       const deviceStats = new Map<string, { online: number; total: number; lastHeartbeat?: string | null }>()
@@ -90,6 +98,12 @@ export default function SitesPage() {
         deviceStats.set(device.site_id, current)
       })
 
+      const qrCounts = new Map<string, number>()
+      ;(qrData.qrCodes || []).forEach((deployment: any) => {
+        if (deployment.status !== 'active') return
+        qrCounts.set(deployment.site_id, (qrCounts.get(deployment.site_id) || 0) + 1)
+      })
+
       const mappedSites: SiteView[] = (sitesData.sites || []).map((site: any) => {
         const stats = deviceStats.get(site.id)
         const onlineCount = stats?.online || 0
@@ -106,8 +120,10 @@ export default function SitesPage() {
           email: site.email || null,
           is_active: !!site.is_active,
           status: site.is_active ? 'active' : 'inactive',
-          kioskStatus: totalDevices > 0 && onlineCount > 0 ? 'online' : 'offline',
-          lastSync: getTimeSince(stats?.lastHeartbeat)
+          onlineDevices: onlineCount,
+          totalDevices,
+          activeQRCodes: qrCounts.get(site.id) || 0,
+          lastSync: stats?.lastHeartbeat ? getTimeSince(stats.lastHeartbeat) : null
         }
       })
 
@@ -130,8 +146,8 @@ export default function SitesPage() {
   const stats = {
     total: sites.length,
     active: sites.filter(s => s.status === 'active').length,
-    online: sites.filter(s => s.kioskStatus === 'online').length,
-    pending: 0,
+    onlineDevices: sites.reduce((total, site) => total + site.onlineDevices, 0),
+    activeQRCodes: sites.reduce((total, site) => total + site.activeQRCodes, 0),
   }
 
   if (loading) {
@@ -168,15 +184,15 @@ export default function SitesPage() {
             <Badge variant="primary" icon={<Building className="h-3 w-3" />}>
               {stats.total} {t('admin.sites').toLowerCase()}
             </Badge>
-            <Badge variant={stats.online === stats.active ? 'success' : 'warning'} icon={<Wifi className="h-3 w-3" />}>
-              {stats.online} {t('admin.online').toLowerCase()}
+            <Badge variant="success" icon={<QrCode className="h-3 w-3" />}>
+              {stats.activeQRCodes} active QR code{stats.activeQRCodes === 1 ? '' : 's'}
             </Badge>
           </div>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6 mb-8">
         <Link href="/admin/sites/new" className="block">
           <Card className="hover:shadow-lg transition-all hover:border-amber-500 hover:bg-gradient-to-br hover:from-amber-500 hover:to-amber-600 group cursor-pointer">
             <div className="flex items-center justify-between">
@@ -224,12 +240,19 @@ export default function SitesPage() {
           </div>
         </Card>
 
-        <Link href="/admin/kiosks" className="block">
+        <Link href="/admin/qr-codes" className="block">
+          <Card className="hover:shadow-lg transition-all hover:border-violet-500 hover:bg-gradient-to-br hover:from-violet-500 hover:to-violet-600 group cursor-pointer">
+            <div className="flex items-center justify-between"><div><p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white">Active QR Codes</p><p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white">{stats.activeQRCodes}</p></div><div className="p-3 bg-violet-600 rounded-lg"><QrCode className="h-6 w-6 text-white" /></div></div>
+            <div className="mt-4 text-xs text-gray-500 group-hover:text-white">Manage QR access points →</div>
+          </Card>
+        </Link>
+
+        <Link href="/admin/devices" className="block">
           <Card className="hover:shadow-lg transition-all hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-500 hover:to-blue-600 group cursor-pointer">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.onlineKiosks')}</p>
-                <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">{stats.online}</p>
+                <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">{stats.onlineDevices}</p>
               </div>
               <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-blue-600 transition-all">
                 <Wifi className="h-6 w-6 text-white transition-colors" />
@@ -289,9 +312,6 @@ export default function SitesPage() {
                       <Badge variant={site.status === 'active' ? 'success' : 'default'}>
                         {site.status === 'active' ? t('admin.active') : t('admin.inactive')}
                       </Badge>
-                      <Badge variant={site.kioskStatus === 'online' ? 'success' : 'error'} icon={<Wifi className="h-3 w-3" />}>
-                        {site.kioskStatus === 'online' ? t('admin.online') : t('admin.offline')}
-                      </Badge>
                     </div>
                   </div>
                 </div>
@@ -313,10 +333,11 @@ export default function SitesPage() {
                     {site.email}
                   </div>
                 )}
-                <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
-                  <Clock className="h-4 w-4 mr-2 text-gray-400" />
-                  {t('admin.lastSync')}: {site.lastSync}
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Badge variant={site.activeQRCodes > 0 ? 'success' : 'default'} icon={<QrCode className="h-3 w-3" />}>{site.activeQRCodes} QR code{site.activeQRCodes === 1 ? '' : 's'}</Badge>
+                  <Badge variant={site.onlineDevices > 0 ? 'success' : 'default'} icon={<Monitor className="h-3 w-3" />}>{site.onlineDevices}/{site.totalDevices} devices online</Badge>
                 </div>
+                {site.lastSync && <div className="flex items-center text-sm text-gray-600 dark:text-gray-400"><Clock className="h-4 w-4 mr-2 text-gray-400" />{t('admin.lastSync')}: {site.lastSync}</div>}
               </div>
 
               {/* Actions */}

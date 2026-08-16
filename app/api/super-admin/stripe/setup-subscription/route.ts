@@ -106,6 +106,20 @@ export async function POST(request: NextRequest) {
     const currentSubscription = business.settings?.subscription || {}
     const hasExistingSubscription = Boolean(currentSubscription?.stripeSubscriptionId)
 
+    if (plan === 'qr_lite') {
+      return NextResponse.json(
+        { error: 'QR Lite is €365 + VAT paid upfront for 12 months and is currently set up manually in Stripe' },
+        { status: 400 }
+      )
+    }
+
+    if (Number(currentSubscription?.discountPercent || 0) > 0) {
+      return NextResponse.json(
+        { error: 'Discounted deals must currently be set up manually in Stripe using the terms recorded in Super Admin' },
+        { status: 400 }
+      )
+    }
+
     const priceId = getStripePriceId(plan, billingCycle)
     const setupFeePriceId = getStripeSetupFeePriceId()
 

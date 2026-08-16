@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
 
     let query = supabase
       .from('suppliers')
-      .select('*')
+      .select('*, ingredient_supplier_variants(count)')
       .eq('business_id', businessId)
       .order('created_at', { ascending: false })
 
@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
 
       const { data: refreshedSuppliers, error: refreshError } = await supabase
         .from('suppliers')
-        .select('*')
+        .select('*, ingredient_supplier_variants(count)')
         .eq('business_id', businessId)
         .order('created_at', { ascending: false })
 
@@ -141,10 +141,20 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ suppliers: [] })
       }
 
-      return NextResponse.json({ suppliers: refreshedSuppliers || [] })
+      return NextResponse.json({
+        suppliers: (refreshedSuppliers || []).map((supplier: any) => ({
+          ...supplier,
+          ingredient_count: supplier.ingredient_supplier_variants?.[0]?.count || 0,
+        }))
+      })
     }
 
-    return NextResponse.json({ suppliers })
+    return NextResponse.json({
+      suppliers: suppliers.map((supplier: any) => ({
+        ...supplier,
+        ingredient_count: supplier.ingredient_supplier_variants?.[0]?.count || 0,
+      }))
+    })
 
   } catch (error: any) {
     console.error('Unexpected error:', error)

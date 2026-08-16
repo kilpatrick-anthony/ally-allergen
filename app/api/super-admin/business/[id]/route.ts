@@ -4,6 +4,7 @@ import { createServiceClient } from '@/lib/supabase/server'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import { isPlanKey } from '@/lib/plans'
+import { getDealTerms } from '@/lib/deal-terms'
 
 async function getAuthenticatedSuperAdmin() {
   const cookieStore = await cookies()
@@ -53,6 +54,9 @@ export async function PATCH(
       city,
       postalCode,
       country,
+      discountPercent,
+      contractLengthMonths,
+      discountReason,
     } = body
 
     if (!name || !String(name).trim()) {
@@ -65,6 +69,17 @@ export async function PATCH(
 
     if (status && !['active', 'inactive', 'trial', 'suspended'].includes(status)) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 })
+    }
+
+    const selectedPlan = plan || 'starter'
+    let dealTerms
+    try {
+      dealTerms = getDealTerms(selectedPlan, { discountPercent, contractLengthMonths, discountReason })
+    } catch (error) {
+      return NextResponse.json(
+        { error: error instanceof Error ? error.message : 'Invalid deal terms' },
+        { status: 400 }
+      )
     }
 
     const supabase = createServiceClient()
@@ -90,8 +105,12 @@ export async function PATCH(
       },
       subscription: {
         ...((existingBusiness.settings || {}).subscription || {}),
-        plan: plan || 'starter',
+        plan: selectedPlan,
         status: status || 'active',
+        ...dealTerms,
+        billingManagement: 'manual_stripe',
+        dealTermsUpdatedAt: new Date().toISOString(),
+        dealTermsUpdatedBy: admin.userEmail,
       },
     }
 
@@ -100,7 +119,7 @@ export async function PATCH(
       .update({
         name: String(name).trim(),
         description: description || '',
-        plan_type: plan || 'starter',
+        plan_type: selectedPlan,
         status: status || 'active',
         settings: nextSettings,
       })

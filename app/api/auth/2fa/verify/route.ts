@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 import { jwtVerify } from 'jose'
-import { TOTP, generateSecret } from 'otplib'
+import { verify as verifyOtp } from 'otplib'
 import * as crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
@@ -35,8 +35,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the TOTP code
-    const totp = new TOTP()
-    const isValid = totp.verify(code, secret)
+    const verification = await verifyOtp({
+      secret,
+      token: String(code).replace(/\s/g, ''),
+      epochTolerance: 30,
+    })
+    const isValid = verification.valid
 
     if (!isValid) {
       return NextResponse.json({ error: 'Invalid verification code' }, { status: 400 })
@@ -48,7 +52,8 @@ export async function POST(request: NextRequest) {
       backupCodes.push(crypto.randomBytes(4).toString('hex').toUpperCase())
     }
 
-    // Store 2FA secret and backup codes in user metadata
+    // Store authorization data in server-controlled app_metadata. user_metadata
+    // can be edited by the account holder and must not be trusted for access.
     const supabase = createServiceClient()
 
     // Get current user data
@@ -58,16 +63,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Update user metadata with 2FA info
-    const currentMetadata = userData.user.user_metadata || {}
-    const updatedMetadata = {
-      ...currentMetadata,
+    const currentAppMetadata = userData.user.app_metadata || {}
+    const currentUserMetadata = userData.user.user_metadata || {}
+    const updatedAppMetadata = {
+      ...currentAppMetadata,
       twoFactorEnabled: true,
       twoFactorSecret: secret,
-      backupCodes: backupCodes,
+      backupCodeHashes: backupCodes.map((backupCode) =>
+        crypto.createHash('sha256').update(backupCode).digest('hex')
+      ),
     }
 
     const { error: updateError } = await supabase.auth.admin.updateUserById(userId, {
-      user_metadata: updatedMetadata,
+      app_metadata: updatedAppMetadata,
+      user_metadata: {
+        ...currentUserMetadata,
+        twoFactorEnabled: true,
+        twoFactorSecret: null,
+        backupCodes: null,
+      },
     })
 
     if (updateError) {

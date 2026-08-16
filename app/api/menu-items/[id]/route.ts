@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import { recordAuditLog, diffRecordFields, MENU_ITEM_AUDIT_FIELDS } from '@/lib/audit'
+import { deriveMenuItemSafety, normalizeIngredientIds, replaceMenuItemIngredients } from '@/lib/server/menu-item-safety'
 
 const getUserBusinessId = async (
   supabase: ReturnType<typeof createServiceClient>,
@@ -126,6 +127,25 @@ export async function PUT(
       .eq('business_id', businessId)
       .single()
 
+    const ingredients = normalizeIngredientIds(body.ingredients)
+    let safety
+    try {
+      safety = await deriveMenuItemSafety(
+        supabase,
+        businessId,
+        ingredients,
+        body.allergen_warnings || {},
+        Array.isArray(body.dietary) ? body.dietary : []
+      )
+    } catch (validationError: any) {
+      return NextResponse.json({ error: validationError.message }, { status: 400 })
+    }
+
+    const { data: previousLinks } = await supabase
+      .from('menu_item_ingredients')
+      .select('ingredient_id')
+      .eq('menu_item_id', id)
+
     const updatePayload = {
       name: body.name,
       description: body.description || '',
@@ -133,8 +153,8 @@ export async function PUT(
       site_id: typeof body.site_id === 'string' && body.site_id.trim() !== ''
         ? body.site_id
         : null,
-      allergen_warnings: body.allergen_warnings || {},
-      dietary: Array.isArray(body.dietary) ? body.dietary : [],
+      allergen_warnings: safety.allergenWarnings,
+      dietary: safety.dietary,
       color: typeof body.color === 'string' && body.color.trim() !== '' ? body.color : null,
       icon: typeof body.icon === 'string' && body.icon.trim() !== '' ? body.icon : null,
       is_active: body.status ? body.status === 'active' : body.is_active ?? true,
@@ -188,6 +208,18 @@ export async function PUT(
       }, { status: 500 })
     }
 
+    try {
+      await replaceMenuItemIngredients(supabase, id, ingredients)
+    } catch (ingredientError: any) {
+      if (previousMenuItem) {
+        await supabase.from('menu_items').update(previousMenuItem).eq('id', id).eq('business_id', businessId)
+      }
+      const oldIngredientIds = (previousLinks || []).map((row: any) => String(row.ingredient_id))
+      await replaceMenuItemIngredients(supabase, id, oldIngredientIds).catch(() => undefined)
+      console.error('Error linking menu item ingredients:', ingredientError)
+      return NextResponse.json({ error: ingredientError.message }, { status: 500 })
+    }
+
     await recordAuditLog(supabase, {
       businessId,
       entityType: 'menu_item',
@@ -198,34 +230,6 @@ export async function PUT(
       userId,
       userEmail: payload.email as string,
     })
-
-    const ingredients = Array.isArray(body.ingredients) ? body.ingredients : []
-
-    const { error: deleteError } = await supabase
-      .from('menu_item_ingredients')
-      .delete()
-      .eq('menu_item_id', id)
-
-    if (deleteError) {
-      console.error('Error clearing menu item ingredients:', deleteError)
-    }
-
-    if (ingredients.length > 0) {
-      const ingredientRows = ingredients.map((ingredientId: string) => ({
-        menu_item_id: id,
-        ingredient_id: ingredientId,
-        quantity: '',
-        is_optional: false
-      }))
-
-      const { error: ingredientError } = await supabase
-        .from('menu_item_ingredients')
-        .insert(ingredientRows)
-
-      if (ingredientError) {
-        console.error('Error linking menu item ingredients:', ingredientError)
-      }
-    }
 
     return NextResponse.json({
       menuItem: {

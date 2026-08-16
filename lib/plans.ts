@@ -45,15 +45,15 @@ export const PLAN_DEFINITIONS: Record<PlanKey, PlanDefinition> = {
   qr_lite: {
     key: 'qr_lite',
     title: 'QR Lite',
-    monthlyPrice: 30.42,
+    monthlyPrice: 365 / 12,
     priceLabel: 'EUR 1',
     priceSuffix: '/day',
-    mrrValue: 30.42,
+    mrrValue: 365 / 12,
     adminFeatures: [
       'QR codes sent to your business',
       'No hardware needed',
       'Printed paper allergen guides still required on site',
-      'Only €1 a day',
+      '€365 + VAT paid upfront (advertised as €1 a day)',
       'Self-managed',
       '12 month contract',
       'Everything in Self-Managed',

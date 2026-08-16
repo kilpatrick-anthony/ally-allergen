@@ -3,8 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import { Building, MapPin, Phone, Mail, Loader2, Tablet, Edit, ChefHat, Search, Trash2 } from 'lucide-react';
+import { Building, MapPin, Phone, Mail, Loader2, Tablet, Edit, ChefHat, Search, Trash2, QrCode } from 'lucide-react';
 import DeviceManagement from '@/components/admin/DeviceManagement';
+import QRCodeManagement from '@/components/admin/QRCodeManagement';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay';
@@ -20,7 +21,7 @@ export default function SiteKioskPage() {
   const [site, setSite] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'menu' | 'devices'>('devices');
+  const [activeTab, setActiveTab] = useState<'menu' | 'devices' | 'qr'>('devices');
   const [menuItems, setMenuItems] = useState<any[]>([]);
   const [menuLoading, setMenuLoading] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
@@ -35,7 +36,7 @@ export default function SiteKioskPage() {
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab === 'menu' || tab === 'devices') {
+    if (tab === 'menu' || tab === 'devices' || tab === 'qr') {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -59,6 +60,9 @@ export default function SiteKioskPage() {
       }
 
       setSite(data.site)
+      if (!searchParams.get('tab') && data.site?.business?.plan_type === 'qr_lite') {
+        setActiveTab('qr')
+      }
     } catch (error) {
       console.error('Error loading data:', error);
       setError('Failed to load site data');
@@ -261,6 +265,17 @@ export default function SiteKioskPage() {
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex gap-6 max-w-7xl mx-auto px-4">
               <button
+                onClick={() => setActiveTab('qr')}
+                className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                  activeTab === 'qr'
+                    ? 'border-[#42b8ac] text-[#003842]'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <QrCode className="h-4 w-4" />
+                QR Codes
+              </button>
+              <button
                 onClick={() => setActiveTab('devices')}
                 className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
                   activeTab === 'devices'
@@ -287,7 +302,9 @@ export default function SiteKioskPage() {
 
         {/* Tab Content */}
         <div className="max-w-7xl mx-auto px-4">
-          {activeTab === 'devices' ? (
+          {activeTab === 'qr' ? (
+            <QRCodeManagement siteId={site.id} siteName={site.name} />
+          ) : activeTab === 'devices' ? (
             <DeviceManagement
               siteId={site.id}
               siteName={site.name}

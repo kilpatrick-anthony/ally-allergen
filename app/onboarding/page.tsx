@@ -17,7 +17,8 @@ import {
   Monitor,
   Globe,
   Phone,
-  Mail
+  Mail,
+  QrCode
 } from 'lucide-react'
 
 type OnboardingStep = 'welcome' | 'location' | 'complete'
@@ -39,6 +40,7 @@ export default function OnboardingPage() {
   const [error, setError] = useState<string | null>(null)
   const [businessName, setBusinessName] = useState('')
   const [businessId, setBusinessId] = useState<string | null>(null)
+  const [isQRLite, setIsQRLite] = useState(false)
   const [createdSiteSlug, setCreatedSiteSlug] = useState<string | null>(null)
   
   const [locationData, setLocationData] = useState<LocationData>({
@@ -84,6 +86,7 @@ export default function OnboardingPage() {
         if (businessResponse.ok) {
           const businessData = await businessResponse.json()
           setBusinessName(businessData?.name || 'Your Business')
+          setIsQRLite(businessData?.plan_type === 'qr_lite')
         } else {
           setBusinessName('Your Business')
         }
@@ -157,11 +160,11 @@ export default function OnboardingPage() {
 
   const handlePairFirstDevice = () => {
     if (createdSiteSlug) {
-      router.push(`/admin/sites/${createdSiteSlug}?tab=devices`)
+      router.push(`/admin/sites/${createdSiteSlug}?tab=${isQRLite ? 'qr' : 'devices'}`)
       return
     }
 
-    router.push('/admin/devices')
+    router.push(isQRLite ? '/admin/qr-codes' : '/admin/devices')
   }
 
   const renderStepIndicator = () => {
@@ -416,8 +419,8 @@ export default function OnboardingPage() {
           <div className="flex items-start gap-3">
             <CheckCircle className="h-5 w-5 text-[#42b8ac] mt-0.5" />
             <div>
-                <p className="font-medium text-[#003842]">Pair Your First Device</p>
-                <p className="text-sm text-gray-600">Open Device Monitoring and generate a setup code</p>
+                <p className="font-medium text-[#003842]">{isQRLite ? 'Create Your First QR Code' : 'Pair Your First Device'}</p>
+                <p className="text-sm text-gray-600">{isQRLite ? 'Generate and download a code for your new location' : 'Open Device Monitoring and generate a setup code'}</p>
             </div>
           </div>
           <div className="flex items-start gap-3">
@@ -443,8 +446,8 @@ export default function OnboardingPage() {
           variant="primary"
           className="px-8"
         >
-          Pair First Device
-          <Monitor className="h-5 w-5 ml-2" />
+          {isQRLite ? 'Create First QR Code' : 'Pair First Device'}
+          {isQRLite ? <QrCode className="h-5 w-5 ml-2" /> : <Monitor className="h-5 w-5 ml-2" />}
         </Button>
 
         <Button
