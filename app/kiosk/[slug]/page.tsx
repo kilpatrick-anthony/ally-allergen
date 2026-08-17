@@ -747,27 +747,34 @@ export default function KioskPage() {
   }
 
   function toggleGlutenType(glutenType: GlutenType) {
+    const wasAllGlutenSelected = selectedAllergens.includes('contains_cereals_gluten')
     setSelectedAllergens(prev => prev.filter(id => id !== 'contains_cereals_gluten'))
     setSelectedGlutenTypes(prev =>
-      prev.includes(glutenType)
+      wasAllGlutenSelected
+        ? GLUTEN_TYPES.map(type => type.key).filter(type => type !== glutenType)
+        : prev.includes(glutenType)
         ? prev.filter(t => t !== glutenType)
         : [...prev, glutenType]
     )
   }
 
   function toggleTreeNutType(nutType: TreeNutType) {
+    const wereAllTreeNutsSelected = selectedAllergens.includes('contains_nuts')
     setSelectedAllergens(prev => prev.filter(id => id !== 'contains_nuts'))
     setSelectedTreeNutTypes(prev =>
-      prev.includes(nutType)
+      wereAllTreeNutsSelected
+        ? TREE_NUT_TYPES.map(type => type.key).filter(type => type !== nutType)
+        : prev.includes(nutType)
         ? prev.filter(t => t !== nutType)
         : [...prev, nutType]
     )
   }
 
   function selectAllGlutenTypes() {
+    const isBroadGlutenSelection = selectedAllergens.includes('contains_cereals_gluten')
     setSelectedAllergens(prev => prev.filter(id => id !== 'contains_cereals_gluten'))
     const allGlutenKeys = GLUTEN_TYPES.map(g => g.key)
-    if (selectedGlutenTypes.length === allGlutenKeys.length) {
+    if (isBroadGlutenSelection || selectedGlutenTypes.length === allGlutenKeys.length) {
       // All selected, deselect all
       setSelectedGlutenTypes([])
     } else {
@@ -777,9 +784,10 @@ export default function KioskPage() {
   }
 
   function selectAllTreeNutTypes() {
+    const isBroadTreeNutSelection = selectedAllergens.includes('contains_nuts')
     setSelectedAllergens(prev => prev.filter(id => id !== 'contains_nuts'))
     const allNutKeys = TREE_NUT_TYPES.map(n => n.key)
-    if (selectedTreeNutTypes.length === allNutKeys.length) {
+    if (isBroadTreeNutSelection || selectedTreeNutTypes.length === allNutKeys.length) {
       // All selected, deselect all
       setSelectedTreeNutTypes([])
     } else {
@@ -1620,6 +1628,10 @@ export default function KioskPage() {
                     const isSelected = selectedAllergens.includes(allergen.id)
                     const isExpanded = expandedAllergens.includes(allergen.id)
                     const hasSubtypes = allergen.id === 'contains_cereals_gluten' || allergen.id === 'contains_nuts'
+                    const areAllGlutenTypesSelected = allergen.id === 'contains_cereals_gluten' &&
+                      (isSelected || selectedGlutenTypes.length === GLUTEN_TYPES.length)
+                    const areAllTreeNutTypesSelected = allergen.id === 'contains_nuts' &&
+                      (isSelected || selectedTreeNutTypes.length === TREE_NUT_TYPES.length)
                     const allergenNumber = ALLERGENS.findIndex(item => item.id === allergen.id) + 1
                     const allergenDisplayName = `${allergenNumber}. ${getAllergenDisplayName(allergen.id, allergen.name)}`
                     
@@ -1656,7 +1668,7 @@ export default function KioskPage() {
                             <p className="mb-3 text-sm font-semibold text-amber-900">{t.chooseSpecificTypes}</p>
                             <div className="flex flex-wrap gap-2">
                             {GLUTEN_TYPES.map(glutenType => {
-                              const isGlutenSelected = selectedGlutenTypes.includes(glutenType.key)
+                              const isGlutenSelected = areAllGlutenTypesSelected || selectedGlutenTypes.includes(glutenType.key)
                               return (
                                 <button
                                   type="button"
@@ -1683,15 +1695,16 @@ export default function KioskPage() {
                             <button
                               type="button"
                               onClick={selectAllGlutenTypes}
+                              aria-pressed={areAllGlutenTypesSelected}
                               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border-2 transition-all hover:shadow-md"
                               style={{
-                                backgroundColor: selectedGlutenTypes.length === GLUTEN_TYPES.length ? `${allergen.bgColor}30` : '#fff',
+                                backgroundColor: areAllGlutenTypesSelected ? `${allergen.bgColor}30` : '#fff',
                                 color: allergen.bgColor,
                                 borderColor: allergen.bgColor,
                                 borderStyle: 'dashed'
                               }}
                             >
-                              {selectedGlutenTypes.length === GLUTEN_TYPES.length ? (
+                              {areAllGlutenTypesSelected ? (
                                 <>
                                   <CheckSquare className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
                                   <span>{t.deselectAll}</span>
@@ -1713,7 +1726,7 @@ export default function KioskPage() {
                             <p className="mb-3 text-sm font-semibold text-amber-900">{t.chooseSpecificTypes}</p>
                             <div className="flex flex-wrap gap-2">
                             {TREE_NUT_TYPES.map(nutType => {
-                              const isNutSelected = selectedTreeNutTypes.includes(nutType.key)
+                              const isNutSelected = areAllTreeNutTypesSelected || selectedTreeNutTypes.includes(nutType.key)
                               return (
                                 <button
                                   type="button"
@@ -1740,15 +1753,16 @@ export default function KioskPage() {
                             <button
                               type="button"
                               onClick={selectAllTreeNutTypes}
+                              aria-pressed={areAllTreeNutTypesSelected}
                               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border-2 transition-all hover:shadow-md"
                               style={{
-                                backgroundColor: selectedTreeNutTypes.length === TREE_NUT_TYPES.length ? `${allergen.bgColor}30` : '#fff',
+                                backgroundColor: areAllTreeNutTypesSelected ? `${allergen.bgColor}30` : '#fff',
                                 color: allergen.bgColor,
                                 borderColor: allergen.bgColor,
                                 borderStyle: 'dashed'
                               }}
                             >
-                              {selectedTreeNutTypes.length === TREE_NUT_TYPES.length ? (
+                              {areAllTreeNutTypesSelected ? (
                                 <>
                                   <CheckSquare className="h-3.5 w-3.5" style={{ color: allergen.bgColor }} />
                                   <span>{t.deselectAll}</span>
