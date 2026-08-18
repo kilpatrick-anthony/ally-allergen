@@ -1,6 +1,7 @@
 // app/layout.tsx
 import type { Metadata } from "next";
 import { Atkinson_Hyperlegible, Arsenal, Inter, Nunito } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import AccessibilityPanel from "@/components/shared/AccessibilityPanel";
@@ -199,6 +200,18 @@ export default function RootLayout({
           </AuthProvider>
         </NotificationProvider>
       </body>
+      <Script
+        src="https://www.googletagmanager.com/gtag/js?id=G-9BH4TMRH75"
+        strategy="afterInteractive"
+      />
+      <Script id="google-analytics" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-9BH4TMRH75');
+        `}
+      </Script>
     </html>
   );
 }
