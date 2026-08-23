@@ -16,6 +16,8 @@ import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 
+const HELP_TOPIC_JOURNEY = [1, 2, 9, 16, 5, 3, 4, 7, 8, 6, 17, 10, 15, 11, 12, 13, 14]
+
 export default function HelpPage() {
   const { t, language } = useTranslation()
   const [searchTerm, setSearchTerm] = useState('')
@@ -654,7 +656,8 @@ export default function HelpPage() {
     name: categoryNamesByLanguage[language]?.[category.id] || category.name,
   }))
 
-  const localizedTopics = helpTopics.map((topic) => {
+  const localizedTopics = HELP_TOPIC_JOURNEY.map((topicId) => {
+    const topic = helpTopics.find((candidate) => candidate.id === topicId)!
     const localized = revisedTopicCards[language]?.[topic.id] || topicTranslations[language]?.[topic.id]
     return {
       ...topic,
@@ -669,6 +672,19 @@ export default function HelpPage() {
                          topic.description.toLowerCase().includes(searchTerm.toLowerCase())
     return matchesCategory && matchesSearch
   })
+
+  const handleTopicToggle = (topicId: number, topicElement: HTMLElement) => {
+    const previousTop = topicElement.getBoundingClientRect().top
+    setExpandedTopic((currentTopic) => currentTopic === topicId ? null : topicId)
+
+    requestAnimationFrame(() => {
+      const updatedTopic = document.querySelector<HTMLElement>(`[data-help-topic-id="${topicId}"]`)
+      if (!updatedTopic) return
+
+      const topDifference = updatedTopic.getBoundingClientRect().top - previousTop
+      if (topDifference !== 0) window.scrollBy({ top: topDifference, behavior: 'auto' })
+    })
+  }
 
   const quickLinks = [
     {
@@ -993,7 +1009,7 @@ export default function HelpPage() {
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 auto-rows-fr">
+        <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2">
           {filteredTopics.map((topic) => {
             const colorClasses = {
               purple: 'from-purple-500 to-purple-600',
@@ -1012,14 +1028,21 @@ export default function HelpPage() {
             return (
               <div
                 key={topic.id}
+                data-help-topic-id={topic.id}
                 role="button"
                 tabIndex={0}
-                onClick={() => setExpandedTopic(isExpanded ? null : topic.id)}
-                onKeyDown={(e) => e.key === 'Enter' && setExpandedTopic(isExpanded ? null : topic.id)}
-                className="cursor-pointer group h-full"
+                aria-expanded={isExpanded}
+                aria-controls={`help-topic-details-${topic.id}`}
+                onClick={(event) => handleTopicToggle(topic.id, event.currentTarget)}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter' && event.key !== ' ') return
+                  event.preventDefault()
+                  handleTopicToggle(topic.id, event.currentTarget)
+                }}
+                className="cursor-pointer group self-start"
               >
-                <Card className="hover:shadow-xl transition-all duration-200 hover:-translate-y-1 h-full flex flex-col border border-gray-200/80 shadow-sm">
-                  <div className="flex items-start gap-4 h-full">
+                <Card className="hover:shadow-xl transition-all duration-200 hover:-translate-y-1 flex flex-col border border-gray-200/80 shadow-sm">
+                  <div className="flex items-start gap-4">
                     <div className={`p-3 bg-gradient-to-br ${colorClasses[topic.color as keyof typeof colorClasses]} rounded-lg group-hover:scale-110 transition-transform flex-shrink-0`}>
                       {typeof topic.icon === 'function' && React.createElement(topic.icon as React.ComponentType<{className: string}>, {
                         className: "h-6 w-6 text-white"
@@ -1039,7 +1062,7 @@ export default function HelpPage() {
                     </div>
                   </div>
                   {isExpanded && topicDetails[topic.id] && (
-                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                    <div id={`help-topic-details-${topic.id}`} className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
                       <ol className="space-y-2">
                         {topicDetails[topic.id].map((point: string, i: number) => (
                           <li key={i} className="flex items-start gap-3 text-sm text-gray-700 dark:text-gray-300">
