@@ -19,12 +19,19 @@ const scanRoots = [
 const recentOnly = process.argv.includes('--recent')
 const recentFiles = new Set([
   'components/admin/MenuItemSupplyFields.tsx',
+  'components/admin/AdminTopBar.tsx',
+  'components/admin/QRCodeManagement.tsx',
   'components/admin/NotificationsPanel.tsx',
   'components/admin/ReviewFrequencySelector.tsx',
   'components/layout/LoadingScreen.tsx',
+  'components/layout/Navigation.tsx',
+  'components/messaging/CharacterMessageForm.tsx',
   'components/shared/CookieConsentManager.tsx',
   'components/shared/NotificationContainer.tsx',
   'components/team/TeamMembersPanel.tsx',
+  'app/admin/devices/page.tsx',
+  'app/admin/qr-codes/page.tsx',
+  'app/admin/sites/page.tsx',
 ])
 
 function loadTypeScriptExport(filename, exportName) {
@@ -35,6 +42,14 @@ function loadTypeScriptExport(filename, exportName) {
   }).outputText
   const moduleRecord = { exports: {} }
   const localRequire = (request) => {
+    if (request === '@/lib/admin-access-translations') {
+      return {
+        adminAccessTranslations: loadTypeScriptExport(
+          path.join(root, 'lib/admin-access-translations.ts'),
+          'adminAccessTranslations',
+        ),
+      }
+    }
     if (request === '@/lib/recent-ui-translations') {
       return {
         recentUiTranslations: loadTypeScriptExport(
@@ -161,6 +176,14 @@ function isInsideNonContentElement(node, sourceFile) {
     if (ts.isJsxElement(current)) {
       const tag = current.openingElement.tagName.getText(sourceFile).toLowerCase()
       if (['script', 'style', 'code', 'pre'].includes(tag)) return true
+      if (current.openingElement.attributes.properties.some((attribute) =>
+        ts.isJsxAttribute(attribute) && attribute.name.getText(sourceFile) === 'data-no-translate'
+      )) return true
+    }
+    if (ts.isJsxSelfClosingElement(current) && current.attributes.properties.some((attribute) =>
+      ts.isJsxAttribute(attribute) && attribute.name.getText(sourceFile) === 'data-no-translate'
+    )) {
+      return true
     }
     current = current.parent
   }

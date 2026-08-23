@@ -169,8 +169,8 @@ export default function DeviceMonitoringPage() {
     <Container>
       <div className="py-8 space-y-6">
         <div className="flex gap-2 border-b border-gray-200">
-          <Link href="/admin/qr-codes" className="inline-flex items-center gap-2 border-b-2 border-transparent px-3 py-3 text-sm font-medium text-gray-500 hover:text-gray-800"><QrCode className="h-4 w-4" />QR Codes</Link>
-          <Link href="/admin/devices" className="inline-flex items-center gap-2 border-b-2 border-[#42b8ac] px-3 py-3 text-sm font-semibold text-[#003842]"><Monitor className="h-4 w-4" />Kiosk Devices</Link>
+          <Link href="/admin/qr-codes" className="inline-flex items-center gap-2 border-b-2 border-transparent px-3 py-3 text-sm font-medium text-gray-500 hover:text-gray-800"><QrCode className="h-4 w-4" />{t('accessPoints.qrCodes')}</Link>
+          <Link href="/admin/devices" className="inline-flex items-center gap-2 border-b-2 border-[#42b8ac] px-3 py-3 text-sm font-semibold text-[#003842]"><Monitor className="h-4 w-4" />{t('adminPortal.kioskDevices')}</Link>
         </div>
         {/* Header */}
         <div className="flex flex-wrap justify-between items-start gap-3">
@@ -372,7 +372,7 @@ export default function DeviceMonitoringPage() {
                             href={`/admin/sites/${device.site_slug}?tab=devices`}
                             className="inline-flex items-center text-[#003842] hover:text-[#42b8ac] font-medium truncate"
                           >
-                            {device.site_name || 'Open location'}
+                            {device.site_name || t('adminPortal.openLocation')}
                           </Link>
                         ) : (
                           <span className="truncate">{device.site_name || '—'}</span>

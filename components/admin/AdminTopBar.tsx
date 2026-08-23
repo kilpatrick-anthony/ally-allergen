@@ -10,30 +10,31 @@ import {
   BarChart, Download, Monitor, CheckCircle2, Settings,
   HelpCircle, Shield, type LucideIcon,
 } from 'lucide-react'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 interface PageMeta {
-  label: string
+  labelKey: string
   icon: LucideIcon
-  parent?: string
+  parentKey?: string
 }
 
 const PAGE_MAP: Record<string, PageMeta> = {
-  '/admin':                       { label: 'Dashboard',       icon: Home },
-  '/admin/ingredients':           { label: 'Ingredients',     icon: Package },
-  '/admin/ingredients/new':       { label: 'New Ingredient',  icon: Package,     parent: 'Ingredients' },
-  '/admin/menu-builder':          { label: 'Menu Builder',    icon: ChefHat },
-  '/admin/menu-builder/new':      { label: 'New Item',        icon: ChefHat,     parent: 'Menu Builder' },
-  '/admin/sites':                 { label: 'Sites',           icon: Building },
-  '/admin/sites/new':             { label: 'New Site',        icon: Building,    parent: 'Sites' },
-  '/admin/suppliers':             { label: 'Suppliers',       icon: ShoppingBag },
-  '/admin/analytics':             { label: 'Analytics',       icon: BarChart },
-  '/admin/downloads':             { label: 'Downloads',       icon: Download },
-  '/admin/qr-codes':              { label: 'Access Points',   icon: Monitor },
-  '/admin/devices':               { label: 'Kiosk Devices',   icon: Monitor, parent: 'Access Points' },
-  '/admin/compliance':            { label: 'Compliance',      icon: CheckCircle2 },
-  '/admin/settings':              { label: 'Settings',        icon: Settings },
-  '/admin/help':                  { label: 'Help & Support',  icon: HelpCircle },
-  '/super-admin':                 { label: 'Super Admin',     icon: Shield },
+  '/admin':                       { labelKey: 'adminPortal.dashboard', icon: Home },
+  '/admin/ingredients':           { labelKey: 'adminPortal.ingredients', icon: Package },
+  '/admin/ingredients/new':       { labelKey: 'adminPortal.newIngredient', icon: Package, parentKey: 'adminPortal.ingredients' },
+  '/admin/menu-builder':          { labelKey: 'adminPortal.menuBuilder', icon: ChefHat },
+  '/admin/menu-builder/new':      { labelKey: 'adminPortal.newItem', icon: ChefHat, parentKey: 'adminPortal.menuBuilder' },
+  '/admin/sites':                 { labelKey: 'adminPortal.sites', icon: Building },
+  '/admin/sites/new':             { labelKey: 'adminPortal.newSite', icon: Building, parentKey: 'adminPortal.sites' },
+  '/admin/suppliers':             { labelKey: 'adminPortal.suppliers', icon: ShoppingBag },
+  '/admin/analytics':             { labelKey: 'adminPortal.analytics', icon: BarChart },
+  '/admin/downloads':             { labelKey: 'adminPortal.downloads', icon: Download },
+  '/admin/qr-codes':              { labelKey: 'adminPortal.accessPoints', icon: Monitor },
+  '/admin/devices':               { labelKey: 'adminPortal.kioskDevices', icon: Monitor, parentKey: 'adminPortal.accessPoints' },
+  '/admin/compliance':            { labelKey: 'adminPortal.compliance', icon: CheckCircle2 },
+  '/admin/settings':              { labelKey: 'adminPortal.settings', icon: Settings },
+  '/admin/help':                  { labelKey: 'adminPortal.helpSupport', icon: HelpCircle },
+  '/super-admin':                 { labelKey: 'adminPortal.superAdmin', icon: Shield },
 }
 
 function resolvePage(pathname: string): PageMeta {
@@ -42,7 +43,7 @@ function resolvePage(pathname: string): PageMeta {
   for (const key of keys) {
     if (pathname.startsWith(key + '/')) return PAGE_MAP[key]
   }
-  return { label: 'Admin', icon: Home }
+  return { labelKey: 'adminPortal.admin', icon: Home }
 }
 
 interface AdminTopBarProps {
@@ -51,6 +52,7 @@ interface AdminTopBarProps {
 }
 
 export function AdminTopBar({ userName, userEmail }: AdminTopBarProps) {
+  const { t } = useTranslation()
   const pathname = usePathname()
   const page = resolvePage(pathname)
   const Icon = page.icon
@@ -70,14 +72,14 @@ export function AdminTopBar({ userName, userEmail }: AdminTopBarProps) {
         <div className="p-1.5 rounded-lg bg-gradient-to-br from-[#003842] to-[#42b8ac] shrink-0">
           <Icon className="h-3.5 w-3.5 text-white" />
         </div>
-        {page.parent && (
+        {page.parentKey && (
           <>
-            <span className="text-sm text-gray-400 dark:text-gray-500 hidden sm:block">{page.parent}</span>
+            <span className="text-sm text-gray-400 dark:text-gray-500 hidden sm:block">{t(page.parentKey)}</span>
             <ChevronRight className="h-3.5 w-3.5 text-gray-300 dark:text-gray-600 hidden sm:block shrink-0" />
           </>
         )}
         <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
-          {page.label}
+          {t(page.labelKey)}
         </span>
       </div>
 

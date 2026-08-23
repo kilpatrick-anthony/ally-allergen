@@ -6,6 +6,7 @@ import { Check, Copy, Download, ExternalLink, Plus, QrCode, RefreshCw, Trash2, X
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 type SiteOption = { id: string; name: string }
 
@@ -28,6 +29,7 @@ interface QRCodeManagementProps {
 }
 
 export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementProps) {
+  const { t, language } = useTranslation()
   const [qrCodes, setQrCodes] = useState<QRDeployment[]>([])
   const [sites, setSites] = useState<SiteOption[]>([])
   const [businessSlug, setBusinessSlug] = useState('')
@@ -50,7 +52,7 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
       if (!siteId) requests.push(fetch('/api/sites'))
       const responses = await Promise.all(requests)
       const qrData = await responses[0].json()
-      if (!responses[0].ok) throw new Error(qrData.error || 'Failed to load QR codes')
+      if (!responses[0].ok) throw new Error(qrData.error || t('accessPoints.loadError'))
       setQrCodes(qrData.qrCodes || [])
       setBusinessSlug(qrData.businessSlug || '')
       setPlanType(qrData.planType || 'starter')
@@ -64,7 +66,7 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
         }
       }
     } catch (loadError: any) {
-      setError(loadError.message || 'Failed to load QR codes')
+      setError(loadError.message || t('accessPoints.loadError'))
     } finally {
       setLoading(false)
     }
@@ -94,13 +96,13 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
         body: JSON.stringify({ site_id: selectedSiteId, name, placement }),
       })
       const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'Failed to create QR code')
+      if (!response.ok) throw new Error(data.error || t('accessPoints.createError'))
       setQrCodes((current) => [{ ...data.qrCode, scan_count: 0, last_scanned_at: null }, ...current])
       setName('')
       setPlacement('')
       setShowCreate(false)
     } catch (createError: any) {
-      setError(createError.message || 'Failed to create QR code')
+      setError(createError.message || t('accessPoints.createError'))
     } finally {
       setSaving(false)
     }
@@ -115,18 +117,18 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
     })
     const data = await response.json()
     if (!response.ok) {
-      setError(data.error || 'Failed to update QR code')
+      setError(data.error || t('accessPoints.updateError'))
       return
     }
     setQrCodes((current) => current.map((code) => code.id === deployment.id ? { ...code, ...data.qrCode } : code))
   }
 
   const removeQRCode = async (deployment: QRDeployment) => {
-    if (!confirm(`Delete “${deployment.name}”? Its printed QR code will stop being tracked.`)) return
+    if (!confirm(t('accessPoints.deleteConfirm', { name: deployment.name }))) return
     const response = await fetch(`/api/qr-codes/${deployment.id}`, { method: 'DELETE' })
     const data = response.ok ? null : await response.json()
     if (!response.ok) {
-      setError(data?.error || 'Failed to delete QR code')
+      setError(data?.error || t('accessPoints.deleteError'))
       return
     }
     setQrCodes((current) => current.filter((code) => code.id !== deployment.id))
@@ -152,7 +154,7 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
 
   const renderToCanvas = (deployment: QRDeployment) => new Promise<HTMLCanvasElement>((resolve, reject) => {
     const svg = document.getElementById(`managed-qr-${deployment.id}`)
-    if (!(svg instanceof SVGElement)) return reject(new Error('QR code preview is unavailable'))
+    if (!(svg instanceof SVGElement)) return reject(new Error(t('accessPoints.previewUnavailable')))
     const source = new XMLSerializer().serializeToString(svg)
     const image = new Image()
     const objectUrl = URL.createObjectURL(new Blob([source], { type: 'image/svg+xml;charset=utf-8' }))
@@ -163,7 +165,7 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
       const context = canvas.getContext('2d')
       if (!context) {
         URL.revokeObjectURL(objectUrl)
-        reject(new Error('Could not prepare QR code image'))
+        reject(new Error(t('accessPoints.imageError')))
         return
       }
       context.fillStyle = '#ffffff'
@@ -174,7 +176,7 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
     }
     image.onerror = () => {
       URL.revokeObjectURL(objectUrl)
-      reject(new Error('Could not prepare QR code image'))
+      reject(new Error(t('accessPoints.imageError')))
     }
     image.src = objectUrl
   })
@@ -200,41 +202,41 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
       const pdf = new jsPDF({ unit: 'mm', format: 'a4' })
       pdf.setTextColor('#003842')
       pdf.setFontSize(24)
-      pdf.text('Scan for allergen information', 105, 35, { align: 'center' })
+      pdf.text(t('accessPoints.signTitle'), 105, 35, { align: 'center' })
       pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 45, 55, 120, 120)
       pdf.setFontSize(16)
       pdf.text(deployment.site?.name || siteName || '', 105, 190, { align: 'center' })
       pdf.setFontSize(11)
       pdf.setTextColor('#4b5563')
-      pdf.text('Open the live AllyJen allergen menu on your phone. No app required.', 105, 202, { align: 'center' })
+      pdf.text(t('accessPoints.signDescription'), 105, 202, { align: 'center' })
       pdf.save(`${deployment.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'allergen-menu'}-sign.pdf`)
     } catch (downloadError: any) {
-      setError(downloadError.message || 'Failed to create QR sign')
+      setError(downloadError.message || t('accessPoints.signError'))
     }
   }
 
   if (loading) {
-    return <Card><div className="flex items-center justify-center gap-2 py-12 text-gray-600"><RefreshCw className="h-5 w-5 animate-spin" />Loading QR codes…</div></Card>
+    return <Card><div className="flex items-center justify-center gap-2 py-12 text-gray-600"><RefreshCw className="h-5 w-5 animate-spin" />{t('accessPoints.loading')}</div></Card>
   }
 
   return (
     <div className="space-y-6">
       {planType === 'qr_lite' && (
         <div className="rounded-xl border border-[#42b8ac]/30 bg-[#f0faf9] p-4 text-sm text-[#134e4a]">
-          <strong>QR Lite:</strong> create and download a code below—no kiosk device or pairing step is required.
+          <strong data-no-translate>QR Lite:</strong> {t('accessPoints.qrLiteDescription')}
         </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card><p className="text-sm text-gray-500">QR codes</p><p className="mt-1 text-2xl font-bold text-[#003842]">{qrCodes.length}</p></Card>
-        <Card><p className="text-sm text-gray-500">Active</p><p className="mt-1 text-2xl font-bold text-emerald-600">{activeCount}</p></Card>
-        <Card><p className="text-sm text-gray-500">Total scans</p><p className="mt-1 text-2xl font-bold text-[#003842]">{totalScans}</p></Card>
+        <Card><p className="text-sm text-gray-500">{t('accessPoints.qrCodes')}</p><p className="mt-1 text-2xl font-bold text-[#003842]">{qrCodes.length}</p></Card>
+        <Card><p className="text-sm text-gray-500">{t('accessPoints.active')}</p><p className="mt-1 text-2xl font-bold text-emerald-600">{activeCount}</p></Card>
+        <Card><p className="text-sm text-gray-500">{t('accessPoints.totalScans')}</p><p className="mt-1 text-2xl font-bold text-[#003842]">{totalScans}</p></Card>
       </div>
 
       <Card>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div><h3 className="text-lg font-semibold text-[#003842]">QR codes{siteName ? ` for ${siteName}` : ''}</h3><p className="mt-1 text-sm text-gray-600">Create separate codes for entrances, counters, tables, or printed materials.</p></div>
-          <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => setShowCreate(true)}>Create QR Code</Button>
+          <div><h3 className="text-lg font-semibold text-[#003842]">{siteName ? t('accessPoints.codesForSite', { site: siteName }) : t('accessPoints.qrCodes')}</h3><p className="mt-1 text-sm text-gray-600">{t('accessPoints.createDescription')}</p></div>
+          <Button variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => setShowCreate(true)}>{t('accessPoints.createQrCode')}</Button>
         </div>
       </Card>
 
@@ -242,18 +244,18 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
 
       {showCreate && (
         <Card className="border-2 border-[#42b8ac]">
-          <div className="mb-4 flex items-center justify-between"><h3 className="text-lg font-semibold text-[#003842]">Create QR code</h3><button type="button" aria-label="Close" onClick={() => setShowCreate(false)}><X className="h-5 w-5 text-gray-500" /></button></div>
+          <div className="mb-4 flex items-center justify-between"><h3 className="text-lg font-semibold text-[#003842]">{t('accessPoints.createQrCode')}</h3><button type="button" aria-label={t('accessPoints.close')} onClick={() => setShowCreate(false)}><X className="h-5 w-5 text-gray-500" /></button></div>
           <div className="grid gap-4 md:grid-cols-3">
-            {!siteId && <label className="text-sm font-medium text-gray-700">Site<select value={selectedSiteId} onChange={(event) => setSelectedSiteId(event.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"><option value="">Choose a site…</option>{sites.map((site) => <option key={site.id} value={site.id}>{site.name}</option>)}</select></label>}
-            <label className="text-sm font-medium text-gray-700">Name<input value={name} onChange={(event) => setName(event.target.value)} placeholder="Front entrance" className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" /></label>
-            <label className="text-sm font-medium text-gray-700">Placement <span className="font-normal text-gray-400">(optional)</span><input value={placement} onChange={(event) => setPlacement(event.target.value)} placeholder="Window beside main door" className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" /></label>
+            {!siteId && <label className="text-sm font-medium text-gray-700">{t('accessPoints.site')}<select value={selectedSiteId} onChange={(event) => setSelectedSiteId(event.target.value)} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2"><option value="">{t('accessPoints.chooseSite')}</option>{sites.map((site) => <option key={site.id} value={site.id}>{site.name}</option>)}</select></label>}
+            <label className="text-sm font-medium text-gray-700">{t('accessPoints.name')}<input value={name} onChange={(event) => setName(event.target.value)} placeholder={t('accessPoints.namePlaceholder')} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" /></label>
+            <label className="text-sm font-medium text-gray-700">{t('accessPoints.placement')} <span className="font-normal text-gray-400">{t('accessPoints.optional')}</span><input value={placement} onChange={(event) => setPlacement(event.target.value)} placeholder={t('accessPoints.placementPlaceholder')} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2" /></label>
           </div>
-          <div className="mt-4 flex justify-end gap-2"><Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button><Button variant="primary" disabled={saving || !name.trim() || !selectedSiteId} onClick={createQRCode}>{saving ? 'Creating…' : 'Create'}</Button></div>
+          <div className="mt-4 flex justify-end gap-2"><Button variant="outline" onClick={() => setShowCreate(false)}>{t('accessPoints.cancel')}</Button><Button variant="primary" disabled={saving || !name.trim() || !selectedSiteId} onClick={createQRCode}>{saving ? t('accessPoints.creating') : t('accessPoints.create')}</Button></div>
         </Card>
       )}
 
       {qrCodes.length === 0 ? (
-        <Card className="py-12 text-center"><QrCode className="mx-auto mb-3 h-12 w-12 text-gray-300" /><h3 className="font-semibold text-gray-900">No QR codes yet</h3><p className="mt-1 text-sm text-gray-500">Create one to give customers mobile access without setting up hardware.</p></Card>
+        <Card className="py-12 text-center"><QrCode className="mx-auto mb-3 h-12 w-12 text-gray-300" /><h3 className="font-semibold text-gray-900">{t('accessPoints.emptyTitle')}</h3><p className="mt-1 text-sm text-gray-500">{t('accessPoints.emptyDescription')}</p></Card>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {qrCodes.map((deployment) => {
@@ -262,17 +264,17 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
               <Card key={deployment.id}>
                 <div className="flex gap-4">
                   <div className="shrink-0 rounded-xl border border-gray-200 bg-white p-2"><QRCodeSVG id={`managed-qr-${deployment.id}`} value={url} size={112} level="H" fgColor="#003842" /></div>
-                  <div className="min-w-0 flex-1"><div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><h3 className="truncate font-semibold text-gray-900">{deployment.name}</h3><p className="text-xs text-gray-500">{deployment.site?.name || siteName}{deployment.placement ? ` · ${deployment.placement}` : ''}</p></div><Badge variant={deployment.status === 'active' ? 'success' : 'default'}>{deployment.status === 'active' ? 'Active' : 'Inactive'}</Badge></div><p className="mt-3 break-all text-xs text-gray-500">{url}</p><div className="mt-3 flex gap-4 text-xs text-gray-600"><span><strong>{deployment.scan_count}</strong> scans</span><span>{deployment.last_scanned_at ? `Last ${new Date(deployment.last_scanned_at).toLocaleDateString()}` : 'Not scanned yet'}</span></div></div>
+                  <div className="min-w-0 flex-1"><div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><h3 className="truncate font-semibold text-gray-900">{deployment.name}</h3><p className="text-xs text-gray-500">{deployment.site?.name || siteName}{deployment.placement ? ` · ${deployment.placement}` : ''}</p></div><Badge variant={deployment.status === 'active' ? 'success' : 'default'}>{deployment.status === 'active' ? t('accessPoints.active') : t('accessPoints.inactive')}</Badge></div><p className="mt-3 break-all text-xs text-gray-500">{url}</p><div className="mt-3 flex gap-4 text-xs text-gray-600"><span><strong>{deployment.scan_count}</strong> {t('accessPoints.scans')}</span><span>{deployment.last_scanned_at ? t('accessPoints.lastScanned', { date: new Date(deployment.last_scanned_at).toLocaleDateString(language) }) : t('accessPoints.notScanned')}</span></div></div>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-                  <Button size="sm" variant="outline" onClick={() => copyUrl(deployment)}>{copiedId === deployment.id ? <Check className="mr-1 h-4 w-4 text-green-600" /> : <Copy className="mr-1 h-4 w-4" />}{copiedId === deployment.id ? 'Copied' : 'Copy'}</Button>
-                  <Button size="sm" variant="outline" onClick={() => downloadSVG(deployment)}><Download className="mr-1 h-4 w-4" />SVG</Button>
-                  <Button size="sm" variant="outline" onClick={() => downloadPNG(deployment)}><Download className="mr-1 h-4 w-4" />PNG</Button>
-                  <Button size="sm" variant="outline" onClick={() => downloadPDF(deployment)}><Download className="mr-1 h-4 w-4" />PDF</Button>
-                  <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"><ExternalLink className="mr-1 h-4 w-4" />Open</a>
-                  <Button size="sm" variant="ghost" onClick={() => toggleStatus(deployment)}>{deployment.status === 'active' ? 'Deactivate' : 'Activate'}</Button>
+                  <Button size="sm" variant="outline" onClick={() => copyUrl(deployment)}>{copiedId === deployment.id ? <Check className="mr-1 h-4 w-4 text-green-600" /> : <Copy className="mr-1 h-4 w-4" />}{copiedId === deployment.id ? t('accessPoints.copied') : t('accessPoints.copy')}</Button>
+                  <Button size="sm" variant="outline" onClick={() => downloadSVG(deployment)}><Download className="mr-1 h-4 w-4" /><span data-no-translate>SVG</span></Button>
+                  <Button size="sm" variant="outline" onClick={() => downloadPNG(deployment)}><Download className="mr-1 h-4 w-4" /><span data-no-translate>PNG</span></Button>
+                  <Button size="sm" variant="outline" onClick={() => downloadPDF(deployment)}><Download className="mr-1 h-4 w-4" /><span data-no-translate>PDF</span></Button>
+                  <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"><ExternalLink className="mr-1 h-4 w-4" />{t('accessPoints.open')}</a>
+                  <Button size="sm" variant="ghost" onClick={() => toggleStatus(deployment)}>{deployment.status === 'active' ? t('accessPoints.deactivate') : t('accessPoints.activate')}</Button>
                 </div>
-                <div className="mt-3 flex justify-end"><button type="button" onClick={() => removeQRCode(deployment)} className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" />Delete</button></div>
+                <div className="mt-3 flex justify-end"><button type="button" onClick={() => removeQRCode(deployment)} className="inline-flex items-center gap-1 text-xs text-gray-400 hover:text-red-600"><Trash2 className="h-3.5 w-3.5" />{t('accessPoints.delete')}</button></div>
               </Card>
             )
           })}

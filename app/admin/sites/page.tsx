@@ -185,7 +185,7 @@ export default function SitesPage() {
               {stats.total} {t('admin.sites').toLowerCase()}
             </Badge>
             <Badge variant="success" icon={<QrCode className="h-3 w-3" />}>
-              {stats.activeQRCodes} active QR code{stats.activeQRCodes === 1 ? '' : 's'}
+              {t(stats.activeQRCodes === 1 ? 'adminPortal.qrCodeSingular' : 'adminPortal.qrCodePlural', { count: stats.activeQRCodes })}
             </Badge>
           </div>
         </div>
@@ -242,8 +242,8 @@ export default function SitesPage() {
 
         <Link href="/admin/qr-codes" className="block">
           <Card className="hover:shadow-lg transition-all hover:border-violet-500 hover:bg-gradient-to-br hover:from-violet-500 hover:to-violet-600 group cursor-pointer">
-            <div className="flex items-center justify-between"><div><p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white">Active QR Codes</p><p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white">{stats.activeQRCodes}</p></div><div className="p-3 bg-violet-600 rounded-lg"><QrCode className="h-6 w-6 text-white" /></div></div>
-            <div className="mt-4 text-xs text-gray-500 group-hover:text-white">Manage QR access points →</div>
+            <div className="flex items-center justify-between"><div><p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white">{t('adminPortal.activeQrCodes')}</p><p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white">{stats.activeQRCodes}</p></div><div className="p-3 bg-violet-600 rounded-lg"><QrCode className="h-6 w-6 text-white" /></div></div>
+            <div className="mt-4 text-xs text-gray-500 group-hover:text-white">{t('adminPortal.manageQrAccessPoints')}</div>
           </Card>
         </Link>
 
@@ -334,8 +334,8 @@ export default function SitesPage() {
                   </div>
                 )}
                 <div className="flex flex-wrap gap-2 pt-1">
-                  <Badge variant={site.activeQRCodes > 0 ? 'success' : 'default'} icon={<QrCode className="h-3 w-3" />}>{site.activeQRCodes} QR code{site.activeQRCodes === 1 ? '' : 's'}</Badge>
-                  <Badge variant={site.onlineDevices > 0 ? 'success' : 'default'} icon={<Monitor className="h-3 w-3" />}>{site.onlineDevices}/{site.totalDevices} devices online</Badge>
+                  <Badge variant={site.activeQRCodes > 0 ? 'success' : 'default'} icon={<QrCode className="h-3 w-3" />}>{t(site.activeQRCodes === 1 ? 'adminPortal.qrCodeSingular' : 'adminPortal.qrCodePlural', { count: site.activeQRCodes })}</Badge>
+                  <Badge variant={site.onlineDevices > 0 ? 'success' : 'default'} icon={<Monitor className="h-3 w-3" />}>{t('adminPortal.devicesOnline', { online: site.onlineDevices, total: site.totalDevices })}</Badge>
                 </div>
                 {site.lastSync && <div className="flex items-center text-sm text-gray-600 dark:text-gray-400"><Clock className="h-4 w-4 mr-2 text-gray-400" />{t('admin.lastSync')}: {site.lastSync}</div>}
               </div>
