@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay'
 import { LabelScanModal } from '@/components/admin/LabelScanModal'
+import { ReviewFrequencySelector } from '@/components/admin/ReviewFrequencySelector'
 import type { AllergenWarnings } from '@/types/allergen'
 import { computeWorstCaseAllergens } from '@/types/allergen'
 
@@ -26,6 +27,7 @@ interface MenuItem {
   allergen_warnings: AllergenWarnings
   dietary: string[]
   ingredients: string[]
+  preferred_review_months: number
   color?: string
   icon?: string
 }
@@ -101,6 +103,7 @@ export default function NewMenuItemPage() {
     },
     dietary: [],
     ingredients: [],
+    preferred_review_months: 12,
     color: '',
     icon: '',
   })
@@ -608,6 +611,18 @@ export default function NewMenuItemPage() {
                   Cancel
                 </Button>
               </Link>
+            </Card>
+
+            {/* Review Frequency */}
+            <Card className="p-6">
+              <ReviewFrequencySelector
+                value={menuItem.preferred_review_months}
+                onChange={(months) => setMenuItem((current) => ({
+                  ...current,
+                  preferred_review_months: months,
+                }))}
+                label={t('admin.reviewFrequency')}
+              />
             </Card>
 
             {/* Final Allergen Summary */}

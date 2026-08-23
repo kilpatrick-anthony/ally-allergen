@@ -201,7 +201,7 @@ export default function EditMenuItemPage() {
           dietary: combinedDietary,
           ingredients: itemIngredientIds,
           status: item.status || (item.is_active ? 'active' : 'draft'),
-          preferred_review_months: item.preferred_review_months || 3,
+          preferred_review_months: item.preferred_review_months || 12,
           color: item.color || '',
           icon: item.icon || '',
         })
@@ -1112,7 +1112,7 @@ export default function EditMenuItemPage() {
             {/* Review Frequency */}
             <Card>
               <ReviewFrequencySelector 
-                value={menuItem?.preferred_review_months || 3}
+                value={menuItem?.preferred_review_months || 12}
                 onChange={(months) => setMenuItem(prev => prev ? { ...prev, preferred_review_months: months } : prev)}
                 label={t('admin.reviewFrequency')}
               />

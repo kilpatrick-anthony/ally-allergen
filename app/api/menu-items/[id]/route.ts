@@ -160,7 +160,7 @@ export async function PUT(
       is_active: body.status ? body.status === 'active' : body.is_active ?? true,
       price: typeof body.price === 'number' ? body.price : 0,
       display_order: typeof body.display_order === 'number' ? body.display_order : 0,
-      preferred_review_months: typeof body.preferred_review_months === 'number' ? body.preferred_review_months : 3,
+      preferred_review_months: typeof body.preferred_review_months === 'number' ? body.preferred_review_months : 12,
       updated_at: new Date().toISOString()
     }
 

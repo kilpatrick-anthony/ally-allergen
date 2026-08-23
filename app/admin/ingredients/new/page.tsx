@@ -18,6 +18,7 @@ import AllergenWarningSelector from '@/components/admin/AllergenWarningSelector'
 import DatasheetUploader from '@/components/admin/DatasheetUploader'
 import { LabelScanModal } from '@/components/admin/LabelScanModal'
 import IngredientSupplierVariantsEditor from '@/components/admin/IngredientSupplierVariantsEditor'
+import { ReviewFrequencySelector } from '@/components/admin/ReviewFrequencySelector'
 import type { AllergenWarnings } from '@/types/allergen'
 import {
   deriveEffectiveIngredientSafety,
@@ -52,7 +53,8 @@ export default function NewIngredientPage() {
       molluscs: 'none'
     } as AllergenWarnings,
     suppliers: [] as string[],
-    certifications: [] as string[]
+    certifications: [] as string[],
+    preferred_review_months: 12,
   })
 
   const [availableSuppliers, setAvailableSuppliers] = useState<string[]>([])
@@ -578,6 +580,18 @@ export default function NewIngredientPage() {
           </div>
         </Card>
         )}
+
+        {/* Review Frequency */}
+        <Card className="mb-8 p-6">
+          <ReviewFrequencySelector
+            value={ingredient.preferred_review_months}
+            onChange={(months) => setIngredient((current) => ({
+              ...current,
+              preferred_review_months: months,
+            }))}
+            label="Review Frequency"
+          />
+        </Card>
 
         {/* Product Datasheets */}
         <Card className="mb-8">

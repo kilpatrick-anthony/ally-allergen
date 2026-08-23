@@ -48,7 +48,7 @@ export default function EditIngredientPage() {
     description: '',
     category: '',
     status: 'active' as 'active' | 'review' | 'archived',
-    preferred_review_months: 3,
+    preferred_review_months: 12,
     allergen_warnings: {
       cereals_gluten: 'none',
       crustaceans: 'none',
@@ -170,7 +170,7 @@ export default function EditIngredientPage() {
           description: data.ingredient.description || '',
           category: data.ingredient.category || '',
           status: data.ingredient.status || 'active',
-          preferred_review_months: data.ingredient.preferred_review_months || 3,
+          preferred_review_months: data.ingredient.preferred_review_months || 12,
           allergen_warnings: data.ingredient.allergen_warnings || ingredient.allergen_warnings,
           suppliers: data.ingredient.suppliers || [],
           certifications: data.ingredient.certifications || []
@@ -665,7 +665,7 @@ export default function EditIngredientPage() {
           {/* Review Frequency */}
           <Card>
             <ReviewFrequencySelector 
-              value={ingredient.preferred_review_months || 3}
+              value={ingredient.preferred_review_months || 12}
               onChange={(months) => setIngredient(prev => ({ ...prev, preferred_review_months: months }))}
               label="Review Frequency"
             />

@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
       suppliers: normalizedSuppliers,
       certifications: effectiveCertifications,
       supplier_profiles: completeProfiles,
-      preferred_review_months: preferred_review_months || 3,
+      preferred_review_months: preferred_review_months || 12,
       status: 'active',
       compliance: 'compliant',
       created_by: userId

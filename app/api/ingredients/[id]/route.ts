@@ -178,7 +178,7 @@ export async function PUT(
       suppliers: normalizedSuppliers,
       certifications: effectiveCertifications,
       supplier_profiles: completeProfiles,
-      preferred_review_months: preferred_review_months || 3,
+      preferred_review_months: preferred_review_months || 12,
       updated_at: new Date().toISOString()
     }
 

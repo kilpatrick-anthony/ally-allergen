@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
               name: ing.name || '',
               status: ing.status,
               last_reviewed_at: ing.last_reviewed_at,
-              preferred_review_months: ing.preferred_review_months || 3,
+              preferred_review_months: ing.preferred_review_months || 12,
               suppliers: ing.suppliers,
               has_datasheets: datasheetCount > 0
             },
@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
             name: menuItem.name,
             status: menuItem.is_active ? 'active' : 'draft',
             last_reviewed_at: menuItem.last_reviewed_at,
-            preferred_review_months: menuItem.preferred_review_months || 3,
+            preferred_review_months: menuItem.preferred_review_months || 12,
             ingredients: ingredients
           },
           ingredientComplianceMap,
@@ -217,7 +217,7 @@ export async function GET(request: NextRequest) {
             name: ing.name,
             status: ing.status,
             last_reviewed_at: ing.last_reviewed_at,
-            preferred_review_months: ing.preferred_review_months || 3,
+            preferred_review_months: ing.preferred_review_months || 12,
             suppliers: ing.suppliers,
             has_datasheets: datasheetCount > 0
           },
@@ -246,7 +246,7 @@ export async function GET(request: NextRequest) {
             name: item.name,
             status: item.status || (item.is_active ? 'active' : 'draft'),
             last_reviewed_at: item.last_reviewed_at,
-            preferred_review_months: item.preferred_review_months || 3,
+            preferred_review_months: item.preferred_review_months || 12,
             ingredients: ingredientsByMenuItem.get(item.id) || []
           },
           ingredientComplianceMap,

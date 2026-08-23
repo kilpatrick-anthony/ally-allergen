@@ -23,12 +23,13 @@ export function ReviewFrequencySelector({ value, onChange, label }: ReviewFreque
         {label || 'Review Frequency'}
       </label>
       <p className="text-xs text-slate-600">
-        How often should this item be reviewed for compliance?
+        Set a routine review interval. Review sooner whenever the product, supplier, recipe, process, or allergen information changes.
       </p>
       <div className="grid grid-cols-2 gap-3">
         {options.map((option) => (
           <button
             key={option.months}
+            type="button"
             onClick={() => onChange(option.months)}
             className={`
               p-3 rounded-lg border-2 transition-all text-left

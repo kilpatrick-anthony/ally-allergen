@@ -67,7 +67,7 @@ export function checkIngredientCompliance(ingredient: {
   }
 
   // Check review date - use preferred_review_months if set, otherwise use business default
-  const preferredMonths = ingredient.preferred_review_months || 3;
+  const preferredMonths = ingredient.preferred_review_months || 12;
   const reviewDays = preferredMonths * 30; // Convert months to approximate days
   const lastReviewedAt = ingredient.last_reviewed_at ? new Date(ingredient.last_reviewed_at) : null;
   const now = new Date();
@@ -183,7 +183,7 @@ export function checkMenuItemCompliance(menuItem: {
   }
 
   // Check menu item's own review date
-  const preferredMonths = menuItem.preferred_review_months || 3;
+  const preferredMonths = menuItem.preferred_review_months || 12;
   const reviewDays = preferredMonths * 30;
   const lastReviewedAt = menuItem.last_reviewed_at ? new Date(menuItem.last_reviewed_at) : null;
   const now = new Date();

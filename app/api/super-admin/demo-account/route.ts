@@ -352,7 +352,7 @@ export async function POST(request: NextRequest) {
       price: item.price,
       is_active: true,
       display_order: index,
-      preferred_review_months: 3,
+      preferred_review_months: 12,
       allergen_warnings: buildWarnings({
         cereals_gluten: allergenFlags.gluten ? 'contains' : 'none',
         crustaceans: allergenFlags.crustaceans ? 'contains' : 'none',
@@ -404,7 +404,7 @@ export async function POST(request: NextRequest) {
       certifications: [],
       status: 'active',
       compliance: 'compliant',
-      preferred_review_months: 3,
+      preferred_review_months: 12,
     }))
 
     let ingredientsSeeded = 0

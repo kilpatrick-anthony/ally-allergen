@@ -163,7 +163,7 @@ export default function IngredientsPage() {
               name: ing.name,
               status: ing.status || 'active',
               last_reviewed_at: ing.last_reviewed_at,
-              preferred_review_months: ing.preferred_review_months || 3,
+              preferred_review_months: ing.preferred_review_months || 12,
               suppliers: ing.suppliers || [],
               has_datasheets: datasheetCount > 0
             },
