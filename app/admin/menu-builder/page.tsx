@@ -205,16 +205,28 @@ export default function MenuBuilderPage() {
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Failed to duplicate')
-      const newItem: MenuItem = {
-        ...item,
-        id: data.menuItem?.id || data.id,
-        name: `Copy of ${item.name}`,
-        status: 'draft',
+
+      const refreshResponse = await fetch('/api/menu-items', { cache: 'no-store' })
+      const refreshData = await refreshResponse.json()
+      if (!refreshResponse.ok) {
+        throw new Error(refreshData.error || 'Menu item duplicated, but the list could not be refreshed')
       }
-      setMenuItems(prev => [...prev, newItem])
+
+      setMenuItems((refreshData.menuItems || []).map((menuItem: any) => ({
+        id: menuItem.id,
+        name: menuItem.name,
+        description: menuItem.description || '',
+        category: menuItem.category || '',
+        site_id: menuItem.site_id ?? null,
+        icon: menuItem.icon || '',
+        allergen_warnings: menuItem.allergen_warnings || { ...defaultWarnings },
+        dietary: Array.isArray(menuItem.dietary) ? menuItem.dietary : [],
+        ingredients: Array.isArray(menuItem.ingredients) ? menuItem.ingredients : [],
+        status: menuItem.status || (menuItem.is_active ? 'active' : 'draft')
+      })))
       showNotification('Menu item duplicated', 'success')
     } catch (error: any) {
-      showNotification('Failed to duplicate: ' + error?.message, 'error')
+      showNotification(error?.message || 'Failed to duplicate menu item', 'error')
     }
   }
 

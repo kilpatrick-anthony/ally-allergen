@@ -1,7 +1,7 @@
 // app/admin/ingredients/page.tsx - Enhanced with Design System
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import React from 'react'
 import { useNotification } from '@/lib/hooks/useNotification'
@@ -135,13 +135,12 @@ export default function IngredientsPage() {
   const [datasheets, setDatasheets] = useState<any[]>([])
   const [loadingDatasheets, setLoadingDatasheets] = useState(false)
 
-  useEffect(() => {
-    const fetchIngredients = async () => {
+  const fetchIngredients = useCallback(async (showLoading = true) => {
       try {
-        setLoading(true)
+        if (showLoading) setLoading(true)
         console.log('📥 Fetching ingredients...')
         
-        const response = await fetch('/api/ingredients')
+        const response = await fetch('/api/ingredients', { cache: 'no-store' })
         const data = await response.json()
         
         if (!response.ok) {
@@ -242,12 +241,13 @@ export default function IngredientsPage() {
       } catch (error: any) {
         console.error('❌ Error fetching ingredients:', error)
       } finally {
-        setLoading(false)
+        if (showLoading) setLoading(false)
       }
-    }
-    
-    fetchIngredients()
   }, [])
+
+  useEffect(() => {
+    void fetchIngredients()
+  }, [fetchIngredients])
 
   // Filter ingredients based on search and filters
   const filteredIngredients = ingredients.filter(ingredient => {
@@ -338,14 +338,8 @@ export default function IngredientsPage() {
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'Failed to duplicate')
+      await fetchIngredients(false)
       showNotification('Ingredient duplicated', 'success')
-      // Reload the list
-      const listRes = await fetch('/api/ingredients')
-      const listData = await listRes.json()
-      if (listRes.ok) {
-        // Re-trigger the useEffect by updating state — simplest: navigate away & back
-        // Instead, just show success and let user refresh or navigate
-      }
     } catch (error: any) {
       showNotification('Failed to duplicate: ' + error?.message, 'error')
     }

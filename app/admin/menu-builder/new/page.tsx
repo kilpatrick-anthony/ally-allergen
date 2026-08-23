@@ -1,13 +1,12 @@
 // app/admin/menu-builder/new/page.tsx
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import {
-  ArrowLeft, Save, X, Plus, ScanLine,
-  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck, FileText, CheckCircle
+  ArrowLeft, Save, X, Plus, CheckCircle
 } from 'lucide-react'
 
 import { Container } from '@/components/layout/Container'
@@ -16,7 +15,6 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import AllergenWarningSelector from '@/components/admin/AllergenWarningSelector'
 import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay'
-import DatasheetUploader from '@/components/admin/DatasheetUploader'
 import { LabelScanModal } from '@/components/admin/LabelScanModal'
 import type { AllergenWarnings } from '@/types/allergen'
 import { computeWorstCaseAllergens } from '@/types/allergen'
@@ -75,14 +73,10 @@ export default function NewMenuItemPage() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [sites, setSites] = useState<SiteOption[]>([])
   const [showIngredientSelector, setShowIngredientSelector] = useState(false)
-  const [datasheets, setDatasheets] = useState<any[]>([])
   const [showScan, setShowScan] = useState(false)
-  const [customDietaryInput, setCustomDietaryInput] = useState('')
-  const [showCustomDietaryInput, setShowCustomDietaryInput] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
   const [saveMessage, setSaveMessage] = useState('')
   const [ingredientSearch, setIngredientSearch] = useState('')
-  const [loadingIngredientDatasheets, setLoadingIngredientDatasheets] = useState(false)
   const [uploadingIcon, setUploadingIcon] = useState(false)
 
   const [menuItem, setMenuItem] = useState<MenuItem>({
@@ -111,18 +105,6 @@ export default function NewMenuItemPage() {
     color: '',
     icon: '',
   })
-
-  const dietaryOptions = [
-    { name: 'Vegan', color: '#16a34a', icon: Leaf },
-    { name: 'Vegetarian', color: '#84cc16', icon: Apple },
-    { name: 'Gluten-Free', color: '#f59e0b', icon: WheatOff },
-    { name: 'Halal', color: '#10b981', icon: Moon },
-    { name: 'Kosher', color: '#3b82f6', icon: Star },
-    { name: 'Organic', color: '#22c55e', icon: Sprout },
-    { name: 'Fair Trade', color: '#8b5cf6', icon: Globe },
-    { name: 'Lactose-Free', color: '#06b6d4', icon: Droplets },
-    { name: 'Coeliac-Friendly', color: '#ec4899', icon: ShieldCheck }
-  ]
 
   const DEFAULT_MENU_CATEGORIES = [
     'Breakfast', 'Desserts', 'Drinks', 'Lunch', 'Mains',
@@ -197,54 +179,6 @@ export default function NewMenuItemPage() {
     fetchData()
   }, [])
 
-  // Load ingredient datasheets
-  useEffect(() => {
-    if (menuItem.ingredients.length === 0) {
-      return
-    }
-
-    const fetchIngredientDatasheets = async () => {
-      try {
-        setLoadingIngredientDatasheets(true)
-        const params = new URLSearchParams({
-          ingredientIds: menuItem.ingredients.join(',')
-        })
-        const response = await fetch(`/api/datasheets?${params.toString()}`)
-        const data = await response.json()
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to fetch datasheets')
-        }
-      } catch (error: any) {
-        console.error('Error loading ingredient datasheets:', error)
-      } finally {
-        setLoadingIngredientDatasheets(false)
-      }
-    }
-
-    fetchIngredientDatasheets()
-  }, [menuItem.ingredients])
-
-  const addCustomDietary = () => {
-    if (customDietaryInput.trim() && !menuItem.dietary.includes(customDietaryInput.trim())) {
-      const newDietary = [...menuItem.dietary, customDietaryInput.trim()]
-      setMenuItem({ ...menuItem, dietary: newDietary })
-      setCustomDietaryInput('')
-      setShowCustomDietaryInput(false)
-    }
-  }
-
-  const removeCustomDietary = (dietary: string) => {
-    setMenuItem({
-      ...menuItem,
-      dietary: menuItem.dietary.filter(d => d !== dietary)
-    })
-  }
-
-  const isCustomDietary = (dietary: string) => {
-    return !dietaryOptions.some(opt => opt.name === dietary)
-  }
-
   const handleIngredientSelect = (ingredientId: string) => {
     const updatedIngredients = menuItem.ingredients.includes(ingredientId)
       ? menuItem.ingredients.filter(id => id !== ingredientId)
@@ -260,17 +194,13 @@ export default function NewMenuItemPage() {
     const mergedCertifications = ingredientCerts.length === 0
       ? []
       : ingredientCerts.reduce((acc, certs) => acc.filter(c => certs.includes(c)))
-    // Keep any dietary attrs the user manually added that aren't from ingredients
-    const manualDietary = menuItem.dietary.filter(d => !dietaryOptions.some(opt => opt.name === d) || mergedCertifications.includes(d))
-    const combinedDietary = Array.from(new Set([...manualDietary, ...mergedCertifications]))
-
     setMenuItem({
       ...menuItem,
       ingredients: updatedIngredients,
       allergen_warnings: profiles.length > 0
         ? computeWorstCaseAllergens(profiles)
         : menuItem.allergen_warnings,
-      dietary: combinedDietary,
+      dietary: mergedCertifications,
     })
   }
 
@@ -331,46 +261,6 @@ export default function NewMenuItemPage() {
 
       if (!response.ok) {
           throw new Error(data.error || t('admin.failedToDownload'))
-      }
-
-      const itemId = data.menuItem?.id || data.id
-
-      // Upload datasheets if any
-      if (datasheets.length > 0) {
-        try {
-          setSaveMessage('Uploading datasheets...')
-          const uploadPromises = datasheets
-            .filter((datasheet) => datasheet.file)
-            .map(async (datasheet) => {
-              const fileName = datasheet.file_name || datasheet.file?.name || 'datasheet'
-              const formData = new FormData()
-              formData.append('file', datasheet.file)
-              formData.append('menu_item_id', itemId)
-              if (datasheet.supplier_name) formData.append('supplier_name', datasheet.supplier_name)
-              if (datasheet.version) formData.append('version', datasheet.version)
-              if (datasheet.next_review_date) formData.append('next_review_date', datasheet.next_review_date)
-              if (datasheet.notes) formData.append('notes', datasheet.notes)
-
-              const uploadResponse = await fetch('/api/upload/datasheet', {
-                method: 'POST',
-                body: formData
-              })
-
-              const uploadData = await uploadResponse.json()
-              if (!uploadResponse.ok) {
-                throw new Error(uploadData.error || `Failed to upload ${fileName}`)
-              }
-              return uploadData
-            })
-
-          await Promise.all(uploadPromises)
-          setDatasheets([])
-        } catch (uploadError: any) {
-          console.error('Error uploading datasheets:', uploadError)
-          setSaveStatus('error')
-          setSaveMessage(uploadError?.message || 'Failed to upload datasheets')
-          return
-        }
       }
 
       setSaveStatus('success')
@@ -652,123 +542,6 @@ export default function NewMenuItemPage() {
               </Button>
             </Card>
 
-            {/* Dietary Attributes */}
-            <Card className="p-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-                {t('admin.dietaryAttributesCertifications')}
-              </label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-                {dietaryOptions.map(dietary => {
-                  const isSelected = menuItem.dietary.includes(dietary.name)
-                  
-                  return (
-                    <button
-                      key={dietary.name}
-                      type="button"
-                      onClick={() => {
-                        const newDietary = isSelected
-                          ? menuItem.dietary.filter(d => d !== dietary.name)
-                          : [...menuItem.dietary, dietary.name]
-                        setMenuItem({ ...menuItem, dietary: newDietary })
-                      }}
-                      className={`
-                        relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
-                        ${isSelected
-                          ? 'border-opacity-100 shadow-md'
-                          : 'border-gray-200 hover:border-gray-300 hover:shadow-lg'
-                        }
-                        group cursor-pointer
-                      `}
-                      style={{
-                        borderColor: isSelected ? dietary.color : undefined,
-                        backgroundColor: isSelected ? `${dietary.color}15` : '#fff'
-                      }}
-                    >
-                      <div 
-                        className={`
-                          flex items-center justify-center w-10 h-10 rounded-lg transition-all
-                          ${isSelected ? 'scale-100' : 'group-hover:scale-110'}
-                          group-hover:shadow-lg
-                        `}
-                        style={{ backgroundColor: dietary.color }}
-                      >
-                        {typeof dietary.icon === 'function' && React.createElement(dietary.icon as React.ComponentType<{className: string}>, { className: 'h-5 w-5 text-white' })}
-                      </div>
-                      <span
-                        className={`text-xs font-semibold text-center transition-colors ${
-                          isSelected ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'
-                        }`}
-                      >
-                        {dietary.name}
-                      </span>
-                      {isSelected && (
-                        <div 
-                          className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
-                          style={{ backgroundColor: dietary.color }}
-                        >
-                          <svg className="w-3 h-3 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
-                            <path d="M5 13l4 4L19 7"></path>
-                          </svg>
-                        </div>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Custom Dietary Input */}
-              <button
-                type="button"
-                onClick={() => setShowCustomDietaryInput(!showCustomDietaryInput)}
-                className="w-full text-left px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                + {t('admin.addCustomAttribute')}
-              </button>
-
-              {showCustomDietaryInput && (
-                <div className="mt-4 flex gap-2">
-                  <input
-                    type="text"
-                    value={customDietaryInput}
-                    onChange={(e) => setCustomDietaryInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addCustomDietary()}
-                    placeholder={t('admin.enterCustomAttribute')}
-                    className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                  />
-                  <Button
-                    variant="primary"
-                    onClick={addCustomDietary}
-                    disabled={!customDietaryInput.trim()}
-                  >
-                    {t('admin.add')}
-                  </Button>
-                </div>
-              )}
-
-              {menuItem.dietary.filter(d => isCustomDietary(d)).length > 0 && (
-                <div className="mt-4">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('admin.customAttributes')}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {menuItem.dietary.filter(d => isCustomDietary(d)).map(dietary => (
-                      <span
-                        key={dietary}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium"
-                      >
-                        {dietary}
-                        <button
-                          type="button"
-                          onClick={() => removeCustomDietary(dietary)}
-                          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </Card>
-
             {/* Allergen Information */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -794,22 +567,6 @@ export default function NewMenuItemPage() {
                   />
                 </>
               )}
-            </Card>
-
-            {/* Datasheets */}
-            <Card className="p-6">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                {t('admin.menuItemSpecificDatasheets')}
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                Upload datasheets specific to this menu item. Note: ingredient-specific datasheets will appear here automatically once the menu item is saved.
-              </p>
-              <DatasheetUploader
-                entityType="menu_item"
-                onFilesChange={setDatasheets}
-                maxFiles={5}
-                compact={false}
-              />
             </Card>
 
             {/* Save Status */}

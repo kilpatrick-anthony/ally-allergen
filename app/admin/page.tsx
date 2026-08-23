@@ -7,24 +7,38 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Package, ChefHat, Building, Shield,
-  Check, ArrowRight, ChevronRight,
-  BookOpen, Zap, Star, Monitor
+  ArrowRight, Star, Monitor, FileText
 } from 'lucide-react'
 
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
-import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { NotificationsPanel } from '@/components/admin/NotificationsPanel'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { getFrequentPages, type AdminPage } from '@/lib/hooks/useFrequentPages'
+
+interface DashboardStats {
+  ingredients: number
+  menuItems: number
+  datasheets: number
+  suppliers: number
+  sites: number
+}
+
+const EMPTY_STATS: DashboardStats = {
+  ingredients: 0,
+  menuItems: 0,
+  datasheets: 0,
+  suppliers: 0,
+  sites: 0,
+}
 
 export default function AdminDashboard() {
   const { t } = useTranslation()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [hasData, setHasData] = useState(false)
-  const [businessId, setBusinessId] = useState<string | null>(null)
+  const [stats, setStats] = useState<DashboardStats>(EMPTY_STATS)
   const [frequentPages, setFrequentPages] = useState<AdminPage[]>([])
   const [settings, setSettings] = useState({
     notificationsEnabled: true,
@@ -55,38 +69,30 @@ export default function AdminDashboard() {
           return
         }
 
-        // Check if user has any data
-        const [ingredientsRes, menuItemsRes, datasheetsRes, suppliersRes, sitesRes] = await Promise.all([
-          fetch('/api/ingredients?limit=1'),
-          fetch('/api/menu-items?limit=1'),
-          fetch('/api/datasheets?limit=1'),
-          fetch('/api/suppliers?limit=1'),
-          fetch('/api/sites')
-        ])
+        const summaryRes = await fetch('/api/dashboard/summary', { cache: 'no-store' })
+        const summary = await summaryRes.json()
+        if (!summaryRes.ok) {
+          throw new Error(summary.error || 'Failed to load dashboard summary')
+        }
 
-        const ingredientsData = ingredientsRes.ok ? await ingredientsRes.json() : []
-        const menuItemsData = menuItemsRes.ok ? await menuItemsRes.json() : []
-        const datasheetsData = datasheetsRes.ok ? await datasheetsRes.json() : []
-        const suppliersData = suppliersRes.ok ? await suppliersRes.json() : []
-        const sitesPayload = sitesRes.ok ? await sitesRes.json() : { sites: [] }
-
-        const hasIngredients = Array.isArray(ingredientsData) && ingredientsData.length > 0
-        const hasMenuItems = Array.isArray(menuItemsData) && menuItemsData.length > 0
-        const hasDatasheets = Array.isArray(datasheetsData) && datasheetsData.length > 0
-        const hasSuppliers = Array.isArray(suppliersData) && suppliersData.length > 0
-        const hasSites = Array.isArray(sitesPayload?.sites) && sitesPayload.sites.length > 0
+        const nextStats: DashboardStats = { ...EMPTY_STATS, ...summary.stats }
+        setStats(nextStats)
 
         // First-login fast path: push users into setup wizard until they create first site.
-        if (!hasSites) {
+        if (nextStats.sites === 0) {
           router.replace('/onboarding')
           return
         }
 
-        setHasData(hasIngredients || hasMenuItems || hasDatasheets || hasSuppliers)
+        setHasData(
+          nextStats.ingredients > 0 ||
+          nextStats.menuItems > 0 ||
+          nextStats.datasheets > 0 ||
+          nextStats.suppliers > 0
+        )
 
         // Load businessId from sessionStorage (written by the admin layout)
         const biz = typeof window !== 'undefined' ? sessionStorage.getItem('ally_biz') : null
-        setBusinessId(biz)
         setFrequentPages(getFrequentPages(biz))
 
         // Load notification settings from localStorage
@@ -129,6 +135,41 @@ export default function AdminDashboard() {
 
   // Show established business dashboard
   if (hasData) {
+    const statCards = [
+      {
+        label: 'Menu items',
+        value: stats.menuItems,
+        detail: 'Across your menus',
+        href: '/admin/menu-builder',
+        icon: ChefHat,
+        iconClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+      },
+      {
+        label: 'Ingredients',
+        value: stats.ingredients,
+        detail: `${stats.suppliers} supplier${stats.suppliers === 1 ? '' : 's'} linked`,
+        href: '/admin/ingredients',
+        icon: Package,
+        iconClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+      },
+      {
+        label: 'Datasheets',
+        value: stats.datasheets,
+        detail: 'Active documents',
+        href: '/admin/downloads/datasheets',
+        icon: FileText,
+        iconClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+      },
+      {
+        label: 'Locations',
+        value: stats.sites,
+        detail: 'Sites being managed',
+        href: '/admin/sites',
+        icon: Building,
+        iconClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+      },
+    ]
+
     return (
       <Container>
         {/* Header */}
@@ -150,26 +191,27 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Notifications Panel */}
-        <div className="mb-8">
-          <NotificationsPanel settings={settings} />
-        </div>
-
-        {/* Business Responsibility Disclaimer */}
-        <div className="mb-8 p-4 bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 rounded-lg">
-          <div className="flex items-start gap-4">
-            <div className="flex-shrink-0 pt-0.5">
-              <Shield className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
-                {t('businessDisclaimerTitle') || 'Business Data Accuracy Responsibility'}
-              </h3>
-              <p className="text-sm text-amber-800 dark:text-amber-200 leading-relaxed">
-                {t('businessDisclaimerText') || 'AllyJen provides tools to help manage allergen information. However, your business is responsible for the accuracy, completeness, and correctness of all data entered into this system.'}
-              </p>
-            </div>
-          </div>
+        {/* At-a-glance stats */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 mb-8">
+          {statCards.map((stat) => {
+            const Icon = stat.icon
+            return (
+              <Link key={stat.label} href={stat.href} className="group">
+                <Card className="h-full transition-all group-hover:-translate-y-0.5 group-hover:border-[#42b8ac]/40 group-hover:shadow-lg">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{stat.label}</p>
+                      <p className="mt-2 text-3xl font-bold text-[#003842] dark:text-white">{stat.value}</p>
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{stat.detail}</p>
+                    </div>
+                    <div className={`rounded-xl p-3 ${stat.iconClass}`}>
+                      <Icon className="h-6 w-6" aria-hidden="true" />
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            )
+          })}
         </div>
 
         {/* Frequently Used */}
@@ -207,6 +249,28 @@ export default function AdminDashboard() {
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 ml-1">
             {t('admin.frequentlyUsedHint')}
           </p>
+        </div>
+
+        {/* Notifications Panel */}
+        <div className="mb-8">
+          <NotificationsPanel settings={settings} />
+        </div>
+
+        {/* Business Responsibility Disclaimer */}
+        <div className="mb-8 p-4 bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 rounded-lg">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 pt-0.5">
+              <Shield className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
+                {t('businessDisclaimerTitle') || 'Business Data Accuracy Responsibility'}
+              </h3>
+              <p className="text-sm text-amber-800 dark:text-amber-200 leading-relaxed">
+                {t('businessDisclaimerText') || 'AllyJen provides tools to help manage allergen information. However, your business is responsible for the accuracy, completeness, and correctness of all data entered into this system.'}
+              </p>
+            </div>
+          </div>
         </div>
       </Container>
     )
