@@ -210,6 +210,7 @@ export default function PortalLocalizationBridge() {
       if (node.nodeType !== Node.ELEMENT_NODE) return
 
       const element = node as Element
+      if (element.closest('[data-no-translate]')) return
       translateAttributes(element)
       const walker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT)
       let current: Node | null = walker.nextNode()

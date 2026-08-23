@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const limit = searchParams.get('limit')
+    const countOnly = searchParams.get('count_only') === 'true'
     // Get user from auth token
     const cookieStore = await cookies()
     const authToken = cookieStore.get('auth-token')?.value
@@ -47,6 +48,20 @@ export async function GET(request: NextRequest) {
 
     if (!userBusiness) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
+    }
+
+    if (countOnly) {
+      const { count, error } = await supabase
+        .from('ingredients')
+        .select('*', { count: 'exact', head: true })
+        .eq('business_id', userBusiness.business_id)
+
+      if (error) {
+        console.error('Error counting ingredients:', error)
+        return NextResponse.json({ error: 'Failed to count ingredients' }, { status: 500 })
+      }
+
+      return NextResponse.json({ count: count || 0 })
     }
 
     // Fetch ingredients for the business

@@ -35,6 +35,23 @@ interface SiteOption {
   name: string
 }
 
+const DEFAULT_WARNINGS: AllergenWarnings = {
+  cereals_gluten: 'none',
+  crustaceans: 'none',
+  eggs: 'none',
+  fish: 'none',
+  peanuts: 'none',
+  soybeans: 'none',
+  milk: 'none',
+  nuts: 'none',
+  celery: 'none',
+  mustard: 'none',
+  sesame: 'none',
+  sulphites: 'none',
+  lupin: 'none',
+  molluscs: 'none'
+}
+
 const isImageIcon = (icon?: string) => Boolean(icon && /^https?:\/\//.test(icon))
 
 function MenuItemIcon({ icon, size = 'md' }: { icon?: string; size?: 'sm' | 'md' }) {
@@ -63,7 +80,7 @@ export default function MenuBuilderPage() {
   const [loading, setLoading] = useState(true)
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [sites, setSites] = useState<SiteOption[]>([])
-  const [ingredients, setIngredients] = useState<any[]>([])
+  const [ingredientCount, setIngredientCount] = useState(0)
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
   const [sortBy, setSortBy] = useState<'name' | 'date'>('name')
@@ -71,23 +88,6 @@ export default function MenuBuilderPage() {
   const [scopeFilter, setScopeFilter] = useState<'all' | 'global' | string>('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [showFilters, setShowFilters] = useState(false)
-
-  const defaultWarnings: AllergenWarnings = {
-    cereals_gluten: 'none',
-    crustaceans: 'none',
-    eggs: 'none',
-    fish: 'none',
-    peanuts: 'none',
-    soybeans: 'none',
-    milk: 'none',
-    nuts: 'none',
-    celery: 'none',
-    mustard: 'none',
-    sesame: 'none',
-    sulphites: 'none',
-    lupin: 'none',
-    molluscs: 'none'
-  }
 
   // Load menu items, sites, and ingredients
   useEffect(() => {
@@ -97,7 +97,7 @@ export default function MenuBuilderPage() {
         const [menuResponse, sitesResponse, ingredientsResponse] = await Promise.all([
           fetch('/api/menu-items'),
           fetch('/api/sites'),
-          fetch('/api/ingredients')
+          fetch('/api/ingredients?count_only=true')
         ])
 
         const menuData = await menuResponse.json()
@@ -109,10 +109,11 @@ export default function MenuBuilderPage() {
             category: item.category || '',
             site_id: item.site_id ?? null,
             icon: item.icon || '',
-            allergen_warnings: item.allergen_warnings || { ...defaultWarnings },
+            allergen_warnings: item.allergen_warnings || { ...DEFAULT_WARNINGS },
             dietary: Array.isArray(item.dietary) ? item.dietary : [],
             ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
-            status: item.status || (item.is_active ? 'active' : 'draft')
+            status: item.status || (item.is_active ? 'active' : 'draft'),
+            item_type: item.item_type || 'prepared'
           }))
           setMenuItems(mappedMenuItems)
         }
@@ -128,13 +129,13 @@ export default function MenuBuilderPage() {
 
         const ingredientsData = await ingredientsResponse.json()
         if (ingredientsResponse.ok) {
-          setIngredients(ingredientsData.ingredients || [])
+          setIngredientCount(ingredientsData.count || 0)
         }
       } catch (error: any) {
         console.error('Error loading menu builder data:', error)
         setMenuItems([])
         setSites([])
-        setIngredients([])
+        setIngredientCount(0)
       } finally {
         setLoading(false)
       }
@@ -168,7 +169,7 @@ export default function MenuBuilderPage() {
 
   const stats = {
     total: menuItems.length,
-    ingredients: ingredients.length,
+    ingredients: ingredientCount,
     sites: sites.length,
   }
 
@@ -220,10 +221,11 @@ export default function MenuBuilderPage() {
         category: menuItem.category || '',
         site_id: menuItem.site_id ?? null,
         icon: menuItem.icon || '',
-        allergen_warnings: menuItem.allergen_warnings || { ...defaultWarnings },
+        allergen_warnings: menuItem.allergen_warnings || { ...DEFAULT_WARNINGS },
         dietary: Array.isArray(menuItem.dietary) ? menuItem.dietary : [],
         ingredients: Array.isArray(menuItem.ingredients) ? menuItem.ingredients : [],
-        status: menuItem.status || (menuItem.is_active ? 'active' : 'draft')
+        status: menuItem.status || (menuItem.is_active ? 'active' : 'draft'),
+        item_type: menuItem.item_type || 'prepared'
       })))
       showNotification('Menu item duplicated', 'success')
     } catch (error: any) {
@@ -464,7 +466,7 @@ export default function MenuBuilderPage() {
             </Link>
           </div>
         ) : viewMode === 'grid' ? (
-          <div className="p-6 space-y-8">
+          <div className="p-6 space-y-8" data-no-translate>
             {menuCategoryOrder.map(cat => (
               <div key={cat}>
                 <div className="flex items-center gap-2 mb-4">
@@ -476,7 +478,7 @@ export default function MenuBuilderPage() {
             {groupedMenuItems[cat].map((item) => (
               <div
                 key={item.id}
-                className="border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg transition-shadow bg-white dark:bg-gray-800 flex flex-col"
+                className="border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg transition-shadow bg-white dark:bg-gray-800 flex flex-col [content-visibility:auto] [contain-intrinsic-size:auto_240px]"
               >
                 {/* Tile Header */}
                 <div className="p-5 flex items-start gap-3">
@@ -488,11 +490,11 @@ export default function MenuBuilderPage() {
                     <div className="flex flex-wrap items-center gap-1.5 mt-1">
                       <Badge variant={item.site_id ? 'primary' : 'default'}>
                         {item.site_id
-                          ? (sites.find((site) => site.id === item.site_id)?.name || 'Site-specific')
-                          : 'Global'}
+                          ? (sites.find((site) => site.id === item.site_id)?.name || t('admin.siteSpecificLabel'))
+                          : t('admin.globalLabel')}
                       </Badge>
                       <Badge variant={item.status === 'active' ? 'success' : 'warning'}>
-                        {item.status}
+                        {t(`admin.${item.status}`)}
                       </Badge>
                       {item.item_type === 'packaged_product' && (
                         <Badge variant="warning">{t('admin.packaged')}</Badge>
@@ -504,7 +506,7 @@ export default function MenuBuilderPage() {
                 {/* Tile Body */}
                 <div className="px-5 flex-1 flex flex-col gap-3">
                   <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 min-h-[2.5rem]">
-                    {item.description || 'No description provided.'}
+                    {item.description || t('admin.noDescriptionProvided')}
                   </p>
 
                   <div>
@@ -519,24 +521,24 @@ export default function MenuBuilderPage() {
                 {/* Tile Footer */}
                 <div className="px-5 py-3 mt-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
                   <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {item.ingredients.length} ingredient{item.ingredients.length !== 1 ? 's' : ''}
+                    {item.ingredients.length} {t('admin.ingredientCountLabel')}
                   </span>
                   <div className="flex items-center gap-1">
                     <Link href={`/admin/menu-builder/${item.id}`}>
-                      <Button variant="ghost" size="sm" icon={<Eye className="h-4 w-4" />} title="View" />
+                      <Button variant="ghost" size="sm" icon={<Eye className="h-4 w-4" />} title={t('admin.view')} />
                     </Link>
                     <Link href={`/admin/menu-builder/${item.id}/edit`}>
-                      <Button variant="ghost" size="sm" icon={<Edit className="h-4 w-4" />} title="Edit" />
+                      <Button variant="ghost" size="sm" icon={<Edit className="h-4 w-4" />} title={t('admin.edit')} />
                     </Link>
                     <Button
                       variant="ghost"
                       size="sm"
                       icon={<Copy className="h-4 w-4" />}
                       onClick={() => handleDuplicate(item)}
-                      title="Duplicate"
+                      title={t('admin.duplicate')}
                     />
                     {canDeleteContent && (
-                      <Button variant="ghost" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => handleDelete(item.id)} title="Delete" />
+                      <Button variant="ghost" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => handleDelete(item.id)} title={t('admin.delete')} />
                     )}
                   </div>
                 </div>
@@ -547,16 +549,16 @@ export default function MenuBuilderPage() {
             ))}
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto" data-no-translate>
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Name</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Description</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('admin.name')}</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('admin.itemDescription')}</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('admin.scope')}</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Status</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">Allergens</th>
-                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white">Actions</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('admin.status')}</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900 dark:text-white">{t('admin.allergens')}</th>
+                  <th className="px-6 py-3 text-right text-sm font-semibold text-gray-900 dark:text-white">{t('admin.actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -581,12 +583,12 @@ export default function MenuBuilderPage() {
                     <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate">{item.description}</td>
                     <td className="px-6 py-4 text-sm">
                       <Badge variant={item.site_id ? 'primary' : 'default'}>
-                        {item.site_id ? sites.find(s => s.id === item.site_id)?.name || 'Site-specific' : 'Global'}
+                        {item.site_id ? sites.find(s => s.id === item.site_id)?.name || t('admin.siteSpecificLabel') : t('admin.globalLabel')}
                       </Badge>
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <Badge variant={item.status === 'active' ? 'success' : 'warning'}>
-                        {item.status}
+                        {t(`admin.${item.status}`)}
                       </Badge>
                       {item.item_type === 'packaged_product' && (
                         <span className="ml-2"><Badge variant="warning">{t('admin.packaged')}</Badge></span>
@@ -604,20 +606,20 @@ export default function MenuBuilderPage() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Link href={`/admin/menu-builder/${item.id}`}>
-                          <Button variant="ghost" size="sm" icon={<Eye className="h-4 w-4" />} title="View" />
+                          <Button variant="ghost" size="sm" icon={<Eye className="h-4 w-4" />} title={t('admin.view')} />
                         </Link>
                         <Link href={`/admin/menu-builder/${item.id}/edit`}>
-                          <Button variant="ghost" size="sm" icon={<Edit className="h-4 w-4" />} title="Edit" />
+                          <Button variant="ghost" size="sm" icon={<Edit className="h-4 w-4" />} title={t('admin.edit')} />
                         </Link>
                         <Button
                           variant="ghost"
                           size="sm"
                           icon={<Copy className="h-4 w-4" />}
                           onClick={() => handleDuplicate(item)}
-                          title="Duplicate"
+                          title={t('admin.duplicate')}
                         />
                         {canDeleteContent && (
-                          <Button variant="ghost" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => handleDelete(item.id)} title="Delete" />
+                          <Button variant="ghost" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => handleDelete(item.id)} title={t('admin.delete')} />
                         )}
                       </div>
                     </td>
