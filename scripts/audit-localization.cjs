@@ -139,6 +139,7 @@ function looksUserFacing(value) {
   const text = normalize(value)
   if (!text || !/[A-Za-z]/.test(text)) return false
   if (/^\{[A-Za-z][A-Za-z0-9_]*\}$/.test(text)) return false
+  if (/^(?:i|x|A\+*|DD\/MM\/YYYY|MM\/DD\/YYYY|\d+\s*×\s*\d+\s*px)$/i.test(text)) return false
   if (/^(https?:|\/|#|[a-z]+-[a-z-]+$)/i.test(text)) return false
   return true
 }
