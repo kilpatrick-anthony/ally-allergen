@@ -19,8 +19,17 @@ import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 
+const DATE_LOCALES = {
+  en: 'en-IE',
+  ga: 'ga-IE',
+  pt: 'pt-PT',
+  fr: 'fr-FR',
+  es: 'es-ES',
+  de: 'de-DE'
+} as const
+
 export default function AnalyticsPage() {
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
   type DateRange = { from?: Date; to?: Date }
 
   const [loading, setLoading] = useState(true)
@@ -74,10 +83,10 @@ export default function AnalyticsPage() {
   }, [])
 
   const presetConfig = {
-    week: { label: 'Week', days: 7 },
-    month: { label: 'Month', days: 30 },
-    quarter: { label: 'Quarter', days: 90 },
-    year: { label: 'Year', days: 365 }
+    week: { label: t('analyticsPortal.week'), days: 7 },
+    month: { label: t('analyticsPortal.month'), days: 30 },
+    quarter: { label: t('analyticsPortal.quarter'), days: 90 },
+    year: { label: t('analyticsPortal.year'), days: 365 }
   }
 
   const getPresetRange = (preset: keyof typeof presetConfig): DateRange => {
@@ -89,7 +98,7 @@ export default function AnalyticsPage() {
   }
 
   const formatDateLabel = (date: Date) =>
-    date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    date.toLocaleDateString(DATE_LOCALES[language] || DATE_LOCALES.en, { month: 'short', day: 'numeric', year: 'numeric' })
 
   const formatDateParam = (date: Date) => date.toISOString().slice(0, 10)
 
@@ -126,26 +135,26 @@ export default function AnalyticsPage() {
 
         if (!contentType.includes('application/json')) {
           const text = await response.text()
-          throw new Error(text || 'Unexpected response while loading analytics')
+          throw new Error(text || t('analyticsPortal.unableToLoad'))
         }
 
         const data = await response.json()
 
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to load analytics')
+          throw new Error(data.error || t('analyticsPortal.unableToLoad'))
         }
 
         setAnalyticsData(data)
       } catch (err: any) {
         console.error('Analytics load error:', err)
-        setError(err?.message || 'Failed to load analytics')
+        setError(err?.message || t('analyticsPortal.unableToLoad'))
       } finally {
         setLoading(false)
       }
     }
 
     loadAnalytics()
-  }, [rangePreset, customRange, siteId, refreshKey])
+  }, [rangePreset, customRange, siteId, refreshKey, t])
 
   const formatDelta = (value: number | null) => {
     if (value === null || Number.isNaN(value)) {
@@ -258,7 +267,7 @@ export default function AnalyticsPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
             <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
           </div>
-          <p className="text-gray-600 dark:text-gray-400">Loading analytics...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('analyticsPortal.loading')}</p>
         </div>
       </div>
     )
@@ -268,7 +277,7 @@ export default function AnalyticsPage() {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
         <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400">{error || 'Unable to load analytics.'}</p>
+          <p className="text-gray-600 dark:text-gray-400">{error || t('analyticsPortal.unableToLoad')}</p>
         </div>
       </div>
     )
@@ -294,7 +303,7 @@ export default function AnalyticsPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="primary" icon={Target}>
-              Real-time
+              {t('analyticsPortal.realTime')}
             </Badge>
             <Badge variant="default">
               {activeRangeLabel}
@@ -310,7 +319,7 @@ export default function AnalyticsPage() {
           {sites.length > 0 && (
             <div className="flex items-center gap-2 mb-1 lg:mb-0">
               <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400 shrink-0">
-                Store/Site
+                {t('analyticsPortal.storeSite')}
               </span>
               <select
                 value={siteId ?? ''}
@@ -325,7 +334,7 @@ export default function AnalyticsPage() {
                 }}
                 className="text-xs rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[#42b8ac]"
               >
-                <option value="">All Sites</option>
+                <option value="">{t('analyticsPortal.allSites')}</option>
                 {sites.map(s => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
@@ -335,7 +344,7 @@ export default function AnalyticsPage() {
           <div className="flex flex-col gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                Date Range
+                {t('analyticsPortal.dateRange')}
               </span>
               {(Object.keys(presetConfig) as Array<keyof typeof presetConfig>).map((preset) => (
                 <button
@@ -370,7 +379,7 @@ export default function AnalyticsPage() {
                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border-transparent'
                     }`}
                   >
-                    Date Range
+                    {t('analyticsPortal.dateRange')}
                   </button>
                 </Dialog.Trigger>
                 <Dialog.Portal>
@@ -378,16 +387,16 @@ export default function AnalyticsPage() {
                   <Dialog.Content className="fixed left-1/2 top-1/2 w-[min(92vw,760px)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-xl">
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <Dialog.Title className="text-lg font-semibold text-[#003842]">Select date range</Dialog.Title>
-                        <p className="text-sm text-gray-600">Choose a custom range for analytics.</p>
+                        <Dialog.Title className="text-lg font-semibold text-[#003842]">{t('analyticsPortal.selectDateRange')}</Dialog.Title>
+                        <p className="text-sm text-gray-600">{t('analyticsPortal.chooseCustomRange')}</p>
                       </div>
-                      <Dialog.Close className="rounded-full p-2 hover:bg-gray-100">X</Dialog.Close>
+                      <Dialog.Close aria-label={t('analyticsPortal.closeDialog')} className="rounded-full p-2 hover:bg-gray-100">X</Dialog.Close>
                     </div>
 
                     <div className="border border-gray-200 rounded-xl p-4">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <label className="text-sm text-gray-600">
-                          Start date
+                          {t('analyticsPortal.startDate')}
                           <input
                             type="date"
                             value={draftRange?.from ? formatDateParam(draftRange.from) : ''}
@@ -401,7 +410,7 @@ export default function AnalyticsPage() {
                           />
                         </label>
                         <label className="text-sm text-gray-600">
-                          End date
+                          {t('analyticsPortal.endDate')}
                           <input
                             type="date"
                             value={draftRange?.to ? formatDateParam(draftRange.to) : ''}
@@ -421,7 +430,7 @@ export default function AnalyticsPage() {
                       <div className="text-sm text-gray-600">
                         {draftRange?.from && draftRange?.to
                           ? `${formatDateLabel(draftRange.from)} - ${formatDateLabel(draftRange.to)}`
-                          : 'Select a start and end date'}
+                          : t('analyticsPortal.selectStartEnd')}
                       </div>
                       <div className="flex items-center gap-2">
                         <button
@@ -430,7 +439,7 @@ export default function AnalyticsPage() {
                             setDraftRange(getPresetRange(rangePreset))
                           }}
                         >
-                          Reset
+                          {t('analyticsPortal.reset')}
                         </button>
                         <button
                           className="px-4 py-2 text-sm font-semibold rounded-lg bg-[#42b8ac] text-white hover:bg-[#36948a]"
@@ -441,7 +450,7 @@ export default function AnalyticsPage() {
                             }
                           }}
                         >
-                          Apply Range
+                          {t('analyticsPortal.applyRange')}
                         </button>
                       </div>
                     </div>
@@ -467,7 +476,7 @@ export default function AnalyticsPage() {
                   icon={<Download className="h-4 w-4" />}
                   disabled={exporting}
                 >
-                  {exporting ? 'Exporting...' : t('admin.export')}
+                  {exporting ? t('analyticsPortal.exporting') : t('admin.export')}
                 </Button>
               </Dialog.Trigger>
               <Dialog.Portal>
@@ -475,10 +484,10 @@ export default function AnalyticsPage() {
                 <Dialog.Content className="fixed left-1/2 top-1/2 w-[min(92vw,400px)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-6 shadow-xl dark:bg-gray-800">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <Dialog.Title className="text-lg font-semibold text-[#003842] dark:text-white">Export Analytics</Dialog.Title>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">Choose export format</p>
+                      <Dialog.Title className="text-lg font-semibold text-[#003842] dark:text-white">{t('analyticsPortal.exportAnalytics')}</Dialog.Title>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{t('analyticsPortal.chooseExportFormat')}</p>
                     </div>
-                    <Dialog.Close className="rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-700">✕</Dialog.Close>
+                    <Dialog.Close aria-label={t('analyticsPortal.closeDialog')} className="rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-700">✕</Dialog.Close>
                   </div>
 
                   <div className="space-y-3">
@@ -487,16 +496,16 @@ export default function AnalyticsPage() {
                       disabled={exporting}
                       className="w-full p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-left transition-colors disabled:opacity-50"
                     >
-                      <div className="font-semibold text-gray-900 dark:text-white">JSON Format</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">Machine-readable format for integrations</div>
+                      <div className="font-semibold text-gray-900 dark:text-white">{t('analyticsPortal.jsonFormat')}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{t('analyticsPortal.jsonFormatDesc')}</div>
                     </button>
                     <button
                       onClick={() => handleExport('csv')}
                       disabled={exporting}
                       className="w-full p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-left transition-colors disabled:opacity-50"
                     >
-                      <div className="font-semibold text-gray-900 dark:text-white">CSV Format</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">Compatible with Excel and spreadsheet apps</div>
+                      <div className="font-semibold text-gray-900 dark:text-white">{t('analyticsPortal.csvFormat')}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{t('analyticsPortal.csvFormatDesc')}</div>
                     </button>
                   </div>
                 </Dialog.Content>
@@ -511,7 +520,7 @@ export default function AnalyticsPage() {
         <Card className="hover:shadow-lg transition-all hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-500 hover:to-blue-600 group h-full flex flex-col">
             <div className="flex items-center justify-between flex-1">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Report Downloads</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">{t('analyticsPortal.reportDownloads')}</p>
                 <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">
                   {analyticsData.overview.reportDownloads.toLocaleString()}
                 </p>
@@ -533,7 +542,7 @@ export default function AnalyticsPage() {
         <Card className="hover:shadow-lg transition-all hover:border-purple-500 hover:bg-gradient-to-br hover:from-purple-500 hover:to-purple-600 group h-full flex flex-col">
             <div className="flex items-center justify-between flex-1">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Kiosk Devices</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">{t('analyticsPortal.kioskDevices')}</p>
                 <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">
                   {(analyticsData.overview.pairedDevices ?? analyticsData.overview.kioskUsage).toLocaleString()}
                 </p>
@@ -544,7 +553,7 @@ export default function AnalyticsPage() {
             </div>
             <div className="mt-4 flex items-center">
               <div className="text-sm font-medium text-gray-500 group-hover:text-white transition-colors">
-                Total setup devices
+                {t('analyticsPortal.totalSetupDevices')}
               </div>
             </div>
           </Card>
@@ -552,7 +561,7 @@ export default function AnalyticsPage() {
         <Card className="hover:shadow-lg transition-all hover:border-amber-500 hover:bg-gradient-to-br hover:from-amber-500 hover:to-amber-600 group h-full flex flex-col">
             <div className="flex items-center justify-between flex-1">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Active Ingredients</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">{t('analyticsPortal.activeIngredients')}</p>
                 <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">
                   {analyticsData.overview.activeMenuIngredients.toLocaleString()}
                 </p>
@@ -574,7 +583,7 @@ export default function AnalyticsPage() {
         <Card className="hover:shadow-lg transition-all hover:border-emerald-500 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-emerald-600 group h-full flex flex-col">
             <div className="flex items-center justify-between flex-1">
               <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">Active Menu Items</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">{t('analyticsPortal.activeMenuItems')}</p>
                 <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">
                   {analyticsData.overview.activeMenuItems.toLocaleString()}
                 </p>
@@ -601,18 +610,18 @@ export default function AnalyticsPage() {
           <div className="p-6 border-b dark:border-gray-700">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">Most Searched Allergens</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-300">What customers are filtering for</p>
+                <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">{t('analyticsPortal.mostSearchedAllergens')}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{t('analyticsPortal.allergenFilterDesc')}</p>
               </div>
               <Badge variant="primary">
-                Top 6
+                {t('analyticsPortal.topSix')}
               </Badge>
             </div>
           </div>
           <div className="p-6">
             <div className="space-y-4">
               {analyticsData.topAllergens && analyticsData.topAllergens.length === 0 ? (
-                <div className="text-sm text-gray-500 dark:text-gray-400">No allergen search data yet.</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">{t('analyticsPortal.noAllergenData')}</div>
               ) : (
                 analyticsData.topAllergens?.map((item: any, index: number) => {
                   const { icon: AllergenIcon, color } = getAllergenIconForLabel(item.name)
@@ -624,7 +633,7 @@ export default function AnalyticsPage() {
                         </div>
                         <div>
                           <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">{item.searches?.toLocaleString() || 0} searches</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{item.searches?.toLocaleString() || 0} {t('analyticsPortal.searches')}</div>
                         </div>
                       </div>
                       <Badge
@@ -646,18 +655,18 @@ export default function AnalyticsPage() {
           <div className="p-6 border-b dark:border-gray-700">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">Most Used Dietary Filters</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Popular dietary preferences</p>
+                <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">{t('analyticsPortal.mostUsedDietaryFilters')}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{t('analyticsPortal.popularDietaryPreferences')}</p>
               </div>
               <Badge variant="primary">
-                Top 6
+                {t('analyticsPortal.topSix')}
               </Badge>
             </div>
           </div>
           <div className="p-6">
             <div className="space-y-4">
               {analyticsData.topDietary && analyticsData.topDietary.length === 0 ? (
-                <div className="text-sm text-gray-500 dark:text-gray-400">No dietary filter data yet.</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">{t('analyticsPortal.noDietaryData')}</div>
               ) : (
                 analyticsData.topDietary?.map((item: any, index: number) => {
                   const { icon: DietaryIcon, color } = getDietaryIconForLabel(item.name)
@@ -669,7 +678,7 @@ export default function AnalyticsPage() {
                         </div>
                         <div>
                           <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">{item.clicks?.toLocaleString() || 0} clicks</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">{item.clicks?.toLocaleString() || 0} {t('analyticsPortal.clicks')}</div>
                         </div>
                       </div>
                       <Badge
@@ -694,18 +703,18 @@ export default function AnalyticsPage() {
           <div className="p-6 border-b dark:border-gray-700">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">Engagement Trends</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Daily views and searches</p>
+                <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">{t('analyticsPortal.engagementTrends')}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{t('analyticsPortal.dailyViewsSearches')}</p>
               </div>
               <Badge variant="primary">
-                Weekly
+                {t('analyticsPortal.weekly')}
               </Badge>
             </div>
           </div>
           <div className="p-6">
             <div className="space-y-4">
               {analyticsData.trends.length === 0 ? (
-                <div className="text-sm text-gray-500 dark:text-gray-400">No engagement data yet.</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">{t('analyticsPortal.noEngagementData')}</div>
               ) : (() => {
                 // Scale bars against the highest value actually in this range,
                 // rather than a fixed denominator — otherwise small businesses
@@ -731,7 +740,7 @@ export default function AnalyticsPage() {
                       </div>
                     </div>
                     <div className="text-sm text-gray-600 dark:text-gray-400 w-24 text-right">
-                      {day.views.toLocaleString()} views
+                      {day.views.toLocaleString()} {t('analyticsPortal.views')}
                     </div>
                   </div>
                 ))
@@ -740,11 +749,11 @@ export default function AnalyticsPage() {
             <div className="mt-6 flex items-center gap-4 text-sm">
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-gradient-to-r from-[#42b8ac] to-[#36948a] rounded mr-2"></div>
-                <span className="text-gray-600 dark:text-gray-300">Menu Views</span>
+                <span className="text-gray-600 dark:text-gray-300">{t('analyticsPortal.menuViews')}</span>
               </div>
               <div className="flex items-center">
                 <div className="w-3 h-3 bg-gradient-to-r from-[#003842] to-[#001f26] rounded mr-2"></div>
-                <span className="text-gray-600 dark:text-gray-300">Ingredient Searches</span>
+                <span className="text-gray-600 dark:text-gray-300">{t('analyticsPortal.ingredientSearches')}</span>
               </div>
             </div>
           </div>
@@ -755,18 +764,18 @@ export default function AnalyticsPage() {
           <div className="p-6 border-b dark:border-gray-700">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">Top Performing</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Most searched ingredients</p>
+                <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">{t('analyticsPortal.topPerforming')}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{t('analyticsPortal.mostSearchedIngredients')}</p>
               </div>
               <Badge variant="primary">
-                This Month
+                {t('analyticsPortal.thisMonth')}
               </Badge>
             </div>
           </div>
           <div className="p-6">
             <div className="space-y-4">
               {analyticsData.topIngredients.length === 0 ? (
-                <div className="text-sm text-gray-500 dark:text-gray-400">No ingredient activity yet.</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">{t('analyticsPortal.noIngredientActivity')}</div>
               ) : (
                 analyticsData.topIngredients.map((item, index) => (
                   <div key={index} className="flex items-center justify-between p-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
@@ -776,7 +785,7 @@ export default function AnalyticsPage() {
                       </div>
                       <div>
                         <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">{item.searches.toLocaleString()} searches</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{item.searches.toLocaleString()} {t('analyticsPortal.searches')}</div>
                       </div>
                     </div>
                     <Badge
@@ -803,13 +812,13 @@ export default function AnalyticsPage() {
                 <Building className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-[#003842] dark:text-[#42b8ac]">Kiosk Performance</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Site usage statistics</p>
+                <h3 className="font-semibold text-[#003842] dark:text-[#42b8ac]">{t('analyticsPortal.kioskPerformance')}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{t('analyticsPortal.siteUsageStats')}</p>
               </div>
             </div>
             <div className="space-y-4">
               {analyticsData.siteBreakdown.length === 0 ? (
-                <div className="text-sm text-gray-500 dark:text-gray-400">No site activity data yet.</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">{t('analyticsPortal.noSiteActivity')}</div>
               ) : (
                 analyticsData.siteBreakdown.map((site) => (
                   <div key={site.id} className="rounded-lg border border-gray-100 dark:border-gray-700 p-3">
@@ -817,12 +826,12 @@ export default function AnalyticsPage() {
                       <div className="min-w-0">
                         <div className="font-medium text-gray-900 dark:text-white truncate">{site.name}</div>
                         <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {site.devices} device{site.devices !== 1 ? 's' : ''}
+                          {site.devices} {t(site.devices === 1 ? 'analyticsPortal.device' : 'analyticsPortal.devices')}
                         </div>
                       </div>
                       <div className="text-right text-sm text-gray-600 dark:text-gray-300">
-                        <div>{site.views.toLocaleString()} views</div>
-                        <div>{site.searches.toLocaleString()} searches</div>
+                        <div>{site.views.toLocaleString()} {t('analyticsPortal.views')}</div>
+                        <div>{site.searches.toLocaleString()} {t('analyticsPortal.searches')}</div>
                       </div>
                     </div>
                   </div>
@@ -840,14 +849,14 @@ export default function AnalyticsPage() {
                 <Download className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="font-semibold text-[#003842] dark:text-[#42b8ac]">Report Downloads</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300">Allergen guide distribution</p>
+                <h3 className="font-semibold text-[#003842] dark:text-[#42b8ac]">{t('analyticsPortal.reportDownloads')}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{t('analyticsPortal.allergenGuideDistribution')}</p>
               </div>
             </div>
             <div className="space-y-6">
               <div>
                 <div className="flex justify-between mb-1">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">This Month</span>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">{t('analyticsPortal.thisMonth')}</span>
                   <span className="text-sm font-medium text-[#003842] dark:text-white">
                     {analyticsData.overview.reportDownloads}
                   </span>
@@ -861,7 +870,7 @@ export default function AnalyticsPage() {
                   ></div>
                 </div>
               </div>
-              <div className="text-sm text-gray-500 dark:text-gray-400">No report downloads yet.</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">{t('analyticsPortal.noReportDownloads')}</div>
             </div>
           </div>
         </Card>

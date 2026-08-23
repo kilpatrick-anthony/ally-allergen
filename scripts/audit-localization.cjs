@@ -74,6 +74,14 @@ function loadTypeScriptExport(filename, exportName) {
         ),
       }
     }
+    if (request === '@/lib/analytics-portal-translations') {
+      return {
+        analyticsPortalTranslations: loadTypeScriptExport(
+          path.join(root, 'lib/analytics-portal-translations.ts'),
+          'analyticsPortalTranslations',
+        ),
+      }
+    }
     if (request === '@/lib/recent-ui-translations') {
       return {
         recentUiTranslations: loadTypeScriptExport(
