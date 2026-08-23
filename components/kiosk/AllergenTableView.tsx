@@ -6,6 +6,7 @@ import { Check, AlertCircle, AlertTriangle, Info } from 'lucide-react'
 import { ALLERGENS, getAllergensForItem, type AllergenInfo } from '@/lib/allergens'
 import { AllergenWarnings, getAllergenLevelText, getAllergenSeverity, formatSubtypes, GLUTEN_TYPES, TREE_NUT_TYPES, type GlutenType, type TreeNutType, type AllergenLevel } from '@/types/allergen'
 import type { MenuItem } from '@/lib/hooks/useOfflineKioskData'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 interface AllergenTableViewProps {
   items: MenuItem[]
@@ -31,6 +32,16 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
   groupByCategory = true,
   stickyTopOffset = 0,
 }) => {
+  const { t } = useTranslation()
+  const allergenName = (id: string, fallback: string) => t(`allergenNames.${id}`) === `allergenNames.${id}` ? fallback : t(`allergenNames.${id}`)
+  const subtypeName = (key: string, fallback: string) => t(`allergenSubtypes.${key}`) === `allergenSubtypes.${key}` ? fallback : t(`allergenSubtypes.${key}`)
+  const levelLabel = (level: string) => ({
+    contains: t('containsShort'),
+    may_contain: t('mayContainShort'),
+    not_suitable: t('notSuitableShort'),
+    traces: t('tracesShort'),
+    cross_contamination: t('crossContaminationShort'),
+  }[level] || level.replace(/_/g, ' '))
   // Expand ingredients with multiple suppliers into separate rows
   const expandedItems = items.flatMap(item => {
     const isIngredient = (item as any).combined_allergens && Array.isArray((item as any).combined_allergens)
@@ -78,7 +89,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
       if (level === 'none') return null
 
       const severity = getAllergenSeverity(level as any)
-      const displayText = level === 'contains' ? 'Yes' : level === 'may_contain' ? 'May' : level === 'cross_contamination' ? 'Trace' : level.replace(/_/g, ' ')
+      const displayText = levelLabel(level)
       
       return {
         level,
@@ -93,7 +104,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
       return {
         level: 'contains',
         severity: 'high',
-        displayText: 'Yes',
+        displayText: t('containsShort'),
         hasSubtypes: false
       }
     }
@@ -125,7 +136,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
       if (level === 'none') return null
 
       const severity = getAllergenSeverity(level)
-      const displayText = level === 'contains' ? 'Yes' : level.replace(/_/g, ' ')
+      const displayText = levelLabel(level)
       
       return {
         level,
@@ -139,13 +150,13 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
       return {
         level: 'contains',
         severity: 'high',
-        displayText: 'Yes'
+        displayText: t('containsShort')
       }
     } else if (!isGluten && (item as any).contains_nuts) {
       return {
         level: 'contains',
         severity: 'high',
-        displayText: 'Yes'
+        displayText: t('containsShort')
       }
     }
     
@@ -154,7 +165,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
 
   const normalizeCategory = (category?: string | null) => {
     const value = (category || '').trim()
-    return value.length > 0 ? value : 'uncategorized'
+    return value.length > 0 ? value : t('uncategorized')
   }
 
   const getCategoryLabel = (category?: string | null) => {
@@ -179,7 +190,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
   })
 
   const groupedItems = sortedItems.reduce<Record<string, typeof sortedItems>>((acc, item) => {
-    const key = groupByCategory ? getCategoryLabel((item as any).category) : 'All Items'
+    const key = groupByCategory ? getCategoryLabel((item as any).category) : t('allItems')
     if (!acc[key]) acc[key] = []
     acc[key].push(item)
     return acc
@@ -222,45 +233,45 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
 
   const Legend = () => (
     <div className={`bg-gray-50 rounded-lg border border-gray-200 ${compactLegend ? 'p-2.5' : 'p-4'}`}>
-      <h4 className={`font-semibold text-gray-900 ${compactLegend ? 'text-xs mb-2' : 'text-sm mb-3'}`}>Legend:</h4>
+      <h4 className={`font-semibold text-gray-900 ${compactLegend ? 'text-xs mb-2' : 'text-sm mb-3'}`}>{t('legend')}:</h4>
       <div className={compactLegend ? 'flex items-center gap-3 overflow-x-auto whitespace-nowrap text-[11px]' : 'grid grid-cols-2 md:grid-cols-3 gap-3 text-xs'}>
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 bg-red-200 rounded flex items-center justify-center">
             <Check className="h-4 w-4 text-red-800" />
           </div>
-          <span className="text-gray-700">Contains</span>
+          <span className="text-gray-700">{t('contains')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 bg-orange-200 rounded flex items-center justify-center">
             <AlertCircle className="h-4 w-4 text-orange-800" />
           </div>
-          <span className="text-gray-700">May Contain</span>
+          <span className="text-gray-700">{t('mayContain')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 bg-violet-200 rounded flex items-center justify-center">
             <AlertTriangle className="h-4 w-4 text-violet-800" />
           </div>
-          <span className="text-gray-700">Not Suitable</span>
+          <span className="text-gray-700">{t('notSuitable')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 bg-cyan-200 rounded flex items-center justify-center">
             <Info className="h-4 w-4 text-cyan-800" />
           </div>
-          <span className="text-gray-700">Traces</span>
+          <span className="text-gray-700">{t('tracesLabel')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 bg-amber-200 rounded flex items-center justify-center">
             <AlertTriangle className="h-4 w-4 text-amber-800" />
           </div>
-          <span className="text-gray-700">Cross Contamination</span>
+          <span className="text-gray-700">{t('crossContaminationLabel')}</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-gray-300 text-xl">—</span>
-          <span className="text-gray-700">Not present</span>
+          <span className="text-gray-700">{t('notPresent')}</span>
         </div>
       </div>
       <p className={`${compactLegend ? 'mt-2 text-[11px]' : 'mt-3 text-xs'} text-gray-600 italic`}>
-        Note: For items with specific sub-types (e.g., wheat, almonds), the cell will show which specific allergen is present.
+        {t('allergenSubtypeNote')}
       </p>
     </div>
   )
@@ -292,7 +303,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
         <thead className="sticky z-50" style={stickyTopStyle}>
           <tr className="bg-[#003842]">
             <th className="text-left p-2 text-white font-semibold border border-gray-300 sticky left-0 bg-[#003842] z-40 min-w-[120px] shadow-[0_2px_0_0_rgba(0,0,0,0.08)]" style={stickyTopStyle}>
-              Item Name
+              {t('itemName')}
             </th>
             {ALLERGENS.map(allergen => {
               const Icon = allergen.icon
@@ -304,11 +315,11 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                     <th 
                       className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[60px] sticky bg-[#003842] z-30 shadow-[0_2px_0_0_rgba(0,0,0,0.08)]"
                       style={stickyTopStyle}
-                      title={allergen.name}
+                      title={allergenName(allergen.id, allergen.name)}
                     >
                       <div className="flex flex-col items-center gap-0.5">
                         {React.createElement(Icon as any, { className: 'h-3 w-3' })}
-                        {!compact && <span className="text-[9px] leading-tight">{allergen.shortName || allergen.name}</span>}
+                        {!compact && <span className="text-[9px] leading-tight">{allergenName(allergen.id, allergen.shortName || allergen.name)}</span>}
                       </div>
                     </th>
                     {/* Gluten subtype columns */}
@@ -317,11 +328,11 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                         key={`${allergen.id}-${glutenType.key}`}
                         className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[50px] bg-[#f59e0b] bg-opacity-80 sticky z-30 shadow-[0_2px_0_0_rgba(0,0,0,0.08)]"
                         style={stickyTopStyle}
-                        title={glutenType.name}
+                        title={subtypeName(glutenType.key, glutenType.name)}
                       >
                         <div className="flex flex-col items-center gap-0.5">
                           {React.createElement(Icon as any, { className: 'h-2.5 w-2.5' })}
-                          <span className="text-[8px] leading-tight">{glutenType.name}</span>
+                          <span className="text-[8px] leading-tight">{subtypeName(glutenType.key, glutenType.name)}</span>
                         </div>
                       </th>
                     ))}
@@ -336,11 +347,11 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                     <th 
                       className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[60px] sticky bg-[#003842] z-30 shadow-[0_2px_0_0_rgba(0,0,0,0.08)]"
                       style={stickyTopStyle}
-                      title={allergen.name}
+                      title={allergenName(allergen.id, allergen.name)}
                     >
                       <div className="flex flex-col items-center gap-0.5">
                         {React.createElement(Icon as any, { className: 'h-3 w-3' })}
-                        {!compact && <span className="text-[9px] leading-tight">{allergen.shortName || allergen.name}</span>}
+                        {!compact && <span className="text-[9px] leading-tight">{allergenName(allergen.id, allergen.shortName || allergen.name)}</span>}
                       </div>
                     </th>
                     {/* Tree nut subtype columns */}
@@ -349,11 +360,11 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                         key={`${allergen.id}-${nutType.key}`}
                         className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[50px] bg-[#b45309] bg-opacity-80 sticky z-30 shadow-[0_2px_0_0_rgba(0,0,0,0.08)]"
                         style={stickyTopStyle}
-                        title={nutType.name}
+                        title={subtypeName(nutType.key, nutType.name)}
                       >
                         <div className="flex flex-col items-center gap-0.5">
                           {React.createElement(Icon as any, { className: 'h-2.5 w-2.5' })}
-                          <span className="text-[8px] leading-tight">{nutType.name}</span>
+                          <span className="text-[8px] leading-tight">{subtypeName(nutType.key, nutType.name)}</span>
                         </div>
                       </th>
                     ))}
@@ -367,11 +378,11 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                   key={allergen.id} 
                   className="text-center p-1 text-white text-xs font-semibold border border-gray-300 min-w-[60px] sticky bg-[#003842] z-30 shadow-[0_2px_0_0_rgba(0,0,0,0.08)]"
                   style={stickyTopStyle}
-                  title={allergen.name}
+                  title={allergenName(allergen.id, allergen.name)}
                 >
                   <div className="flex flex-col items-center gap-0.5">
                     {React.createElement(Icon as any, { className: 'h-3 w-3' })}
-                    {!compact && <span className="text-[9px] leading-tight">{allergen.shortName || allergen.name}</span>}
+                    {!compact && <span className="text-[9px] leading-tight">{allergenName(allergen.id, allergen.shortName || allergen.name)}</span>}
                   </div>
                 </th>
               )
@@ -403,7 +414,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                         )}
                         {!compact && (item as any).supplier && (
                           <div className="text-xs text-blue-600 mt-0.5">
-                            <span className="font-medium">Supplier:</span> {(item as any).supplier}
+                            <span className="font-medium">{t('supplierLabel')}:</span> {(item as any).supplier}
                           </div>
                         )}
                       </div>

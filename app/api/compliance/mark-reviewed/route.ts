@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     const now = new Date().toISOString()
 
     // Update the item with current timestamp
-    const { error: updateError } = await supabase
+    const { data: updatedItem, error: updateError } = await supabase
       .from(tableName)
       .update({
         last_reviewed_at: now,
@@ -57,25 +57,40 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', itemId)
       .eq('business_id', userBusiness.business_id)
+      .select('id')
+      .maybeSingle()
 
     if (updateError) {
       console.error('Error updating review date:', updateError)
       return NextResponse.json({ error: 'Failed to mark as reviewed' }, { status: 500 })
     }
 
-    // Log the action in compliance_audit
-    await supabase
+    if (!updatedItem) {
+      return NextResponse.json({ error: 'Item not found' }, { status: 404 })
+    }
+
+    // Record the review action without claiming that all other compliance
+    // requirements (such as datasheets or supplier details) have passed.
+    const { error: auditError } = await supabase
       .from('compliance_audit')
       .insert({
         business_id: userBusiness.business_id,
         item_id: itemId,
         item_type: itemType,
-        new_compliance: 'compliant',
-        reason: 'Manually marked as reviewed',
+        new_compliance: 'reviewed',
+        reason: 'Review date manually renewed; remaining compliance requirements are evaluated separately',
         changed_by: userId
       })
 
-    return NextResponse.json({ success: true, message: 'Item marked as reviewed' })
+    if (auditError) {
+      console.error('Review date updated but compliance audit logging failed:', auditError)
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Item marked as reviewed',
+      auditLogged: !auditError
+    })
 
   } catch (error: any) {
     console.error('Unexpected error:', error)

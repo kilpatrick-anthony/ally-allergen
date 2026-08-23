@@ -12,6 +12,7 @@ import SpeechController from '@/components/SpeechController'
 import { trackAdminPageVisit } from '@/lib/hooks/useFrequentPages'
 import { FsaiNewsTicker } from '@/components/admin/FsaiNewsTicker'
 import { JenCoach } from '@/components/admin/JenCoach'
+import PortalLocalizationBridge from '@/components/shared/PortalLocalizationBridge'
 
 interface AdminLayoutProps {
   children: ReactNode
@@ -99,6 +100,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           setBusinessId(biz)
           if (biz && typeof window !== 'undefined') {
             sessionStorage.setItem('ally_biz', biz)
+            const businessResponse = await fetch(`/api/business/${biz}`)
+            if (businessResponse.ok) {
+              const business = await businessResponse.json()
+              const savedLanguage = business?.settings?.defaultLanguage || 'en'
+              if (['en', 'ga', 'pt', 'fr', 'es', 'de'].includes(savedLanguage)) {
+                localStorage.setItem('defaultLanguage', savedLanguage)
+                window.dispatchEvent(new CustomEvent('languageChange', { detail: savedLanguage }))
+              }
+            }
           }
         }
       } catch (error) {
@@ -157,9 +167,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   }, [handleLogout])
 
   return (
-    <ProtectedRoute allowedRoles={['owner', 'manager', 'staff']}>
-      <SpeechController />
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900" data-context="admin">
+    <>
+      <PortalLocalizationBridge />
+      <div data-context="admin">
+        <ProtectedRoute allowedRoles={['owner', 'manager', 'staff']}>
+          <SpeechController />
+          <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
         {/* Mobile header */}
         <div className="lg:hidden fixed top-0 left-0 right-0 z-30 bg-[#003842] h-14 flex items-center px-4 shadow-md">
           {isSidebarOpen ? (
@@ -275,8 +288,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           {/* Jen — compliance coach floating widget */}
           <JenCoach />
         </div>
+          </div>
+        </ProtectedRoute>
       </div>
-    </ProtectedRoute>
+    </>
   )
 }
 

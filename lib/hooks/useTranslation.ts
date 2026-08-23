@@ -1,28 +1,37 @@
-import { useState, useEffect } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import { translations, LanguageCode } from '@/lib/translations'
+
+const SUPPORTED_LANGUAGES: LanguageCode[] = ['en', 'ga', 'pt', 'fr', 'es', 'de']
+
+function readSavedLanguage(): LanguageCode {
+  if (typeof window === 'undefined') return 'en'
+  const saved = localStorage.getItem('defaultLanguage') as LanguageCode | null
+  return saved && SUPPORTED_LANGUAGES.includes(saved) ? saved : 'en'
+}
 
 export function useTranslation() {
   // Get initial language from localStorage, default to 'en'
-  const [language, setLanguage] = useState<LanguageCode>(
-    (typeof window !== 'undefined'
-      ? localStorage.getItem('defaultLanguage') as LanguageCode || 'en'
-      : 'en') as LanguageCode
-  )
+  const [language, setLanguage] = useState<LanguageCode>(readSavedLanguage)
 
   // Listen for language change events
   useEffect(() => {
     const handleLanguageChange = (event: CustomEvent<LanguageCode>) => {
-      setLanguage(event.detail)
+      if (SUPPORTED_LANGUAGES.includes(event.detail)) setLanguage(event.detail)
+    }
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'defaultLanguage') setLanguage(readSavedLanguage())
     }
 
     window.addEventListener('languageChange', handleLanguageChange as EventListener)
+    window.addEventListener('storage', handleStorageChange)
 
     return () => {
       window.removeEventListener('languageChange', handleLanguageChange as EventListener)
+      window.removeEventListener('storage', handleStorageChange)
     }
   }, [])
 
-  const t = (key: string): string => {
+  const t = useCallback((key: string, replacements?: Record<string, string | number>): string => {
     const keys = key.split('.')
     let value: any = translations[language]
 
@@ -36,11 +45,17 @@ export function useTranslation() {
       for (const k of keys) {
         fallbackValue = fallbackValue?.[k]
       }
-      return fallbackValue || key
+      const fallbackText = fallbackValue || key
+      return replacements
+        ? Object.entries(replacements).reduce((text, [name, replacement]) => text.replaceAll(`{${name}}`, String(replacement)), fallbackText)
+        : fallbackText
     }
 
-    return value || key
-  }
+    const text = value || key
+    return replacements
+      ? Object.entries(replacements).reduce((result, [name, replacement]) => result.replaceAll(`{${name}}`, String(replacement)), text)
+      : text
+  }, [language])
 
   return { t, language }
 }

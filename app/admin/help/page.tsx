@@ -125,7 +125,7 @@ export default function HelpPage() {
       id: 3,
       category: 'ingredients',
       title: 'Adding ingredients',
-      description: 'Create ingredient records with allergen details and datasheets in a few simple steps.',
+      description: 'Create ingredients, supplier variants, allergen profiles, dietary attributes and supporting datasheets.',
       icon: Package,
       color: 'green'
     },
@@ -141,17 +141,25 @@ export default function HelpPage() {
       id: 5,
       category: 'ingredients',
       title: 'Supplier management',
-      description: 'Keep track of suppliers for each ingredient and manage their details clearly.',
+      description: 'Manage supplier-specific versions of an ingredient and calculate the safest combined profile.',
       icon: Users,
       color: 'indigo'
     },
     {
       id: 6,
       category: 'menu',
-      title: 'Creating menu items',
-      description: 'Build menu items by combining ingredients with allergen calculations that happen automatically.',
+      title: 'Creating prepared menu items',
+      description: 'Build prepared items from ingredients with automatic allergen and dietary calculations.',
       icon: ChefHat,
       color: 'pink'
+    },
+    {
+      id: 17,
+      category: 'menu',
+      title: 'Adding bought-in packaged products',
+      description: 'Record manufacturer labels, allergens, dietary claims, suppliers and evidence for sealed products sold directly.',
+      icon: Package,
+      color: 'orange'
     },
     {
       id: 7,
@@ -337,35 +345,52 @@ export default function HelpPage() {
       3: [
         'Navigate to Ingredients → New Ingredient.',
         'Enter the ingredient name and select a category.',
-        'Set allergen warning levels for each of the 14 EU-mandated allergens.',
-        'For Cereals/Gluten and Tree Nuts, specify sub-types where applicable.',
-        'Add relevant dietary certifications (Vegan, Halal, Gluten-Free, etc.).',
-        'Optionally upload a product datasheet or supplier spec sheet.',
-        'Link one or more suppliers and save — the ingredient is now available in Menu Builder.',
+        'Add a supplier variant when the ingredient is bought from a particular supplier. Each variant can have its own allergen warnings and dietary attributes.',
+        'Set warning levels for each of the 14 EU-mandated allergens. For Cereals/Gluten and Tree Nuts, specify sub-types where applicable.',
+        'Upload the supplier product datasheet or specification as evidence and record its review information.',
+        'If the same ingredient comes from several suppliers, add each supplier as a separate variant rather than creating duplicate ingredient records.',
+        'The ingredient summary shows the safest combined result: the most severe allergen warning across every supplier variant.',
+        'Choose a review frequency. New ingredients default to an annual review, which can be changed where a shorter cycle is appropriate.',
+        'Save the ingredient to make it available in Menu Builder.',
       ],
       4: [
         'Datasheets are supplier-provided PDF spec sheets confirming allergen and ingredient information.',
-        'Upload a datasheet on any ingredient record under the Datasheets tab.',
-        'Set a review date when uploading — you will be reminded before it expires.',
+        'Upload datasheets to an ingredient or directly to a bought-in packaged menu item.',
+        'Include the supplier, version, notes and next review date where available.',
         'View and manage all datasheets centrally via Downloads → All Datasheets.',
         'Datasheets approaching or past their review date are flagged in your Notifications panel.',
-        'Keeping datasheets current is essential for your allergen compliance audit trail.',
+        'Removing or replacing a document from the item editor updates the evidence attached to that record.',
+        'Keeping the current manufacturer or supplier evidence is essential for your allergen compliance audit trail.',
       ],
       5: [
-        'Each ingredient can have one or more linked suppliers.',
-        'Add a supplier on any ingredient record under the Suppliers tab.',
-        'Record the supplier name, contact email, phone number, and any reference codes.',
-        'Multiple suppliers allow you to track alternative sourcing options.',
-        'Supplier information is included in compliance exports and audit reports.',
+        'Create supplier records centrally so they can be reused across ingredients and packaged products.',
+        'For an ingredient, create one supplier variant for each source or formulation you may receive.',
+        'Record allergen warnings and dietary attributes against each supplier variant, because formulations can differ between suppliers.',
+        'AllyJen calculates the ingredient’s displayed allergen profile using the highest warning level found across all supplier variants.',
+        'A dietary attribute is carried forward only when it is supported across the applicable ingredient profiles; do not assume one supplier’s claim applies to another.',
+        'When a supplier changes a formula, update its variant and upload the current specification rather than overwriting the history with unsupported information.',
       ],
       6: [
         'Navigate to Menu Builder → New Item.',
-        'Name your menu item and choose its category.',
+        'Choose Made or assembled by us, then name the item and choose its category and site scope.',
         'Search for and add ingredients from your ingredient library.',
-        'AllyJen automatically calculates the combined allergen profile from all added ingredients.',
-        'Review the auto-calculated allergens — you can override any level if the finished dish differs.',
-        'Add dietary certifications that apply to the final prepared dish.',
+        'At least one ingredient should be linked so the item has a traceable recipe-based safety profile.',
+        'AllyJen automatically applies the highest allergen warning found across all selected ingredients. Edit the underlying ingredient or supplier variant if that source information changes.',
+        'Dietary attributes use a strict intersection: a claim is carried to the menu item only when every selected ingredient supports it.',
+        'Choose the item’s review frequency. The default is annual, but you can set a shorter interval.',
         'Save — the item is immediately live and displayed on paired kiosks.',
+      ],
+      17: [
+        'Use this option only for a product bought in sealed and sold directly to the customer. Food packed or assembled by your own business should use the prepared-item workflow.',
+        'Navigate to Menu Builder → New Item and choose Bought-in packaged product under How is this item supplied?',
+        'Select the supplier and record the manufacturer or brand, product or SKU code, and barcode where available.',
+        'Transcribe the full ingredient declaration from the current manufacturer label or specification.',
+        'Set the allergen warnings and dietary claims directly from that evidence. These values are not calculated from AllyJen ingredients because packaged products do not have recipe links.',
+        'Use Scan label to help capture the product name, description and allergens, then review the result carefully against the physical pack.',
+        'Upload the current manufacturer datasheet, specification or clear label evidence directly to the menu item.',
+        'Tick Label details checked only after comparing the saved details with the current label or specification.',
+        'Packaged-product compliance requires label evidence, an ingredient declaration and label verification. Linking a supplier is also strongly recommended.',
+        'If the manufacturer reformulates or relabels the product, update the record, replace its evidence and mark it reviewed again.',
       ],
       7: [
         'Contains — The allergen is a deliberate, listed ingredient in the recipe.',
@@ -382,7 +407,8 @@ export default function HelpPage() {
         'Dairy-Free — Contains no milk or milk-derived ingredients.',
         'Halal — Prepared in accordance with Islamic dietary guidelines.',
         'Kosher — Prepared in accordance with Jewish dietary guidelines.',
-        'Certifications can be applied at ingredient level and/or menu item level. Menu item certifications take precedence when displaying to customers.',
+        'For prepared items, a dietary claim is displayed only when every selected ingredient supports it.',
+        'For bought-in packaged products, record only the claims supported by the current manufacturer label or specification.',
       ],
       9: [
         'Navigate to Sites & Locations → Add Site.',
@@ -408,10 +434,12 @@ export default function HelpPage() {
         'Tip: Generate an allergen matrix from the Reports section to print and display in-venue for staff and customers.',
       ],
       12: [
-        'When uploading a datasheet, set a review date (typically annual or when a formulation change is expected).',
+        'Ingredients and menu items default to an annual review frequency. Choose a shorter interval when the product, supplier or business process requires it.',
+        'When uploading a datasheet, record its next review date where one is known.',
         'AllyJen flags datasheets approaching their review date in your Notifications panel.',
         'Click Review on a flagged datasheet to confirm it is still current, or upload a replacement document.',
         'Reviewed datasheets reset their review countdown from the date of review.',
+        'Prepared menu-item compliance follows its linked ingredients. Bought-in packaged products are checked against their own label evidence and verification.',
         'Maintaining up-to-date datasheets provides a clear, dated audit trail for compliance inspections.',
       ],
       13: [
@@ -422,7 +450,7 @@ export default function HelpPage() {
         'Printed allergen matrices are a practical compliance tool to display for staff and customers in-venue.',
       ],
       14: [
-        'Go to Downloads → All Datasheets for a central view of every uploaded spec sheet across all ingredients.',
+        'Go to Downloads → All Datasheets for a central view of uploaded specifications across ingredients and menu items.',
         'Filter by status: Current, Due for Review, Overdue, or Missing.',
         'Click any datasheet entry to open or download the original PDF.',
         'Use the bulk export option to download all datasheets as a ZIP file — useful for audits or off-site review.',
@@ -528,9 +556,97 @@ export default function HelpPage() {
       13: ['Navigieren Sie zu Downloads & Berichte.','Wählen Sie aus: Allergenmatrix (alle Menüpunkte vs. alle Allergene), Vollständiger Zutatenbericht, oder Compliance-Zusammenfassung.','Wenden Sie Filter nach Standort, Kategorie oder Datumsbereich an, um den Berichtsumfang einzugrenzen.','Laden Sie Berichte als PDF zum Drucken oder als CSV zur Tabellenkalkulationsnutzung herunter.','Gedruckte Allergenmatrizen sind ein praktisches Compliance-Werkzeug zur Anzeige für Personal und Kunden im Betrieb.'],
       14: ['Gehen Sie zu Downloads → Alle Datenblätter für eine zentrale Übersicht aller hochgeladenen Spezifikationsblätter über alle Zutaten hinweg.','Filtern Sie nach Status: Aktuell, Zur Überprüfung fällig, Überfällig, oder Fehlend.','Klicken Sie auf einen beliebigen Datenblatteintrag, um das Original-PDF zu öffnen oder herunterzuladen.','Verwenden Sie die Massenexport-Option, um alle Datenblätter als ZIP-Datei herunterzuladen — nützlich für Audits oder externe Überprüfungen.','Fehlende Datenblätter (Zutaten ohne hochgeladenes Spezifikationsblatt) werden hervorgehoben, damit Sie mit den Lieferanten nachfassen können.'],      15: ['Wählen Sie unter Standorte & Filialen einen Standort aus und klicken Sie auf Bearbeiten, dann scrollen Sie zum Abschnitt Kiosk-Öffnungszeiten.','Aktivieren Sie Öffnungszeiten aktivieren, um den Zeitplan zu aktivieren — wenn deaktiviert, läuft der Kiosk 24/7.','Legen Sie für jeden Wochentag eine Öffnungszeit, eine Schließzeit fest, oder setzen Sie ein Häkchen bei Den ganzen Tag geschlossen, wenn der Betrieb an diesem Tag geschlossen ist.','Außerhalb der geplanten Zeiten zeigt der Kiosk einen Geschlossen-Bildschirm mit der nächsten Öffnungszeit.','Mitarbeiter können den Schlafbildschirm umgehen, indem sie ihn 5 Mal schnell antippen — dies entsperrt den Kiosk für 30 Minuten.','Speichern Sie Ihre Änderungen — der Zeitplan tritt sofort auf allen gekoppelten Kiosken für diesen Standort in Kraft.'],    },
   }
-  const topicDetails = {
-    ...topicDetailsByLang['en'],
+  const revisedTopicCards: Record<string, Record<number, { title: string; description: string }>> = {
+    ga: {
+      3: { title: 'Comhábhair a chur leis', description: 'Cruthaigh comhábhair, leaganacha soláthraí, próifílí ailléirginí agus bileoga sonraí.' },
+      5: { title: 'Bainistíocht soláthraithe', description: 'Bainistigh leaganacha comhábhair de réir soláthraí agus an phróifíl chomhcheangailte is sábháilte.' },
+      6: { title: 'Míreanna ullmhaithe a chruthú', description: 'Cruthaigh míreanna ó chomhábhair le ríomh uathoibríoch ailléirginí agus tréithe aiste bia.' },
+      17: { title: 'Táirgí pacáistithe ceannaithe isteach', description: 'Taifead lipéid, ailléirginí, maímh chothaithe, soláthraithe agus fianaise do tháirgí séalaithe.' },
+    },
+    pt: {
+      3: { title: 'Adicionar ingredientes', description: 'Crie ingredientes, variantes por fornecedor, perfis de alergénios e fichas técnicas.' },
+      5: { title: 'Gestão de fornecedores', description: 'Gira versões do ingrediente por fornecedor e o perfil combinado mais seguro.' },
+      6: { title: 'Criar itens preparados', description: 'Crie itens a partir de ingredientes com cálculo automático de alergénios e atributos dietéticos.' },
+      17: { title: 'Adicionar produtos embalados comprados', description: 'Registe rótulos, alergénios, alegações dietéticas, fornecedores e provas para produtos selados.' },
+    },
+    fr: {
+      3: { title: 'Ajouter des ingrédients', description: 'Créez des ingrédients, variantes fournisseur, profils allergènes et fiches techniques.' },
+      5: { title: 'Gestion des fournisseurs', description: 'Gérez chaque version fournisseur et le profil combiné le plus prudent.' },
+      6: { title: 'Créer des articles préparés', description: 'Créez des articles à partir d’ingrédients avec calcul automatique des allergènes et attributs alimentaires.' },
+      17: { title: 'Ajouter des produits emballés achetés', description: 'Enregistrez étiquettes, allergènes, allégations, fournisseurs et justificatifs des produits scellés.' },
+    },
+    es: {
+      3: { title: 'Añadir ingredientes', description: 'Crea ingredientes, variantes por proveedor, perfiles de alérgenos y fichas técnicas.' },
+      5: { title: 'Gestión de proveedores', description: 'Gestiona versiones por proveedor y el perfil combinado más seguro.' },
+      6: { title: 'Crear artículos preparados', description: 'Crea artículos con ingredientes y cálculo automático de alérgenos y atributos dietéticos.' },
+      17: { title: 'Añadir productos envasados comprados', description: 'Registra etiquetas, alérgenos, declaraciones, proveedores y pruebas para productos sellados.' },
+    },
+    de: {
+      3: { title: 'Zutaten hinzufügen', description: 'Erstellen Sie Zutaten, Lieferantenvarianten, Allergenprofile und Datenblätter.' },
+      5: { title: 'Lieferantenverwaltung', description: 'Verwalten Sie Lieferantenversionen und das sicherste kombinierte Profil.' },
+      6: { title: 'Zubereitete Menüpunkte erstellen', description: 'Erstellen Sie Menüpunkte aus Zutaten mit automatischer Allergen- und Ernährungsberechnung.' },
+      17: { title: 'Zugekaufte verpackte Produkte', description: 'Erfassen Sie Etiketten, Allergene, Angaben, Lieferanten und Nachweise für versiegelte Produkte.' },
+    },
+  }
+  const revisedTopicDetails: Record<string, Record<number, string[]>> = {
+    ga: {
+      3: ['Cuir leagan soláthraí ar leith le gach foinse nó foirmliú.', 'Taifead na 14 ailléirgin, tréithe aiste bia agus bileog sonraí don leagan.', 'Úsáideann an achoimre an rabhadh is déine agus is é bliain an mhinicíocht athbhreithnithe réamhshocraithe.'],
+      4: ['Uaslódáil bileoga sonraí chuig comhábhar nó táirge pacáistithe.', 'Taifead an soláthraí, an leagan agus an chéad dáta athbhreithnithe eile.', 'Coinnigh an fhianaise reatha mar chuid den rian iniúchta.'],
+      5: ['Athúsáid taifid soláthraithe ar fud comhábhar agus táirgí.', 'Coinnigh próifíl ar leith do gach foirmliú soláthraí.', 'Ní iompraítear maíomh aiste bia ach nuair a thacaíonn na próifílí ábhartha go léir leis.'],
+      6: ['Roghnaigh Déanta nó curtha le chéile againn agus cuir comhábhar amháin ar a laghad leis.', 'Úsáideann AllyJen an rabhadh ailléirgin is déine agus trasnú docht de thréithe aiste bia.', 'Cuir an comhábhar nó próifíl an tsoláthraí in eagar má athraíonn an fhoinse.'],
+      8: ['I gcás míreanna ullmhaithe, ní thaispeántar maíomh ach má thacaíonn gach comhábhar leis.', 'I gcás táirgí pacáistithe, taifead maímh ón lipéad nó ón sonraíocht reatha amháin.'],
+      12: ['Is é bliain an t-eatramh athbhreithnithe réamhshocraithe; roghnaigh eatramh níos giorra nuair is gá.', 'Leanann comhlíonadh míre ullmhaithe a comhábhair; úsáideann táirge pacáistithe a fhianaise lipéid féin.'],
+      14: ['Taispeánann Íoslódálacha → Gach Bileog Sonraí sonraíochtaí comhábhar agus míreanna biachláir.', 'Scag de réir stádais agus oscail nó íoslódáil an bhuncháipéis.'],
+      17: ['Úsáid é seo do tháirge a cheannaítear séalaithe agus a dhíoltar díreach leis an gcustaiméir.', 'Taifead an soláthraí, monaróir, cód, barrachód agus dearbhú iomlán comhábhar.', 'Socraigh ailléirginí agus maímh ón lipéad; ná nasc comhábhair oidis.', 'Uaslódáil fianaise reatha agus marcáil seiceáil an lipéid tar éis fíoraithe.'],
+    },
+    pt: {
+      3: ['Adicione uma variante por fornecedor para cada origem ou fórmula.', 'Registe os 14 alergénios, atributos dietéticos e a ficha técnica de cada variante.', 'O resumo usa o aviso mais grave e a revisão predefinida é anual.'],
+      4: ['Carregue fichas num ingrediente ou produto embalado.', 'Registe fornecedor, versão e próxima data de revisão.', 'Mantenha provas atuais para a auditoria.'],
+      5: ['Reutilize fornecedores em ingredientes e produtos.', 'Mantenha um perfil separado para cada fórmula do fornecedor.', 'Uma alegação dietética só é propagada quando todos os perfis aplicáveis a suportam.'],
+      6: ['Escolha Preparado ou montado por nós e adicione pelo menos um ingrediente.', 'O AllyJen usa o aviso mais grave e a interseção estrita dos atributos dietéticos.', 'Edite o ingrediente ou perfil do fornecedor quando a origem mudar.'],
+      8: ['Em itens preparados, uma alegação só aparece quando todos os ingredientes a suportam.', 'Em produtos embalados, registe apenas alegações da etiqueta ou especificação atual.'],
+      12: ['A revisão predefinida é anual; escolha um intervalo menor quando necessário.', 'A conformidade de itens preparados segue os ingredientes; produtos embalados usam as próprias provas.'],
+      14: ['Downloads → Todas as Fichas mostra especificações de ingredientes e itens de menu.', 'Filtre por estado e abra ou transfira o documento original.'],
+      17: ['Use para um produto comprado selado e vendido diretamente ao consumidor.', 'Registe fornecedor, fabricante, código, código de barras e declaração completa de ingredientes.', 'Defina alergénios e alegações a partir do rótulo; não associe ingredientes de receita.', 'Carregue provas atuais e confirme a verificação do rótulo.'],
+    },
+    fr: {
+      3: ['Ajoutez une variante pour chaque fournisseur ou formulation.', 'Renseignez les 14 allergènes, attributs alimentaires et la fiche technique de chaque variante.', 'Le résumé retient l’avertissement le plus sévère et la révision par défaut est annuelle.'],
+      4: ['Ajoutez des fiches à un ingrédient ou produit emballé.', 'Renseignez fournisseur, version et prochaine date de révision.', 'Conservez des justificatifs actuels pour la piste d’audit.'],
+      5: ['Réutilisez les fournisseurs entre ingrédients et produits.', 'Conservez un profil distinct pour chaque formulation fournisseur.', 'Une allégation n’est transmise que si tous les profils concernés la confirment.'],
+      6: ['Choisissez Préparé ou assemblé par nos soins et ajoutez au moins un ingrédient.', 'AllyJen retient l’avertissement le plus sévère et l’intersection stricte des attributs.', 'Modifiez l’ingrédient ou le profil fournisseur si la source change.'],
+      8: ['Pour un article préparé, une allégation apparaît uniquement si tous les ingrédients la confirment.', 'Pour un produit emballé, utilisez uniquement l’étiquette ou la fiche actuelle.'],
+      12: ['La révision est annuelle par défaut ; choisissez un délai plus court si nécessaire.', 'La conformité d’un article préparé suit ses ingrédients ; un produit emballé utilise ses propres justificatifs.'],
+      14: ['Téléchargements → Toutes les fiches réunit les documents des ingrédients et articles.', 'Filtrez par statut et ouvrez ou téléchargez le document original.'],
+      17: ['Utilisez ce type pour un produit acheté scellé et revendu directement.', 'Renseignez fournisseur, fabricant, code, code-barres et déclaration complète des ingrédients.', 'Saisissez allergènes et allégations depuis l’étiquette sans associer d’ingrédients de recette.', 'Ajoutez les justificatifs actuels et confirmez la vérification de l’étiquette.'],
+    },
+    es: {
+      3: ['Añade una variante por cada proveedor o formulación.', 'Registra los 14 alérgenos, atributos dietéticos y ficha técnica de cada variante.', 'El resumen usa la advertencia más grave y la revisión predeterminada es anual.'],
+      4: ['Sube fichas a un ingrediente o producto envasado.', 'Registra proveedor, versión y próxima fecha de revisión.', 'Conserva pruebas actuales para la auditoría.'],
+      5: ['Reutiliza proveedores en ingredientes y productos.', 'Mantén un perfil separado por cada formulación del proveedor.', 'Una declaración solo se transmite si todos los perfiles aplicables la respaldan.'],
+      6: ['Elige Preparado o montado por nosotros y añade al menos un ingrediente.', 'AllyJen usa la advertencia más grave y la intersección estricta de atributos dietéticos.', 'Edita el ingrediente o perfil del proveedor si cambia el origen.'],
+      8: ['En artículos preparados, una declaración solo aparece si todos los ingredientes la respaldan.', 'En productos envasados, usa únicamente la etiqueta o especificación actual.'],
+      12: ['La revisión predeterminada es anual; elige un intervalo menor cuando sea necesario.', 'La conformidad del artículo preparado sigue sus ingredientes; el producto envasado usa sus propias pruebas.'],
+      14: ['Descargas → Todas las fichas reúne documentos de ingredientes y artículos.', 'Filtra por estado y abre o descarga el documento original.'],
+      17: ['Úsalo para un producto comprado sellado y vendido directamente.', 'Registra proveedor, fabricante, código, código de barras y declaración completa de ingredientes.', 'Define alérgenos y declaraciones desde la etiqueta sin asociar ingredientes de receta.', 'Sube pruebas actuales y confirma la verificación de la etiqueta.'],
+    },
+    de: {
+      3: ['Fügen Sie für jede Bezugsquelle oder Rezeptur eine Lieferantenvariante hinzu.', 'Erfassen Sie die 14 Allergene, Ernährungsmerkmale und das Datenblatt je Variante.', 'Die Zusammenfassung verwendet die strengste Warnung; Standardprüfung ist jährlich.'],
+      4: ['Laden Sie Datenblätter zu einer Zutat oder einem verpackten Produkt hoch.', 'Erfassen Sie Lieferant, Version und nächstes Prüfdatum.', 'Bewahren Sie aktuelle Nachweise für den Prüfpfad auf.'],
+      5: ['Verwenden Sie Lieferanten für Zutaten und Produkte wieder.', 'Pflegen Sie ein eigenes Profil je Lieferantenrezeptur.', 'Eine Ernährungsangabe wird nur übernommen, wenn alle relevanten Profile sie bestätigen.'],
+      6: ['Wählen Sie Von uns zubereitet oder zusammengestellt und fügen Sie mindestens eine Zutat hinzu.', 'AllyJen nutzt die strengste Allergenwarnung und die Schnittmenge der Ernährungsmerkmale.', 'Bearbeiten Sie Zutat oder Lieferantenprofil, wenn sich die Quelle ändert.'],
+      8: ['Bei zubereiteten Artikeln erscheint eine Angabe nur, wenn alle Zutaten sie unterstützen.', 'Bei verpackten Produkten gelten nur aktuelles Etikett oder Spezifikation.'],
+      12: ['Die Standardprüfung ist jährlich; wählen Sie bei Bedarf ein kürzeres Intervall.', 'Die Compliance zubereiteter Artikel folgt den Zutaten; verpackte Produkte nutzen eigene Nachweise.'],
+      14: ['Downloads → Alle Datenblätter zeigt Unterlagen zu Zutaten und Menüpunkten.', 'Filtern Sie nach Status und öffnen oder laden Sie das Originaldokument herunter.'],
+      17: ['Verwenden Sie diesen Typ für versiegelt eingekaufte und direkt verkaufte Produkte.', 'Erfassen Sie Lieferant, Hersteller, Code, Barcode und vollständige Zutatenangabe.', 'Legen Sie Allergene und Angaben anhand des Etiketts fest; verknüpfen Sie keine Rezeptzutaten.', 'Laden Sie aktuelle Nachweise hoch und bestätigen Sie die Etikettprüfung.'],
+    },
+  }
+  const localizedTopicDetails: Record<number, string[]> = {
     ...(topicDetailsByLang[language] ?? {}),
+    ...(revisedTopicDetails[language] ?? {}),
+  }
+  const topicDetails: Record<number, string[]> = {
+    ...topicDetailsByLang['en'],
+    ...localizedTopicDetails,
   }
 
   const localizedCategories = categories.map((category) => ({
@@ -539,7 +655,7 @@ export default function HelpPage() {
   }))
 
   const localizedTopics = helpTopics.map((topic) => {
-    const localized = topicTranslations[language]?.[topic.id]
+    const localized = revisedTopicCards[language]?.[topic.id] || topicTranslations[language]?.[topic.id]
     return {
       ...topic,
       title: localized?.title || topic.title,

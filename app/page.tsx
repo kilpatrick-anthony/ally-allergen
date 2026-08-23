@@ -707,6 +707,11 @@ export default function LandingPage() {
               </div>
               <p className="text-sm text-white/40">© 2026 AllyJen Solutions Limited.</p>
               <p className="text-xs text-white/30">CRO No. 811542 | Republic of Ireland</p>
+              <nav aria-label="Legal pages" className="flex flex-wrap justify-center gap-4 text-xs text-white/60 md:justify-end">
+                <Link href="/privacy" className="transition-colors hover:text-[#8dd8d2]">Privacy</Link>
+                <Link href="/cookies" className="transition-colors hover:text-[#8dd8d2]">Cookies</Link>
+                <Link href="/terms" className="transition-colors hover:text-[#8dd8d2]">Terms</Link>
+              </nav>
             </div>
           </div>
         </Container>

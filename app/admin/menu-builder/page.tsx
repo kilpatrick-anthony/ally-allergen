@@ -27,6 +27,7 @@ interface MenuItem {
   dietary: string[]
   ingredients: string[]
   status: 'active' | 'draft' | 'archived'
+  item_type?: 'prepared' | 'packaged_product'
 }
 
 interface SiteOption {
@@ -493,6 +494,9 @@ export default function MenuBuilderPage() {
                       <Badge variant={item.status === 'active' ? 'success' : 'warning'}>
                         {item.status}
                       </Badge>
+                      {item.item_type === 'packaged_product' && (
+                        <Badge variant="warning">{t('admin.packaged')}</Badge>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -584,6 +588,9 @@ export default function MenuBuilderPage() {
                       <Badge variant={item.status === 'active' ? 'success' : 'warning'}>
                         {item.status}
                       </Badge>
+                      {item.item_type === 'packaged_product' && (
+                        <span className="ml-2"><Badge variant="warning">{t('admin.packaged')}</Badge></span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <div className="max-w-xs">

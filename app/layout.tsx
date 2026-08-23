@@ -1,7 +1,6 @@
 // app/layout.tsx
 import type { Metadata } from "next";
 import { Atkinson_Hyperlegible, Arsenal, Inter, Nunito } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import AccessibilityPanel from "@/components/shared/AccessibilityPanel";
@@ -9,7 +8,7 @@ import ServiceWorkerRegistrar from "@/components/ServiceWorkerRegistrar";
 import DarkModeInitializer from "@/components/DarkModeInitializer";
 import { NotificationProvider } from "@/lib/hooks/useNotification";
 import { NotificationContainer } from "@/components/shared/NotificationContainer";
-import { Analytics } from '@vercel/analytics/next'
+import CookieConsentManager from "@/components/shared/CookieConsentManager";
 const atkinson = Atkinson_Hyperlegible({
   weight: ["400", "700"],
   style: ["normal", "italic"],
@@ -195,23 +194,11 @@ export default function RootLayout({
             {children}
             {isKiosk && <AccessibilityPanel />}
             <ServiceWorkerRegistrar />
-            <Analytics />
+            <CookieConsentManager />
             <NotificationContainer />
           </AuthProvider>
         </NotificationProvider>
       </body>
-      <Script
-        src="https://www.googletagmanager.com/gtag/js?id=G-9BH4TMRH75"
-        strategy="afterInteractive"
-      />
-      <Script id="google-analytics" strategy="afterInteractive">
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-9BH4TMRH75');
-        `}
-      </Script>
     </html>
   );
 }

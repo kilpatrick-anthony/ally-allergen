@@ -49,6 +49,13 @@ export const MENU_ITEM_AUDIT_FIELDS: { key: string; label: string }[] = [
   { key: 'is_active', label: 'Active' },
   { key: 'price', label: 'Price' },
   { key: 'preferred_review_months', label: 'Review frequency (months)' },
+  { key: 'item_type', label: 'Supply type' },
+  { key: 'supplier_id', label: 'Supplier' },
+  { key: 'manufacturer', label: 'Manufacturer / brand' },
+  { key: 'product_code', label: 'Product code' },
+  { key: 'barcode', label: 'Barcode' },
+  { key: 'ingredient_declaration', label: 'Ingredient declaration' },
+  { key: 'label_verified_at', label: 'Label verified' },
 ]
 
 function humanizeValue(value: unknown): string {

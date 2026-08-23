@@ -20,6 +20,7 @@ import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay'
 import DatasheetUploader from '@/components/admin/DatasheetUploader'
 import { ReviewFrequencySelector } from '@/components/admin/ReviewFrequencySelector'
 import { LabelScanModal } from '@/components/admin/LabelScanModal'
+import { MenuItemSupplyFields, type MenuItemType, type SupplierOption } from '@/components/admin/MenuItemSupplyFields'
 import type { AllergenWarnings } from '@/types/allergen'
 import { computeWorstCaseAllergens } from '@/types/allergen'
 import { useContentPermissions } from '@/lib/hooks/useContentPermissions'
@@ -37,6 +38,13 @@ interface MenuItem {
   preferred_review_months?: number
   color?: string
   icon?: string
+  item_type: MenuItemType
+  supplier_id: string | null
+  manufacturer: string
+  product_code: string
+  barcode: string
+  ingredient_declaration: string
+  label_verified_at: string | null
 }
 
 interface Ingredient {
@@ -88,6 +96,7 @@ export default function EditMenuItemPage() {
   const [menuItem, setMenuItem] = useState<MenuItem | null>(null)
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [sites, setSites] = useState<SiteOption[]>([])
+  const [suppliers, setSuppliers] = useState<SupplierOption[]>([])
   const [showIngredientSelector, setShowIngredientSelector] = useState(false)
   const [datasheets, setDatasheets] = useState<any[]>([])
   const [existingDatasheets, setExistingDatasheets] = useState<any[]>([])
@@ -153,10 +162,11 @@ export default function EditMenuItemPage() {
     const fetchData = async () => {
       try {
         setLoading(true)
-        const [itemResponse, ingredientResponse, sitesResponse] = await Promise.all([
+        const [itemResponse, ingredientResponse, sitesResponse, suppliersResponse] = await Promise.all([
           fetch(`/api/menu-items/${itemId}`),
           fetch('/api/ingredients'),
-          fetch('/api/sites')
+          fetch('/api/sites'),
+          fetch('/api/suppliers')
         ])
 
         const [itemData, ingredientData] = await Promise.all([
@@ -204,6 +214,13 @@ export default function EditMenuItemPage() {
           preferred_review_months: item.preferred_review_months || 12,
           color: item.color || '',
           icon: item.icon || '',
+          item_type: item.item_type === 'packaged_product' ? 'packaged_product' : 'prepared',
+          supplier_id: item.supplier_id || null,
+          manufacturer: item.manufacturer || '',
+          product_code: item.product_code || '',
+          barcode: item.barcode || '',
+          ingredient_declaration: item.ingredient_declaration || '',
+          label_verified_at: item.label_verified_at || null,
         })
 
         const sitesData = await sitesResponse.json()
@@ -214,6 +231,8 @@ export default function EditMenuItemPage() {
           }))
           setSites(mappedSites)
         }
+        const suppliersData = await suppliersResponse.json()
+        if (suppliersResponse.ok) setSuppliers((suppliersData.suppliers || []).map((supplier: any) => ({ id: supplier.id, name: supplier.name })))
       } catch (error) {
         console.error('Error loading data:', error)
       } finally {
@@ -581,6 +600,18 @@ export default function EditMenuItemPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form Section */}
           <div className="lg:col-span-2 space-y-6">
+            <Card className="p-6">
+              <MenuItemSupplyFields
+                value={menuItem}
+                suppliers={suppliers}
+                onChange={(changes) => setMenuItem(current => current ? ({
+                  ...current,
+                  ...changes,
+                  ...(changes.item_type === 'packaged_product' ? { ingredients: [] } : {}),
+                }) : current)}
+                onScanLabel={() => setShowScan(true)}
+              />
+            </Card>
             {/* Menu Item Name */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -774,10 +805,10 @@ export default function EditMenuItemPage() {
             {/* Menu Item Icon/Image */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                Icon or Picture <span className="text-gray-400 font-normal">({t('admin.optional')})</span>
+                {t('admin.iconOrPicture')} <span className="text-gray-400 font-normal">({t('admin.optional')})</span>
               </label>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                Add an icon or picture to this menu item. Choose from preset icons or upload a custom image. This will be displayed on the kiosk menu.
+                {t('admin.iconPictureHelp')}
               </p>
               
               {/* Upload Custom Image */}
@@ -844,7 +875,8 @@ export default function EditMenuItemPage() {
               </div>
             </Card>
 
-            {/* Selected Ingredients */}
+            {menuItem.item_type === 'prepared' && (
+            /* Selected Ingredients */
             <Card className="p-6">
               <div className="flex justify-between items-center mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -893,6 +925,7 @@ export default function EditMenuItemPage() {
                 {menuItem.ingredients.length === 0 ? t('admin.addIngredients') : t('admin.addMoreIngredients')}
               </Button>
             </Card>
+            )}
 
             {/* Dietary Attributes */}
             <Card className="p-6">
@@ -1019,7 +1052,7 @@ export default function EditMenuItemPage() {
               {menuItem.ingredients.length > 0 ? (
                 <>
                   <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
-                    Calculated automatically from the selected ingredients. Edit an ingredient or its supplier profile to change this result.
+                    {t('admin.preparedAllergenHelp')}
                   </p>
                   <div className="rounded-xl border border-[#42b8ac]/30 bg-[#42b8ac]/5 p-4">
                     <AllergenWarningDisplay warnings={menuItem.allergen_warnings} showNone={true} />
@@ -1028,7 +1061,7 @@ export default function EditMenuItemPage() {
               ) : (
                 <>
                   <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
-                    No ingredients are linked, so set this menu item's allergen information manually.
+                    {t('admin.directAllergenHelp')}
                   </p>
                   <AllergenWarningSelector
                     value={menuItem.allergen_warnings}
@@ -1172,7 +1205,7 @@ export default function EditMenuItemPage() {
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
               {filteredIngredients.length === 0 ? (
                 <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                  No ingredients found
+                  {t('admin.noIngredientsFound')}
                 </div>
               ) : (
                 filteredIngredients.map((ingredient) => (
@@ -1203,7 +1236,7 @@ export default function EditMenuItemPage() {
                 fullWidth
                 onClick={() => setShowIngredientSelector(false)}
               >
-                Done
+                {t('admin.done')}
               </Button>
             </div>
           </Card>
@@ -1215,8 +1248,7 @@ export default function EditMenuItemPage() {
         open={showScan}
         onClose={() => setShowScan(false)}
         onAccept={(scanData) => {
-          if (scanData.name) setMenuItem({ ...menuItem, name: scanData.name })
-          if (scanData.description) setMenuItem({ ...menuItem, description: scanData.description })
+          setMenuItem(current => current ? ({ ...current, name: scanData.name || current.name, description: scanData.description || current.description, allergen_warnings: scanData.allergen_warnings || current.allergen_warnings }) : current)
           setShowScan(false)
         }}
       />

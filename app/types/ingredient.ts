@@ -53,6 +53,13 @@ export interface MenuItem {
   is_active: boolean;
   created_at: string;
   business_id: string;
+  item_type?: 'prepared' | 'packaged_product';
+  supplier_id?: string | null;
+  manufacturer?: string | null;
+  product_code?: string | null;
+  barcode?: string | null;
+  ingredient_declaration?: string | null;
+  label_verified_at?: string | null;
 }
 
 export interface MenuItemIngredient {

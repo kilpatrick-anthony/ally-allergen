@@ -3,10 +3,19 @@
 import { useNotification, NotificationType } from '@/lib/hooks/useNotification'
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 export function NotificationContainer() {
   const { notifications, removeNotification } = useNotification()
+  const { t } = useTranslation()
+  const pathname = usePathname()
   const [mounted, setMounted] = useState(false)
+  const portalContext = pathname.startsWith('/admin')
+    ? 'admin'
+    : pathname.startsWith('/kiosk')
+      ? 'kiosk'
+      : undefined
 
   useEffect(() => {
     setMounted(true)
@@ -67,13 +76,14 @@ export function NotificationContainer() {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50 px-4">
+    <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50 px-4" data-context={portalContext}>
       <div className="flex flex-col gap-3 max-w-md w-full">
         {notifications.map(notification => {
           const colors = getColors(notification.type)
           return (
             <div
               key={notification.id}
+              role="alert"
               className={`
                 pointer-events-auto
                 ${colors.bg} ${colors.border} ${colors.text}
@@ -96,7 +106,7 @@ export function NotificationContainer() {
                   flex-shrink-0 rounded-lg p-1 
                   transition-colors hover:bg-white/20 active:bg-white/30
                 `}
-                aria-label="Close notification"
+                aria-label={t('shared.closeNotification')}
               >
                 <X className="h-4 w-4" />
               </button>

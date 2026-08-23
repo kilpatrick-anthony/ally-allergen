@@ -112,6 +112,11 @@ export function checkMenuItemCompliance(menuItem: {
   last_reviewed_at: string | null;
   preferred_review_months?: number;
   ingredients?: string[] | Array<{ id: string; compliance?: ComplianceStatus }>;
+  item_type?: 'prepared' | 'packaged_product';
+  supplier_id?: string | null;
+  ingredient_declaration?: string | null;
+  label_verified_at?: string | null;
+  has_datasheets?: boolean;
 }, ingredientComplianceMap: Map<string, ComplianceStatus>, businessSettings: {
   compliance_review_days: number;
 }, ingredientReviewDatesMap?: Map<string, { daysUntilDue: number | null; daysOverdue: number | null }>): ComplianceCheckResult {
@@ -129,9 +134,28 @@ export function checkMenuItemCompliance(menuItem: {
     };
   }
 
+  if (menuItem.item_type === 'packaged_product') {
+    if (!menuItem.has_datasheets) {
+      reasons.push('No manufacturer datasheet or label evidence uploaded')
+      status = 'error'
+    }
+    if (!menuItem.ingredient_declaration) {
+      reasons.push('No ingredient declaration recorded from the pack')
+      status = 'error'
+    }
+    if (!menuItem.label_verified_at) {
+      reasons.push('Label details have not been verified')
+      status = 'error'
+    }
+    if (!menuItem.supplier_id) {
+      reasons.push('No supplier linked')
+      if (status === 'compliant') status = 'warning'
+    }
+  }
+
   // Check if all ingredients are compliant
   const ingredients = menuItem.ingredients || [];
-  if (ingredients.length > 0) {
+  if (menuItem.item_type !== 'packaged_product' && ingredients.length > 0) {
     const nonCompliantIngredients = ingredients.filter((ing: any) => {
       // Handle both string IDs and objects with id property
       const ingId = typeof ing === 'string' ? ing : ing.id;

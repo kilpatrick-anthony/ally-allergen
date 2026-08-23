@@ -3,13 +3,10 @@
 
 import { AlertCircle, AlertTriangle, Info, Wheat, Shell, Egg, Fish, Nut, Sprout, Milk, Leaf, Carrot, Circle, Beaker, TreeDeciduous, Flower2, Bean, Salad, Sun, Snail } from 'lucide-react';
 import type { AllergenWarnings } from '@/types/allergen';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 import { 
   ALLERGEN_LIST, 
-  getAllergenLevelText, 
   getAllergenSeverity,
-  formatSubtypes,
-  GLUTEN_TYPES,
-  TREE_NUT_TYPES
 } from '@/types/allergen';
 
 // Helper to get icon component
@@ -33,6 +30,19 @@ export default function AllergenWarningDisplay({
   compact = false,
   showNone = false 
 }: AllergenWarningDisplayProps) {
+  const { t } = useTranslation();
+  const allergenName = (id: string, fallback: string) => {
+    const translated = t(`allergenNames.${id}`);
+    return translated === `allergenNames.${id}` ? fallback : translated;
+  };
+  const localizedSubtypes = (id: 'cereals_gluten' | 'nuts', values?: string[]) => {
+    if (!values?.length) return allergenName(id, id === 'nuts' ? 'Tree Nuts' : 'Gluten').toLowerCase();
+    return values.map(value => {
+      const translated = t(`allergenSubtypes.${value}`);
+      return translated === `allergenSubtypes.${value}` ? value : translated;
+    }).join(', ').toLowerCase();
+  };
+  const levelText = (level: string, name: string) => t(`allergenLevelText.${level}`, { allergen: name });
   // Filter to only allergens with warnings
   const activeWarnings = ALLERGEN_LIST.filter(allergen => {
     const level = warnings[allergen.id];
@@ -47,7 +57,7 @@ export default function AllergenWarningDisplay({
     return (
       <div className="flex items-center gap-2 text-green-700 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
         <Info className="h-4 w-4" />
-        <span className="text-sm font-medium">No allergens detected</span>
+        <span className="text-sm font-medium">{t('noAllergensDetected')}</span>
       </div>
     );
   }
@@ -65,10 +75,10 @@ export default function AllergenWarningDisplay({
         {byLevel.high.length > 0 && byLevel.high.map(allergen => {
           const IconComponent = getIconComponent(allergen.icon);
           const displayName = allergen.id === 'cereals_gluten' 
-            ? formatSubtypes('cereals_gluten', warnings.cereals_gluten_types)
+            ? localizedSubtypes('cereals_gluten', warnings.cereals_gluten_types)
             : allergen.id === 'nuts'
-            ? formatSubtypes('nuts', warnings.nuts_types)
-            : allergen.name;
+            ? localizedSubtypes('nuts', warnings.nuts_types)
+            : allergenName(allergen.id, allergen.name);
           
           return (
             <div
@@ -88,10 +98,10 @@ export default function AllergenWarningDisplay({
         {byLevel.medium.length > 0 && byLevel.medium.map(allergen => {
           const IconComponent = getIconComponent(allergen.icon);
           const displayName = allergen.id === 'cereals_gluten' 
-            ? formatSubtypes('cereals_gluten', warnings.cereals_gluten_types)
+            ? localizedSubtypes('cereals_gluten', warnings.cereals_gluten_types)
             : allergen.id === 'nuts'
-            ? formatSubtypes('nuts', warnings.nuts_types)
-            : allergen.name;
+            ? localizedSubtypes('nuts', warnings.nuts_types)
+            : allergenName(allergen.id, allergen.name);
           
           return (
             <div
@@ -111,10 +121,10 @@ export default function AllergenWarningDisplay({
         {byLevel.low.length > 0 && byLevel.low.map(allergen => {
           const IconComponent = getIconComponent(allergen.icon);
           const displayName = allergen.id === 'cereals_gluten' 
-            ? formatSubtypes('cereals_gluten', warnings.cereals_gluten_types)
+            ? localizedSubtypes('cereals_gluten', warnings.cereals_gluten_types)
             : allergen.id === 'nuts'
-            ? formatSubtypes('nuts', warnings.nuts_types)
-            : allergen.name;
+            ? localizedSubtypes('nuts', warnings.nuts_types)
+            : allergenName(allergen.id, allergen.name);
           
           return (
             <div
@@ -143,19 +153,19 @@ export default function AllergenWarningDisplay({
           <div className="flex items-start gap-3">
             <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <h4 className="font-bold text-red-900 mb-2">Contains Allergens</h4>
+              <h4 className="font-bold text-red-900 mb-2">{t('containsAllergens')}</h4>
               <ul className="space-y-1">
                 {byLevel.high.map(allergen => {
                   const displayName = allergen.id === 'cereals_gluten' 
-                    ? formatSubtypes('cereals_gluten', warnings.cereals_gluten_types)
+                    ? localizedSubtypes('cereals_gluten', warnings.cereals_gluten_types)
                     : allergen.id === 'nuts'
-                    ? formatSubtypes('nuts', warnings.nuts_types)
-                    : allergen.name.toLowerCase();
+                    ? localizedSubtypes('nuts', warnings.nuts_types)
+                    : allergenName(allergen.id, allergen.name).toLowerCase();
                   
                   return (
                     <li key={allergen.id} className="text-sm text-red-800">
-                      <span className="font-semibold">{allergen.number}. {allergen.name}:</span>{' '}
-                      {getAllergenLevelText(warnings[allergen.id], displayName)}
+                      <span className="font-semibold">{allergen.number}. {allergenName(allergen.id, allergen.name)}:</span>{' '}
+                      {levelText(warnings[allergen.id], displayName)}
                     </li>
                   );
                 })}
@@ -171,19 +181,19 @@ export default function AllergenWarningDisplay({
           <div className="flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <h4 className="font-bold text-amber-900 mb-2">Allergen Warnings</h4>
+              <h4 className="font-bold text-amber-900 mb-2">{t('allergenWarnings')}</h4>
               <ul className="space-y-1">
                 {byLevel.medium.map(allergen => {
                   const displayName = allergen.id === 'cereals_gluten' 
-                    ? formatSubtypes('cereals_gluten', warnings.cereals_gluten_types)
+                    ? localizedSubtypes('cereals_gluten', warnings.cereals_gluten_types)
                     : allergen.id === 'nuts'
-                    ? formatSubtypes('nuts', warnings.nuts_types)
-                    : allergen.name.toLowerCase();
+                    ? localizedSubtypes('nuts', warnings.nuts_types)
+                    : allergenName(allergen.id, allergen.name).toLowerCase();
                   
                   return (
                     <li key={allergen.id} className="text-sm text-amber-800">
-                      <span className="font-semibold">{allergen.number}. {allergen.name}:</span>{' '}
-                      {getAllergenLevelText(warnings[allergen.id], displayName)}
+                      <span className="font-semibold">{allergen.number}. {allergenName(allergen.id, allergen.name)}:</span>{' '}
+                      {levelText(warnings[allergen.id], displayName)}
                     </li>
                   );
                 })}
@@ -199,19 +209,19 @@ export default function AllergenWarningDisplay({
           <div className="flex items-start gap-3">
             <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div className="flex-1">
-              <h4 className="font-bold text-blue-900 mb-2">Advisory Information</h4>
+              <h4 className="font-bold text-blue-900 mb-2">{t('advisoryInformation')}</h4>
               <ul className="space-y-1">
                 {byLevel.low.map(allergen => {
                   const displayName = allergen.id === 'cereals_gluten' 
-                    ? formatSubtypes('cereals_gluten', warnings.cereals_gluten_types)
+                    ? localizedSubtypes('cereals_gluten', warnings.cereals_gluten_types)
                     : allergen.id === 'nuts'
-                    ? formatSubtypes('nuts', warnings.nuts_types)
-                    : allergen.name.toLowerCase();
+                    ? localizedSubtypes('nuts', warnings.nuts_types)
+                    : allergenName(allergen.id, allergen.name).toLowerCase();
                   
                   return (
                     <li key={allergen.id} className="text-sm text-blue-800">
-                      <span className="font-semibold">{allergen.number}. {allergen.name}:</span>{' '}
-                      {getAllergenLevelText(warnings[allergen.id], displayName)}
+                      <span className="font-semibold">{allergen.number}. {allergenName(allergen.id, allergen.name)}:</span>{' '}
+                      {levelText(warnings[allergen.id], displayName)}
                     </li>
                   );
                 })}

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/Button';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 interface AccessibilitySettings {
   fontSize: 'normal' | 'large' | 'x-large' | 'xx-large';
@@ -34,6 +35,7 @@ function PersonWithCheckIcon({ size = 28 }: { size?: number }) {
 }
 
 export default function AccessibilityPanel() {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
   const [settings, setSettings] = useState<AccessibilitySettings>({
@@ -308,7 +310,7 @@ export default function AccessibilityPanel() {
         <button 
           onClick={() => setIsOpen(!isOpen)}
           className="bg-gradient-to-br from-[#003842] to-[#42b8ac] text-white p-4 rounded-full shadow-xl hover:from-[#004c5a] hover:to-[#48c8b8] focus:outline-none focus:ring-4 focus:ring-[#42b8ac]/50 transition-all duration-200 flex items-center justify-center"
-          aria-label="Accessibility settings"
+          aria-label={t('accessibility.settings')}
           aria-expanded={isOpen}
           style={{ 
             width: '64px',
@@ -341,18 +343,18 @@ export default function AccessibilityPanel() {
                     <Eye className="h-5 w-5 text-white" />
                   </div>
                   <h2 className="text-xl font-bold text-[#003842]">
-                    Accessibility Settings
+                    {t('accessibility.settings')}
                   </h2>
                 </div>
               <p className="text-gray-600 text-sm">
-              Customise your viewing experience for better accessibility
+              {t('accessibility.description')}
             </p>
             {showDefaultsNotice && (
               <div className="mt-3 p-2 rounded bg-yellow-50 border border-yellow-100 text-yellow-800 text-sm flex items-center justify-between gap-3">
-                <div>Accessibility defaults updated — <strong>highlight links</strong> are now OFF by default.</div>
+                <div>{t('accessibility.defaultsUpdated')}</div>
                 <div className="flex gap-2">
-                  <Button size="sm" onClick={applyNewDefaults}>Apply new defaults</Button>
-                  <Button size="sm" variant="ghost" onClick={dismissDefaultsNotice}>Dismiss</Button>
+                  <Button size="sm" onClick={applyNewDefaults}>{t('accessibility.applyDefaults')}</Button>
+                  <Button size="sm" variant="ghost" onClick={dismissDefaultsNotice}>{t('accessibility.dismiss')}</Button>
                 </div>
               </div>
             )}
@@ -364,7 +366,7 @@ export default function AccessibilityPanel() {
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-3">
                   <Text size={18} className="text-[#003842]" />
-                  <h3 className="font-semibold text-[#003842]">Font Size</h3>
+                  <h3 className="font-semibold text-[#003842]">{t('accessibility.fontSize')}</h3>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                   {(['normal', 'large', 'x-large', 'xx-large'] as const).map((size) => (
@@ -372,7 +374,7 @@ export default function AccessibilityPanel() {
                       key={size}
                       onClick={() => applySettings({ fontSize: size })}
                       className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${settings.fontSize === size ? 'bg-gradient-to-r from-[#003842]/10 to-[#42b8ac]/10 text-[#003842] border-2 border-[#42b8ac]/50' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                      aria-label={`Set font size to ${size}`}
+                      aria-label={`${t('accessibility.fontSize')}: ${size}`}
                     >
                       {size === 'normal' ? 'A' : 
                        size === 'large' ? 'A+' : 
@@ -388,32 +390,32 @@ export default function AccessibilityPanel() {
                   <div className="mb-6">
                     <div className="flex items-center gap-2 mb-3">
                       <Type size={18} className="text-[#003842]" />
-                      <h3 className="font-semibold text-[#003842]">Text Appearance</h3>
+                      <h3 className="font-semibold text-[#003842]">{t('accessibility.textAppearance')}</h3>
                     </div>
                     <div className="space-y-4">
                       {/* Font Type */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Font Type
+                          {t('accessibility.fontType')}
                         </label>
                         <select 
                           value={settings.fontFamily}
                           onChange={(e) => applySettings({ fontFamily: e.target.value as any })}
                           className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                          aria-label="Select font type"
+                          aria-label={t('accessibility.fontType')}
                         >
-                          <option value="default">Default (Arsenal)</option>
+                          <option value="default">{t('accessibility.defaultFont')} (Arsenal)</option>
                           <option value="verdana-pro">Verdana Pro</option>
                           <option value="arsenal">Arsenal</option>
-                          <option value="dyslexic">Atkinson Hyperlegible (Accessibility)</option>
-                          <option value="high-contrast">High Visibility</option>
+                          <option value="dyslexic">Atkinson Hyperlegible ({t('accessibility.accessibilityFont')})</option>
+                          <option value="high-contrast">{t('accessibility.highVisibility')}</option>
                         </select>
                       </div>
 
                       {/* Letter Spacing */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Letter Spacing
+                          {t('accessibility.letterSpacing')}
                         </label>
                         <div className="flex gap-2">
                           {(['normal', 'wide', 'extra-wide'] as const).map((spacing) => (
@@ -421,9 +423,9 @@ export default function AccessibilityPanel() {
                               key={spacing}
                               onClick={() => applySettings({ letterSpacing: spacing })}
                               className={`flex-1 py-2 px-3 rounded-lg text-sm ${settings.letterSpacing === spacing ? 'bg-gradient-to-r from-[#003842]/10 to-[#42b8ac]/10 text-[#003842] border-2 border-[#42b8ac]/50' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                              aria-label={`Set letter spacing to ${spacing}`}
+                              aria-label={`${t('accessibility.letterSpacing')}: ${spacing}`}
                             >
-                              {spacing.replace('-', ' ')}
+                              {spacing === 'extra-wide' ? t('accessibility.extraWide') : t(`accessibility.${spacing}`)}
                             </button>
                           ))}
                         </div>
@@ -432,7 +434,7 @@ export default function AccessibilityPanel() {
                       {/* Line Height */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Line Height
+                          {t('accessibility.lineHeight')}
                         </label>
                         <div className="flex gap-2">
                           {(['normal', 'relaxed', 'very-relaxed'] as const).map((height) => (
@@ -440,9 +442,9 @@ export default function AccessibilityPanel() {
                               key={height}
                               onClick={() => applySettings({ lineHeight: height })}
                               className={`flex-1 py-2 px-3 rounded-lg text-sm ${settings.lineHeight === height ? 'bg-gradient-to-r from-[#003842]/10 to-[#42b8ac]/10 text-[#003842] border-2 border-[#42b8ac]/50' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-                              aria-label={`Set line height to ${height}`}
+                              aria-label={`${t('accessibility.lineHeight')}: ${height}`}
                             >
-                              {height.replace('-', ' ')}
+                              {height === 'very-relaxed' ? t('accessibility.veryRelaxed') : t(`accessibility.${height}`)}
                             </button>
                           ))}
                         </div>
@@ -454,13 +456,13 @@ export default function AccessibilityPanel() {
                   <div className="mb-6">
                     <div className="flex items-center gap-2 mb-4">
                       <Palette size={18} className="text-[#003842]" />
-                      <h3 className="font-semibold text-[#003842]">Visual Preferences</h3>
+                      <h3 className="font-semibold text-[#003842]">{t('accessibility.visualPreferences')}</h3>
                     </div>
                     <div className="space-y-4">
                       {/* Contrast */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Color Contrast
+                          {t('accessibility.colorContrast')}
                         </label>
                         <div className="grid grid-cols-3 gap-2">
                           {(['normal', 'high', 'inverted'] as const).map((mode) => (
@@ -468,10 +470,10 @@ export default function AccessibilityPanel() {
                               key={mode}
                               onClick={() => applySettings({ contrast: mode })}
                               className={`py-3 rounded-lg font-medium flex items-center justify-center gap-2 ${settings.contrast === mode ? 'ring-2 ring-offset-2 ring-[#42b8ac]' : ''} ${mode === 'normal' ? 'bg-white text-gray-900 border border-gray-300' : mode === 'high' ? 'bg-black text-yellow-300' : 'bg-yellow-300 text-black'}`}
-                              aria-label={`Set contrast mode to ${mode}`}
+                              aria-label={`${t('accessibility.colorContrast')}: ${mode}`}
                             >
                               <Contrast size={16} />
-                              {mode}
+                              {t(`accessibility.${mode}`)}
                             </button>
                           ))}
                         </div>
@@ -480,13 +482,13 @@ export default function AccessibilityPanel() {
                       {/* Toggles */}
                       <div className="space-y-3">
                         <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
-                          <span className="font-medium text-gray-900">Reduce Motion</span>
+                          <span className="font-medium text-gray-900">{t('accessibility.reduceMotion')}</span>
                           <input
                             type="checkbox"
                             checked={settings.reducedMotion}
                             onChange={(e) => applySettings({ reducedMotion: e.target.checked })}
                             className="sr-only"
-                            aria-label="Toggle reduced motion"
+                            aria-label={t('accessibility.reduceMotion')}
                           />
                           <div className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${settings.reducedMotion ? 'bg-[#42b8ac]' : 'bg-gray-300'}`}>
                             <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${settings.reducedMotion ? 'translate-x-6' : ''}`} />
@@ -494,13 +496,13 @@ export default function AccessibilityPanel() {
                         </label>
 
                         <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
-                          <span className="font-medium text-gray-900">Highlight Interactive Elements</span>
+                          <span className="font-medium text-gray-900">{t('accessibility.highlightInteractive')}</span>
                           <input
                             type="checkbox"
                             checked={settings.highlightLinks}
                             onChange={(e) => applySettings({ highlightLinks: e.target.checked })}
                             className="sr-only"
-                            aria-label="Toggle highlight interactive elements"
+                            aria-label={t('accessibility.highlightInteractive')}
                           />
                           <div className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${settings.highlightLinks ? 'bg-[#42b8ac]' : 'bg-gray-300'}`}>
                             <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${settings.highlightLinks ? 'translate-x-6' : ''}`} />
@@ -516,24 +518,24 @@ export default function AccessibilityPanel() {
               <div className="mb-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Volume2 size={18} className="text-[#003842]" />
-                  <h3 className="font-semibold text-[#003842]">Text-to-Speech</h3>
+                  <h3 className="font-semibold text-[#003842]">{t('accessibility.textToSpeech')}</h3>
                 </div>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <button
                       onClick={() => applySettings({ speech: !settings.speech })}
                       className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors ${settings.speech ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-gradient-to-r from-[#003842]/10 to-[#42b8ac]/10 text-[#003842] hover:from-[#003842]/20 hover:to-[#42b8ac]/20'}`}
-                      aria-label={settings.speech ? "Stop reading aloud" : "Start reading aloud"}
+                      aria-label={settings.speech ? t('accessibility.stopReading') : t('accessibility.readAloud')}
                     >
                       {settings.speech ? (
                         <>
                           <VolumeX size={20} />
-                          Stop Reading Aloud
+                          {t('accessibility.stopReading')}
                         </>
                       ) : (
                         <>
                           <Volume2 size={20} />
-                          Read Aloud
+                          {t('accessibility.readAloud')}
                         </>
                       )}
                     </button>
@@ -545,7 +547,7 @@ export default function AccessibilityPanel() {
                   {settings.speech && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Speech Speed
+                        {t('accessibility.speechSpeed')}
                       </label>
                       <input
                         type="range"
@@ -555,12 +557,12 @@ export default function AccessibilityPanel() {
                         value={settings.speechRate}
                         onChange={(e) => applySettings({ speechRate: parseFloat(e.target.value) })}
                         className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#42b8ac]"
-                        aria-label="Adjust speech speed"
+                        aria-label={t('accessibility.speechSpeed')}
                       />
                       <div className="flex justify-between text-xs text-gray-500 mt-1">
-                        <span>Slower</span>
+                        <span>{t('accessibility.slower')}</span>
                         <span>{settings.speechRate.toFixed(1)}x</span>
-                        <span>Faster</span>
+                        <span>{t('accessibility.faster')}</span>
                       </div>
                     </div>
                   )}
@@ -570,13 +572,13 @@ export default function AccessibilityPanel() {
               {/* Dark Mode */}
               <div className="mb-6">
                 <label className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer">
-                  <span className="font-medium text-gray-900">Dark Mode</span>
+                  <span className="font-medium text-gray-900">{t('accessibility.darkMode')}</span>
                   <input
                     type="checkbox"
                     checked={settings.darkMode}
                     onChange={(e) => applySettings({ darkMode: e.target.checked })}
                     className="sr-only"
-                    aria-label="Toggle dark mode"
+                    aria-label={t('accessibility.darkMode')}
                   />
                   <div className={`w-12 h-6 flex items-center rounded-full p-1 transition-colors ${settings.darkMode ? 'bg-[#42b8ac]' : 'bg-gray-300'}`}>
                     <div className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${settings.darkMode ? 'translate-x-6' : ''}`} />
@@ -588,10 +590,10 @@ export default function AccessibilityPanel() {
               <button
                 onClick={resetSettings}
                 className="w-full py-3 px-4 bg-gradient-to-r from-[#003842]/5 to-[#42b8ac]/5 text-[#003842] rounded-lg font-medium hover:from-[#003842]/10 hover:to-[#42b8ac]/10 transition-colors border border-[#42b8ac]/20 flex items-center justify-center gap-2"
-                aria-label="Reset all accessibility settings to default"
+                aria-label={t('accessibility.reset')}
               >
                 <RotateCcw size={18} />
-                Reset to Default Settings
+                {t('accessibility.reset')}
               </button>
             </div>
           </div>

@@ -1,6 +1,89 @@
+import { recentUiTranslations } from '@/lib/recent-ui-translations'
+
+const reviewedTranslations = {
+  en: {
+    ...recentUiTranslations.en,
+    loadingKiosk: 'Loading kiosk', fetchingLatestMenu: 'Fetching the latest allergen menu...', kioskDataUnavailable: 'Kiosk data unavailable', retryLoading: 'Retry loading', kioskSleeping: 'Kiosk sleeping', tapToWake: 'Tap anywhere on the screen to wake and continue.', servingConfidence: 'Serving Confidence', doubleCheckDesc: 'Please speak to staff if you have a severe allergy or need extra reassurance.',
+    legend: 'Legend', mayContain: 'May Contain', notSuitable: 'Not Suitable', tracesLabel: 'Traces', crossContaminationLabel: 'Cross-contamination', notPresent: 'Not present', allergenSubtypeNote: 'For items with specific sub-types (for example wheat or almonds), the cell shows the specific allergen present.', itemName: 'Item name', supplierLabel: 'Supplier', containsShort: 'Yes', mayContainShort: 'May', notSuitableShort: 'Not suitable', tracesShort: 'Traces', crossContaminationShort: 'Trace risk', allItems: 'All items', uncategorized: 'Uncategorised', noAllergensDetected: 'No allergens detected', containsAllergens: 'Contains allergens', allergenWarnings: 'Allergen warnings', advisoryInformation: 'Advisory information',
+    allergenNames: { cereals_gluten: 'Gluten', crustaceans: 'Crustaceans', eggs: 'Eggs', fish: 'Fish', peanuts: 'Peanuts', soybeans: 'Soybeans', milk: 'Milk', nuts: 'Tree nuts', celery: 'Celery', mustard: 'Mustard', sesame: 'Sesame seeds', sulphites: 'Sulphur dioxide and sulphites', lupin: 'Lupin', molluscs: 'Molluscs' },
+    allergenSubtypes: { wheat: 'Wheat', rye: 'Rye', barley: 'Barley', oats: 'Oats', spelt: 'Spelt', kamut: 'Kamut', almonds: 'Almonds', hazelnuts: 'Hazelnuts', walnuts: 'Walnuts', cashews: 'Cashews', pecans: 'Pecans', brazil_nuts: 'Brazil nuts', pistachios: 'Pistachios', macadamia: 'Macadamia nuts' },
+    allergenLevelText: { none: '', contains: 'Contains {allergen}', may_contain: 'May contain {allergen}', traces: 'May contain traces of {allergen}', not_suitable: 'Not suitable for a {allergen} allergy', cross_contamination: 'Produced in a facility that handles {allergen}' },
+    accessibility: { settings: 'Accessibility settings', description: 'Customise your viewing experience for better accessibility', defaultsUpdated: 'Accessibility defaults were updated; highlighting interactive elements is now off by default.', applyDefaults: 'Apply new defaults', dismiss: 'Dismiss', fontSize: 'Font size', textAppearance: 'Text appearance', fontType: 'Font type', defaultFont: 'Default', accessibilityFont: 'Accessibility font', highVisibility: 'High visibility', letterSpacing: 'Letter spacing', lineHeight: 'Line height', visualPreferences: 'Visual preferences', colorContrast: 'Colour contrast', normal: 'Normal', wide: 'Wide', extraWide: 'Extra wide', relaxed: 'Relaxed', veryRelaxed: 'Very relaxed', high: 'High', inverted: 'Inverted', reduceMotion: 'Reduce motion', highlightInteractive: 'Highlight interactive elements', textToSpeech: 'Text-to-speech', stopReading: 'Stop reading aloud', readAloud: 'Read aloud', speechSpeed: 'Speech speed', slower: 'Slower', faster: 'Faster', darkMode: 'Dark mode', reset: 'Reset to default settings' },
+    admin: {
+      online: 'Online', offline: 'Offline', itemSupplyQuestion: 'How is this item supplied?', itemSupplyHelp: 'This controls whether safety information comes from recipe ingredients or directly from a manufacturer label.', preparedItem: 'Made or assembled by us', preparedItemHelp: 'Allergens and dietary information are calculated from ingredients.', packagedProduct: 'Bought-in packaged product', packagedProductHelp: 'Record the label, supplier evidence, allergens and dietary claims directly.', manufacturerLabelDetails: 'Manufacturer label details', manufacturerLabelHelp: 'Use the current pack label or manufacturer specification.', scanLabel: 'Scan label', supplier: 'Supplier', selectSupplier: 'Select supplier', manufacturerBrand: 'Manufacturer / brand', productSkuCode: 'Product or SKU code', barcode: 'Barcode', fullIngredientDeclaration: 'Full ingredient declaration', ingredientDeclarationPlaceholder: 'Transcribe the ingredient list exactly as shown on the pack', labelDetailsChecked: 'Label details checked', labelDetailsCheckedHelp: 'I checked these details against the current manufacturer label or specification.', dietaryClaims: 'Dietary claims', dietaryClaimsHelp: 'Only select claims supported by the label or supplier specification.', packaged: 'Packaged', preparedAllergenHelp: 'Calculated automatically from the selected ingredients. Edit an ingredient or supplier profile to change this result.', addIngredientsForAllergens: 'Add ingredients above to calculate this menu item’s allergen information automatically.', directAllergenHelp: 'No ingredients are linked, so set this menu item’s allergen information manually.',
+    },
+  },
+  ga: {
+    ...recentUiTranslations.ga,
+    loadingKiosk: 'An both á luchtú', fetchingLatestMenu: 'Ag fáil an roghchláir ailléirginí is déanaí...', kioskDataUnavailable: 'Níl sonraí an bhoth ar fáil', retryLoading: 'Bain triail eile as', kioskSleeping: 'Tá an both ina chodladh', tapToWake: 'Tapáil áit ar bith ar an scáileán chun dúiseacht agus leanúint ar aghaidh.', servingConfidence: 'Muinín á Freastal', doubleCheckDesc: 'Labhair leis an bhfoireann má tá ailléirge thromchúiseach agat nó má theastaíonn tuilleadh dearbhaithe uait.',
+    legend: 'Eochair', mayContain: 'D’fhéadfadh sé a bheith ann', notSuitable: 'Neamhoiriúnach', tracesLabel: 'Rianta', crossContaminationLabel: 'Tras-éilliú', notPresent: 'Níl sé ann', allergenSubtypeNote: 'I gcás míreanna le fo-chineálacha sonracha (mar shampla cruithneacht nó almóinní), taispeánann an chill an t-ailléirgin sonrach.', itemName: 'Ainm na míre', supplierLabel: 'Soláthraí', containsShort: 'Tá', mayContainShort: 'B’fhéidir', notSuitableShort: 'Neamhoiriúnach', tracesShort: 'Rianta', crossContaminationShort: 'Riosca rianta', allItems: 'Gach mír', uncategorized: 'Gan chatagóir', noAllergensDetected: 'Níor aimsíodh ailléirginí', containsAllergens: 'Tá ailléirginí ann', allergenWarnings: 'Rabhaidh ailléirginí', advisoryInformation: 'Faisnéis chomhairleach',
+    allergenNames: { cereals_gluten: 'Glútan', crustaceans: 'Crústaigh', eggs: 'Uibheacha', fish: 'Iasc', peanuts: 'Píseanna talún', soybeans: 'Pónairí soighe', milk: 'Bainne', nuts: 'Cnónna crainn', celery: 'Soilire', mustard: 'Mustaird', sesame: 'Síolta seasamain', sulphites: 'Dé-ocsaíd sulfair agus sulfítí', lupin: 'Lúipín', molluscs: 'Moilisc' },
+    allergenSubtypes: { wheat: 'Cruithneacht', rye: 'Seagal', barley: 'Eorna', oats: 'Coirce', spelt: 'Speilt', kamut: 'Kamut', almonds: 'Almóinní', hazelnuts: 'Cnónna coill', walnuts: 'Gallchnónna', cashews: 'Cnónna caisiú', pecans: 'Cnónna peacán', brazil_nuts: 'Cnónna Brasaíle', pistachios: 'Pistéisí', macadamia: 'Cnónna macadamia' },
+    allergenLevelText: { none: '', contains: 'Tá {allergen} ann', may_contain: 'D’fhéadfadh {allergen} a bheith ann', traces: 'D’fhéadfadh rianta de {allergen} a bheith ann', not_suitable: 'Neamhoiriúnach do dhuine a bhfuil ailléirge {allergen} aige', cross_contamination: 'Táirgtear é i saoráid a láimhseálann {allergen}' },
+    accessibility: { settings: 'Socruithe inrochtaineachta', description: 'Saincheap d’eispéireas féachana ar mhaithe le hinrochtaineacht níos fearr', defaultsUpdated: 'Nuashonraíodh na réamhshocruithe; tá aibhsiú eilimintí idirghníomhacha múchta anois.', applyDefaults: 'Cuir réamhshocruithe nua i bhfeidhm', dismiss: 'Dún', fontSize: 'Clómhéid', textAppearance: 'Cuma an téacs', fontType: 'Cineál cló', defaultFont: 'Réamhshocrú', accessibilityFont: 'Cló inrochtaineachta', highVisibility: 'Ard-infheictheacht', letterSpacing: 'Spásáil litreacha', lineHeight: 'Airde líne', visualPreferences: 'Roghanna amhairc', colorContrast: 'Codarsnacht dathanna', normal: 'Gnáth', wide: 'Leathan', extraWide: 'An-leathan', relaxed: 'Scaoilte', veryRelaxed: 'An-scaoilte', high: 'Ard', inverted: 'Inbhéartaithe', reduceMotion: 'Laghdaigh gluaiseacht', highlightInteractive: 'Aibhsigh eilimintí idirghníomhacha', textToSpeech: 'Téacs go caint', stopReading: 'Stop ag léamh os ard', readAloud: 'Léigh os ard', speechSpeed: 'Luas cainte', slower: 'Níos moille', faster: 'Níos tapúla', darkMode: 'Mód dorcha', reset: 'Athshocraigh go réamhshocruithe' },
+    admin: {
+      loadingDownloads: 'Íoslódálacha á luchtú...', allergenInformation: 'Faisnéis ailléirginí', allergenGuidesDesc: 'Cruthaigh treoracha ailléirginí don ghnó nó do shuíomh ar leith', businessWideGuide: 'Treoir don ghnó ar fad', generating: 'Á ghiniúint...', generateCompleteGuide: 'Gin treoir iomlán', siteSpecificGuide: 'Treoir do shuíomh ar leith', selectSite: 'Roghnaigh suíomh', helpSupport: 'Cabhair agus Tacaíocht', helpSupportDesc: 'Faigh freagraí, treoracha agus tacaíocht d’AllyJen', knowledgeBase: 'Bunachar eolais', searchHelpTopics: 'Cuardaigh ábhair chabhrach...', noTopicsFound: 'Níor aimsíodh ábhair', learnMore: 'Tuilleadh eolais', needMoreHelp: 'Tuilleadh cabhrach uait?', supportTeamHelp: 'Tá ár bhfoireann tacaíochta anseo chun cabhrú leat.', allergens: 'Ailléirginí', viewIngredient: 'Féach ar chomhábhar', deleteIngredient: 'Scrios comhábhar', addFirstIngredient: 'Cuir do chéad chomhábhar leis', welcomeToAllyJen: 'Fáilte go AllyJen', welcomeSubtitle: 'Socraigh do chóras bainistíochta ailléirginí', gettingStarted: 'Ag tosú', gettingStartedDesc: 'Lean na céimeanna seo chun AllyJen a chur ar bun', loadingSupplierData: 'Sonraí soláthraithe á luchtú...', totalSuppliers: 'Soláthraithe iomlána', addSupplier: 'Cuir soláthraí leis', searchSuppliers: 'Cuardaigh soláthraithe', searchSuppliersPlaceholder: 'Cuardaigh de réir ainm, teagmhála nó ríomhphoist...', docs: 'Doiciméid', noSuppliersFound: 'Níor aimsíodh soláthraithe', getStartedFirstSupplier: 'Tosaigh trí do chéad soláthraí a chur leis.', addFirstSupplier: 'Cuir an chéad soláthraí leis',
+      online: 'Ar líne', offline: 'As líne', itemSupplyQuestion: 'Conas a sholáthraítear an mhír seo?', itemSupplyHelp: 'Rialaíonn sé seo cibé acu a thagann an fhaisnéis sábháilteachta ó chomhábhair an oidis nó go díreach ó lipéad an mhonaróra.', preparedItem: 'Déanta nó curtha le chéile againn', preparedItemHelp: 'Ríomhtar ailléirginí agus faisnéis chothaithe ó na comhábhair.', packagedProduct: 'Táirge pacáistithe ceannaithe isteach', packagedProductHelp: 'Taifead an lipéad, fianaise an tsoláthraí, ailléirginí agus maímh chothaithe go díreach.', manufacturerLabelDetails: 'Sonraí lipéad an mhonaróra', manufacturerLabelHelp: 'Úsáid lipéad reatha an phacáiste nó sonraíocht an mhonaróra.', scanLabel: 'Scan lipéad', supplier: 'Soláthraí', selectSupplier: 'Roghnaigh soláthraí', manufacturerBrand: 'Monaróir / branda', productSkuCode: 'Cód táirge nó SKU', barcode: 'Barrachód', fullIngredientDeclaration: 'Dearbhú iomlán comhábhar', ingredientDeclarationPlaceholder: 'Tras-scríobh liosta na gcomhábhar díreach mar atá sé ar an bpacáiste', labelDetailsChecked: 'Sonraí an lipéid seiceáilte', labelDetailsCheckedHelp: 'Sheiceáil mé na sonraí seo i gcoinne lipéad nó sonraíocht reatha an mhonaróra.', dietaryClaims: 'Maímh chothaithe', dietaryClaimsHelp: 'Ná roghnaigh ach maímh a bhfuil tacaíocht acu ón lipéad nó ó shonraíocht an tsoláthraí.', packaged: 'Pacáistithe', preparedAllergenHelp: 'Ríomhtar é go huathoibríoch ó na comhábhair roghnaithe. Cuir comhábhar nó próifíl soláthraí in eagar chun an toradh a athrú.', addIngredientsForAllergens: 'Cuir comhábhair leis thuas chun faisnéis ailléirginí na míre a ríomh go huathoibríoch.', directAllergenHelp: 'Níl aon chomhábhair nasctha, mar sin socraigh faisnéis ailléirginí na míre de láimh.',
+    },
+  },
+  pt: {
+    ...recentUiTranslations.pt,
+    loadingKiosk: 'A carregar o quiosque', fetchingLatestMenu: 'A obter o menu de alergénios mais recente...', kioskDataUnavailable: 'Dados do quiosque indisponíveis', retryLoading: 'Tentar novamente', kioskSleeping: 'Quiosque em repouso', tapToWake: 'Toque em qualquer parte do ecrã para ativar e continuar.', servingConfidence: 'Servir com Confiança', doubleCheckDesc: 'Fale com a equipa se tiver uma alergia grave ou precisar de confirmação adicional.',
+    legend: 'Legenda', mayContain: 'Pode conter', notSuitable: 'Não adequado', tracesLabel: 'Vestígios', crossContaminationLabel: 'Contaminação cruzada', notPresent: 'Não presente', allergenSubtypeNote: 'Para itens com subtipos específicos (por exemplo, trigo ou amêndoas), a célula mostra o alergénio específico presente.', itemName: 'Nome do item', supplierLabel: 'Fornecedor', containsShort: 'Sim', mayContainShort: 'Pode', notSuitableShort: 'Não adequado', tracesShort: 'Vestígios', crossContaminationShort: 'Risco de vestígios', allItems: 'Todos os itens', uncategorized: 'Sem categoria', noAllergensDetected: 'Nenhum alergénio detetado', containsAllergens: 'Contém alergénios', allergenWarnings: 'Avisos de alergénios', advisoryInformation: 'Informação consultiva',
+    allergenNames: { cereals_gluten: 'Glúten', crustaceans: 'Crustáceos', eggs: 'Ovos', fish: 'Peixe', peanuts: 'Amendoins', soybeans: 'Soja', milk: 'Leite', nuts: 'Frutos de casca rija', celery: 'Aipo', mustard: 'Mostarda', sesame: 'Sementes de sésamo', sulphites: 'Dióxido de enxofre e sulfitos', lupin: 'Tremoço', molluscs: 'Moluscos' },
+    allergenSubtypes: { wheat: 'Trigo', rye: 'Centeio', barley: 'Cevada', oats: 'Aveia', spelt: 'Espelta', kamut: 'Kamut', almonds: 'Amêndoas', hazelnuts: 'Avelãs', walnuts: 'Nozes', cashews: 'Cajus', pecans: 'Nozes-pecã', brazil_nuts: 'Castanhas-do-pará', pistachios: 'Pistácios', macadamia: 'Nozes de macadâmia' },
+    allergenLevelText: { none: '', contains: 'Contém {allergen}', may_contain: 'Pode conter {allergen}', traces: 'Pode conter vestígios de {allergen}', not_suitable: 'Não adequado para alergia a {allergen}', cross_contamination: 'Produzido numa instalação que manuseia {allergen}' },
+    accessibility: { settings: 'Definições de acessibilidade', description: 'Personalize a visualização para melhorar a acessibilidade', defaultsUpdated: 'As predefinições foram atualizadas; o destaque de elementos interativos está agora desativado.', applyDefaults: 'Aplicar novas predefinições', dismiss: 'Fechar', fontSize: 'Tamanho do texto', textAppearance: 'Aspeto do texto', fontType: 'Tipo de letra', defaultFont: 'Predefinido', accessibilityFont: 'Tipo de letra acessível', highVisibility: 'Alta visibilidade', letterSpacing: 'Espaçamento entre letras', lineHeight: 'Altura da linha', visualPreferences: 'Preferências visuais', colorContrast: 'Contraste de cor', normal: 'Normal', wide: 'Largo', extraWide: 'Muito largo', relaxed: 'Relaxado', veryRelaxed: 'Muito relaxado', high: 'Alto', inverted: 'Invertido', reduceMotion: 'Reduzir movimento', highlightInteractive: 'Destacar elementos interativos', textToSpeech: 'Texto para voz', stopReading: 'Parar leitura', readAloud: 'Ler em voz alta', speechSpeed: 'Velocidade da voz', slower: 'Mais lento', faster: 'Mais rápido', darkMode: 'Modo escuro', reset: 'Repor predefinições' },
+    admin: {
+      loadingDownloads: 'A carregar downloads...', allergenInformation: 'Informação sobre alergénios', allergenGuidesDesc: 'Gere guias de alergénios para toda a empresa ou para um local', businessWideGuide: 'Guia de toda a empresa', generating: 'A gerar...', generateCompleteGuide: 'Gerar guia completo', siteSpecificGuide: 'Guia específico do local', selectSite: 'Selecionar local', helpSupport: 'Ajuda e Suporte', helpSupportDesc: 'Encontre respostas, guias e suporte para o AllyJen', knowledgeBase: 'Base de conhecimento', searchHelpTopics: 'Pesquisar tópicos de ajuda...', noTopicsFound: 'Nenhum tópico encontrado', learnMore: 'Saber mais', needMoreHelp: 'Precisa de mais ajuda?', supportTeamHelp: 'A nossa equipa de suporte está disponível para ajudar.', viewIngredient: 'Ver ingrediente', deleteIngredient: 'Eliminar ingrediente', loadingSupplierData: 'A carregar dados dos fornecedores...', totalSuppliers: 'Total de fornecedores', addSupplier: 'Adicionar fornecedor', searchSuppliers: 'Pesquisar fornecedores', searchSuppliersPlaceholder: 'Pesquisar por nome, contacto ou email...', docs: 'Documentos', noSuppliersFound: 'Nenhum fornecedor encontrado', getStartedFirstSupplier: 'Comece por adicionar o seu primeiro fornecedor.', addFirstSupplier: 'Adicionar primeiro fornecedor',
+      online: 'Online', offline: 'Offline', itemSupplyQuestion: 'Como é fornecido este item?', itemSupplyHelp: 'Isto define se a informação de segurança vem dos ingredientes da receita ou diretamente do rótulo do fabricante.', preparedItem: 'Preparado ou montado por nós', preparedItemHelp: 'Os alergénios e a informação dietética são calculados a partir dos ingredientes.', packagedProduct: 'Produto embalado comprado', packagedProductHelp: 'Registe diretamente o rótulo, provas do fornecedor, alergénios e alegações dietéticas.', manufacturerLabelDetails: 'Detalhes do rótulo do fabricante', manufacturerLabelHelp: 'Utilize o rótulo atual da embalagem ou a especificação do fabricante.', scanLabel: 'Digitalizar rótulo', supplier: 'Fornecedor', selectSupplier: 'Selecionar fornecedor', manufacturerBrand: 'Fabricante / marca', productSkuCode: 'Código de produto ou SKU', barcode: 'Código de barras', fullIngredientDeclaration: 'Declaração completa de ingredientes', ingredientDeclarationPlaceholder: 'Transcreva a lista de ingredientes exatamente como aparece na embalagem', labelDetailsChecked: 'Detalhes do rótulo verificados', labelDetailsCheckedHelp: 'Comparei estes detalhes com o rótulo ou especificação atual do fabricante.', dietaryClaims: 'Alegações dietéticas', dietaryClaimsHelp: 'Selecione apenas alegações confirmadas pelo rótulo ou pela especificação do fornecedor.', packaged: 'Embalado', preparedAllergenHelp: 'Calculado automaticamente a partir dos ingredientes selecionados. Edite um ingrediente ou perfil de fornecedor para alterar o resultado.', addIngredientsForAllergens: 'Adicione ingredientes acima para calcular automaticamente os alergénios deste item.', directAllergenHelp: 'Não existem ingredientes associados; defina manualmente os alergénios deste item.',
+    },
+  },
+  fr: {
+    ...recentUiTranslations.fr,
+    loadingKiosk: 'Chargement de la borne', fetchingLatestMenu: 'Récupération du dernier menu des allergènes...', kioskDataUnavailable: 'Données de la borne indisponibles', retryLoading: 'Réessayer', kioskSleeping: 'Borne en veille', tapToWake: 'Touchez l’écran pour réveiller la borne et continuer.', servingConfidence: 'Servir en Toute Confiance', doubleCheckDesc: 'Adressez-vous au personnel si vous avez une allergie sévère ou besoin d’une confirmation supplémentaire.',
+    legend: 'Légende', mayContain: 'Peut contenir', notSuitable: 'Non adapté', tracesLabel: 'Traces', crossContaminationLabel: 'Contamination croisée', notPresent: 'Non présent', allergenSubtypeNote: 'Pour les produits comportant des sous-types précis (par exemple blé ou amandes), la cellule indique l’allergène concerné.', itemName: 'Nom de l’article', supplierLabel: 'Fournisseur', containsShort: 'Oui', mayContainShort: 'Peut', notSuitableShort: 'Non adapté', tracesShort: 'Traces', crossContaminationShort: 'Risque de traces', allItems: 'Tous les articles', uncategorized: 'Sans catégorie', noAllergensDetected: 'Aucun allergène détecté', containsAllergens: 'Contient des allergènes', allergenWarnings: 'Avertissements allergènes', advisoryInformation: 'Informations complémentaires',
+    allergenNames: { cereals_gluten: 'Gluten', crustaceans: 'Crustacés', eggs: 'Œufs', fish: 'Poisson', peanuts: 'Arachides', soybeans: 'Soja', milk: 'Lait', nuts: 'Fruits à coque', celery: 'Céleri', mustard: 'Moutarde', sesame: 'Graines de sésame', sulphites: 'Anhydride sulfureux et sulfites', lupin: 'Lupin', molluscs: 'Mollusques' },
+    allergenSubtypes: { wheat: 'Blé', rye: 'Seigle', barley: 'Orge', oats: 'Avoine', spelt: 'Épeautre', kamut: 'Kamut', almonds: 'Amandes', hazelnuts: 'Noisettes', walnuts: 'Noix', cashews: 'Noix de cajou', pecans: 'Noix de pécan', brazil_nuts: 'Noix du Brésil', pistachios: 'Pistaches', macadamia: 'Noix de macadamia' },
+    allergenLevelText: { none: '', contains: 'Contient {allergen}', may_contain: 'Peut contenir {allergen}', traces: 'Peut contenir des traces de {allergen}', not_suitable: 'Non adapté en cas d’allergie à {allergen}', cross_contamination: 'Produit dans un établissement manipulant {allergen}' },
+    accessibility: { settings: 'Paramètres d’accessibilité', description: 'Personnalisez l’affichage pour une meilleure accessibilité', defaultsUpdated: 'Les paramètres par défaut ont été mis à jour ; la mise en évidence des éléments interactifs est désactivée.', applyDefaults: 'Appliquer les nouveaux paramètres', dismiss: 'Fermer', fontSize: 'Taille du texte', textAppearance: 'Apparence du texte', fontType: 'Police', defaultFont: 'Par défaut', accessibilityFont: 'Police accessible', highVisibility: 'Haute visibilité', letterSpacing: 'Espacement des lettres', lineHeight: 'Hauteur de ligne', visualPreferences: 'Préférences visuelles', colorContrast: 'Contraste des couleurs', normal: 'Normal', wide: 'Large', extraWide: 'Très large', relaxed: 'Détendu', veryRelaxed: 'Très détendu', high: 'Élevé', inverted: 'Inversé', reduceMotion: 'Réduire les animations', highlightInteractive: 'Mettre en évidence les éléments interactifs', textToSpeech: 'Synthèse vocale', stopReading: 'Arrêter la lecture', readAloud: 'Lire à voix haute', speechSpeed: 'Vitesse de lecture', slower: 'Plus lent', faster: 'Plus rapide', darkMode: 'Mode sombre', reset: 'Rétablir les paramètres par défaut' },
+    admin: {
+      loadingDownloads: 'Chargement des téléchargements...', allergenInformation: 'Informations sur les allergènes', allergenGuidesDesc: 'Générez des guides des allergènes pour toute l’entreprise ou un site', businessWideGuide: 'Guide de toute l’entreprise', generating: 'Génération...', generateCompleteGuide: 'Générer le guide complet', siteSpecificGuide: 'Guide spécifique au site', selectSite: 'Sélectionner un site', helpSupport: 'Aide et Assistance', helpSupportDesc: 'Trouvez des réponses, des guides et de l’aide pour AllyJen', knowledgeBase: 'Base de connaissances', searchHelpTopics: 'Rechercher dans l’aide...', noTopicsFound: 'Aucun sujet trouvé', learnMore: 'En savoir plus', needMoreHelp: 'Besoin d’aide supplémentaire ?', supportTeamHelp: 'Notre équipe d’assistance est à votre disposition.', viewIngredient: 'Voir l’ingrédient', deleteIngredient: 'Supprimer l’ingrédient', loadingSupplierData: 'Chargement des fournisseurs...', totalSuppliers: 'Nombre de fournisseurs', addSupplier: 'Ajouter un fournisseur', searchSuppliers: 'Rechercher des fournisseurs', searchSuppliersPlaceholder: 'Rechercher par nom, contact ou e-mail...', docs: 'Documents', noSuppliersFound: 'Aucun fournisseur trouvé', getStartedFirstSupplier: 'Commencez par ajouter votre premier fournisseur.', addFirstSupplier: 'Ajouter le premier fournisseur',
+      online: 'En ligne', offline: 'Hors ligne', itemSupplyQuestion: 'Comment cet article est-il fourni ?', itemSupplyHelp: 'Ce choix détermine si les informations de sécurité proviennent des ingrédients de la recette ou directement de l’étiquette du fabricant.', preparedItem: 'Préparé ou assemblé par nos soins', preparedItemHelp: 'Les allergènes et informations alimentaires sont calculés à partir des ingrédients.', packagedProduct: 'Produit emballé acheté', packagedProductHelp: 'Enregistrez directement l’étiquette, les justificatifs du fournisseur, les allergènes et les allégations alimentaires.', manufacturerLabelDetails: 'Informations de l’étiquette fabricant', manufacturerLabelHelp: 'Utilisez l’étiquette actuelle de l’emballage ou la fiche du fabricant.', scanLabel: 'Scanner l’étiquette', supplier: 'Fournisseur', selectSupplier: 'Sélectionner un fournisseur', manufacturerBrand: 'Fabricant / marque', productSkuCode: 'Code produit ou SKU', barcode: 'Code-barres', fullIngredientDeclaration: 'Déclaration complète des ingrédients', ingredientDeclarationPlaceholder: 'Transcrivez la liste des ingrédients exactement comme sur l’emballage', labelDetailsChecked: 'Informations de l’étiquette vérifiées', labelDetailsCheckedHelp: 'J’ai comparé ces informations à l’étiquette ou à la fiche actuelle du fabricant.', dietaryClaims: 'Allégations alimentaires', dietaryClaimsHelp: 'Sélectionnez uniquement les allégations confirmées par l’étiquette ou la fiche fournisseur.', packaged: 'Emballé', preparedAllergenHelp: 'Calculé automatiquement à partir des ingrédients sélectionnés. Modifiez un ingrédient ou un profil fournisseur pour changer le résultat.', addIngredientsForAllergens: 'Ajoutez des ingrédients ci-dessus pour calculer automatiquement les allergènes de cet article.', directAllergenHelp: 'Aucun ingrédient n’est associé ; renseignez manuellement les allergènes de cet article.',
+    },
+  },
+  es: {
+    ...recentUiTranslations.es,
+    loadingKiosk: 'Cargando el quiosco', fetchingLatestMenu: 'Obteniendo el menú de alérgenos más reciente...', kioskDataUnavailable: 'Datos del quiosco no disponibles', retryLoading: 'Reintentar', kioskSleeping: 'Quiosco en reposo', tapToWake: 'Toca cualquier parte de la pantalla para activar y continuar.', servingConfidence: 'Servir con Confianza', doubleCheckDesc: 'Habla con el personal si tienes una alergia grave o necesitas confirmación adicional.',
+    legend: 'Leyenda', mayContain: 'Puede contener', notSuitable: 'No apto', tracesLabel: 'Trazas', crossContaminationLabel: 'Contaminación cruzada', notPresent: 'No presente', allergenSubtypeNote: 'Para productos con subtipos específicos (por ejemplo trigo o almendras), la celda muestra el alérgeno concreto presente.', itemName: 'Nombre del artículo', supplierLabel: 'Proveedor', containsShort: 'Sí', mayContainShort: 'Puede', notSuitableShort: 'No apto', tracesShort: 'Trazas', crossContaminationShort: 'Riesgo de trazas', allItems: 'Todos los artículos', uncategorized: 'Sin categoría', noAllergensDetected: 'No se detectaron alérgenos', containsAllergens: 'Contiene alérgenos', allergenWarnings: 'Advertencias de alérgenos', advisoryInformation: 'Información adicional',
+    allergenNames: { cereals_gluten: 'Gluten', crustaceans: 'Crustáceos', eggs: 'Huevos', fish: 'Pescado', peanuts: 'Cacahuetes', soybeans: 'Soja', milk: 'Leche', nuts: 'Frutos de cáscara', celery: 'Apio', mustard: 'Mostaza', sesame: 'Semillas de sésamo', sulphites: 'Dióxido de azufre y sulfitos', lupin: 'Altramuces', molluscs: 'Moluscos' },
+    allergenSubtypes: { wheat: 'Trigo', rye: 'Centeno', barley: 'Cebada', oats: 'Avena', spelt: 'Espelta', kamut: 'Kamut', almonds: 'Almendras', hazelnuts: 'Avellanas', walnuts: 'Nueces', cashews: 'Anacardos', pecans: 'Nueces pecanas', brazil_nuts: 'Nueces de Brasil', pistachios: 'Pistachos', macadamia: 'Nueces de macadamia' },
+    allergenLevelText: { none: '', contains: 'Contiene {allergen}', may_contain: 'Puede contener {allergen}', traces: 'Puede contener trazas de {allergen}', not_suitable: 'No apto para personas alérgicas a {allergen}', cross_contamination: 'Producido en instalaciones que manipulan {allergen}' },
+    accessibility: { settings: 'Ajustes de accesibilidad', description: 'Personaliza la visualización para mejorar la accesibilidad', defaultsUpdated: 'Se actualizaron los valores predeterminados; el resaltado de elementos interactivos está desactivado.', applyDefaults: 'Aplicar nuevos valores', dismiss: 'Cerrar', fontSize: 'Tamaño del texto', textAppearance: 'Aspecto del texto', fontType: 'Tipo de letra', defaultFont: 'Predeterminado', accessibilityFont: 'Fuente accesible', highVisibility: 'Alta visibilidad', letterSpacing: 'Espaciado de letras', lineHeight: 'Altura de línea', visualPreferences: 'Preferencias visuales', colorContrast: 'Contraste de color', normal: 'Normal', wide: 'Amplio', extraWide: 'Muy amplio', relaxed: 'Relajado', veryRelaxed: 'Muy relajado', high: 'Alto', inverted: 'Invertido', reduceMotion: 'Reducir movimiento', highlightInteractive: 'Resaltar elementos interactivos', textToSpeech: 'Texto a voz', stopReading: 'Detener lectura', readAloud: 'Leer en voz alta', speechSpeed: 'Velocidad de voz', slower: 'Más lento', faster: 'Más rápido', darkMode: 'Modo oscuro', reset: 'Restablecer ajustes' },
+    admin: {
+      loadingDownloads: 'Cargando descargas...', allergenInformation: 'Información sobre alérgenos', allergenGuidesDesc: 'Genera guías de alérgenos para toda la empresa o para un sitio', businessWideGuide: 'Guía de toda la empresa', generating: 'Generando...', generateCompleteGuide: 'Generar guía completa', siteSpecificGuide: 'Guía específica del sitio', selectSite: 'Seleccionar sitio', helpSupport: 'Ayuda y Soporte', helpSupportDesc: 'Encuentra respuestas, guías y soporte para AllyJen', knowledgeBase: 'Base de conocimientos', searchHelpTopics: 'Buscar temas de ayuda...', noTopicsFound: 'No se encontraron temas', learnMore: 'Más información', needMoreHelp: '¿Necesitas más ayuda?', supportTeamHelp: 'Nuestro equipo de soporte está disponible para ayudarte.', viewIngredient: 'Ver ingrediente', deleteIngredient: 'Eliminar ingrediente', loadingSupplierData: 'Cargando datos de proveedores...', totalSuppliers: 'Total de proveedores', addSupplier: 'Añadir proveedor', searchSuppliers: 'Buscar proveedores', searchSuppliersPlaceholder: 'Buscar por nombre, contacto o correo...', docs: 'Documentos', noSuppliersFound: 'No se encontraron proveedores', getStartedFirstSupplier: 'Empieza añadiendo tu primer proveedor.', addFirstSupplier: 'Añadir primer proveedor',
+      online: 'En línea', offline: 'Sin conexión', itemSupplyQuestion: '¿Cómo se suministra este artículo?', itemSupplyHelp: 'Esto determina si la información de seguridad procede de los ingredientes de la receta o directamente de la etiqueta del fabricante.', preparedItem: 'Preparado o montado por nosotros', preparedItemHelp: 'Los alérgenos y la información dietética se calculan a partir de los ingredientes.', packagedProduct: 'Producto envasado comprado', packagedProductHelp: 'Registra directamente la etiqueta, las pruebas del proveedor, los alérgenos y las declaraciones dietéticas.', manufacturerLabelDetails: 'Datos de la etiqueta del fabricante', manufacturerLabelHelp: 'Utiliza la etiqueta actual del envase o la especificación del fabricante.', scanLabel: 'Escanear etiqueta', supplier: 'Proveedor', selectSupplier: 'Seleccionar proveedor', manufacturerBrand: 'Fabricante / marca', productSkuCode: 'Código de producto o SKU', barcode: 'Código de barras', fullIngredientDeclaration: 'Declaración completa de ingredientes', ingredientDeclarationPlaceholder: 'Transcribe la lista de ingredientes exactamente como aparece en el envase', labelDetailsChecked: 'Datos de la etiqueta verificados', labelDetailsCheckedHelp: 'He comparado estos datos con la etiqueta o especificación actual del fabricante.', dietaryClaims: 'Declaraciones dietéticas', dietaryClaimsHelp: 'Selecciona únicamente declaraciones respaldadas por la etiqueta o la especificación del proveedor.', packaged: 'Envasado', preparedAllergenHelp: 'Calculado automáticamente a partir de los ingredientes seleccionados. Edita un ingrediente o perfil de proveedor para cambiar el resultado.', addIngredientsForAllergens: 'Añade ingredientes arriba para calcular automáticamente los alérgenos de este artículo.', directAllergenHelp: 'No hay ingredientes vinculados; configura manualmente los alérgenos de este artículo.',
+    },
+  },
+  de: {
+    ...recentUiTranslations.de,
+    loadingKiosk: 'Kiosk wird geladen', fetchingLatestMenu: 'Das aktuelle Allergenmenü wird geladen...', kioskDataUnavailable: 'Kioskdaten nicht verfügbar', retryLoading: 'Erneut laden', kioskSleeping: 'Kiosk im Ruhemodus', tapToWake: 'Tippen Sie auf den Bildschirm, um den Kiosk zu aktivieren und fortzufahren.', servingConfidence: 'Sicher Servieren', doubleCheckDesc: 'Bitte sprechen Sie mit dem Personal, wenn Sie eine schwere Allergie haben oder zusätzliche Sicherheit benötigen.',
+    legend: 'Legende', mayContain: 'Kann enthalten', notSuitable: 'Nicht geeignet', tracesLabel: 'Spuren', crossContaminationLabel: 'Kreuzkontamination', notPresent: 'Nicht vorhanden', allergenSubtypeNote: 'Bei Artikeln mit bestimmten Untertypen (zum Beispiel Weizen oder Mandeln) zeigt die Zelle das jeweilige Allergen.', itemName: 'Artikelname', supplierLabel: 'Lieferant', containsShort: 'Ja', mayContainShort: 'Kann', notSuitableShort: 'Nicht geeignet', tracesShort: 'Spuren', crossContaminationShort: 'Spurenrisiko', allItems: 'Alle Artikel', uncategorized: 'Ohne Kategorie', noAllergensDetected: 'Keine Allergene erkannt', containsAllergens: 'Enthält Allergene', allergenWarnings: 'Allergenwarnungen', advisoryInformation: 'Zusätzliche Hinweise',
+    allergenNames: { cereals_gluten: 'Gluten', crustaceans: 'Krebstiere', eggs: 'Eier', fish: 'Fisch', peanuts: 'Erdnüsse', soybeans: 'Soja', milk: 'Milch', nuts: 'Schalenfrüchte', celery: 'Sellerie', mustard: 'Senf', sesame: 'Sesamsamen', sulphites: 'Schwefeldioxid und Sulfite', lupin: 'Lupinen', molluscs: 'Weichtiere' },
+    allergenSubtypes: { wheat: 'Weizen', rye: 'Roggen', barley: 'Gerste', oats: 'Hafer', spelt: 'Dinkel', kamut: 'Kamut', almonds: 'Mandeln', hazelnuts: 'Haselnüsse', walnuts: 'Walnüsse', cashews: 'Cashewkerne', pecans: 'Pekannüsse', brazil_nuts: 'Paranüsse', pistachios: 'Pistazien', macadamia: 'Macadamianüsse' },
+    allergenLevelText: { none: '', contains: 'Enthält {allergen}', may_contain: 'Kann {allergen} enthalten', traces: 'Kann Spuren von {allergen} enthalten', not_suitable: 'Nicht geeignet bei einer Allergie gegen {allergen}', cross_contamination: 'Hergestellt in einem Betrieb, der {allergen} verarbeitet' },
+    accessibility: { settings: 'Barrierefreiheit', description: 'Passen Sie die Darstellung für bessere Barrierefreiheit an', defaultsUpdated: 'Die Standardwerte wurden aktualisiert; interaktive Elemente werden standardmäßig nicht hervorgehoben.', applyDefaults: 'Neue Standardwerte anwenden', dismiss: 'Schließen', fontSize: 'Textgröße', textAppearance: 'Textdarstellung', fontType: 'Schriftart', defaultFont: 'Standard', accessibilityFont: 'Barrierefreie Schrift', highVisibility: 'Hohe Sichtbarkeit', letterSpacing: 'Buchstabenabstand', lineHeight: 'Zeilenhöhe', visualPreferences: 'Visuelle Einstellungen', colorContrast: 'Farbkontrast', normal: 'Normal', wide: 'Weit', extraWide: 'Sehr weit', relaxed: 'Locker', veryRelaxed: 'Sehr locker', high: 'Hoch', inverted: 'Invertiert', reduceMotion: 'Bewegung reduzieren', highlightInteractive: 'Interaktive Elemente hervorheben', textToSpeech: 'Sprachausgabe', stopReading: 'Vorlesen stoppen', readAloud: 'Vorlesen', speechSpeed: 'Sprechgeschwindigkeit', slower: 'Langsamer', faster: 'Schneller', darkMode: 'Dunkelmodus', reset: 'Auf Standard zurücksetzen' },
+    admin: {
+      loadingDownloads: 'Downloads werden geladen...', allergenInformation: 'Allergeninformationen', allergenGuidesDesc: 'Erstellen Sie Allergenleitfäden für das gesamte Unternehmen oder einen Standort', businessWideGuide: 'Unternehmensweiter Leitfaden', generating: 'Wird erstellt...', generateCompleteGuide: 'Vollständigen Leitfaden erstellen', siteSpecificGuide: 'Standortspezifischer Leitfaden', selectSite: 'Standort auswählen', helpSupport: 'Hilfe und Support', helpSupportDesc: 'Antworten, Anleitungen und Unterstützung für AllyJen', knowledgeBase: 'Wissensdatenbank', searchHelpTopics: 'Hilfethemen durchsuchen...', noTopicsFound: 'Keine Themen gefunden', learnMore: 'Mehr erfahren', needMoreHelp: 'Benötigen Sie weitere Hilfe?', supportTeamHelp: 'Unser Support-Team hilft Ihnen gerne weiter.', viewIngredient: 'Zutat anzeigen', deleteIngredient: 'Zutat löschen', loadingSupplierData: 'Lieferantendaten werden geladen...', totalSuppliers: 'Lieferanten insgesamt', addSupplier: 'Lieferant hinzufügen', searchSuppliers: 'Lieferanten suchen', searchSuppliersPlaceholder: 'Nach Name, Kontakt oder E-Mail suchen...', docs: 'Dokumente', noSuppliersFound: 'Keine Lieferanten gefunden', getStartedFirstSupplier: 'Fügen Sie zunächst Ihren ersten Lieferanten hinzu.', addFirstSupplier: 'Ersten Lieferanten hinzufügen',
+      online: 'Online', offline: 'Offline', itemSupplyQuestion: 'Wie wird dieser Artikel bezogen?', itemSupplyHelp: 'Dies legt fest, ob Sicherheitsinformationen aus den Rezeptzutaten oder direkt vom Herstelleretikett stammen.', preparedItem: 'Von uns zubereitet oder zusammengestellt', preparedItemHelp: 'Allergene und Ernährungsangaben werden aus den Zutaten berechnet.', packagedProduct: 'Zugekauftes verpacktes Produkt', packagedProductHelp: 'Erfassen Sie Etikett, Lieferantennachweise, Allergene und Ernährungsangaben direkt.', manufacturerLabelDetails: 'Angaben auf dem Herstelleretikett', manufacturerLabelHelp: 'Verwenden Sie das aktuelle Verpackungsetikett oder die Herstellerspezifikation.', scanLabel: 'Etikett scannen', supplier: 'Lieferant', selectSupplier: 'Lieferant auswählen', manufacturerBrand: 'Hersteller / Marke', productSkuCode: 'Produkt- oder SKU-Code', barcode: 'Barcode', fullIngredientDeclaration: 'Vollständige Zutatenangabe', ingredientDeclarationPlaceholder: 'Übertragen Sie die Zutatenliste genau wie auf der Verpackung', labelDetailsChecked: 'Etikettangaben geprüft', labelDetailsCheckedHelp: 'Ich habe diese Angaben mit dem aktuellen Herstelleretikett oder der Spezifikation abgeglichen.', dietaryClaims: 'Ernährungsangaben', dietaryClaimsHelp: 'Wählen Sie nur Angaben, die durch Etikett oder Lieferantenspezifikation belegt sind.', packaged: 'Verpackt', preparedAllergenHelp: 'Wird automatisch aus den ausgewählten Zutaten berechnet. Bearbeiten Sie eine Zutat oder ein Lieferantenprofil, um das Ergebnis zu ändern.', addIngredientsForAllergens: 'Fügen Sie oben Zutaten hinzu, um die Allergene dieses Artikels automatisch zu berechnen.', directAllergenHelp: 'Es sind keine Zutaten verknüpft; legen Sie die Allergene dieses Artikels manuell fest.',
+    },
+  },
+} as const
+
 // Comprehensive translations for the kiosk
 export const translations = {
   en: {
+    ...reviewedTranslations.en,
     flag: '🇬🇧',
     abbr: 'EN',
     name: 'English',
@@ -164,6 +247,7 @@ export const translations = {
 
     // Admin Interface
     admin: {
+      ...reviewedTranslations.en.admin,
       // Navigation
       dashboard: 'Dashboard',
       ingredients: 'Ingredients',
@@ -321,6 +405,16 @@ export const translations = {
       // Dashboard Titles
       dashboardTitle: 'Dashboard',
       dashboardSubtitle: 'Manage your allergen management system',
+      complianceNotifications: 'Compliance notifications',
+      loadingComplianceSummary: 'Loading compliance summary...',
+      unableLoadComplianceSummary: 'Unable to load the compliance summary.',
+      tryAgain: 'Try again',
+      itemsNeedAttention: '{count} items need attention',
+      allComplianceChecksPassed: 'All compliance checks passed!',
+      noComplianceIssues: 'No compliance errors or warnings were found.',
+      complianceErrors: 'Errors',
+      complianceWarnings: 'Warnings',
+      reviewComplianceDetails: 'Review compliance details',
       menuBuilder: 'Menu Builder',
       createMenuItems: 'Create menu items',
       locations: 'Locations',
@@ -532,6 +626,7 @@ export const translations = {
       generateReport: 'Generate Report',
       backToMenuBuilder: 'Back to Menu Builder',
       editMenuItem: 'Edit Menu Item',
+      createNewMenuItem: 'Create New Menu Item', createNewMenuItemDesc: 'Add a new item to your menu with allergen tracking', iconOrPicture: 'Icon or Picture', iconPictureHelp: 'Choose a preset icon or upload a custom image to display on the kiosk menu.', done: 'Done',
       updateDetailsFor: 'Update the details for',
       menuItemName: 'Menu Item Name',
       siteScope: 'Site Scope',
@@ -570,6 +665,8 @@ export const translations = {
       savingMenuItem: 'Saving...',
       deletingMenuItem: 'Deleting...',
       reviewFrequency: 'Review Frequency',
+      reviewFrequencyHelp: 'Set a routine review interval. Review sooner whenever the product, supplier, recipe, process or allergen information changes.',
+      threeMonths: '3 months', quarterlyReview: 'Quarterly review', sixMonths: '6 months', semiAnnualReview: 'Six-month review', nineMonths: '9 months', nineMonthReview: 'Review every 9 months', twelveMonths: '12 months', annualReview: 'Annual review',
       allergenSummary: 'Allergen Summary',
       selectIngredientsTitle: 'Select Ingredients',
       chooseIngredientsForMenuItem: 'Choose ingredients for your menu item',
@@ -577,6 +674,7 @@ export const translations = {
   },
 
   ga: {
+    ...reviewedTranslations.ga,
     flag: '🇮🇪',
     abbr: 'GA',
     name: 'Irish',
@@ -761,6 +859,7 @@ export const translations = {
 
     // Admin Interface
     admin: {
+      ...reviewedTranslations.ga.admin,
       // Navigation
       dashboard: 'Painéal',
       ingredients: 'Comhábhair',
@@ -1008,6 +1107,16 @@ export const translations = {
       // Dashboard
       dashboardTitle: 'Painéal',
       dashboardSubtitle: 'Bainistigh do chóras bainistíochta aileargéine',
+      complianceNotifications: 'Fógraí comhlíontachta',
+      loadingComplianceSummary: 'Achoimre comhlíontachta á luchtú...',
+      unableLoadComplianceSummary: 'Níorbh fhéidir an achoimre comhlíontachta a luchtú.',
+      tryAgain: 'Bain triail eile as',
+      itemsNeedAttention: 'Tá aird de dhíth ar {count} mír',
+      allComplianceChecksPassed: 'D’éirigh le gach seiceáil comhlíontachta!',
+      noComplianceIssues: 'Níor aimsíodh aon earráidí ná rabhaidh chomhlíontachta.',
+      complianceErrors: 'Earráidí',
+      complianceWarnings: 'Rabhaidh',
+      reviewComplianceDetails: 'Athbhreithnigh sonraí comhlíontachta',
       loadingDevices: 'Gléasanna á luchtú...',
       loadingSites: 'Suíomhanna á luchtú...',
       errorLoadingDevices: 'Earráid agus gléasanna á luchtú',
@@ -1125,6 +1234,7 @@ export const translations = {
       generateReport: 'Gin Tuarascáil',
       backToMenuBuilder: 'Ar ais chuig an Tógálaí Biachláir',
       editMenuItem: 'Cuir Mír Bhiachláir in Eagar',
+      createNewMenuItem: 'Cruthaigh Mír Bhiachláir Nua', createNewMenuItemDesc: 'Cuir mír nua le do bhiachlár le rianú ailléirginí', iconOrPicture: 'Deilbhín nó Pictiúr', iconPictureHelp: 'Roghnaigh deilbhín réamhshocraithe nó uaslódáil íomhá don bhiachlár both.', done: 'Déanta',
       updateDetailsFor: 'Nuashonraigh na sonraí do',
       menuItemName: 'Ainm na Míre Biachláir',
       siteScope: 'Scóip an tSuímh',
@@ -1163,6 +1273,9 @@ export const translations = {
       savingMenuItem: 'Á sábháil...',
       deletingMenuItem: 'Á scriosadh...',
       reviewFrequency: 'Minicíocht Athbhreithnithe',
+      reviewFrequencyHelp: 'Socraigh eatramh athbhreithnithe rialta. Déan athbhreithniú níos luaithe má athraíonn an táirge, soláthraí, oideas, próiseas nó faisnéis ailléirginí.',
+      threeMonths: '3 mhí', quarterlyReview: 'Athbhreithniú ráithiúil', sixMonths: '6 mhí', semiAnnualReview: 'Athbhreithniú sé mhí', nineMonths: '9 mí', nineMonthReview: 'Athbhreithniú gach 9 mí', twelveMonths: '12 mhí', annualReview: 'Athbhreithniú bliantúil',
+      loadingDownloads: 'Íoslódálacha á luchtú...', allergenInformation: 'Faisnéis ailléirginí', allergenGuidesDesc: 'Cruthaigh treoracha ailléirginí don ghnó nó do shuíomh ar leith', businessWideGuide: 'Treoir don ghnó ar fad', generating: 'Á ghiniúint...', generateCompleteGuide: 'Gin treoir iomlán', siteSpecificGuide: 'Treoir do shuíomh ar leith', selectSite: 'Roghnaigh suíomh', helpSupport: 'Cabhair agus Tacaíocht', helpSupportDesc: 'Faigh freagraí, treoracha agus tacaíocht d’AllyJen', knowledgeBase: 'Bunachar eolais', searchHelpTopics: 'Cuardaigh ábhair chabhrach...', noTopicsFound: 'Níor aimsíodh ábhair', learnMore: 'Tuilleadh eolais', needMoreHelp: 'Tuilleadh cabhrach uait?', supportTeamHelp: 'Tá ár bhfoireann tacaíochta anseo chun cabhrú leat.', allergens: 'Ailléirginí', viewIngredient: 'Féach ar chomhábhar', deleteIngredient: 'Scrios comhábhar', addFirstIngredient: 'Cuir do chéad chomhábhar leis', welcomeToAllyJen: 'Fáilte go AllyJen', welcomeSubtitle: 'Socraigh do chóras bainistíochta ailléirginí', gettingStarted: 'Ag tosú', gettingStartedDesc: 'Lean na céimeanna seo chun AllyJen a chur ar bun', loadingSupplierData: 'Sonraí soláthraithe á luchtú...', totalSuppliers: 'Soláthraithe iomlána', addSupplier: 'Cuir soláthraí leis', searchSuppliers: 'Cuardaigh soláthraithe', searchSuppliersPlaceholder: 'Cuardaigh de réir ainm, teagmhála nó ríomhphoist...', docs: 'Doiciméid', noSuppliersFound: 'Níor aimsíodh soláthraithe', getStartedFirstSupplier: 'Tosaigh trí do chéad soláthraí a chur leis.', addFirstSupplier: 'Cuir an chéad soláthraí leis',
       allergenSummary: 'Achoimre Aileargéine',
       selectIngredientsTitle: 'Roghnaigh Comhábhair',
       chooseIngredientsForMenuItem: 'Roghnaigh comhábhair do do mhír bhiachláir',
@@ -1170,6 +1283,7 @@ export const translations = {
   },
   
   pt: {
+    ...reviewedTranslations.pt,
     flag: '🇵🇹',
     abbr: 'PT',
     name: 'Português',
@@ -1315,6 +1429,7 @@ export const translations = {
 
     // Admin Interface
     admin: {
+      ...reviewedTranslations.pt.admin,
       // Navigation
       dashboard: 'Painel',
       menuBuilder: 'Construtor de Menu',
@@ -1563,6 +1678,16 @@ export const translations = {
       // Dashboard
       dashboardTitle: 'Painel',
       dashboardSubtitle: 'Gerencie seu sistema de gerenciamento de alérgenos',
+      complianceNotifications: 'Notificações de conformidade',
+      loadingComplianceSummary: 'Carregando resumo de conformidade...',
+      unableLoadComplianceSummary: 'Não foi possível carregar o resumo de conformidade.',
+      tryAgain: 'Tentar novamente',
+      itemsNeedAttention: '{count} itens requerem atenção',
+      allComplianceChecksPassed: 'Todas as verificações de conformidade foram aprovadas!',
+      noComplianceIssues: 'Nenhum erro ou aviso de conformidade foi encontrado.',
+      complianceErrors: 'Erros',
+      complianceWarnings: 'Avisos',
+      reviewComplianceDetails: 'Revisar detalhes de conformidade',
       
       manageIngredients: 'Gerencie seus ingredientes',
       
@@ -1713,6 +1838,7 @@ export const translations = {
       generateReport: 'Gerar Relatório',
       backToMenuBuilder: 'Voltar ao Construtor de Menu',
       editMenuItem: 'Editar Item do Menu',
+      createNewMenuItem: 'Criar Novo Item do Menu', createNewMenuItemDesc: 'Adicione um novo item ao menu com controlo de alergénios', iconOrPicture: 'Ícone ou Imagem', iconPictureHelp: 'Escolha um ícone predefinido ou carregue uma imagem para o menu do quiosque.', done: 'Concluído',
       updateDetailsFor: 'Atualizar os detalhes de',
       menuItemName: 'Nome do Item do Menu',
       siteScope: 'Âmbito do Local',
@@ -1751,6 +1877,9 @@ export const translations = {
       savingMenuItem: 'A guardar...',
       deletingMenuItem: 'A eliminar...',
       reviewFrequency: 'Frequência de Revisão',
+      reviewFrequencyHelp: 'Defina um intervalo de revisão regular. Reveja mais cedo sempre que o produto, fornecedor, receita, processo ou informação sobre alergénios mudar.',
+      threeMonths: '3 meses', quarterlyReview: 'Revisão trimestral', sixMonths: '6 meses', semiAnnualReview: 'Revisão semestral', nineMonths: '9 meses', nineMonthReview: 'Revisão a cada 9 meses', twelveMonths: '12 meses', annualReview: 'Revisão anual',
+      loadingDownloads: 'A carregar downloads...', allergenInformation: 'Informação sobre alergénios', allergenGuidesDesc: 'Gere guias de alergénios para toda a empresa ou para um local', businessWideGuide: 'Guia de toda a empresa', generating: 'A gerar...', generateCompleteGuide: 'Gerar guia completo', siteSpecificGuide: 'Guia específico do local', selectSite: 'Selecionar local', helpSupport: 'Ajuda e Suporte', helpSupportDesc: 'Encontre respostas, guias e suporte para o AllyJen', knowledgeBase: 'Base de conhecimento', searchHelpTopics: 'Pesquisar tópicos de ajuda...', noTopicsFound: 'Nenhum tópico encontrado', learnMore: 'Saber mais', needMoreHelp: 'Precisa de mais ajuda?', supportTeamHelp: 'A nossa equipa de suporte está disponível para ajudar.', viewIngredient: 'Ver ingrediente', deleteIngredient: 'Eliminar ingrediente', loadingSupplierData: 'A carregar dados dos fornecedores...', totalSuppliers: 'Total de fornecedores', addSupplier: 'Adicionar fornecedor', searchSuppliers: 'Pesquisar fornecedores', searchSuppliersPlaceholder: 'Pesquisar por nome, contacto ou email...', docs: 'Documentos', noSuppliersFound: 'Nenhum fornecedor encontrado', getStartedFirstSupplier: 'Comece por adicionar o seu primeiro fornecedor.', addFirstSupplier: 'Adicionar primeiro fornecedor',
       allergenSummary: 'Resumo de Alérgenos',
       selectIngredientsTitle: 'Selecionar Ingredientes',
       chooseIngredientsForMenuItem: 'Escolha ingredientes para o seu item do menu',
@@ -1758,6 +1887,7 @@ export const translations = {
   },
   
   fr: {
+    ...reviewedTranslations.fr,
     flag: '🇫🇷',
     abbr: 'FR',
     name: 'Français',
@@ -1903,6 +2033,7 @@ export const translations = {
 
     // Admin Interface
     admin: {
+      ...reviewedTranslations.fr.admin,
       // Navigation
       dashboard: 'Tableau de Bord',
       menuBuilder: 'Constructeur de Menu',
@@ -2151,6 +2282,16 @@ export const translations = {
       // Dashboard
       dashboardTitle: 'Tableau de Bord',
       dashboardSubtitle: 'Gérez votre système de gestion des allergènes',
+      complianceNotifications: 'Notifications de conformité',
+      loadingComplianceSummary: 'Chargement du résumé de conformité...',
+      unableLoadComplianceSummary: 'Impossible de charger le résumé de conformité.',
+      tryAgain: 'Réessayer',
+      itemsNeedAttention: '{count} éléments nécessitent votre attention',
+      allComplianceChecksPassed: 'Tous les contrôles de conformité sont validés !',
+      noComplianceIssues: 'Aucune erreur ni aucun avertissement de conformité détecté.',
+      complianceErrors: 'Erreurs',
+      complianceWarnings: 'Avertissements',
+      reviewComplianceDetails: 'Consulter les détails de conformité',
       
       manageIngredients: 'Gérez vos ingrédients',
       
@@ -2301,6 +2442,7 @@ export const translations = {
       generateReport: 'Générer le Rapport',
       backToMenuBuilder: 'Retour au Constructeur de Menu',
       editMenuItem: 'Modifier l\'Article du Menu',
+      createNewMenuItem: 'Créer un Nouvel Article', createNewMenuItemDesc: 'Ajoutez un article au menu avec suivi des allergènes', iconOrPicture: 'Icône ou Image', iconPictureHelp: 'Choisissez une icône ou importez une image pour le menu de la borne.', done: 'Terminé',
       updateDetailsFor: 'Mettre à jour les détails pour',
       menuItemName: 'Nom de l\'Article du Menu',
       siteScope: 'Portée du Site',
@@ -2339,6 +2481,9 @@ export const translations = {
       savingMenuItem: 'Enregistrement...',
       deletingMenuItem: 'Suppression...',
       reviewFrequency: 'Fréquence de Révision',
+      reviewFrequencyHelp: 'Définissez un intervalle de révision régulier. Révisez plus tôt si le produit, le fournisseur, la recette, le processus ou les informations allergènes changent.',
+      threeMonths: '3 mois', quarterlyReview: 'Révision trimestrielle', sixMonths: '6 mois', semiAnnualReview: 'Révision semestrielle', nineMonths: '9 mois', nineMonthReview: 'Révision tous les 9 mois', twelveMonths: '12 mois', annualReview: 'Révision annuelle',
+      loadingDownloads: 'Chargement des téléchargements...', allergenInformation: 'Informations sur les allergènes', allergenGuidesDesc: 'Générez des guides des allergènes pour toute l’entreprise ou un site', businessWideGuide: 'Guide de toute l’entreprise', generating: 'Génération...', generateCompleteGuide: 'Générer le guide complet', siteSpecificGuide: 'Guide spécifique au site', selectSite: 'Sélectionner un site', helpSupport: 'Aide et Assistance', helpSupportDesc: 'Trouvez des réponses, des guides et de l’aide pour AllyJen', knowledgeBase: 'Base de connaissances', searchHelpTopics: 'Rechercher dans l’aide...', noTopicsFound: 'Aucun sujet trouvé', learnMore: 'En savoir plus', needMoreHelp: 'Besoin d’aide supplémentaire ?', supportTeamHelp: 'Notre équipe d’assistance est à votre disposition.', viewIngredient: 'Voir l’ingrédient', deleteIngredient: 'Supprimer l’ingrédient', loadingSupplierData: 'Chargement des fournisseurs...', totalSuppliers: 'Nombre de fournisseurs', addSupplier: 'Ajouter un fournisseur', searchSuppliers: 'Rechercher des fournisseurs', searchSuppliersPlaceholder: 'Rechercher par nom, contact ou e-mail...', docs: 'Documents', noSuppliersFound: 'Aucun fournisseur trouvé', getStartedFirstSupplier: 'Commencez par ajouter votre premier fournisseur.', addFirstSupplier: 'Ajouter le premier fournisseur',
       allergenSummary: 'Résumé des Allergènes',
       selectIngredientsTitle: 'Sélectionner des Ingrédients',
       chooseIngredientsForMenuItem: 'Choisissez des ingrédients pour votre article du menu',
@@ -2346,6 +2491,7 @@ export const translations = {
   },
   
   es: {
+    ...reviewedTranslations.es,
     flag: '🇪🇸',
     abbr: 'ES',
     name: 'Español',
@@ -2491,6 +2637,7 @@ export const translations = {
 
     // Admin Interface
     admin: {
+      ...reviewedTranslations.es.admin,
       // Navigation
       dashboard: 'Panel de Control',
       menuBuilder: 'Constructor de Menú',
@@ -2739,6 +2886,16 @@ export const translations = {
       // Dashboard
       dashboardTitle: 'Panel',
       dashboardSubtitle: 'Gestiona tu sistema de gestión de alérgenos',
+      complianceNotifications: 'Notificaciones de cumplimiento',
+      loadingComplianceSummary: 'Cargando el resumen de cumplimiento...',
+      unableLoadComplianceSummary: 'No se pudo cargar el resumen de cumplimiento.',
+      tryAgain: 'Intentar de nuevo',
+      itemsNeedAttention: '{count} elementos requieren atención',
+      allComplianceChecksPassed: '¡Todas las comprobaciones de cumplimiento están superadas!',
+      noComplianceIssues: 'No se encontraron errores ni avisos de cumplimiento.',
+      complianceErrors: 'Errores',
+      complianceWarnings: 'Avisos',
+      reviewComplianceDetails: 'Revisar los detalles de cumplimiento',
       
       manageIngredients: 'Gestiona tus ingredientes',
       
@@ -2889,6 +3046,7 @@ export const translations = {
       generateReport: 'Generar Informe',
       backToMenuBuilder: 'Volver al Constructor de Menú',
       editMenuItem: 'Editar Elemento del Menú',
+      createNewMenuItem: 'Crear Nuevo Artículo', createNewMenuItemDesc: 'Añade un artículo al menú con seguimiento de alérgenos', iconOrPicture: 'Icono o Imagen', iconPictureHelp: 'Elige un icono o sube una imagen para el menú del quiosco.', done: 'Hecho',
       updateDetailsFor: 'Actualizar los detalles de',
       menuItemName: 'Nombre del Elemento del Menú',
       siteScope: 'Alcance del Sitio',
@@ -2927,6 +3085,9 @@ export const translations = {
       savingMenuItem: 'Guardando...',
       deletingMenuItem: 'Eliminando...',
       reviewFrequency: 'Frecuencia de Revisión',
+      reviewFrequencyHelp: 'Define un intervalo de revisión periódico. Revisa antes si cambia el producto, proveedor, receta, proceso o información sobre alérgenos.',
+      threeMonths: '3 meses', quarterlyReview: 'Revisión trimestral', sixMonths: '6 meses', semiAnnualReview: 'Revisión semestral', nineMonths: '9 meses', nineMonthReview: 'Revisión cada 9 meses', twelveMonths: '12 meses', annualReview: 'Revisión anual',
+      loadingDownloads: 'Cargando descargas...', allergenInformation: 'Información sobre alérgenos', allergenGuidesDesc: 'Genera guías de alérgenos para toda la empresa o para un sitio', businessWideGuide: 'Guía de toda la empresa', generating: 'Generando...', generateCompleteGuide: 'Generar guía completa', siteSpecificGuide: 'Guía específica del sitio', selectSite: 'Seleccionar sitio', helpSupport: 'Ayuda y Soporte', helpSupportDesc: 'Encuentra respuestas, guías y soporte para AllyJen', knowledgeBase: 'Base de conocimientos', searchHelpTopics: 'Buscar temas de ayuda...', noTopicsFound: 'No se encontraron temas', learnMore: 'Más información', needMoreHelp: '¿Necesitas más ayuda?', supportTeamHelp: 'Nuestro equipo de soporte está disponible para ayudarte.', viewIngredient: 'Ver ingrediente', deleteIngredient: 'Eliminar ingrediente', loadingSupplierData: 'Cargando datos de proveedores...', totalSuppliers: 'Total de proveedores', addSupplier: 'Añadir proveedor', searchSuppliers: 'Buscar proveedores', searchSuppliersPlaceholder: 'Buscar por nombre, contacto o correo...', docs: 'Documentos', noSuppliersFound: 'No se encontraron proveedores', getStartedFirstSupplier: 'Empieza añadiendo tu primer proveedor.', addFirstSupplier: 'Añadir primer proveedor',
       allergenSummary: 'Resumen de Alérgenos',
       selectIngredientsTitle: 'Seleccionar Ingredientes',
       chooseIngredientsForMenuItem: 'Elija ingredientes para su elemento del menú',
@@ -2934,6 +3095,7 @@ export const translations = {
   },
   
   de: {
+    ...reviewedTranslations.de,
     flag: '🇩🇪',
     abbr: 'DE',
     name: 'Deutsch',
@@ -3079,6 +3241,7 @@ export const translations = {
 
     // Admin Interface
     admin: {
+      ...reviewedTranslations.de.admin,
       // Navigation
       dashboard: 'Dashboard',
       menuBuilder: 'Menü-Builder',
@@ -3288,6 +3451,16 @@ export const translations = {
       // Dashboard
       dashboardTitle: 'Dashboard',
       dashboardSubtitle: 'Verwalten Sie Ihr Allergiemanagementsystem',
+      complianceNotifications: 'Compliance-Benachrichtigungen',
+      loadingComplianceSummary: 'Compliance-Übersicht wird geladen...',
+      unableLoadComplianceSummary: 'Die Compliance-Übersicht konnte nicht geladen werden.',
+      tryAgain: 'Erneut versuchen',
+      itemsNeedAttention: '{count} Einträge erfordern Aufmerksamkeit',
+      allComplianceChecksPassed: 'Alle Compliance-Prüfungen bestanden!',
+      noComplianceIssues: 'Es wurden keine Compliance-Fehler oder -Warnungen gefunden.',
+      complianceErrors: 'Fehler',
+      complianceWarnings: 'Warnungen',
+      reviewComplianceDetails: 'Compliance-Details prüfen',
       
       manageIngredients: 'Verwalten Sie Ihre Zutaten',
       
@@ -3477,6 +3650,7 @@ export const translations = {
       generateReport: 'Bericht erzeugen',
       backToMenuBuilder: 'Zurück zum Menü-Builder',
       editMenuItem: 'Menüelement bearbeiten',
+      createNewMenuItem: 'Neuen Menüpunkt erstellen', createNewMenuItemDesc: 'Fügen Sie einen Menüpunkt mit Allergenverfolgung hinzu', iconOrPicture: 'Symbol oder Bild', iconPictureHelp: 'Wählen Sie ein Symbol oder laden Sie ein Bild für das Kioskmenü hoch.', done: 'Fertig',
       updateDetailsFor: 'Details aktualisieren für',
       menuItemName: 'Name des Menüelements',
       siteScope: 'Standortbereich',
@@ -3515,6 +3689,9 @@ export const translations = {
       savingMenuItem: 'Wird gespeichert...',
       deletingMenuItem: 'Wird gelöscht...',
       reviewFrequency: 'Prüfhäufigkeit',
+      reviewFrequencyHelp: 'Legen Sie ein regelmäßiges Prüfintervall fest. Prüfen Sie früher, wenn sich Produkt, Lieferant, Rezept, Prozess oder Allergeninformationen ändern.',
+      threeMonths: '3 Monate', quarterlyReview: 'Vierteljährliche Prüfung', sixMonths: '6 Monate', semiAnnualReview: 'Halbjährliche Prüfung', nineMonths: '9 Monate', nineMonthReview: 'Prüfung alle 9 Monate', twelveMonths: '12 Monate', annualReview: 'Jährliche Prüfung',
+      loadingDownloads: 'Downloads werden geladen...', allergenInformation: 'Allergeninformationen', allergenGuidesDesc: 'Erstellen Sie Allergenleitfäden für das gesamte Unternehmen oder einen Standort', businessWideGuide: 'Unternehmensweiter Leitfaden', generating: 'Wird erstellt...', generateCompleteGuide: 'Vollständigen Leitfaden erstellen', siteSpecificGuide: 'Standortspezifischer Leitfaden', selectSite: 'Standort auswählen', helpSupport: 'Hilfe und Support', helpSupportDesc: 'Antworten, Anleitungen und Unterstützung für AllyJen', knowledgeBase: 'Wissensdatenbank', searchHelpTopics: 'Hilfethemen durchsuchen...', noTopicsFound: 'Keine Themen gefunden', learnMore: 'Mehr erfahren', needMoreHelp: 'Benötigen Sie weitere Hilfe?', supportTeamHelp: 'Unser Support-Team hilft Ihnen gerne weiter.', viewIngredient: 'Zutat anzeigen', deleteIngredient: 'Zutat löschen', loadingSupplierData: 'Lieferantendaten werden geladen...', totalSuppliers: 'Lieferanten insgesamt', addSupplier: 'Lieferant hinzufügen', searchSuppliers: 'Lieferanten suchen', searchSuppliersPlaceholder: 'Nach Name, Kontakt oder E-Mail suchen...', docs: 'Dokumente', noSuppliersFound: 'Keine Lieferanten gefunden', getStartedFirstSupplier: 'Fügen Sie zunächst Ihren ersten Lieferanten hinzu.', addFirstSupplier: 'Ersten Lieferanten hinzufügen',
       allergenSummary: 'Allergenzusammenfassung',
       selectIngredientsTitle: 'Zutaten auswählen',
       chooseIngredientsForMenuItem: 'Wählen Sie Zutaten für Ihr Menüelement',

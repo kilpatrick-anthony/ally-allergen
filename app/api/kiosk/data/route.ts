@@ -129,6 +129,7 @@ export async function GET(request: NextRequest) {
         logo_url: (business as any).settings?.logoUrl ?? (business as any).logo_url ?? null,
         primary_color: (business as any).settings?.primaryColor ?? (business as any).primary_color ?? null,
         kiosk_disclaimer: (business as any).settings?.kioskDisclaimer ?? null,
+        default_language: (business as any).settings?.defaultLanguage ?? 'en',
         opening_hours: siteOpeningHours,
       },
       menuItems: menuItemsWithIngredients,

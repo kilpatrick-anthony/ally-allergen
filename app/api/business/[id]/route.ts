@@ -2,6 +2,8 @@
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
+const SUPPORTED_LANGUAGES = new Set(['en', 'ga', 'pt', 'fr', 'es', 'de'])
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id: businessId } = await params
@@ -34,7 +36,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: 'Business ID required' }, { status: 400 })
     }
     const body = await request.json()
-    const { name, contactEmail, sessionTimeout, businessAddress, businessCity, businessPostalCode, businessCountry, businessPhone, primaryColor, secondaryColor, kioskDisclaimer } = body
+    const { name, contactEmail, sessionTimeout, businessAddress, businessCity, businessPostalCode, businessCountry, businessPhone, primaryColor, secondaryColor, kioskDisclaimer, defaultLanguage } = body
     const supabase = createServiceClient()
     
     // First, get current business settings
@@ -54,6 +56,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       ...(primaryColor && { primaryColor }),
       ...(secondaryColor && { secondaryColor }),
       ...(kioskDisclaimer !== undefined && { kioskDisclaimer }),
+      ...(SUPPORTED_LANGUAGES.has(defaultLanguage) && { defaultLanguage }),
       address: {
         street: businessAddress || '',
         city: businessCity || '',

@@ -20,6 +20,9 @@ import { translations, type LanguageCode } from '@/lib/translations'
 import AllergenTableView from '@/components/kiosk/AllergenTableView'
 import { generateAllergenTablePDF } from '@/lib/pdf/allergenTablePDF'
 import { GLUTEN_TYPES, TREE_NUT_TYPES, type GlutenType, type TreeNutType } from '@/types/allergen'
+import { hasAnalyticsConsent } from '@/lib/cookie-consent'
+import { useAnalyticsConsent } from '@/lib/hooks/useAnalyticsConsent'
+import PortalLocalizationBridge from '@/components/shared/PortalLocalizationBridge'
 
 // Import your design system components
 import { Container } from '@/components/layout/Container'
@@ -43,6 +46,8 @@ async function sendKioskAnalyticsEvent(payload: {
   scanSource?: string
   timeOnPage?: number
 }) {
+  if (!hasAnalyticsConsent()) return
+
   try {
     await fetch('/api/analytics/kiosk-event', {
       method: 'POST',
@@ -357,6 +362,7 @@ export default function KioskPage() {
   const siteIdParam = searchParams.get('site_id')
   const qrDeploymentCode = searchParams.get('qr')
   const pdfAutoDownload = searchParams.get('pdf')
+  const analyticsAllowed = useAnalyticsConsent()
 
   // Persist slug so the PWA start_url (/kiosk) can redirect back here
   useEffect(() => {
@@ -432,6 +438,7 @@ export default function KioskPage() {
   const lastActivityRef = useRef<number>(Date.now())
   const pageLoadTime = useRef(Date.now())
   const screensaverTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const businessLanguageAppliedRef = useRef<string | null>(null)
 
   // ── Visual Viewport / keyboard offset ───────────────────────────────────────
   useEffect(() => {
@@ -486,6 +493,20 @@ export default function KioskPage() {
   }, [])
 
   // Listen for language changes from admin settings
+  useEffect(() => {
+    const defaultLanguage = business?.default_language
+    const businessId = business?.id
+    if (!businessId || !defaultLanguage) return
+
+    const businessLanguageKey = `${businessId}:${defaultLanguage}`
+    if (businessLanguageAppliedRef.current === businessLanguageKey) return
+
+    businessLanguageAppliedRef.current = businessLanguageKey
+    setCurrentLanguage(defaultLanguage)
+    localStorage.setItem('defaultLanguage', defaultLanguage)
+    window.dispatchEvent(new CustomEvent('languageChange', { detail: defaultLanguage }))
+  }, [business?.default_language, business?.id])
+
   useEffect(() => {
     const handleLanguageChange = (event: CustomEvent<LanguageCode>) => {
       setCurrentLanguage(event.detail)
@@ -642,7 +663,10 @@ export default function KioskPage() {
     setShowFilterResults(false)
     setShowInactivityWarning(false)
     setRemainingSeconds(0)
-    setCurrentLanguage('en')
+    const defaultLanguage = business?.default_language || 'en'
+    setCurrentLanguage(defaultLanguage)
+    localStorage.setItem('defaultLanguage', defaultLanguage)
+    window.dispatchEvent(new CustomEvent('languageChange', { detail: defaultLanguage }))
     
     // Clear any selections
     setSelectedAllergens([])
@@ -662,13 +686,13 @@ export default function KioskPage() {
 
   // Track page view on load
   useEffect(() => {
-    if (slug) {
+    if (slug && analyticsAllowed) {
       trackPageView(slug, siteIdParam)
     }
-  }, [slug, siteIdParam])
+  }, [analyticsAllowed, slug, siteIdParam])
 
   useEffect(() => {
-    if (!qrDeploymentCode) return
+    if (!analyticsAllowed || !qrDeploymentCode) return
     const sessionKey = `allyjen_qr_scan_${qrDeploymentCode}`
     if (sessionStorage.getItem(sessionKey)) return
     sessionStorage.setItem(sessionKey, '1')
@@ -678,37 +702,39 @@ export default function KioskPage() {
       body: JSON.stringify({ code: qrDeploymentCode }),
     }).catch(() => undefined)
     trackQRScan(slug, `deployment:${qrDeploymentCode}`, siteIdParam)
-  }, [qrDeploymentCode, siteIdParam, slug])
+  }, [analyticsAllowed, qrDeploymentCode, siteIdParam, slug])
 
   // Track search queries
   useEffect(() => {
-    if (searchQuery) {
+    if (analyticsAllowed && searchQuery) {
       const timeoutId = setTimeout(() => {
         trackSearch(slug, searchQuery, siteIdParam)
       }, 500)
       
       return () => clearTimeout(timeoutId)
     }
-  }, [searchQuery, slug, siteIdParam])
+  }, [analyticsAllowed, searchQuery, slug, siteIdParam])
 
   // Track filter usage
   useEffect(() => {
-    if (selectedAllergens.length > 0 || selectedDietary.length > 0) {
+    if (analyticsAllowed && (selectedAllergens.length > 0 || selectedDietary.length > 0)) {
       trackFilterUsage(slug, selectedAllergens, selectedDietary, siteIdParam)
     }
-  }, [selectedAllergens, selectedDietary, slug, siteIdParam])
+  }, [analyticsAllowed, selectedAllergens, selectedDietary, slug, siteIdParam])
 
   useEffect(() => {
-    if (showQRCode) {
+    if (analyticsAllowed && showQRCode) {
       trackQRScan(slug, 'kiosk_modal', siteIdParam)
     }
-  }, [showQRCode, slug, siteIdParam])
+  }, [analyticsAllowed, showQRCode, slug, siteIdParam])
 
   // Track time on page when leaving
   useEffect(() => {
     return () => {
-      const timeOnPage = Math.floor((Date.now() - pageLoadTime.current) / 1000)
-      trackTimeOnPage(slug, timeOnPage, siteIdParam)
+      if (hasAnalyticsConsent()) {
+        const timeOnPage = Math.floor((Date.now() - pageLoadTime.current) / 1000)
+        trackTimeOnPage(slug, timeOnPage, siteIdParam)
+      }
     }
   }, [slug, siteIdParam])
 
@@ -1085,6 +1111,7 @@ export default function KioskPage() {
   if (loading && !business && menuItems.length === 0) {
     return (
       <div className="min-h-screen bg-[#003842] flex items-center justify-center px-6" data-context="kiosk">
+        <PortalLocalizationBridge />
         <div className="text-center text-white max-w-md">
           <div className="relative h-12 w-12 mx-auto mb-4">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/25 border-t-[#42b8ac]" />
@@ -1099,6 +1126,7 @@ export default function KioskPage() {
   if (error && !business && menuItems.length === 0) {
     return (
       <div className="min-h-screen bg-[#003842] flex items-center justify-center px-6" data-context="kiosk">
+        <PortalLocalizationBridge />
         <div className="bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl">
           <div className="flex items-start gap-3">
             <AlertCircle className="h-6 w-6 text-red-600 mt-0.5" />
@@ -1169,6 +1197,7 @@ export default function KioskPage() {
         data-context="kiosk"
         onClick={enterFullscreen}
       >
+        <PortalLocalizationBridge />
         {/* Decorative blobs for depth */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div
@@ -1254,7 +1283,8 @@ export default function KioskPage() {
   const kioskUrl = typeof window !== 'undefined' ? `${window.location.origin}/kiosk/${slug}` : ''
 
   return (
-    <div className="min-h-screen bg-gray-50 relative">
+    <div className="min-h-screen bg-gray-50 relative" data-context="kiosk">
+      <PortalLocalizationBridge />
       {showInactivityWarning && <InactivityWarning />}
 
       {/* Header */}
@@ -1436,16 +1466,16 @@ export default function KioskPage() {
                     icon={<Home className="h-4 w-4" />}
                     className="text-white border-white/40 hover:text-white hover:border-white/60"
                     onClick={() => { setActiveView('landing'); clearFilters(); setShowInactivityWarning(false) }}
-                    title="Return to main menu"
+                    title={t.homeButton}
                   />
                   <Button
                     variant="outline"
                     size="sm"
                     className="text-white border-white/40 hover:text-white hover:border-white/60"
-                    onClick={() => { setKioskStarted(false); setActiveView('landing'); clearFilters(); setShowInactivityWarning(false); setCurrentLanguage('en'); window.dispatchEvent(new CustomEvent('kiosk:reset')) }}
-                    title="Return to sleep screen"
+                    onClick={() => { const defaultLanguage = business?.default_language || 'en'; setKioskStarted(false); setActiveView('landing'); clearFilters(); setShowInactivityWarning(false); setCurrentLanguage(defaultLanguage); localStorage.setItem('defaultLanguage', defaultLanguage); window.dispatchEvent(new CustomEvent('languageChange', { detail: defaultLanguage })); window.dispatchEvent(new CustomEvent('kiosk:reset')) }}
+                    title={t.kioskSleeping}
                   >
-                    Kiosk
+                    {t.admin.kiosks}
                   </Button>
                 </div>
               </div>
@@ -1992,7 +2022,7 @@ export default function KioskPage() {
             {/* Menu Items Header with View Toggle */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-[#003842]">Menu Items</h2>
+                <h2 className="text-2xl font-bold text-[#003842]">{t.menuItems}</h2>
                 
                 {/* View Mode Toggle */}
                 <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
@@ -2044,7 +2074,7 @@ export default function KioskPage() {
                   <div className="inline-flex items-center gap-3 rounded-lg border border-[#42b8ac]/30 bg-[#e8f7f5] px-3 py-2 text-xs text-[#0f4f4a] font-medium">
                     <span>{t.swipeLeftHint}</span>
                     <span className="text-[#42b8ac]">|</span>
-                    <span>↕ Scroll inside table for more rows</span>
+                    <span>{t.scrollHint}</span>
                   </div>
                   <AllergenTableView 
                     items={filteredItems} 
@@ -2210,14 +2240,14 @@ export default function KioskPage() {
                     <QrCode className="h-7 w-7" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-bold text-white">Use AllyJen on Your Phone</h3>
-                    <p className="mt-1 text-sm font-medium text-white/75">Open this allergen guide on a mobile device.</p>
+                    <h3 className="text-2xl font-bold text-white">{t.scanToSaveMenu}</h3>
+                    <p className="mt-1 text-sm font-medium text-white/75">{t.saveMenuToPhoneDesc}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => setShowQRCode(false)}
                   className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
-                  aria-label="Close QR code"
+                  aria-label={t.close}
                 >
                   <X className="h-6 w-6" />
                 </button>
@@ -2232,13 +2262,13 @@ export default function KioskPage() {
 
                 <div className="text-center sm:text-left">
                   <p className="text-2xl font-bold leading-tight text-[#003842]">
-                    Scan with your phone camera
+                    {t.scanWithPhoneCamera}
                   </p>
                   <p className="mt-3 text-base leading-relaxed text-gray-700">
-                    The menu will open for this business, so you can read allergen details more comfortably on your own screen.
+                    {t.scanToSaveMenu}
                   </p>
                   <div className="mt-5 rounded-2xl bg-[#f0f9f8] px-4 py-3 text-sm font-semibold text-[#134e4a]">
-                    No app needed. Just point your camera at the code.
+                    {t.saveMenuToPhoneDesc}
                   </div>
                 </div>
               </div>
@@ -2248,7 +2278,7 @@ export default function KioskPage() {
                   onClick={() => setShowQRCode(false)}
                   className="inline-flex min-h-12 items-center justify-center rounded-xl border border-gray-300 bg-white px-6 text-base font-bold text-[#003842] shadow-sm hover:bg-gray-50"
                 >
-                  Close
+                  {t.close}
                 </button>
               </div>
             </div>
@@ -2336,13 +2366,13 @@ export default function KioskPage() {
                   </div>
                   <div>
                     <h3 className="text-2xl font-bold text-white">{t.getYourAllergenGuide}</h3>
-                    <p className="mt-1 text-sm font-medium text-white/75">Send a copy of this guide to your inbox.</p>
+                    <p className="mt-1 text-sm font-medium text-white/75">{t.emailAllergenGuideDesc}</p>
                   </div>
                 </div>
                 <button
                   onClick={() => { setShowPDFOptions(false); setShowEmailInput(false); setEmailInput(''); setEmailSent(false); setEmailError(''); }}
                   className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition"
-                  aria-label="Close email guide"
+                  aria-label={t.close}
                 >
                   <X className="h-6 w-6" />
                 </button>
@@ -2411,7 +2441,7 @@ export default function KioskPage() {
                 <div className="mt-5 text-center">
                   <div className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm">
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-[#42b8ac] border-t-transparent" />
-                    Generating PDF...
+                    {t.admin.generating}
                   </div>
                 </div>
               )}

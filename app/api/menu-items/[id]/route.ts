@@ -5,6 +5,7 @@ import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import { recordAuditLog, diffRecordFields, MENU_ITEM_AUDIT_FIELDS } from '@/lib/audit'
 import { deriveMenuItemSafety, normalizeIngredientIds, replaceMenuItemIngredients } from '@/lib/server/menu-item-safety'
+import { buildProductFields } from '@/lib/server/menu-item-product'
 
 const getUserBusinessId = async (
   supabase: ReturnType<typeof createServiceClient>,
@@ -127,7 +128,15 @@ export async function PUT(
       .eq('business_id', businessId)
       .single()
 
-    const ingredients = normalizeIngredientIds(body.ingredients)
+    let productFields
+    try {
+      productFields = await buildProductFields(supabase, businessId, userId, body)
+    } catch (validationError: any) {
+      return NextResponse.json({ error: validationError.message }, { status: 400 })
+    }
+    const ingredients = productFields.item_type === 'packaged_product'
+      ? []
+      : normalizeIngredientIds(body.ingredients)
     let safety
     try {
       safety = await deriveMenuItemSafety(
@@ -161,7 +170,8 @@ export async function PUT(
       price: typeof body.price === 'number' ? body.price : 0,
       display_order: typeof body.display_order === 'number' ? body.display_order : 0,
       preferred_review_months: typeof body.preferred_review_months === 'number' ? body.preferred_review_months : 12,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      ...productFields
     }
 
     let { data: menuItem, error } = await supabase

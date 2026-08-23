@@ -1,5 +1,6 @@
 // lib/analytics/tracker.ts
 import { createClient } from '@/lib/supabase/client'
+import { hasAnalyticsConsent } from '@/lib/cookie-consent'
 
 interface TrackPageViewParams {
   slug: string
@@ -25,12 +26,8 @@ class AnalyticsTracker {
   private supabase = typeof window !== 'undefined' ? createClient() : null
   private sessionId: string | null = null
 
-  constructor() {
-    this.initializeSession()
-  }
-
   private initializeSession() {
-    if (typeof window === 'undefined') return
+    if (typeof window === 'undefined' || !hasAnalyticsConsent()) return false
     
     // Generate or retrieve session ID
     this.sessionId = localStorage.getItem('analytics_session_id')
@@ -38,11 +35,13 @@ class AnalyticsTracker {
       this.sessionId = crypto.randomUUID()
       localStorage.setItem('analytics_session_id', this.sessionId)
     }
+
+    return true
   }
 
   async trackPageView(params: TrackPageViewParams) {
     try {
-      if (!this.supabase) return
+      if (!this.supabase || !this.initializeSession()) return
       const { data: deviceData } = this.getDeviceInfo()
       
       await this.supabase.from('page_views').insert({
@@ -67,7 +66,7 @@ class AnalyticsTracker {
 
   async trackQRScan(params: TrackQRScanParams) {
     try {
-      if (!this.supabase) return
+      if (!this.supabase || !this.initializeSession()) return
       const { data: deviceData, location } = await this.getDeviceInfoWithLocation()
       
       await this.supabase.from('qr_code_scans').insert({
@@ -88,7 +87,7 @@ class AnalyticsTracker {
 
   async trackPDFDownload(params: TrackPDFDownloadParams) {
     try {
-      if (!this.supabase) return
+      if (!this.supabase || !this.initializeSession()) return
       const { data: deviceData } = this.getDeviceInfo()
       
       await this.supabase.from('pdf_downloads').insert({

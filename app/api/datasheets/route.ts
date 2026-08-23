@@ -179,6 +179,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
+    if ((!ingredient_id && !menu_item_id) || (ingredient_id && menu_item_id)) {
+      return NextResponse.json({ error: 'Provide exactly one of ingredient_id or menu_item_id' }, { status: 400 })
+    }
+    const entityTable = ingredient_id ? 'ingredients' : 'menu_items'
+    const { data: ownedEntity } = await supabase
+      .from(entityTable)
+      .select('id')
+      .eq('id', ingredient_id || menu_item_id)
+      .eq('business_id', userBusiness.business_id)
+      .maybeSingle()
+    if (!ownedEntity) {
+      return NextResponse.json({ error: 'Ingredient or menu item not found' }, { status: 404 })
+    }
+
     // Create datasheet
     const { data: datasheet, error } = await supabase
       .from('datasheets')

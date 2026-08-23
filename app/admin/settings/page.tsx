@@ -420,6 +420,7 @@ export default function SettingsPage() {
               businessPostalCode: businessData?.settings?.address?.postalCode ?? '',
               businessCountry: businessData?.settings?.address?.country ?? '',
               businessPhone: businessData?.settings?.address?.phone ?? '',
+              defaultLanguage: businessData?.settings?.defaultLanguage ?? 'en',
               sessionTimeout: businessData?.sessionTimeout ?? prev.sessionTimeout,
               logoUrl: businessData?.settings?.logoUrl ?? prev.logoUrl,
               primaryColor: businessData?.settings?.primaryColor ?? prev.primaryColor,
@@ -517,7 +518,8 @@ export default function SettingsPage() {
           sessionTimeout: settings.sessionTimeout,
           primaryColor: settings.primaryColor,
           secondaryColor: settings.secondaryColor,
-          kioskDisclaimer: settings.kioskDisclaimer
+          kioskDisclaimer: settings.kioskDisclaimer,
+          defaultLanguage: settings.defaultLanguage
         })
       })
       if (!res.ok) {
@@ -536,6 +538,7 @@ export default function SettingsPage() {
           primaryColor: businessData?.settings?.primaryColor ?? prev.primaryColor,
           secondaryColor: businessData?.settings?.secondaryColor ?? prev.secondaryColor,
           kioskDisclaimer: businessData?.settings?.kioskDisclaimer ?? prev.kioskDisclaimer,
+          defaultLanguage: businessData?.settings?.defaultLanguage ?? prev.defaultLanguage,
         }))
       }
       setHasUnsavedChanges(false)

@@ -85,7 +85,11 @@ export async function GET(request: NextRequest) {
             name,
             is_active,
             last_reviewed_at,
-            preferred_review_months
+            preferred_review_months,
+            item_type,
+            supplier_id,
+            ingredient_declaration,
+            label_verified_at
           `)
           .eq('id', itemId)
           .eq('business_id', userBusiness.business_id)
@@ -102,6 +106,12 @@ export async function GET(request: NextRequest) {
           .eq('menu_item_id', itemId)
 
         const ingredients = (menuIngredients || []).map((row) => String(row.ingredient_id))
+        const { count: menuDatasheetCount } = await supabase
+          .from('datasheets')
+          .select('*', { count: 'exact', head: true })
+          .eq('business_id', userBusiness.business_id)
+          .eq('menu_item_id', itemId)
+          .eq('status', 'active')
 
         // Get all ingredients' compliance status
         const { data: allIngredients } = await supabase
@@ -146,7 +156,12 @@ export async function GET(request: NextRequest) {
             status: menuItem.is_active ? 'active' : 'draft',
             last_reviewed_at: menuItem.last_reviewed_at,
             preferred_review_months: menuItem.preferred_review_months || 12,
-            ingredients: ingredients
+            ingredients: ingredients,
+            item_type: menuItem.item_type,
+            supplier_id: menuItem.supplier_id,
+            ingredient_declaration: menuItem.ingredient_declaration,
+            label_verified_at: menuItem.label_verified_at,
+            has_datasheets: (menuDatasheetCount || 0) > 0
           },
           ingredientComplianceMap,
           businessSettings
@@ -177,13 +192,18 @@ export async function GET(request: NextRequest) {
           name,
           is_active,
           last_reviewed_at,
-          preferred_review_months
+          preferred_review_months,
+          item_type,
+          supplier_id,
+          ingredient_declaration,
+          label_verified_at
         `)
         .eq('business_id', userBusiness.business_id)
 
       // Get all menu item ingredients
       const menuItemIds = (menuItems || []).map((item) => item.id)
       let ingredientsByMenuItem = new Map<string, string[]>()
+      const menuItemsWithDatasheets = new Set<string>()
 
       if (menuItemIds.length > 0) {
         const { data: menuIngredients } = await supabase
@@ -199,6 +219,15 @@ export async function GET(request: NextRequest) {
             return acc
           }, new Map<string, string[]>())
         }
+        const { data: menuDatasheets } = await supabase
+          .from('datasheets')
+          .select('menu_item_id')
+          .eq('business_id', userBusiness.business_id)
+          .eq('status', 'active')
+          .in('menu_item_id', menuItemIds)
+        menuDatasheets?.forEach((datasheet: any) => {
+          if (datasheet.menu_item_id) menuItemsWithDatasheets.add(datasheet.menu_item_id)
+        })
       }
 
       const ingredientComplianceList: any[] = []
@@ -247,7 +276,12 @@ export async function GET(request: NextRequest) {
             status: item.status || (item.is_active ? 'active' : 'draft'),
             last_reviewed_at: item.last_reviewed_at,
             preferred_review_months: item.preferred_review_months || 12,
-            ingredients: ingredientsByMenuItem.get(item.id) || []
+            ingredients: ingredientsByMenuItem.get(item.id) || [],
+            item_type: item.item_type,
+            supplier_id: item.supplier_id,
+            ingredient_declaration: item.ingredient_declaration,
+            label_verified_at: item.label_verified_at,
+            has_datasheets: menuItemsWithDatasheets.has(item.id)
           },
           ingredientComplianceMap,
           businessSettings

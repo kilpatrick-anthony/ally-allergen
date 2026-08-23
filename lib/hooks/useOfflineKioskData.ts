@@ -13,6 +13,7 @@ export interface Business {
   secondary_color: string | null;
   kiosk_display_name: string | null;
   kiosk_disclaimer?: string | null;
+  default_language?: 'en' | 'ga' | 'pt' | 'fr' | 'es' | 'de';
   address?: string;
   phone?: string;
   website?: string;

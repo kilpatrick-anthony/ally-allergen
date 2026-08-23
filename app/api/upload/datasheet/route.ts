@@ -53,6 +53,21 @@ export async function POST(request: NextRequest) {
     if (!ingredientId && !menuItemId) {
       return NextResponse.json({ error: 'Either ingredient_id or menu_item_id is required' }, { status: 400 })
     }
+    if (ingredientId && menuItemId) {
+      return NextResponse.json({ error: 'A datasheet can belong to either an ingredient or a menu item, not both' }, { status: 400 })
+    }
+
+    const entityTable = ingredientId ? 'ingredients' : 'menu_items'
+    const entityId = ingredientId || menuItemId
+    const { data: ownedEntity } = await supabase
+      .from(entityTable)
+      .select('id')
+      .eq('id', entityId as string)
+      .eq('business_id', userBusiness.business_id)
+      .maybeSingle()
+    if (!ownedEntity) {
+      return NextResponse.json({ error: 'Ingredient or menu item not found' }, { status: 404 })
+    }
 
     // Generate unique file path
     const timestamp = Date.now()

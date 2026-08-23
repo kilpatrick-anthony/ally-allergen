@@ -22,7 +22,7 @@ interface DatasheetFile {
 
 interface DatasheetUploaderProps {
   entityType: 'ingredient' | 'menu_item'
-  entityId?: number
+  entityId?: string
   existingDatasheets?: DatasheetFile[]
   onFilesChange?: (files: DatasheetFile[]) => void
   maxFiles?: number
