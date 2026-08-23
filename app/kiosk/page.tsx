@@ -7,10 +7,12 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 const STORAGE_KEY = 'allyjen_kiosk_slug'
 
 export default function KioskLanding() {
+  const { t } = useTranslation()
   const router = useRouter()
   const [slug, setSlug] = useState<string | null>(null)
 
@@ -33,7 +35,7 @@ export default function KioskLanding() {
       <div className="min-h-screen bg-[#003842] flex items-center justify-center">
         <div className="text-white text-center">
           <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-lg font-medium">Loading AllyJen…</p>
+          <p className="text-lg font-medium">{t('kioskPortal.loadingAllyJen')}</p>
         </div>
       </div>
     )
@@ -48,12 +50,12 @@ export default function KioskLanding() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.243m-4.243 0H7.757M12 12V8m0 4v4" />
           </svg>
         </div>
-        <h1 className="text-xl font-bold text-gray-900 mb-2">Kiosk Not Set Up</h1>
+        <h1 className="text-xl font-bold text-gray-900 mb-2">{t('kioskPortal.notSetUp')}</h1>
         <p className="text-gray-600 text-sm mb-6">
-          This device hasn't been linked to a kiosk yet. Open the full kiosk URL provided by your admin to get started — the app will remember it for next time.
+          {t('kioskPortal.notSetUpDescription')}
         </p>
         <p className="text-xs text-gray-400">
-          e.g. <span className="font-mono">allyjen.ie/kiosk/your-business</span>
+          {t('kioskPortal.example')} <span className="font-mono" data-no-translate>allyjen.ie/kiosk/your-business</span>
         </p>
       </div>
     </div>

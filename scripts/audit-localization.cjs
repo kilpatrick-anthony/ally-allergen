@@ -50,6 +50,22 @@ function loadTypeScriptExport(filename, exportName) {
         ),
       }
     }
+    if (request === '@/lib/kiosk-portal-translations') {
+      return {
+        kioskPortalTranslations: loadTypeScriptExport(
+          path.join(root, 'lib/kiosk-portal-translations.ts'),
+          'kioskPortalTranslations',
+        ),
+      }
+    }
+    if (request === '@/lib/core-portal-translations') {
+      return {
+        corePortalTranslations: loadTypeScriptExport(
+          path.join(root, 'lib/core-portal-translations.ts'),
+          'corePortalTranslations',
+        ),
+      }
+    }
     if (request === '@/lib/recent-ui-translations') {
       return {
         recentUiTranslations: loadTypeScriptExport(
@@ -114,6 +130,7 @@ function walkFiles(directory, output = []) {
 function looksUserFacing(value) {
   const text = normalize(value)
   if (!text || !/[A-Za-z]/.test(text)) return false
+  if (/^\{[A-Za-z][A-Za-z0-9_]*\}$/.test(text)) return false
   if (/^(https?:|\/|#|[a-z]+-[a-z-]+$)/i.test(text)) return false
   return true
 }

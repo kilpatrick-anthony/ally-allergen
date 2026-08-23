@@ -960,7 +960,7 @@ export default function KioskPage() {
       
       if (!response.ok || !result.allowed) {
         setGeneratingPDF(false)
-        alert(result.error || 'PDF download limit reached. Please upgrade your plan to continue.')
+        alert(result.error || t.kioskPortal.pdfLimitReached)
         return
       }
       
@@ -970,16 +970,18 @@ export default function KioskPage() {
       await generateAllergenTablePDF({
         business: business,
         items: allItemsToInclude,
-          title: includeFilters && totalActiveFilters > 0 
-            ? `Allergen Guide (${totalActiveFilters} active filter${totalActiveFilters > 1 ? 's' : ''})`
-          : 'Complete Allergen Information Guide',
+          title: includeFilters && totalActiveFilters > 0
+            ? (totalActiveFilters === 1
+              ? t.kioskPortal.filteredGuideTitleOne.replace('{count}', String(totalActiveFilters))
+              : t.kioskPortal.filteredGuideTitleMany.replace('{count}', String(totalActiveFilters)))
+            : t.kioskPortal.completeGuideTitle,
         showLegend: true
       })
       
       await trackDownload(slug, includeFilters ? 'filtered_pdf' : 'full_pdf', siteIdParam)
     } catch (error) {
       console.error('Error generating PDF:', error)
-      alert('Sorry, there was an error generating the PDF. Please try again.')
+      alert(t.kioskPortal.pdfGenerationError)
     } finally {
       setGeneratingPDF(false)
     }
@@ -1006,8 +1008,10 @@ export default function KioskPage() {
         business: businessForPdf,
         items: allItemsToEmail,
         title: includeFilters && totalActiveFilters > 0
-          ? `Allergen Guide (${totalActiveFilters} active filter${totalActiveFilters > 1 ? 's' : ''})`
-          : 'Complete Allergen Information Guide',
+          ? (totalActiveFilters === 1
+            ? t.kioskPortal.filteredGuideTitleOne.replace('{count}', String(totalActiveFilters))
+            : t.kioskPortal.filteredGuideTitleMany.replace('{count}', String(totalActiveFilters)))
+          : t.kioskPortal.completeGuideTitle,
         showLegend: true,
         outputMode: 'base64',
       }) as string
@@ -1310,7 +1314,7 @@ export default function KioskPage() {
               <button
                 onClick={() => setShowMobileMenu(!showMobileMenu)}
                 className="p-2 rounded-lg border border-white/40 text-white hover:bg-white/10 transition"
-                aria-label="Open menu"
+                aria-label={t.kioskPortal.openMenu}
               >
                 {showMobileMenu ? (
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -2407,7 +2411,7 @@ export default function KioskPage() {
                           value={emailInput}
                           onChange={e => { setEmailInput(e.target.value); setEmailError(''); }}
                           onFocus={e => setTimeout(() => e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 300)}
-                          placeholder="your@email.com"
+                          placeholder={t.emailPlaceholder}
                           className="min-h-14 flex-1 rounded-xl border border-gray-300 bg-white px-4 text-lg text-gray-900 placeholder:text-gray-400 shadow-sm focus:outline-none focus:ring-4 focus:ring-[#42b8ac]/30 focus:border-[#42b8ac]"
                           disabled={sendingEmail}
                           autoComplete="email"
@@ -2420,7 +2424,7 @@ export default function KioskPage() {
                         >
                           {sendingEmail ? (
                             <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
-                          ) : 'Send'}
+                          ) : t.kioskPortal.send}
                         </button>
                       </div>
                       {emailError && (
@@ -2455,7 +2459,7 @@ export default function KioskPage() {
       <div className="mt-8 border-t border-gray-200 bg-gray-50 py-5 px-4">
           <div className="max-w-4xl mx-auto flex items-start justify-center gap-3 text-xs text-gray-500 text-center">
           {/* EU Flag icon — rectangular */}
-          <svg className="h-4 w-6 shrink-0 mt-0.5 rounded-[1px]" viewBox="0 0 18 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="EU flag">
+          <svg className="h-4 w-6 shrink-0 mt-0.5 rounded-[1px]" viewBox="0 0 18 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label={t.kioskPortal.euFlag}>
             <rect width="18" height="12" fill="#003399"/>
             {/* 12 gold stars in a circle, radius ~3.5 units, centred at 9,6 */}
             {Array.from({ length: 12 }).map((_, i) => {
@@ -2475,7 +2479,7 @@ export default function KioskPage() {
       {/* Site Footer */}
       <footer className="bg-[#003842] border-t border-[#42b8ac]/20 py-5 px-6">
         <div className="max-w-6xl mx-auto flex flex-col items-center gap-2 text-center">
-          <p className="text-white/55 text-xs">
+          <p className="text-white/55 text-xs" data-no-translate>
             © {new Date().getFullYear()} AllyJen Solutions Limited. CRO No. 811542 | Republic of Ireland | AllyJen.ie
           </p>
           <img src={ADMIN_WORDMARK_SRC} alt="AllyJen" className="h-5 w-auto opacity-70" />

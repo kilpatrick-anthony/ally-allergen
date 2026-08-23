@@ -7,11 +7,13 @@
 import { useState, useRef, KeyboardEvent, ClipboardEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Monitor, AlertCircle, CheckCircle } from 'lucide-react'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 const CODE_LENGTH = 4 // chars after "ALLY-"
 const ADMIN_WORDMARK_SRC = '/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg'
 
 export default function KioskPairPage() {
+  const { t } = useTranslation()
   const router = useRouter()
   const [digits, setDigits] = useState<string[]>(Array(CODE_LENGTH).fill(''))
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
@@ -39,7 +41,7 @@ export default function KioskPairPage() {
 
       if (!res.ok) {
         setStatus('error')
-        setErrorMsg(data.error || 'Invalid setup code')
+        setErrorMsg(data.error || t('kioskPortal.invalidSetupCode'))
         setDigits(Array(CODE_LENGTH).fill(''))
         inputRefs.current[0]?.focus()
         return
@@ -58,7 +60,7 @@ export default function KioskPairPage() {
         const kioskTarget = data.kiosk_target || data.business_slug || data.business_id
         if (!kioskTarget) {
           setStatus('error')
-          setErrorMsg('Paired, but kiosk destination is missing. Please regenerate and try again.')
+          setErrorMsg(t('kioskPortal.missingDestination'))
           return
         }
         router.replace(
@@ -67,7 +69,7 @@ export default function KioskPairPage() {
       }, 1200)
     } catch {
       setStatus('error')
-      setErrorMsg('Connection error — please try again')
+      setErrorMsg(t('kioskPortal.connectionError'))
     }
   }
 
@@ -131,28 +133,28 @@ export default function KioskPairPage() {
           <div className="bg-[#42b8ac]/20 border border-[#42b8ac]/30 p-2 rounded-lg">
             <Monitor className="h-5 w-5 text-[#42b8ac]" />
           </div>
-          <p className="text-[#8dd8d2] text-base font-medium tracking-wide">Kiosk Setup</p>
+          <p className="text-[#8dd8d2] text-base font-medium tracking-wide">{t('kioskPortal.setup')}</p>
         </div>
       </div>
 
       {status === 'success' ? (
         <div className="relative z-10 flex flex-col items-center gap-4 text-center animate-pulse">
           <CheckCircle className="h-20 w-20 text-[#42b8ac]" />
-          <p className="text-white text-2xl font-semibold">Paired! Opening kiosk…</p>
+          <p className="text-white text-2xl font-semibold">{t('kioskPortal.pairedOpening')}</p>
         </div>
       ) : (
         <div className="relative z-10 bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm space-y-6">
           <div className="text-center space-y-2">
-            <h1 className="text-2xl font-bold text-[#003842]">Enter Setup Code</h1>
+            <h1 className="text-2xl font-bold text-[#003842]">{t('kioskPortal.enterSetupCode')}</h1>
             <p className="text-sm text-gray-500">
-              Find the setup code in your admin portal under<br />
-              <span className="font-medium text-[#003842]">Sites → Devices &amp; Kiosks → Add Device</span>
+              {t('kioskPortal.findSetupCode')}<br />
+              <span className="font-medium text-[#003842]">{t('kioskPortal.setupPath')}</span>
             </p>
           </div>
 
           {/* ALLY- prefix + digit boxes */}
           <div className="flex items-center justify-center gap-2">
-            <span className="text-2xl font-mono font-bold text-gray-400 select-none">
+            <span className="text-2xl font-mono font-bold text-gray-400 select-none" data-no-translate>
               ALLY-
             </span>
             {digits.map((d, i) => (
@@ -195,11 +197,11 @@ export default function KioskPairPage() {
                 : 'bg-gray-200 text-gray-400 cursor-not-allowed'}
             `}
           >
-            {status === 'loading' ? 'Connecting…' : 'Connect Kiosk'}
+            {status === 'loading' ? t('kioskPortal.connecting') : t('kioskPortal.connectKiosk')}
           </button>
 
           <p className="text-center text-xs text-gray-400">
-            Setup codes expire after 24 hours and can only be used once.
+            {t('kioskPortal.setupCodeExpiry')}
           </p>
         </div>
       )}

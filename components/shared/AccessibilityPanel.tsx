@@ -149,7 +149,7 @@ export default function AccessibilityPanel() {
   // Speech synthesis functions
   const startSpeech = () => {
     if (!('speechSynthesis' in window)) {
-      alert('Text-to-speech is not supported in your browser');
+      alert(t('kioskPortal.speechUnsupported'));
       applySettings({ speech: false });
       return;
     }
@@ -376,9 +376,9 @@ export default function AccessibilityPanel() {
                       className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${settings.fontSize === size ? 'bg-gradient-to-r from-[#003842]/10 to-[#42b8ac]/10 text-[#003842] border-2 border-[#42b8ac]/50' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                       aria-label={`${t('accessibility.fontSize')}: ${size}`}
                     >
-                      {size === 'normal' ? 'A' : 
+                      <span data-no-translate>{size === 'normal' ? 'A' :
                        size === 'large' ? 'A+' : 
-                       size === 'x-large' ? 'A++' : 'A+++'}
+                       size === 'x-large' ? 'A++' : 'A+++'}</span>
                     </button>
                   ))}
                 </div>
@@ -398,15 +398,15 @@ export default function AccessibilityPanel() {
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           {t('accessibility.fontType')}
                         </label>
-                        <select 
+                        <select data-no-translate
                           value={settings.fontFamily}
                           onChange={(e) => applySettings({ fontFamily: e.target.value as any })}
                           className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                           aria-label={t('accessibility.fontType')}
                         >
                           <option value="default">{t('accessibility.defaultFont')} (Arsenal)</option>
-                          <option value="verdana-pro">Verdana Pro</option>
-                          <option value="arsenal">Arsenal</option>
+                          <option value="verdana-pro" data-no-translate>Verdana Pro</option>
+                          <option value="arsenal" data-no-translate>Arsenal</option>
                           <option value="dyslexic">Atkinson Hyperlegible ({t('accessibility.accessibilityFont')})</option>
                           <option value="high-contrast">{t('accessibility.highVisibility')}</option>
                         </select>
@@ -539,7 +539,7 @@ export default function AccessibilityPanel() {
                         </>
                       )}
                     </button>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-gray-500" data-no-translate>
                       Ctrl+Alt+S
                     </span>
                   </div>
@@ -561,7 +561,7 @@ export default function AccessibilityPanel() {
                       />
                       <div className="flex justify-between text-xs text-gray-500 mt-1">
                         <span>{t('accessibility.slower')}</span>
-                        <span>{settings.speechRate.toFixed(1)}x</span>
+                        <span data-no-translate>{settings.speechRate.toFixed(1)}x</span>
                         <span>{t('accessibility.faster')}</span>
                       </div>
                     </div>

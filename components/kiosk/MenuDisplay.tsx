@@ -6,6 +6,7 @@ import {
   Filter, Search, Globe, Building,
   AlertTriangle, Check, X, Info
 } from 'lucide-react';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 interface AllergenItem {
   id: string;
@@ -36,11 +37,20 @@ const allergenOptions = [
   'Sesame', 'Sulphites', 'Lupin', 'Molluscs'
 ];
 
+const allergenTranslationKeys: Record<string, string> = {
+  Gluten: 'allergenNames.cereals_gluten', Crustaceans: 'allergenNames.crustaceans', Eggs: 'allergenNames.eggs', Fish: 'allergenNames.fish', Peanuts: 'allergenNames.peanuts', Soybeans: 'allergenNames.soybeans', Milk: 'allergenNames.milk', Nuts: 'allergenNames.nuts', Celery: 'allergenNames.celery', Mustard: 'allergenNames.mustard', Sesame: 'allergenNames.sesame', Sulphites: 'allergenNames.sulphites', Lupin: 'allergenNames.lupin', Molluscs: 'allergenNames.molluscs',
+};
+
 export default function KioskMenu({ 
   items, 
   site, 
   showSiteBadge = false 
 }: KioskMenuProps) {
+  const { t } = useTranslation();
+  const translateAllergen = (allergen: string) => {
+    const key = allergenTranslationKeys[allergen];
+    return key ? t(key) : allergen;
+  };
   const [selectedAllergens, setSelectedAllergens] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -101,8 +111,8 @@ export default function KioskMenu({
       <div className="bg-white rounded-2xl shadow-lg p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-xl font-bold text-gray-900">Filter Menu</h3>
-            <p className="text-gray-600">Select allergens to filter out</p>
+            <h3 className="text-xl font-bold text-gray-900">{t('kioskPortal.filterMenu')}</h3>
+            <p className="text-gray-600">{t('kioskPortal.selectAllergensToFilter')}</p>
           </div>
           
           {showSiteBadge && (
@@ -117,7 +127,7 @@ export default function KioskMenu({
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-4">
             <Filter size={20} className="text-gray-700" />
-            <h4 className="font-semibold text-gray-900">Filter by Allergens</h4>
+            <h4 className="font-semibold text-gray-900">{t('filterByAllergens')}</h4>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
             {allergenOptions.map(allergen => (
@@ -131,7 +141,7 @@ export default function KioskMenu({
                 ) : (
                   <Check size={16} />
                 )}
-                {allergen}
+                {translateAllergen(allergen)}
               </button>
             ))}
           </div>
@@ -141,7 +151,7 @@ export default function KioskMenu({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Search Items
+              {t('kioskPortal.searchItems')}
             </label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -149,7 +159,7 @@ export default function KioskMenu({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search menu items..."
+                placeholder={t('searchMenuItems')}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
               />
             </div>
@@ -157,7 +167,7 @@ export default function KioskMenu({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Category
+              {t('admin.category')}
             </label>
             <select
               value={selectedCategory}
@@ -166,7 +176,7 @@ export default function KioskMenu({
             >
               {categories.map(category => (
                 <option key={category} value={category}>
-                  {category === 'all' ? 'All Categories' : category.charAt(0).toUpperCase() + category.slice(1)}
+                  {category === 'all' ? t('admin.allCategories') : category.charAt(0).toUpperCase() + category.slice(1)}
                 </option>
               ))}
             </select>
@@ -178,7 +188,7 @@ export default function KioskMenu({
           <div className="mt-6 pt-6 border-t border-gray-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-gray-700">Active filters:</span>
+                <span className="text-sm font-medium text-gray-700">{t('kioskPortal.activeFilters')}</span>
                 {selectedAllergens.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {selectedAllergens.map(allergen => (
@@ -186,7 +196,7 @@ export default function KioskMenu({
                         key={allergen}
                         className="inline-flex items-center gap-1 px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full"
                       >
-                        No {allergen}
+                        {t('kioskPortal.excludingAllergen', { allergen: translateAllergen(allergen) })}
                         <button
                           onClick={() => toggleAllergen(allergen)}
                           className="text-red-500 hover:text-red-700"
@@ -202,7 +212,7 @@ export default function KioskMenu({
                 onClick={clearFilters}
                 className="text-sm text-green-600 hover:text-green-700 font-medium"
               >
-                Clear all filters
+                {t('kioskPortal.clearAllFilters')}
               </button>
             </div>
           </div>
@@ -212,14 +222,14 @@ export default function KioskMenu({
       {/* Results Count */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-2xl font-bold text-gray-900">Menu Items</h3>
+          <h3 className="text-2xl font-bold text-gray-900">{t('menuItems')}</h3>
           <p className="text-gray-600">
-            Showing {filteredItems.length} of {items.length} items
-            {selectedAllergens.length > 0 && ` (filtered for ${selectedAllergens.length} allergens)`}
+            {t('kioskPortal.resultsCount', { shown: filteredItems.length, total: items.length })}
+            {selectedAllergens.length > 0 && ` (${t('kioskPortal.filteredFor', { count: selectedAllergens.length })})`}
           </p>
         </div>
         <div className="text-sm text-gray-500">
-          {filteredItems.length === 0 ? 'No items match your filters' : ''}
+          {filteredItems.length === 0 ? t('noItemsMatch') : ''}
         </div>
       </div>
 
@@ -249,17 +259,17 @@ export default function KioskMenu({
                             {item.visibility === 'site-specific' ? (
                               <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
                                 <Building size={12} />
-                                Site Special
+                                {t('kioskPortal.siteSpecial')}
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
                                 <Globe size={12} />
-                                Available at all locations
+                                {t('kioskPortal.allLocations')}
                               </span>
                             )}
                             {item.site_id && !item.is_global && (
                               <span className="text-xs text-gray-500">
-                                Only at this location
+                                {t('kioskPortal.onlyHere')}
                               </span>
                             )}
                           </div>
@@ -277,7 +287,7 @@ export default function KioskMenu({
                           <div className="flex items-center gap-2 mb-2">
                             <AlertTriangle size={16} className="text-amber-500" />
                             <span className="text-sm font-medium text-gray-700">
-                              Contains:
+                              {t('contains')}
                             </span>
                           </div>
                           <div className="flex flex-wrap gap-2">
@@ -286,7 +296,7 @@ export default function KioskMenu({
                                 key={allergen}
                                 className={`px-2 py-1 text-xs font-medium rounded ${selectedAllergens.includes(allergen) ? 'bg-red-100 text-red-700 line-through' : 'bg-amber-100 text-amber-700'}`}
                               >
-                                {allergen}
+                                {translateAllergen(allergen)}
                               </span>
                             ))}
                           </div>
@@ -295,7 +305,7 @@ export default function KioskMenu({
                         <div className="flex items-center gap-2 text-green-600 mb-4">
                           <Check size={16} />
                           <span className="text-sm font-medium">
-                            No major allergens
+                            {t('kioskPortal.noMajorAllergens')}
                           </span>
                         </div>
                       )}
@@ -306,8 +316,8 @@ export default function KioskMenu({
                           <span className="flex items-center gap-1">
                             <Info size={12} />
                             {item.allergens.length === 0 
-                              ? 'Suitable for most diets' 
-                              : 'Check allergens before ordering'}
+                              ? t('kioskPortal.suitableMostDiets')
+                              : t('kioskPortal.checkBeforeOrdering')}
                           </span>
                         </div>
                       </div>
@@ -322,17 +332,17 @@ export default function KioskMenu({
         <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-gray-300">
           <Filter className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            No items match your filters
+            {t('noItemsMatch')}
           </h3>
           <p className="text-gray-600 mb-6 max-w-md mx-auto">
-            Try adjusting your allergen filters or search terms to see more menu items.
+            {t('kioskPortal.adjustFilters')}
           </p>
           <button
             onClick={clearFilters}
             className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
           >
             <X size={20} />
-            Clear All Filters
+            {t('kioskPortal.clearAllFilters')}
           </button>
         </div>
       )}

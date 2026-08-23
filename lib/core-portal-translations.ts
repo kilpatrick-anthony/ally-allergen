@@ -1,0 +1,60 @@
+type LocaleIndex = 1 | 2 | 3 | 4 | 5 | 6
+
+const rows = [
+  ['errorLoadingCompliance', 'Error Loading Compliance Data', 'Earráid agus Sonraí Comhlíonta á Luchtú', 'Erro ao carregar dados de conformidade', 'Erreur de chargement des données de conformité', 'Error al cargar los datos de cumplimiento', 'Fehler beim Laden der Compliance-Daten'],
+  ['totalNonCompliant', 'Total Non-Compliant', 'Iomlán Neamhchomhlíontach', 'Total não conforme', 'Total non conforme', 'Total no conforme', 'Nicht konform insgesamt'],
+  ['totalItems', 'Total Items', 'Míreanna Iomlána', 'Total de itens', 'Nombre total d’articles', 'Total de artículos', 'Artikel insgesamt'],
+  ['allStatuses', 'All Statuses', 'Gach Stádas', 'Todos os estados', 'Tous les statuts', 'Todos los estados', 'Alle Statuswerte'],
+  ['itemType', 'Item Type', 'Cineál Míre', 'Tipo de item', 'Type d’article', 'Tipo de artículo', 'Artikeltyp'],
+  ['allTypes', 'All Types', 'Gach Cineál', 'Todos os tipos', 'Tous les types', 'Todos los tipos', 'Alle Typen'],
+  ['allClear', 'All Clear!', 'Gach Rud Glan!', 'Tudo em ordem!', 'Tout est en ordre !', '¡Todo correcto!', 'Alles in Ordnung!'],
+  ['noFilteredItems', 'No items to display with current filters.', 'Níl aon mhíreanna le taispeáint leis na scagairí reatha.', 'Não existem itens para apresentar com os filtros atuais.', 'Aucun article à afficher avec les filtres actuels.', 'No hay artículos que mostrar con los filtros actuales.', 'Mit den aktuellen Filtern sind keine Artikel vorhanden.'],
+  ['itemsFound', 'items found.', 'mír aimsithe.', 'itens encontrados.', 'articles trouvés.', 'artículos encontrados.', 'Artikel gefunden.'],
+  ['ingredientsCount', 'Ingredients (', 'Comhábhair (', 'Ingredientes (', 'Ingrédients (', 'Ingredientes (', 'Zutaten ('],
+  ['menuItemsCount', 'Menu Items (', 'Míreanna Biachláir (', 'Itens do menu (', 'Articles du menu (', 'Artículos del menú (', 'Menüartikel ('],
+  ['lastReviewed', 'Last reviewed:', 'Athbhreithniú deireanach:', 'Última revisão:', 'Dernière vérification :', 'Última revisión:', 'Zuletzt geprüft:'],
+  ['review', 'Review', 'Athbhreithnigh', 'Rever', 'Vérifier', 'Revisar', 'Prüfen'],
+  ['backToDownloads', 'Back to Downloads', 'Ar ais chuig Íoslódálacha', 'Voltar aos downloads', 'Retour aux téléchargements', 'Volver a Descargas', 'Zurück zu Downloads'],
+  ['datasheetDescription', 'View and manage all product specification sheets and compliance documents', 'Féach ar gach bileog sonraíochta táirge agus doiciméad comhlíonta agus bainistigh iad', 'Consulte e gira todas as fichas de especificações e documentos de conformidade', 'Consultez et gérez toutes les fiches techniques et tous les documents de conformité', 'Consulta y gestiona todas las fichas técnicas y documentos de cumplimiento', 'Alle Produktspezifikationen und Compliance-Dokumente anzeigen und verwalten'],
+  ['datasheets', 'datasheets', 'bileoga sonraí', 'fichas técnicas', 'fiches techniques', 'fichas técnicas', 'Datenblätter'],
+  ['total', 'Total', 'Iomlán', 'Total', 'Total', 'Total', 'Gesamt'],
+  ['dueSoon', 'Due Soon', 'Le Teacht Go Luath', 'Próximo do prazo', 'Bientôt à échéance', 'Próximo a vencer', 'Bald fällig'],
+  ['overdue', 'Overdue', 'Thar Téarma', 'Em atraso', 'En retard', 'Vencido', 'Überfällig'],
+  ['searchDatasheets', 'Search datasheets or items...', 'Cuardaigh bileoga sonraí nó míreanna...', 'Pesquisar fichas técnicas ou itens...', 'Rechercher des fiches techniques ou des articles...', 'Buscar fichas técnicas o artículos...', 'Datenblätter oder Artikel suchen...'],
+  ['entityType', 'Entity Type', 'Cineál Aonáin', 'Tipo de entidade', 'Type d’entité', 'Tipo de entidad', 'Entitätstyp'],
+  ['reviewStatus', 'Review Status', 'Stádas Athbhreithnithe', 'Estado da revisão', 'Statut de vérification', 'Estado de revisión', 'Prüfstatus'],
+  ['upToDate', 'Up to Date', 'Cothrom le Dáta', 'Atualizado', 'À jour', 'Actualizado', 'Aktuell'],
+  ['allSuppliers', 'All Suppliers', 'Gach Soláthraí', 'Todos os fornecedores', 'Tous les fournisseurs', 'Todos los proveedores', 'Alle Lieferanten'],
+  ['noDatasheetsFound', 'No datasheets found', 'Níor aimsíodh aon bhileoga sonraí', 'Nenhuma ficha técnica encontrada', 'Aucune fiche technique trouvée', 'No se encontraron fichas técnicas', 'Keine Datenblätter gefunden'],
+  ['associatedWith', 'Associated With', 'Bainteach Le', 'Associado a', 'Associé à', 'Asociado con', 'Verknüpft mit'],
+  ['version', 'Version', 'Leagan', 'Versão', 'Version', 'Versión', 'Version'],
+  ['nextReview', 'Next Review', 'An Chéad Athbhreithniú Eile', 'Próxima revisão', 'Prochaine vérification', 'Próxima revisión', 'Nächste Prüfung'],
+  ['preview', 'Preview', 'Réamhamharc', 'Pré-visualizar', 'Aperçu', 'Vista previa', 'Vorschau'],
+  ['download', 'Download', 'Íoslódáil', 'Descarregar', 'Télécharger', 'Descargar', 'Herunterladen'],
+  ['markReviewed', 'Mark Reviewed', 'Marcáil mar Athbhreithnithe', 'Marcar como revisto', 'Marquer comme vérifié', 'Marcar como revisado', 'Als geprüft markieren'],
+  ['allSources', 'All Sources', 'Gach Foinse', 'Todas as fontes', 'Toutes les sources', 'Todas las fuentes', 'Alle Quellen'],
+  ['fsaiIreland', 'FSAI (Ireland)', 'FSAI (Éire)', 'FSAI (Irlanda)', 'FSAI (Irlande)', 'FSAI (Irlanda)', 'FSAI (Irland)'],
+  ['ieIreland', 'IE (Ireland)', 'IE (Éire)', 'IE (Irlanda)', 'IE (Irlande)', 'IE (Irlanda)', 'IE (Irland)'],
+  ['euRasff', 'EU RASFF', 'RASFF an AE', 'RASFF da UE', 'RASFF de l’UE', 'RASFF de la UE', 'EU RASFF'],
+  ['efsaAuthority', 'EFSA (EU Authority)', 'EFSA (Údarás AE)', 'EFSA (Autoridade da UE)', 'EFSA (Autorité de l’UE)', 'EFSA (Autoridad de la UE)', 'EFSA (EU-Behörde)'],
+  ['ukAlertSource', 'FSA UK / UK Alerts', 'FSA RA / Foláirimh RA', 'FSA UK / Alertas do Reino Unido', 'FSA UK / Alertes du Royaume-Uni', 'FSA UK / Alertas del Reino Unido', 'FSA UK / Warnmeldungen aus dem Vereinigten Königreich'],
+  ['foodSafetyNews', 'Food Safety News', 'Nuacht Sábháilteachta Bia', 'Notícias de segurança alimentar', 'Actualités sur la sécurité alimentaire', 'Noticias sobre seguridad alimentaria', 'Nachrichten zur Lebensmittelsicherheit'],
+  ['ireland', 'Ireland', 'Éire', 'Irlanda', 'Irlande', 'Irlanda', 'Irland'],
+  ['euAuthority', 'EU Authority', 'Údarás AE', 'Autoridade da UE', 'Autorité de l’UE', 'Autoridad de la UE', 'EU-Behörde'],
+  ['ukAlerts', 'UK Alerts', 'Foláirimh RA', 'Alertas do Reino Unido', 'Alertes du Royaume-Uni', 'Alertas del Reino Unido', 'Warnmeldungen aus dem Vereinigten Königreich'],
+  ['foodSafetyAlerts', 'Food Safety Alerts', 'Foláirimh Sábháilteachta Bia', 'Alertas de segurança alimentar', 'Alertes de sécurité alimentaire', 'Alertas de seguridad alimentaria', 'Lebensmittelsicherheitswarnungen'],
+  ['foodSafetyFeed', 'Live feed from FSAI, EU RASFF, and Food Safety News', 'Fotha beo ó FSAI, RASFF an AE agus Food Safety News', 'Feed em direto da FSAI, RASFF da UE e Food Safety News', 'Flux en direct de la FSAI, du RASFF de l’UE et de Food Safety News', 'Canal en directo de FSAI, RASFF de la UE y Food Safety News', 'Live-Feed von FSAI, EU RASFF und Food Safety News'],
+  ['lastUpdatedPrefix', '· Last updated', '· Nuashonraithe go deireanach', '· Última atualização', '· Dernière mise à jour', '· Última actualización', '· Zuletzt aktualisiert'],
+  ['foodSafetyLoadError', 'Unable to load food safety alerts.', 'Ní féidir foláirimh sábháilteachta bia a luchtú.', 'Não foi possível carregar os alertas de segurança alimentar.', 'Impossible de charger les alertes de sécurité alimentaire.', 'No se pudieron cargar las alertas de seguridad alimentaria.', 'Lebensmittelsicherheitswarnungen konnten nicht geladen werden.'],
+  ['noSourceAlerts', 'No alerts found for this source.', 'Níor aimsíodh aon fholáirimh don fhoinse seo.', 'Não foram encontrados alertas para esta fonte.', 'Aucune alerte trouvée pour cette source.', 'No se encontraron alertas para esta fuente.', 'Für diese Quelle wurden keine Warnmeldungen gefunden.'],
+  ['openAlert', 'Open alert', 'Oscail foláireamh', 'Abrir alerta', 'Ouvrir l’alerte', 'Abrir alerta', 'Warnmeldung öffnen'],
+] as const
+
+function locale(index: LocaleIndex) {
+  return Object.fromEntries(rows.map((row) => [row[0], row[index]]))
+}
+
+export const corePortalTranslations = {
+  en: { corePortal: locale(1) }, ga: { corePortal: locale(2) }, pt: { corePortal: locale(3) },
+  fr: { corePortal: locale(4) }, es: { corePortal: locale(5) }, de: { corePortal: locale(6) },
+} as const
