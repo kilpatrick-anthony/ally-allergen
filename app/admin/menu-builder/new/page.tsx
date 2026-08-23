@@ -13,7 +13,6 @@ import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import AllergenWarningSelector from '@/components/admin/AllergenWarningSelector'
 import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay'
 import { LabelScanModal } from '@/components/admin/LabelScanModal'
 import type { AllergenWarnings } from '@/types/allergen'
@@ -199,7 +198,7 @@ export default function NewMenuItemPage() {
       ingredients: updatedIngredients,
       allergen_warnings: profiles.length > 0
         ? computeWorstCaseAllergens(profiles)
-        : menuItem.allergen_warnings,
+        : { ...defaultWarnings },
       dietary: mergedCertifications,
     })
   }
@@ -557,15 +556,9 @@ export default function NewMenuItemPage() {
                   </div>
                 </>
               ) : (
-                <>
-                  <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
-                    No ingredients are linked, so set this menu item's allergen information manually.
-                  </p>
-                  <AllergenWarningSelector
-                    value={menuItem.allergen_warnings}
-                    onChange={(warnings) => setMenuItem({ ...menuItem, allergen_warnings: warnings })}
-                  />
-                </>
+                <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4 text-sm text-gray-500 dark:border-gray-600 dark:bg-gray-800/60 dark:text-gray-400">
+                  Add ingredients above to calculate this menu item's allergen information automatically.
+                </div>
               )}
             </Card>
 
