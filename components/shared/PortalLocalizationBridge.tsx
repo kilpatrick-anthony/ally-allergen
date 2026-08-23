@@ -23,6 +23,45 @@ function fold(value: string): string {
   return normalize(value).toLocaleLowerCase('en')
 }
 
+function isWordCharacter(character: string | undefined): boolean {
+  return Boolean(character && /[\p{L}\p{N}_]/u.test(character))
+}
+
+function replaceFragment(value: string, source: string, replacement: string) {
+  if (!source || !value.includes(source)) return { value, replaced: false }
+
+  let cursor = 0
+  let result = ''
+  let replaced = false
+  const sourceStartsWithWord = isWordCharacter(source[0])
+  const sourceEndsWithWord = isWordCharacter(source.at(-1))
+
+  while (cursor < value.length) {
+    const matchIndex = value.indexOf(source, cursor)
+    if (matchIndex === -1) {
+      result += value.slice(cursor)
+      break
+    }
+
+    result += value.slice(cursor, matchIndex)
+    const before = matchIndex > 0 ? value[matchIndex - 1] : undefined
+    const afterIndex = matchIndex + source.length
+    const after = afterIndex < value.length ? value[afterIndex] : undefined
+    const hasLeftBoundary = !sourceStartsWithWord || !isWordCharacter(before)
+    const hasRightBoundary = !sourceEndsWithWord || !isWordCharacter(after)
+
+    if (hasLeftBoundary && hasRightBoundary) {
+      result += replacement
+      replaced = true
+    } else {
+      result += source
+    }
+    cursor = afterIndex
+  }
+
+  return { value: result, replaced }
+}
+
 function decodeAuditedLiteral(value: string): string {
   return value
     .replaceAll('&apos;', '’')
@@ -136,16 +175,18 @@ export default function PortalLocalizationBridge() {
       let matched = Boolean(previousSource)
       if (!previousSource) {
         for (const [localized, english] of reverseFragments) {
-          if (!source.includes(localized)) continue
-          source = source.replaceAll(localized, english)
+          const result = replaceFragment(source, localized, english)
+          if (!result.replaced) continue
+          source = result.value
           matched = true
         }
       }
 
       let translated = source
       for (const [english, localized] of forwardFragments) {
-        if (!translated.includes(english)) continue
-        translated = translated.replaceAll(english, localized)
+        const result = replaceFragment(translated, english, localized)
+        if (!result.replaced) continue
+        translated = result.value
         matched = true
       }
       return matched ? { source, translated } : null
@@ -157,7 +198,7 @@ export default function PortalLocalizationBridge() {
 
       let translated = value
       for (const [source, localized] of forwardFragments) {
-        if (translated.includes(source)) translated = translated.replaceAll(source, localized)
+        translated = replaceFragment(translated, source, localized).value
       }
       return translated
     }

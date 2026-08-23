@@ -1039,10 +1039,10 @@ export default function HelpPage() {
                   event.preventDefault()
                   handleTopicToggle(topic.id, event.currentTarget)
                 }}
-                className="cursor-pointer group self-start"
+                className={`cursor-pointer group self-start ${isExpanded ? '' : 'h-56'}`}
               >
-                <Card className="hover:shadow-xl transition-all duration-200 hover:-translate-y-1 flex flex-col border border-gray-200/80 shadow-sm">
-                  <div className="flex items-start gap-4">
+                <Card className={`hover:shadow-xl transition-all duration-200 hover:-translate-y-1 flex flex-col border border-gray-200/80 shadow-sm ${isExpanded ? '' : 'h-full'}`}>
+                  <div className="flex flex-1 items-start gap-4">
                     <div className={`p-3 bg-gradient-to-br ${colorClasses[topic.color as keyof typeof colorClasses]} rounded-lg group-hover:scale-110 transition-transform flex-shrink-0`}>
                       {typeof topic.icon === 'function' && React.createElement(topic.icon as React.ComponentType<{className: string}>, {
                         className: "h-6 w-6 text-white"
