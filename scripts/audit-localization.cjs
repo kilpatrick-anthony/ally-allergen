@@ -66,6 +66,14 @@ function loadTypeScriptExport(filename, exportName) {
         ),
       }
     }
+    if (request === '@/lib/settings-portal-translations') {
+      return {
+        settingsPortalTranslations: loadTypeScriptExport(
+          path.join(root, 'lib/settings-portal-translations.ts'),
+          'settingsPortalTranslations',
+        ),
+      }
+    }
     if (request === '@/lib/recent-ui-translations') {
       return {
         recentUiTranslations: loadTypeScriptExport(
@@ -227,6 +235,14 @@ function isInsideLocalizedBranch(node, sourceFile) {
 
 const translations = loadTranslations()
 const english = flattenStrings(translations.en)
+const englishFolded = new Map()
+const ambiguousFolded = new Set()
+for (const [value, key] of english) {
+  const folded = value.toLocaleLowerCase('en')
+  if (englishFolded.has(folded) && englishFolded.get(folded) !== key) ambiguousFolded.add(folded)
+  else englishFolded.set(folded, key)
+}
+for (const value of ambiguousFolded) englishFolded.delete(value)
 const flattenedTranslations = Object.fromEntries(
   Object.entries(translations).map(([language, values]) => [language, flattenPaths(values)]),
 )
@@ -262,7 +278,7 @@ for (const relativeRoot of scanRoots) {
         line: lineNumber(sourceFile, node),
         kind,
         text,
-        key: english.get(text) || (reviewedOverrides.has(text) ? 'reviewed-override' : ''),
+        key: english.get(text) || englishFolded.get(text.toLocaleLowerCase('en')) || (reviewedOverrides.has(text) ? 'reviewed-override' : ''),
       })
     }
 

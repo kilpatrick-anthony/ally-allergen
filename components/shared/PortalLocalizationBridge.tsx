@@ -19,6 +19,10 @@ function normalize(value: string): string {
   return value.replace(/\s+/g, ' ').trim()
 }
 
+function fold(value: string): string {
+  return normalize(value).toLocaleLowerCase('en')
+}
+
 function decodeAuditedLiteral(value: string): string {
   return value
     .replaceAll('&apos;', '’')
@@ -56,12 +60,20 @@ function buildLookup(language: LanguageCode): TranslationLookup {
 
   const official = new Map<string, string>()
   collectTranslationPairs(translations.en, translations[language], official)
+  const officialFolded = new Map<string, string>()
+  const ambiguousFolded = new Set<string>()
+  for (const [source, translated] of official) {
+    const key = fold(source)
+    if (officialFolded.has(key) && officialFolded.get(key) !== translated) ambiguousFolded.add(key)
+    else officialFolded.set(key, translated)
+  }
+  for (const key of ambiguousFolded) officialFolded.delete(key)
 
   const overrides = uiLiteralOverrides[language]
   const forward = new Map<string, string>()
 
   for (const source of allowed) {
-    const translated = official.get(source) || overrides[source]
+    const translated = official.get(source) || officialFolded.get(fold(source)) || overrides[source]
     if (translated) forward.set(source, translated)
   }
 
