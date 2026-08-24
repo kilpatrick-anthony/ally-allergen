@@ -19,6 +19,10 @@ const scanRoots = [
 const recentOnly = process.argv.includes('--recent')
 const recentFiles = new Set([
   'components/admin/MenuItemSupplyFields.tsx',
+  'components/admin/IngredientSupplierVariantsEditor.tsx',
+  'components/admin/AllergenWarningSelector.tsx',
+  'components/admin/DatasheetUploader.tsx',
+  'components/admin/LabelScanModal.tsx',
   'components/admin/AdminTopBar.tsx',
   'components/admin/QRCodeManagement.tsx',
   'components/admin/NotificationsPanel.tsx',
@@ -30,6 +34,10 @@ const recentFiles = new Set([
   'components/shared/NotificationContainer.tsx',
   'components/team/TeamMembersPanel.tsx',
   'app/admin/devices/page.tsx',
+  'app/admin/ingredients/page.tsx',
+  'app/admin/ingredients/[id]/edit/page.tsx',
+  'app/admin/ingredients/[id]/page.tsx',
+  'app/admin/ingredients/new/page.tsx',
   'app/admin/qr-codes/page.tsx',
   'app/admin/sites/page.tsx',
 ])
@@ -79,6 +87,14 @@ function loadTypeScriptExport(filename, exportName) {
         analyticsPortalTranslations: loadTypeScriptExport(
           path.join(root, 'lib/analytics-portal-translations.ts'),
           'analyticsPortalTranslations',
+        ),
+      }
+    }
+    if (request === '@/lib/ingredients-portal-translations') {
+      return {
+        ingredientsPortalTranslations: loadTypeScriptExport(
+          path.join(root, 'lib/ingredients-portal-translations.ts'),
+          'ingredientsPortalTranslations',
         ),
       }
     }

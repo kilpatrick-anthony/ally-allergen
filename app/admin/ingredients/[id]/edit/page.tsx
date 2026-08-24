@@ -25,9 +25,11 @@ import {
   deriveEffectiveIngredientSafety,
   type SupplierProfileMap,
 } from '@/lib/ingredient-supplier-profiles'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 export default function EditIngredientPage() {
   const { showNotification } = useNotification()
+  const { t, language } = useTranslation()
   const { canDeleteContent } = useContentPermissions()
   const router = useRouter()
   const params = useParams()
@@ -83,7 +85,7 @@ export default function EditIngredientPage() {
       return response.json()
     }
     const text = await response.text()
-    return { error: text || 'Unexpected response from server' }
+    return { error: text || t('ingredientsPortal.unexpectedServerResponse') }
   }
 
   const DEFAULT_INGREDIENT_CATEGORIES = [
@@ -187,17 +189,17 @@ export default function EditIngredientPage() {
         }
       } catch (error: any) {
         console.error('Error fetching ingredient:', error)
-        showNotification('Failed to load ingredient', 'error')
+        showNotification(t('ingredientsPortal.failedToLoadIngredient'), 'error')
       } finally {
         setLoading(false)
       }
     }
     
     fetchIngredient()
-  }, [ingredientId])
+  }, [ingredientId, t])
 
   const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete "${ingredient.name}"? This cannot be undone.`)) return
+    if (!confirm(t('ingredientsPortal.deleteNamedIngredientConfirm', { name: ingredient.name }))) return
     setDeleting(true)
     try {
       const response = await fetch(`/api/ingredients/${ingredientId}`, { method: 'DELETE' })
@@ -208,7 +210,7 @@ export default function EditIngredientPage() {
       router.push('/admin/ingredients')
     } catch (error: any) {
       console.error('Error deleting ingredient:', error)
-      showNotification(error.message || 'Failed to delete ingredient', 'error')
+      showNotification(t('ingredientsPortal.deleteIngredientFailed', { error: error.message || '' }), 'error')
     } finally {
       setDeleting(false)
     }
@@ -248,10 +250,10 @@ export default function EditIngredientPage() {
 
       // Refresh compliance status
       await fetchCompliance()
-      showNotification('Ingredient marked as reviewed!', 'success')
+      showNotification(t('ingredientsPortal.ingredientMarkedReviewed'), 'success')
     } catch (error: any) {
       console.error('Error marking as reviewed:', error)
-      showNotification(error.message || 'Failed to mark as reviewed', 'error')
+      showNotification(t('ingredientsPortal.markReviewedFailed', { error: error.message || '' }), 'error')
     } finally {
       setMarking(false)
     }
@@ -266,7 +268,7 @@ export default function EditIngredientPage() {
 
   const handleSave = async () => {
     if (!ingredient.name) {
-      showNotification('Please fill in required field (Name)', 'error')
+      showNotification(t('ingredientsPortal.nameRequired'), 'error')
       return
     }
 
@@ -331,7 +333,7 @@ export default function EditIngredientPage() {
           if (!uploadResponse.ok) {
             const errorData = await parseJsonSafely(uploadResponse)
             console.error('Failed to upload:', fileName, errorData)
-            throw new Error(`Failed to upload ${fileName}: ${errorData.error || 'Unknown error'}`)
+            throw new Error(t('ingredientsPortal.uploadDatasheetFailed', { fileName, error: errorData.error || t('ingredientsPortal.unknownError') }))
           }
 
           return parseJsonSafely(uploadResponse)
@@ -344,7 +346,7 @@ export default function EditIngredientPage() {
       router.push('/admin/ingredients')
     } catch (error: any) {
       console.error('Error updating ingredient:', error)
-      showNotification(error.message || 'Failed to update ingredient', 'error')
+      showNotification(t('ingredientsPortal.updateIngredientFailed', { error: error.message || '' }), 'error')
     } finally {
       setSaving(false)
     }
@@ -405,7 +407,7 @@ export default function EditIngredientPage() {
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
               <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
             </div>
-            <p className="text-gray-600 dark:text-gray-400">Loading ingredient...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('ingredientsPortal.loadingIngredient')}</p>
           </div>
         </div>
       </Container>
@@ -418,7 +420,7 @@ export default function EditIngredientPage() {
         <div className="mb-6">
         <Link href="/admin/ingredients">
           <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />}>
-            Back to Ingredients
+            {t('ingredientsPortal.backToIngredients')}
           </Button>
         </Link>
       </div>
@@ -429,8 +431,8 @@ export default function EditIngredientPage() {
             <Package className="h-8 w-8 text-white" />
           </div>
           <div>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">Edit Ingredient</h1>
-            <p className="text-gray-600 dark:text-gray-300">Update ingredient details and allergen information</p>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{t('admin.editIngredient')}</h1>
+            <p className="text-gray-600 dark:text-gray-300">{t('ingredientsPortal.editIngredientDescription')}</p>
           </div>
         </div>
       </div>
@@ -440,38 +442,38 @@ export default function EditIngredientPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Basic Information */}
           <Card>
-            <h2 className="text-xl font-semibold text-[#003842] mb-4">Basic Information</h2>
+            <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('ingredientsPortal.basicInformation')}</h2>
             
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Name <span className="text-red-500">*</span>
+                  {t('accessPoints.name')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={ingredient.name}
                   onChange={(e) => setIngredient({ ...ingredient, name: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                  placeholder="e.g., Almonds"
+                  placeholder={t('ingredientsPortal.namePlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
+                  {t('ingredientsPortal.description')}
                 </label>
                 <textarea
                   value={ingredient.description}
                   onChange={(e) => setIngredient({ ...ingredient, description: e.target.value })}
                   rows={4}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                  placeholder="Enter ingredient description..."
+                  placeholder={t('ingredientsPortal.descriptionPlaceholder')}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category
+                  {t('admin.category')}
                 </label>
                 <input
                   type="text"
@@ -479,7 +481,7 @@ export default function EditIngredientPage() {
                   value={ingredient.category}
                   onChange={(e) => setIngredient({ ...ingredient, category: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                  placeholder="e.g., Dairy, Produce, Dry Goods"
+                  placeholder={t('ingredientsPortal.categoryPlaceholder')}
                 />
                 <datalist id="ingredient-categories">
                   {categoryOptions.map(opt => (
@@ -506,12 +508,12 @@ export default function EditIngredientPage() {
           {/* Allergen Information */}
           <Card>
             <h2 className="text-xl font-semibold text-[#003842] mb-2">
-              {ingredient.suppliers.length > 0 ? 'Effective allergen summary' : 'Allergen information'}
+              {ingredient.suppliers.length > 0 ? t('ingredientsPortal.effectiveAllergenSummary') : t('admin.allergenInformation')}
             </h2>
             {ingredient.suppliers.length > 0 ? (
               <>
                 <p className="mb-4 text-sm text-gray-500">
-                  Read-only safest result calculated from every supplier variant above. Update a supplier profile to change it.
+                  {t('ingredientsPortal.effectiveAllergenHelp')}
                 </p>
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/40 dark:bg-emerald-900/20">
                   <AllergenWarningDisplay warnings={ingredient.allergen_warnings} compact={false} showNone={true} />
@@ -527,9 +529,9 @@ export default function EditIngredientPage() {
 
           {/* Status Toggle */}
           <Card>
-            <h2 className="text-xl font-semibold text-[#003842] mb-4">Visibility Status</h2>
+            <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('admin.visibilityStatus')}</h2>
             <p className="text-sm text-gray-600 mb-3">
-              Active ingredients appear in reports and menu builder. Draft ingredients are hidden from view.
+              {t('ingredientsPortal.visibilityStatusHelp')}
             </p>
             <div className="flex gap-3">
               <button
@@ -540,7 +542,7 @@ export default function EditIngredientPage() {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                Active
+                {t('admin.active')}
               </button>
               <button
                 onClick={() => setIngredient({ ...ingredient, status: 'review' })}
@@ -550,7 +552,7 @@ export default function EditIngredientPage() {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                Draft
+                {t('admin.draft')}
               </button>
               <button
                 onClick={() => setIngredient({ ...ingredient, status: 'archived' })}
@@ -560,7 +562,7 @@ export default function EditIngredientPage() {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                Archived
+                {t('admin.archived')}
               </button>
             </div>
           </Card>
@@ -568,18 +570,18 @@ export default function EditIngredientPage() {
           {/* Compliance Status */}
           <Card>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-[#003842]">Compliance Status</h2>
+              <h2 className="text-xl font-semibold text-[#003842]">{t('admin.complianceStatus')}</h2>
               <Button
                 onClick={handleMarkReviewed}
                 disabled={marking || loadingCompliance}
                 className="bg-emerald-500 text-white hover:bg-emerald-600 text-sm"
               >
-                {marking ? 'Marking...' : 'Mark as Reviewed'}
+                {marking ? t('admin.marking') : t('admin.markAsReviewed')}
               </Button>
             </div>
             
             {loadingCompliance ? (
-              <div className="text-gray-500 text-sm">Loading compliance status...</div>
+              <div className="text-gray-500 text-sm">{t('admin.loadingComplianceStatus')}</div>
             ) : compliance ? (
               <div className="space-y-3">
                 <div
@@ -595,8 +597,8 @@ export default function EditIngredientPage() {
                     color: compliance.status === 'compliant' ? '#16a34a' : 
                           compliance.status === 'warning' ? '#f59e0b' : '#dc2626'
                   }}>
-                    {compliance.status === 'compliant' ? '✓ Compliant' : 
-                     compliance.status === 'warning' ? '⚠ Review Due Soon' : '✕ Not Compliant'}
+                    {compliance.status === 'compliant' ? t('ingredientsPortal.compliantStatus') :
+                     compliance.status === 'warning' ? t('ingredientsPortal.reviewDueSoonStatus') : t('ingredientsPortal.notCompliantStatus')}
                   </div>
                 </div>
                 
@@ -613,18 +615,18 @@ export default function EditIngredientPage() {
                 
                 {compliance.lastReviewedAt && (
                   <div className="text-xs text-gray-500 pt-2 border-t">
-                    Last reviewed: {new Date(compliance.lastReviewedAt).toLocaleDateString()}
+                    {t('corePortal.lastReviewed')} {new Date(compliance.lastReviewedAt).toLocaleDateString(language)}
                   </div>
                 )}
               </div>
             ) : (
-              <div className="text-gray-500 text-sm">Unable to load compliance status</div>
+              <div className="text-gray-500 text-sm">{t('admin.unableLoadComplianceStatus')}</div>
             )}
           </Card>
 
           {/* Datasheets Section */}
           <Card>
-            <h2 className="text-xl font-semibold text-[#003842] mb-4">Product Datasheets</h2>
+            <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('admin.productDatasheets')}</h2>
             <DatasheetUploader 
               existingDatasheets={existingDatasheets}
               onFilesChange={handleDatasheetsChange}
@@ -645,19 +647,19 @@ export default function EditIngredientPage() {
               size="lg"
               disabled={saving || !ingredient.name}
             >
-              {saving ? 'Saving...' : 'Save Changes'}
+              {saving ? t('admin.savingMenuItem') : t('admin.saveChanges')}
             </Button>
             <button
               type="button"
               onClick={() => router.push('/admin/ingredients')}
               className="w-full mt-3 px-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
             >
-              Cancel
+              {t('accessPoints.cancel')}
             </button>
             {canDeleteContent && (
               <button type="button" onClick={handleDelete} disabled={deleting} className="w-full mt-3 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-red-300 text-red-600 text-sm font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
                 <Trash2 className="h-4 w-4" />
-                {deleting ? 'Deleting...' : 'Delete Ingredient'}
+                {deleting ? t('admin.deletingMenuItem') : t('admin.deleteIngredient')}
               </button>
             )}
           </Card>
@@ -667,14 +669,14 @@ export default function EditIngredientPage() {
             <ReviewFrequencySelector 
               value={ingredient.preferred_review_months || 12}
               onChange={(months) => setIngredient(prev => ({ ...prev, preferred_review_months: months }))}
-              label="Review Frequency"
+              label={t('ingredientsPortal.reviewFrequency')}
             />
           </Card>
 
           {/* Dietary Attributes */}
           {ingredient.suppliers.length === 0 && (
           <Card>
-            <h2 className="text-xl font-semibold text-[#003842] mb-4">Dietary Attributes</h2>
+            <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('admin.dietaryAttributes')}</h2>
             
             <div className="space-y-3">
               {certificationOptions.map((cert) => {
@@ -709,7 +711,7 @@ export default function EditIngredientPage() {
                   className="w-full flex items-center gap-3 p-3 rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-700 transition-all"
                 >
                   <Plus className="h-5 w-5" />
-                  <span className="font-medium">Add Custom</span>
+                  <span className="font-medium">{t('ingredientsPortal.addCustom')}</span>
                 </button>
               )}
 
@@ -720,12 +722,12 @@ export default function EditIngredientPage() {
                     value={customCertInput}
                     onChange={(e) => setCustomCertInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && addCustomCertification()}
-                    placeholder="Custom certification"
+                    placeholder={t('ingredientsPortal.customCertification')}
                     className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                     autoFocus
                   />
                   <Button size="sm" onClick={addCustomCertification}>
-                    Add
+                    {t('admin.add')}
                   </Button>
                   <Button 
                     size="sm" 

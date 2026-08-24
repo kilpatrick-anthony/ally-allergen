@@ -24,9 +24,11 @@ import {
   deriveEffectiveIngredientSafety,
   type SupplierProfileMap,
 } from '@/lib/ingredient-supplier-profiles'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 export default function NewIngredientPage() {
   const { showNotification } = useNotification()
+  const { t } = useTranslation()
   const router = useRouter()
   const [saving, setSaving] = useState(false)
   const [datasheets, setDatasheets] = useState<any[]>([])
@@ -71,7 +73,7 @@ export default function NewIngredientPage() {
       return response.json()
     }
     const text = await response.text()
-    return { error: text || 'Unexpected response from server' }
+    return { error: text || t('ingredientsPortal.unexpectedServerResponse') }
   }
 
   const applyDefaultSupplierToDatasheets = (files: any[], suppliers: string[]) => {
@@ -175,7 +177,7 @@ export default function NewIngredientPage() {
 
   const handleSave = async () => {
     if (!ingredient.name) {
-      showNotification('Please fill in required field (Name)', 'error')
+      showNotification(t('ingredientsPortal.nameRequired'), 'error')
       return
     }
 
@@ -222,7 +224,7 @@ export default function NewIngredientPage() {
           if (!uploadResponse.ok) {
             const errorData = await parseJsonSafely(uploadResponse)
             console.error('Failed to upload:', datasheet.file_name, errorData)
-            throw new Error(`Failed to upload ${datasheet.file_name}`)
+            throw new Error(t('ingredientsPortal.uploadDatasheetFailed', { fileName: datasheet.file_name || t('ingredientsPortal.datasheet'), error: errorData.error || t('ingredientsPortal.unknownError') }))
           }
 
           return parseJsonSafely(uploadResponse)
@@ -232,11 +234,11 @@ export default function NewIngredientPage() {
         console.log('✅ All datasheets uploaded')
       }
 
-      showNotification('Ingredient saved successfully!', 'success')
+      showNotification(t('ingredientsPortal.ingredientSaved'), 'success')
       router.push('/admin/ingredients')
     } catch (error: any) {
       console.error('Error saving ingredient:', error)
-      showNotification(error.message || 'Failed to save ingredient', 'error')
+      showNotification(t('ingredientsPortal.saveIngredientFailed', { error: error.message || '' }), 'error')
     } finally {
       setSaving(false)
     }
@@ -311,7 +313,7 @@ export default function NewIngredientPage() {
             className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Back to Ingredients
+            {t('ingredientsPortal.backToIngredients')}
           </Link>
           
           <div className="flex justify-between items-start">
@@ -321,9 +323,9 @@ export default function NewIngredientPage() {
                   <Package className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-[#003842] dark:text-white">Add New Ingredient</h1>
+                  <h1 className="text-3xl font-bold text-[#003842] dark:text-white">{t('ingredientsPortal.addNewIngredient')}</h1>
                   <p className="text-gray-600">
-                    Create a new ingredient with allergen information
+                    {t('ingredientsPortal.newIngredientDescription')}
                   </p>
                 </div>
               </div>
@@ -336,7 +338,7 @@ export default function NewIngredientPage() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-[#42b8ac] to-[#003842] text-sm font-semibold text-white hover:opacity-90 transition-opacity shadow-md"
             >
               <ScanLine className="h-4 w-4" />
-              Scan Label
+              {t('admin.scanLabel')}
             </button>
             )}
           </div>
@@ -345,8 +347,8 @@ export default function NewIngredientPage() {
         {/* Basic Information */}
         <Card className="mb-8">
           <div className="p-6 border-b">
-            <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">Basic Information</h2>
-            <p className="text-sm text-gray-600">Enter the ingredient details</p>
+            <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">{t('ingredientsPortal.basicInformation')}</h2>
+            <p className="text-sm text-gray-600">{t('ingredientsPortal.ingredientDetailsHelp')}</p>
           </div>
 
           <div className="p-6">
@@ -354,21 +356,21 @@ export default function NewIngredientPage() {
               {/* Ingredient Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ingredient Name *
+                  {t('ingredientsPortal.ingredientName')} *
                 </label>
                 <input
                   type="text"
                   value={ingredient.name}
                   onChange={(e) => setIngredient({...ingredient, name: e.target.value})}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                  placeholder="e.g., Acai Berry"
+                  placeholder={t('ingredientsPortal.newNamePlaceholder')}
                 />
               </div>
 
               {/* Category */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category
+                  {t('admin.category')}
                 </label>
                 <input
                   type="text"
@@ -376,7 +378,7 @@ export default function NewIngredientPage() {
                   value={ingredient.category}
                   onChange={(e) => setIngredient({...ingredient, category: e.target.value})}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                  placeholder="e.g., Dairy, Produce, Dry Goods"
+                  placeholder={t('ingredientsPortal.categoryPlaceholder')}
                 />
                 <datalist id="ingredient-categories">
                   {categoryOptions.map(opt => (
@@ -389,7 +391,7 @@ export default function NewIngredientPage() {
               {ingredient.suppliers.length === 0 && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-3">
-                  Certifications & Dietary Attributes
+                  {t('ingredientsPortal.certificationsAndDietaryAttributes')}
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                   {certificationOptions.map(cert => {
@@ -474,7 +476,7 @@ export default function NewIngredientPage() {
                       <Plus className="h-6 w-6 text-white" />
                     </div>
                     <span className="text-xs font-semibold text-center text-gray-700">
-                      Custom
+                      {t('ingredientsPortal.custom')}
                     </span>
                   </button>
                 </div>
@@ -487,7 +489,7 @@ export default function NewIngredientPage() {
                       value={customCertInput}
                       onChange={(e) => setCustomCertInput(e.target.value)}
                       onKeyPress={(e) => e.key === 'Enter' && addCustomCertification()}
-                      placeholder="Enter custom certification"
+                      placeholder={t('ingredientsPortal.customCertificationPlaceholder')}
                       className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                     />
                     <Button
@@ -495,7 +497,7 @@ export default function NewIngredientPage() {
                       onClick={addCustomCertification}
                       disabled={!customCertInput.trim()}
                     >
-                      Add
+                      {t('admin.add')}
                     </Button>
                   </div>
                 )}
@@ -503,7 +505,7 @@ export default function NewIngredientPage() {
                 {/* Display Custom Certifications */}
                 {ingredient.certifications.filter(cert => isCustomCertification(cert)).length > 0 && (
                   <div className="mt-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Custom Certifications:</p>
+                    <p className="text-sm font-medium text-gray-700 mb-2">{t('ingredientsPortal.customCertifications')}</p>
                     <div className="flex flex-wrap gap-2">
                       {ingredient.certifications.filter(cert => isCustomCertification(cert)).map(cert => (
                         <span
@@ -529,14 +531,14 @@ export default function NewIngredientPage() {
               {/* Description */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description (Optional)
+                  {t('ingredientsPortal.descriptionOptional')}
                 </label>
                 <textarea
                   value={ingredient.description}
                   onChange={(e) => setIngredient({...ingredient, description: e.target.value})}
                   rows={3}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                  placeholder="Describe the ingredient..."
+                  placeholder={t('ingredientsPortal.newDescriptionPlaceholder')}
                 />
               </div>
 
@@ -564,9 +566,9 @@ export default function NewIngredientPage() {
             <div className="flex items-center gap-2">
               <AlertCircle className="h-5 w-5 text-[#003842]" />
               <div>
-                <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">Allergen Information</h2>
+                <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">{t('admin.allergenInformation')}</h2>
                 <p className="text-sm text-gray-600">
-                  Specify allergen warnings for this ingredient
+                  {t('ingredientsPortal.allergenWarningsHelp')}
                 </p>
               </div>
             </div>
@@ -589,7 +591,7 @@ export default function NewIngredientPage() {
               ...current,
               preferred_review_months: months,
             }))}
-            label="Review Frequency"
+            label={t('ingredientsPortal.reviewFrequency')}
           />
         </Card>
 
@@ -597,9 +599,9 @@ export default function NewIngredientPage() {
         <Card className="mb-8">
           <div className="p-6 border-b">
             <div>
-              <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">Product Datasheets</h2>
+              <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">{t('admin.productDatasheets')}</h2>
               <p className="text-sm text-gray-600">
-                Upload product specification sheets, compliance certificates, and allergen statements
+                {t('ingredientsPortal.datasheetUploadHelp')}
               </p>
             </div>
           </div>
@@ -617,7 +619,7 @@ export default function NewIngredientPage() {
         <div className="flex justify-start gap-4">
           <Link href="/admin/ingredients">
             <Button variant="outline">
-              Cancel
+              {t('accessPoints.cancel')}
             </Button>
           </Link>
           <Button
@@ -626,7 +628,7 @@ export default function NewIngredientPage() {
             onClick={handleSave}
             disabled={saving || !ingredient.name}
           >
-            {saving ? 'Saving...' : 'Save Ingredient'}
+            {saving ? t('admin.savingMenuItem') : t('ingredientsPortal.saveIngredient')}
           </Button>
         </div>
       </div>

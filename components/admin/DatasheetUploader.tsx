@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Upload, X, FileText, AlertCircle, Check, Loader2, Calendar } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 interface DatasheetFile {
   id?: string
@@ -39,6 +40,7 @@ export default function DatasheetUploader({
   acceptedTypes = ['.pdf', '.doc', '.docx', '.xlsx', '.xls', '.jpg', '.jpeg', '.png'],
   compact = false
 }: DatasheetUploaderProps) {
+  const { t } = useTranslation()
   const [files, setFiles] = useState<DatasheetFile[]>(existingDatasheets ?? [])
   const [dragActive, setDragActive] = useState(false)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
@@ -183,9 +185,9 @@ export default function DatasheetUploader({
 
   const getUploadStatusLabel = (file: DatasheetFile) => {
     if (file.id) {
-      return 'Saved'
+      return t('ingredientsPortal.saved')
     }
-    return 'Uploaded'
+    return t('ingredientsPortal.uploaded')
   }
 
   const hasUnsavedFiles = files.some((file) => !file.id)
@@ -195,7 +197,7 @@ export default function DatasheetUploader({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium text-gray-700">
-            Product Datasheets
+            {t('admin.productDatasheets')}
           </label>
           <Button
             type="button"
@@ -205,7 +207,7 @@ export default function DatasheetUploader({
             disabled={files.length >= maxFiles}
           >
             <Upload className="h-4 w-4 mr-1" />
-            Add Files
+            {t('ingredientsPortal.addFiles')}
           </Button>
         </div>
         
@@ -222,7 +224,7 @@ export default function DatasheetUploader({
           <div className="space-y-2">
             {hasUnsavedFiles && (
               <div className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                Upload complete. Save the ingredient to keep these files.
+                {t('ingredientsPortal.uploadCompleteSaveIngredient')}
               </div>
             )}
             {files.map((file, index) => (
@@ -247,6 +249,7 @@ export default function DatasheetUploader({
                 <button
                   type="button"
                   onClick={() => removeFile(index)}
+                  aria-label={t('ingredientsPortal.removeFile', { fileName: file.file_name })}
                   className="ml-2 text-red-600 hover:text-red-700"
                 >
                   <X className="h-4 w-4" />
@@ -258,7 +261,7 @@ export default function DatasheetUploader({
 
         {files.length === 0 && (
           <p className="text-sm text-gray-500 italic">
-            No datasheets uploaded yet
+            {t('ingredientsPortal.noDatasheetsYet')}
           </p>
         )}
       </div>
@@ -291,10 +294,10 @@ export default function DatasheetUploader({
         <div className="text-center">
           <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
           <p className="text-base font-medium text-gray-900 mb-1">
-            Drop files here or click to browse
+            {t('ingredientsPortal.dropFiles')}
           </p>
           <p className="text-sm text-gray-500 mb-4">
-            Upload product datasheets, compliance documents, or certificates
+            {t('ingredientsPortal.uploadDocumentsHelp')}
           </p>
           <Button
             type="button"
@@ -304,10 +307,10 @@ export default function DatasheetUploader({
             disabled={files.length >= maxFiles}
           >
             <Upload className="h-4 w-4 mr-2" />
-            Select Files
+            {t('ingredientsPortal.selectFiles')}
           </Button>
           <p className="text-xs text-gray-400 mt-3">
-            Supported formats: PDF, Word, Excel, Images • Max {maxFiles} files
+            {t('ingredientsPortal.supportedFormats', { maxFiles })}
           </p>
         </div>
       </div>
@@ -317,11 +320,11 @@ export default function DatasheetUploader({
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="text-sm font-semibold text-gray-900">
-              Uploaded Files ({files.length}/{maxFiles})
+              {t('ingredientsPortal.uploadedFiles', { count: files.length, maxFiles })}
             </h4>
             {hasUnsavedFiles && (
               <span className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-1">
-                Upload complete. Save to keep.
+                {t('ingredientsPortal.uploadCompleteSave')}
               </span>
             )}
           </div>
@@ -350,7 +353,7 @@ export default function DatasheetUploader({
                         )}
                         {file.version && (
                           <Badge variant="info" size="sm">
-                            v{file.version}
+                            {t('ingredientsPortal.versionPrefix', { version: file.version })}
                           </Badge>
                         )}
                         <Badge variant="success" size="sm">
@@ -364,7 +367,7 @@ export default function DatasheetUploader({
                           <div className="grid grid-cols-2 gap-3">
                             <div>
                               <label className="block text-xs font-medium text-gray-700 mb-1">
-                                Supplier Name
+                                {t('ingredientsPortal.supplierName')}
                               </label>
                               <select
                                 defaultValue=""
@@ -376,7 +379,7 @@ export default function DatasheetUploader({
                                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent mb-2"
                               >
                                 <option value="">
-                                  {loadingSuppliers ? 'Loading suppliers...' : 'Select existing supplier'}
+                                  {loadingSuppliers ? t('ingredientsPortal.loadingSuppliers') : t('ingredientsPortal.selectExistingSupplier')}
                                 </option>
                                 {availableSuppliers.map((supplier) => (
                                   <option key={supplier} value={supplier}>
@@ -389,26 +392,26 @@ export default function DatasheetUploader({
                                 value={file.supplier_name || ''}
                                 onChange={(e) => updateFileMetadata(index, { supplier_name: e.target.value })}
                                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                placeholder="Or type new supplier name"
+                                placeholder={t('ingredientsPortal.typeNewSupplier')}
                               />
                             </div>
                             <div>
                               <label className="block text-xs font-medium text-gray-700 mb-1">
-                                Version
+                                {t('corePortal.version')}
                               </label>
                               <input
                                 type="text"
                                 value={file.version || ''}
                                 onChange={(e) => updateFileMetadata(index, { version: e.target.value })}
                                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                                placeholder="e.g., 2024-Q1"
+                                placeholder={t('ingredientsPortal.versionPlaceholder')}
                               />
                             </div>
                           </div>
                           <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1">
                               <Calendar className="inline h-3 w-3 mr-1" />
-                              Next Review Date
+                              {t('ingredientsPortal.nextReviewDate')}
                             </label>
                             <input
                               type="date"
@@ -419,14 +422,14 @@ export default function DatasheetUploader({
                           </div>
                           <div>
                             <label className="block text-xs font-medium text-gray-700 mb-1">
-                              Notes
+                              {t('ingredientsPortal.notes')}
                             </label>
                             <textarea
                               value={file.notes || ''}
                               onChange={(e) => updateFileMetadata(index, { notes: e.target.value })}
                               rows={2}
                               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                              placeholder="Additional notes about this datasheet..."
+                              placeholder={t('ingredientsPortal.datasheetNotesPlaceholder')}
                             />
                           </div>
                         </div>
@@ -451,12 +454,13 @@ export default function DatasheetUploader({
                         size="sm"
                         onClick={() => setEditingIndex(index)}
                       >
-                        Edit Info
+                        {t('ingredientsPortal.editInfo')}
                       </Button>
                     )}
                     <button
                       type="button"
                       onClick={() => removeFile(index)}
+                      aria-label={t('ingredientsPortal.removeFile', { fileName: file.file_name })}
                       className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     >
                       <X className="h-4 w-4" />
@@ -473,7 +477,7 @@ export default function DatasheetUploader({
         <div className="text-center py-4">
           <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
           <p className="text-sm text-gray-500">
-            No datasheets uploaded yet
+            {t('ingredientsPortal.noDatasheetsYet')}
           </p>
         </div>
       )}

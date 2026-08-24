@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { 
+import {
   AlertCircle, Info, AlertTriangle, ChevronDown, ChevronUp,
   Wheat, Shell, Egg, Fish, Sprout, Milk, TreeDeciduous, 
   Carrot, Droplet, Sparkles, Flame, Flower2, Nut, CircleDot,
@@ -19,6 +19,7 @@ import {
   getAllergenSeverity,
   formatSubtypes
 } from '@/types/allergen';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 interface AllergenWarningSelectorProps {
   value: AllergenWarnings;
@@ -26,37 +27,13 @@ interface AllergenWarningSelectorProps {
   disabled?: boolean;
 }
 
-const ALLERGEN_LEVEL_OPTIONS: { value: AllergenLevel; label: string; description: string }[] = [
-  {
-    value: 'none',
-    label: 'Not Present',
-    description: 'This allergen is not present in the product'
-  },
-  {
-    value: 'contains',
-    label: 'Contains',
-    description: 'Product definitely contains this allergen'
-  },
-  {
-    value: 'may_contain',
-    label: 'May Contain',
-    description: 'Product may contain this allergen'
-  },
-  {
-    value: 'traces',
-    label: 'May Contain Traces',
-    description: 'Product may contain traces of this allergen'
-  },
-  {
-    value: 'not_suitable',
-    label: 'Not Suitable',
-    description: 'Not suitable for those with this allergy'
-  },
-  {
-    value: 'cross_contamination',
-    label: 'Cross-Contamination Risk',
-    description: 'Made in facility that handles this allergen'
-  }
+const ALLERGEN_LEVEL_OPTIONS: { value: AllergenLevel; labelKey: string }[] = [
+  { value: 'none', labelKey: 'notPresent' },
+  { value: 'contains', labelKey: 'ingredientsPortal.contains' },
+  { value: 'may_contain', labelKey: 'mayContain' },
+  { value: 'traces', labelKey: 'ingredientsPortal.mayContainTraces' },
+  { value: 'not_suitable', labelKey: 'notSuitable' },
+  { value: 'cross_contamination', labelKey: 'ingredientsPortal.crossContaminationRisk' }
 ];
 
 export default function AllergenWarningSelector({ 
@@ -64,6 +41,7 @@ export default function AllergenWarningSelector({
   onChange, 
   disabled = false 
 }: AllergenWarningSelectorProps) {
+  const { t } = useTranslation();
   const [expandedAllergen, setExpandedAllergen] = useState<AllergenId | null>(null);
   const [showSubtypes, setShowSubtypes] = useState<{ cereals_gluten?: boolean; nuts?: boolean }>({});
 
@@ -182,8 +160,8 @@ export default function AllergenWarningSelector({
       <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
         <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
         <div className="text-xs text-blue-900">
-          <p className="font-semibold mb-1">Select warning level for each allergen</p>
-          <p><strong>Contains</strong> = Present | <strong>May Contain</strong> = Possible | <strong>Traces</strong> = Small amounts | <strong>Not Suitable</strong> = Cannot guarantee safety | <strong>Cross-Contamination</strong> = Shared facility</p>
+          <p className="font-semibold mb-1">{t('ingredientsPortal.selectWarningLevel')}</p>
+          <p><strong>{t('ingredientsPortal.contains')}</strong> = {t('ingredientsPortal.presentMeaning')} | <strong>{t('mayContain')}</strong> = {t('ingredientsPortal.possibleMeaning')} | <strong>{t('tracesLabel')}</strong> = {t('ingredientsPortal.smallAmountsMeaning')} | <strong>{t('notSuitable')}</strong> = {t('ingredientsPortal.cannotGuaranteeSafetyMeaning')} | <strong>{t('crossContaminationLabel')}</strong> = {t('ingredientsPortal.sharedFacilityMeaning')}</p>
         </div>
       </div>
 
@@ -223,7 +201,7 @@ export default function AllergenWarningSelector({
                       >
                         {allergen.number}
                       </span>
-                      <h4 className="font-semibold text-gray-900 group-hover:text-gray-700 transition-colors truncate">{allergen.name}</h4>
+                      <h4 className="font-semibold text-gray-900 group-hover:text-gray-700 transition-colors truncate">{t(`allergenNames.${allergen.id}`)}</h4>
                     </div>
                   </div>
                 </div>
@@ -243,7 +221,7 @@ export default function AllergenWarningSelector({
                   >
                     {ALLERGEN_LEVEL_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
-                        {option.label}
+                        {t(option.labelKey)}
                       </option>
                     ))}
                   </select>
@@ -255,14 +233,14 @@ export default function AllergenWarningSelector({
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <div className="flex items-center justify-between mb-3">
                     <h5 className="text-sm font-semibold text-gray-900">
-                      Specify risk level for each {allergen.id === 'cereals_gluten' ? 'grain' : 'nut'}:
+                      {t(allergen.id === 'cereals_gluten' ? 'ingredientsPortal.specifyGrainRisk' : 'ingredientsPortal.specifyNutRisk')}
                     </h5>
                     <button
                       type="button"
                       onClick={() => handleSetAllSubtypesToMainLevel(allergen.id as 'cereals_gluten' | 'nuts')}
                       className="text-xs text-[#42b8ac] hover:underline font-medium"
                     >
-                      Set All to {ALLERGEN_LEVEL_OPTIONS.find(o => o.value === currentLevel)?.label}
+                      {t('ingredientsPortal.setAllTo', { level: t(ALLERGEN_LEVEL_OPTIONS.find(o => o.value === currentLevel)?.labelKey || 'notPresent') })}
                     </button>
                   </div>
                   
@@ -274,7 +252,7 @@ export default function AllergenWarningSelector({
                       return (
                         <div key={glutenType.key} className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-3">
                           <span className="text-sm font-medium text-gray-700 xs:w-24 xs:flex-shrink-0">
-                            {glutenType.name}
+                            {t(`allergenSubtypes.${glutenType.key}`)}
                           </span>
                           <select
                             value={subtypeLevel}
@@ -289,7 +267,7 @@ export default function AllergenWarningSelector({
                           >
                             {ALLERGEN_LEVEL_OPTIONS.map((option) => (
                               <option key={option.value} value={option.value}>
-                                {option.label}
+                                {t(option.labelKey)}
                               </option>
                             ))}
                           </select>
@@ -304,7 +282,7 @@ export default function AllergenWarningSelector({
                       return (
                         <div key={nutType.key} className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-3">
                           <span className="text-sm font-medium text-gray-700 xs:w-24 xs:flex-shrink-0">
-                            {nutType.name}
+                            {t(`allergenSubtypes.${nutType.key}`)}
                           </span>
                           <select
                             value={subtypeLevel}
@@ -319,7 +297,7 @@ export default function AllergenWarningSelector({
                           >
                             {ALLERGEN_LEVEL_OPTIONS.map((option) => (
                               <option key={option.value} value={option.value}>
-                                {option.label}
+                                {t(option.labelKey)}
                               </option>
                             ))}
                           </select>
@@ -330,7 +308,7 @@ export default function AllergenWarningSelector({
                   
                   <p className="mt-3 text-xs text-gray-600 bg-gray-50 rounded p-2">
                     <Info className="h-3 w-3 inline mr-1" />
-                    The main allergen level above shows the highest severity across all {allergen.id === 'cereals_gluten' ? 'grains' : 'nuts'}.
+                    {t(allergen.id === 'cereals_gluten' ? 'ingredientsPortal.mainGrainLevelHelp' : 'ingredientsPortal.mainNutLevelHelp')}
                   </p>
                 </div>
               )}
@@ -341,7 +319,7 @@ export default function AllergenWarningSelector({
 
       {/* Summary */}
       <Card className="bg-gray-50">
-        <h4 className="font-semibold text-gray-900 mb-3">Allergen Summary</h4>
+        <h4 className="font-semibold text-gray-900 mb-3">{t('admin.allergenSummary')}</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
           {ALLERGEN_LIST.map((allergen) => {
             const level = value[allergen.id] || 'none';
@@ -355,9 +333,9 @@ export default function AllergenWarningSelector({
               const subtypes = Object.entries(value.cereals_gluten_levels)
                 .filter(([_, lvl]) => lvl !== 'none')
                 .map(([type, lvl]) => {
-                  const name = GLUTEN_TYPES.find(g => g.key === type)?.name || type;
+                  const name = t(`allergenSubtypes.${type}`);
                   const option = ALLERGEN_LEVEL_OPTIONS.find(o => o.value === lvl);
-                  return `${name}: ${option?.label}`;
+                  return `${name}: ${option ? t(option.labelKey) : ''}`;
                 });
               if (subtypes.length > 0) {
                 subtypeDisplay = subtypes.join(' • ');
@@ -366,9 +344,9 @@ export default function AllergenWarningSelector({
               const subtypes = Object.entries(value.nuts_levels)
                 .filter(([_, lvl]) => lvl !== 'none')
                 .map(([type, lvl]) => {
-                  const name = TREE_NUT_TYPES.find(n => n.key === type)?.name || type;
+                  const name = t(`allergenSubtypes.${type}`);
                   const option = ALLERGEN_LEVEL_OPTIONS.find(o => o.value === lvl);
-                  return `${name}: ${option?.label}`;
+                  return `${name}: ${option ? t(option.labelKey) : ''}`;
                 });
               if (subtypes.length > 0) {
                 subtypeDisplay = subtypes.join(' • ');
@@ -394,11 +372,11 @@ export default function AllergenWarningSelector({
                 </div>
                 <div className="flex-1 min-w-0">
                   <span className="text-sm font-semibold block text-gray-900">
-                    {allergen.number}. {allergen.name}
+                    {allergen.number}. {t(`allergenNames.${allergen.id}`)}
                   </span>
                   {!subtypeDisplay && (
                     <span className="text-xs block mt-0.5 opacity-80">
-                      {ALLERGEN_LEVEL_OPTIONS.find(o => o.value === level)?.label}
+                      {t(ALLERGEN_LEVEL_OPTIONS.find(o => o.value === level)?.labelKey || 'notPresent')}
                     </span>
                   )}
                   {subtypeDisplay && (
@@ -412,7 +390,7 @@ export default function AllergenWarningSelector({
           })}
           {Object.values(value).every(v => v === 'none' || !v) && (
             <p className="text-gray-500 italic col-span-full">
-              No allergen warnings set
+              {t('ingredientsPortal.noAllergenWarnings')}
             </p>
           )}
         </div>

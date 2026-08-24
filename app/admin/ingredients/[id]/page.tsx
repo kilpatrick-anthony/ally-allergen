@@ -18,9 +18,11 @@ import { ALLERGEN_LIST } from '@/types/allergen'
 import { EditHistory } from '@/components/admin/EditHistory'
 import { useContentPermissions } from '@/lib/hooks/useContentPermissions'
 import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 export default function ViewIngredientPage() {
   const { showNotification } = useNotification()
+  const { t, language } = useTranslation()
   const { canDeleteContent } = useContentPermissions()
   const router = useRouter()
   const params = useParams()
@@ -71,7 +73,7 @@ export default function ViewIngredientPage() {
         
       } catch (error: any) {
         console.error('Error fetching ingredient:', error)
-        showNotification('Failed to load ingredient', 'error')
+        showNotification(t('ingredientsPortal.failedToLoadIngredient'), 'error')
       } finally {
         setLoading(false)
         setLoadingDatasheets(false)
@@ -79,10 +81,10 @@ export default function ViewIngredientPage() {
     }
     
     fetchData()
-  }, [ingredientId])
+  }, [ingredientId, t])
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this ingredient?')) {
+    if (!confirm(t('ingredientsPortal.deleteIngredientConfirm'))) {
       return
     }
 
@@ -99,7 +101,7 @@ export default function ViewIngredientPage() {
       router.push('/admin/ingredients')
     } catch (error: any) {
       console.error('Error deleting ingredient:', error)
-      showNotification(error.message || 'Failed to delete ingredient', 'error')
+      showNotification(t('ingredientsPortal.deleteIngredientFailed', { error: error.message || '' }), 'error')
     }
   }
 
@@ -119,7 +121,7 @@ export default function ViewIngredientPage() {
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
               <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
             </div>
-            <p className="text-gray-600 dark:text-gray-400">Loading ingredient...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('ingredientsPortal.loadingIngredient')}</p>
           </div>
         </div>
       </Container>
@@ -132,10 +134,10 @@ export default function ViewIngredientPage() {
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <p className="text-gray-600">Ingredient not found</p>
+            <p className="text-gray-600">{t('ingredientsPortal.ingredientNotFound')}</p>
             <Link href="/admin/ingredients">
               <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} className="mt-4">
-                Back to Ingredients
+                {t('ingredientsPortal.backToIngredients')}
               </Button>
             </Link>
           </div>
@@ -174,7 +176,7 @@ export default function ViewIngredientPage() {
       <div className="mb-6">
         <Link href="/admin/ingredients">
           <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />}>
-            Back to Ingredients
+            {t('ingredientsPortal.backToIngredients')}
           </Button>
         </Link>
       </div>
@@ -187,19 +189,19 @@ export default function ViewIngredientPage() {
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-bold text-[#003842] truncate">{ingredient.name}</h1>
             <p className="text-gray-600">
-              Created {new Date(ingredient.created_at).toLocaleDateString()}
+              {t('ingredientsPortal.createdOn', { date: new Date(ingredient.created_at).toLocaleDateString(language) })}
             </p>
           </div>
         </div>
         <div className="flex gap-3 flex-shrink-0">
           <Link href={`/admin/ingredients/${ingredientId}/edit`}>
             <Button icon={<Edit className="h-4 w-4" />}>
-              Edit
+              {t('team.edit')}
             </Button>
           </Link>
           {canDeleteContent && (
             <Button variant="outline" onClick={handleDelete} icon={<Trash2 className="h-4 w-4" />} className="text-red-600 hover:text-red-700 hover:border-red-300">
-              Delete
+              {t('accessPoints.delete')}
             </Button>
           )}
         </div>
@@ -210,31 +212,31 @@ export default function ViewIngredientPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Basic Information */}
           <Card>
-            <h2 className="text-xl font-semibold text-[#003842] mb-4">Basic Information</h2>
+            <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('ingredientsPortal.basicInformation')}</h2>
             
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-500">Name</label>
+                <label className="text-sm font-medium text-gray-500">{t('accessPoints.name')}</label>
                 <p className="text-lg text-gray-900 mt-1">{ingredient.name}</p>
               </div>
 
               {ingredient.description && (
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Description</label>
+                  <label className="text-sm font-medium text-gray-500">{t('ingredientsPortal.description')}</label>
                   <p className="text-gray-900 mt-1 whitespace-pre-wrap">{ingredient.description}</p>
                 </div>
               )}
 
               {ingredient.category && (
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Category</label>
+                  <label className="text-sm font-medium text-gray-500">{t('admin.category')}</label>
                   <p className="text-gray-900 mt-1">{ingredient.category}</p>
                 </div>
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Status</label>
+                  <label className="text-sm font-medium text-gray-500">{t('admin.status')}</label>
                   <div className="mt-1">
                     <Badge
                       variant={
@@ -243,7 +245,7 @@ export default function ViewIngredientPage() {
                         'default'
                       }
                     >
-                      {ingredient.status || 'active'}
+                      {t(ingredient.status === 'review' ? 'admin.inReview' : ingredient.status === 'archived' ? 'admin.archived' : 'admin.active')}
                     </Badge>
                   </div>
                 </div>
@@ -253,12 +255,12 @@ export default function ViewIngredientPage() {
 
           {/* Allergen Information */}
           <Card>
-            <h2 className="text-xl font-semibold text-[#003842] mb-4">Allergen Information</h2>
+            <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('admin.allergenInformation')}</h2>
             
             {activeAllergens.length === 0 ? (
               <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <Check className="h-5 w-5 text-green-600" />
-                <span className="text-green-800 font-medium">No allergens present</span>
+                <span className="text-green-800 font-medium">{t('ingredientsPortal.noAllergensPresent')}</span>
               </div>
             ) : (
               <div className="space-y-3">
@@ -306,11 +308,11 @@ export default function ViewIngredientPage() {
                               'default'
                             }
                           >
-                            {value === 'contains' ? 'Contains' : 
-                             value === 'may_contain' ? 'May Contain' : 
-                             value === 'traces' ? 'May Contain Traces' :
-                             value === 'cross_contamination' ? 'Cross-Contamination Risk' :
-                             'Processed In Facility'}
+                            {value === 'contains' ? t('ingredientsPortal.contains') :
+                             value === 'may_contain' ? t('mayContain') :
+                             value === 'traces' ? t('ingredientsPortal.mayContainTraces') :
+                             value === 'cross_contamination' ? t('ingredientsPortal.crossContaminationRisk') :
+                             t('ingredientsPortal.processedInFacility')}
                           </Badge>
                         )}
                       </div>
@@ -338,11 +340,11 @@ export default function ViewIngredientPage() {
                                     'default'
                                   }
                                 >
-                                  {sub.level === 'contains' ? 'Contains' : 
-                                   sub.level === 'may_contain' ? 'May Contain' : 
-                                   sub.level === 'traces' ? 'May Contain Traces' :
-                                   sub.level === 'cross_contamination' ? 'Cross-Contamination Risk' :
-                                   'Not Suitable'}
+                                  {sub.level === 'contains' ? t('ingredientsPortal.contains') :
+                                   sub.level === 'may_contain' ? t('mayContain') :
+                                   sub.level === 'traces' ? t('ingredientsPortal.mayContainTraces') :
+                                   sub.level === 'cross_contamination' ? t('ingredientsPortal.crossContaminationRisk') :
+                                   t('notSuitable')}
                                 </Badge>
                               </div>
                             );
@@ -359,7 +361,7 @@ export default function ViewIngredientPage() {
           {/* Suppliers */}
           {ingredient.suppliers && ingredient.suppliers.length > 0 && (
             <Card>
-              <h2 className="text-xl font-semibold text-[#003842] mb-4">Suppliers</h2>
+              <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('admin.suppliers')}</h2>
               
               <div className="space-y-2">
                 {ingredient.suppliers.map((supplier: string) => {
@@ -381,7 +383,7 @@ export default function ViewIngredientPage() {
                           </Link>
                         ) : header}
                         <Badge variant={isAssessed ? 'success' : 'warning'}>
-                          {isAssessed ? 'Reviewed' : 'Needs review'}
+                          {isAssessed ? t('ingredientsPortal.reviewed') : t('ingredientsPortal.needsReview')}
                         </Badge>
                       </div>
                       {profile?.allergen_warnings && (
@@ -399,24 +401,24 @@ export default function ViewIngredientPage() {
           {/* Datasheets */}
           <Card>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-[#003842]">Product Datasheets</h2>
+              <h2 className="text-xl font-semibold text-[#003842]">{t('admin.productDatasheets')}</h2>
               <Link href={`/admin/ingredients/${ingredientId}/edit`}>
                 <Button variant="ghost" size="sm">
-                  Upload
+                  {t('ingredientsPortal.upload')}
                 </Button>
               </Link>
             </div>
             
             {loadingDatasheets ? (
               <div className="text-center py-8">
-                <p className="text-gray-600 text-sm">Loading datasheets...</p>
+                <p className="text-gray-600 text-sm">{t('admin.loadingDatasheets')}</p>
               </div>
             ) : datasheets.length === 0 ? (
               <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
                 <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-600 text-sm mb-2">No datasheets uploaded</p>
+                <p className="text-gray-600 text-sm mb-2">{t('ingredientsPortal.noDatasheetsUploaded')}</p>
                 <p className="text-gray-500 text-xs">
-                  Edit this ingredient to add specification sheets
+                  {t('ingredientsPortal.addSpecificationSheets')}
                 </p>
               </div>
             ) : (
@@ -435,7 +437,7 @@ export default function ViewIngredientPage() {
                           {datasheet.file_name}
                         </p>
                         <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
-                          <span>{(datasheet.file_size / 1024 / 1024).toFixed(2)} MB</span>
+                          <span>{t('ingredientsPortal.fileSizeMb', { size: (datasheet.file_size / 1024 / 1024).toFixed(2) })}</span>
                           {datasheet.supplier_name && (
                             <>
                               <span>•</span>
@@ -445,7 +447,7 @@ export default function ViewIngredientPage() {
                           {datasheet.version && (
                             <>
                               <span>•</span>
-                              <span>v{datasheet.version}</span>
+                              <span>{t('ingredientsPortal.versionPrefix', { version: datasheet.version })}</span>
                             </>
                           )}
                         </div>
@@ -457,7 +459,7 @@ export default function ViewIngredientPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                        title="View/Download"
+                        title={t('ingredientsPortal.viewDownload')}
                       >
                         <ExternalLink className="h-4 w-4 text-gray-600" />
                       </a>
@@ -473,11 +475,11 @@ export default function ViewIngredientPage() {
         <div className="space-y-6">
           {/* Dietary Attributes */}
           <Card>
-            <h2 className="text-xl font-semibold text-[#003842] mb-4">Dietary Attributes</h2>
+            <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('admin.dietaryAttributes')}</h2>
             
             <div className="space-y-2">
               {(!ingredient.certifications || ingredient.certifications.length === 0) ? (
-                <p className="text-sm text-gray-500">No dietary attributes set</p>
+                <p className="text-sm text-gray-500">{t('ingredientsPortal.noDietaryAttributes')}</p>
               ) : (
                 ingredient.certifications.map((cert: string, index: number) => {
                   const certData = certificationOptions.find(c => c.name === cert)
@@ -515,19 +517,19 @@ export default function ViewIngredientPage() {
 
           {/* Metadata */}
           <Card>
-            <h2 className="text-xl font-semibold text-[#003842] mb-4">Metadata</h2>
+            <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('ingredientsPortal.metadata')}</h2>
             
             <div className="space-y-3 text-sm">
               <div>
-                <label className="text-gray-500">Created</label>
+                <label className="text-gray-500">{t('ingredientsPortal.created')}</label>
                 <p className="text-gray-900 mt-1">
-                  {new Date(ingredient.created_at).toLocaleString()}
+                  {new Date(ingredient.created_at).toLocaleString(language)}
                 </p>
               </div>
               <div>
-                <label className="text-gray-500">Last Updated</label>
+                <label className="text-gray-500">{t('ingredientsPortal.lastUpdated')}</label>
                 <p className="text-gray-900 mt-1">
-                  {new Date(ingredient.updated_at).toLocaleString()}
+                  {new Date(ingredient.updated_at).toLocaleString(language)}
                 </p>
               </div>
             </div>

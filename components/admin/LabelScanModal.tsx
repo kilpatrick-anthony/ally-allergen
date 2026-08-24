@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import type { AllergenWarnings } from '@/types/allergen'
 import { ALLERGEN_LIST } from '@/types/allergen'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 export interface ScanResult {
   name: string
@@ -33,22 +34,23 @@ interface Props {
 
 type Stage = 'idle' | 'preview' | 'scanning' | 'result' | 'error'
 
-const LEVEL_LABELS: Record<string, { label: string; colour: string }> = {
-  none:               { label: 'None',               colour: 'text-gray-400' },
-  contains:           { label: 'Contains',           colour: 'text-red-600 font-semibold' },
-  may_contain:        { label: 'May contain',        colour: 'text-amber-600 font-semibold' },
-  traces:             { label: 'Traces',             colour: 'text-amber-500' },
-  cross_contamination:{ label: 'Cross-contamination',colour: 'text-orange-500' },
-  not_suitable:       { label: 'Not suitable',       colour: 'text-red-500 font-semibold' },
+const LEVEL_LABELS: Record<string, { labelKey: string; colour: string }> = {
+  none:               { labelKey: 'admin.none', colour: 'text-gray-400' },
+  contains:           { labelKey: 'ingredientsPortal.contains', colour: 'text-red-600 font-semibold' },
+  may_contain:        { labelKey: 'mayContain', colour: 'text-amber-600 font-semibold' },
+  traces:             { labelKey: 'tracesLabel', colour: 'text-amber-500' },
+  cross_contamination:{ labelKey: 'crossContaminationLabel', colour: 'text-orange-500' },
+  not_suitable:       { labelKey: 'notSuitableShort', colour: 'text-red-500 font-semibold' },
 }
 
-function AllergenResultRow({ id, name, level }: { id: string; name: string; level: string }) {
+function AllergenResultRow({ id, level }: { id: string; level: string }) {
+  const { t } = useTranslation()
   if (level === 'none') return null
   const meta = LEVEL_LABELS[level] ?? LEVEL_LABELS.none
   return (
     <div className="flex items-center justify-between py-1.5 border-b border-gray-100 last:border-0">
-      <span className="text-sm text-gray-700">{name}</span>
-      <span className={`text-xs ${meta.colour}`}>{meta.label}</span>
+      <span className="text-sm text-gray-700">{t(`allergenNames.${id}`)}</span>
+      <span className={`text-xs ${meta.colour}`}>{t(meta.labelKey)}</span>
     </div>
   )
 }
@@ -77,6 +79,7 @@ async function compressImage(file: File, maxDim = 1280, quality = 0.82): Promise
 }
 
 export function LabelScanModal({ open, onClose, onAccept }: Props) {
+  const { t } = useTranslation()
   const [stage, setStage]         = useState<Stage>('idle')
   const [preview, setPreview]     = useState<string | null>(null)
   const [isDocument, setIsDocument] = useState(false)
@@ -104,7 +107,7 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
   const handleFileSelected = useCallback(async (file: File | null | undefined) => {
     if (!file) return
     if (!file.type.startsWith('image/')) {
-      setErrorMsg('Please select an image file.')
+      setErrorMsg(t('ingredientsPortal.selectImageFile'))
       setStage('error')
       return
     }
@@ -114,10 +117,10 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
       setPreview(dataUrl)
       setStage('preview')
     } catch {
-      setErrorMsg('Could not read the image. Please try again.')
+      setErrorMsg(t('ingredientsPortal.readImageFailed'))
       setStage('error')
     }
-  }, [])
+  }, [t])
 
   const handleDocSelected = useCallback(async (file: File | null | undefined) => {
     if (!file) return
@@ -127,7 +130,7 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
       'application/msword',
     ]
     if (!validTypes.includes(file.type)) {
-      setErrorMsg('Please select a PDF or Word document (.pdf, .docx, .doc).')
+      setErrorMsg(t('ingredientsPortal.selectPdfOrWord'))
       setStage('error')
       return
     }
@@ -143,10 +146,10 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
       setPreview(dataUrl)
       setStage('preview')
     } catch {
-      setErrorMsg('Could not read the document. Please try again.')
+      setErrorMsg(t('ingredientsPortal.readDocumentFailed'))
       setStage('error')
     }
-  }, [])
+  }, [t])
 
   const handleScan = useCallback(async () => {
     if (!preview) return
@@ -164,16 +167,16 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
 
       const data = await res.json()
       if (!res.ok) {
-        throw new Error(data.error || 'Scan failed.')
+        throw new Error(data.error || t('ingredientsPortal.scanFailed'))
       }
 
       setResult(data as ScanResult)
       setStage('result')
     } catch (err: any) {
-      setErrorMsg(err.message || 'An unexpected error occurred.')
+      setErrorMsg(err.message || t('ingredientsPortal.unexpectedError'))
       setStage('error')
     }
-  }, [preview])
+  }, [preview, isDocument, t])
 
   const handleAccept = useCallback(() => {
     if (result) {
@@ -193,7 +196,7 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
       role="dialog"
       aria-modal="true"
-      aria-label="Scan product label"
+      aria-label={t('ingredientsPortal.scanProductLabel')}
     >
       {/* Backdrop */}
       <div
@@ -211,15 +214,15 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
               <ScanLine className="h-4 w-4 text-white" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white">Scan Product Label</h2>
-              <p className="text-xs text-gray-500">AI-powered allergen extraction</p>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white">{t('ingredientsPortal.scanProductLabel')}</h2>
+              <p className="text-xs text-gray-500">{t('ingredientsPortal.aiAllergenExtraction')}</p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleClose}
             className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-            aria-label="Close"
+            aria-label={t('accessPoints.close')}
           >
             <X className="h-5 w-5" />
           </button>
@@ -232,8 +235,7 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
           {stage === 'idle' && (
             <div className="p-6">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 text-center">
-                Take a photo or upload an image of the product label, or upload a product datasheet (PDF or Word).
-                The AI will read the allergen information — you can review and correct it before saving.
+                {t('ingredientsPortal.scanLabelIntro')}
               </p>
 
               <div className="grid grid-cols-2 gap-3 mb-3">
@@ -246,8 +248,8 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
                   <div className="p-3 bg-[#42b8ac]/10 rounded-full group-hover:bg-[#42b8ac]/20 transition-colors">
                     <Camera className="h-6 w-6 text-[#42b8ac]" />
                   </div>
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Take Photo</span>
-                  <span className="text-xs text-gray-400">Use your camera</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('ingredientsPortal.takePhoto')}</span>
+                  <span className="text-xs text-gray-400">{t('ingredientsPortal.useCamera')}</span>
                 </button>
 
                 {/* Image file upload */}
@@ -259,8 +261,8 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
                   <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-full group-hover:bg-[#42b8ac]/20 transition-colors">
                     <Upload className="h-6 w-6 text-gray-500 group-hover:text-[#42b8ac]" />
                   </div>
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Upload Image</span>
-                  <span className="text-xs text-gray-400">JPG, PNG, WEBP</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('ingredientsPortal.uploadImage')}</span>
+                  <span className="text-xs text-gray-400">{t('ingredientsPortal.imageFormats')}</span>
                 </button>
               </div>
 
@@ -274,17 +276,15 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
                   <FileText className="h-6 w-6 text-gray-500 group-hover:text-[#42b8ac]" />
                 </div>
                 <div className="text-left">
-                  <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">Upload Datasheet</span>
-                  <span className="text-xs text-gray-400">PDF or Word document (.pdf, .docx)</span>
+                  <span className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('ingredientsPortal.uploadDatasheet')}</span>
+                  <span className="text-xs text-gray-400">{t('ingredientsPortal.documentFormats')}</span>
                 </div>
               </button>
 
               <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
                 <Info className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
                 <p className="text-xs text-blue-700 dark:text-blue-300">
-                  For best results, ensure the <strong>ingredients list</strong> and{' '}
-                  <strong>allergen warnings</strong> sections are clearly visible and well-lit (images),
-                  or use a supplier datasheet in PDF/Word format.
+                  {t('ingredientsPortal.scanBestResults')}
                 </p>
               </div>
 
@@ -323,22 +323,22 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
                     <FileText className="h-10 w-10 text-[#42b8ac]" />
                   </div>
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-300 text-center max-w-xs break-all">{docName}</p>
-                  <p className="text-xs text-gray-400">Ready to scan</p>
+                  <p className="text-xs text-gray-400">{t('ingredientsPortal.readyToScan')}</p>
                 </div>
               ) : (
                 <div className="relative rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800 mb-4">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={preview}
-                    alt="Label to scan"
+                    alt={t('ingredientsPortal.labelToScan')}
                     className="w-full max-h-72 object-contain"
                   />
                 </div>
               )}
               <p className="text-sm text-center text-gray-600 dark:text-gray-400 mb-5">
                 {isDocument
-                  ? <>Document loaded. Tap <strong>Scan Document</strong> to extract allergen info.</>
-                  : <>Is the label clearly readable? Then tap <strong>Scan Label</strong> to extract allergen info.</>
+                  ? t('ingredientsPortal.documentReadyPrompt')
+                  : t('ingredientsPortal.imageReadyPrompt')
                 }
               </p>
               <div className="flex gap-3">
@@ -347,7 +347,7 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
                   onClick={reset}
                   className="flex-1 py-2.5 px-4 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
-                  {isDocument ? 'Choose Different' : 'Retake'}
+                  {isDocument ? t('ingredientsPortal.chooseDifferent') : t('ingredientsPortal.retake')}
                 </button>
                 <button
                   type="button"
@@ -355,7 +355,7 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
                   className="flex-[2] py-2.5 px-4 rounded-lg bg-gradient-to-r from-[#42b8ac] to-[#003842] text-sm font-semibold text-white hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
                 >
                   <ScanLine className="h-4 w-4" />
-                  {isDocument ? 'Scan Document' : 'Scan Label'}
+                  {isDocument ? t('ingredientsPortal.scanDocument') : t('admin.scanLabel')}
                 </button>
               </div>
             </div>
@@ -368,9 +368,9 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
                 <div className="h-16 w-16 rounded-full border-4 border-[#42b8ac]/20 border-t-[#42b8ac] animate-spin" />
                 <ScanLine className="absolute inset-0 m-auto h-7 w-7 text-[#42b8ac]" />
               </div>
-              <p className="text-base font-medium text-gray-700 dark:text-gray-300">Reading label…</p>
+              <p className="text-base font-medium text-gray-700 dark:text-gray-300">{t('ingredientsPortal.readingLabel')}</p>
               <p className="text-xs text-gray-400 text-center max-w-xs">
-                AI is analysing the ingredients list and allergen declarations. This usually takes a few seconds.
+                {t('ingredientsPortal.analysingLabel')}
               </p>
             </div>
           )}
@@ -382,9 +382,9 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
               <div className="flex items-start gap-2 mb-4">
                 <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">Detected Name</p>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-0.5">{t('ingredientsPortal.detectedName')}</p>
                   <p className="text-base font-semibold text-gray-900 dark:text-white">
-                    {result.name || <em className="text-gray-400 font-normal">Not detected</em>}
+                    {result.name || <em className="text-gray-400 font-normal">{t('ingredientsPortal.notDetected')}</em>}
                   </p>
                   {result.description && (
                     <p className="text-xs text-gray-500 mt-0.5">{result.description}</p>
@@ -395,11 +395,11 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
               {/* Allergens */}
               <div className="mb-4">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                  Allergens found ({detectedAllergens.length} of 14)
+                  {t('ingredientsPortal.allergensFound', { count: detectedAllergens.length, total: 14 })}
                 </p>
                 {detectedAllergens.length === 0 ? (
                   <div className="py-3 px-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                    <p className="text-sm text-green-700 dark:text-green-400">No allergens detected on this label.</p>
+                    <p className="text-sm text-green-700 dark:text-green-400">{t('ingredientsPortal.noAllergensOnLabel')}</p>
                   </div>
                 ) : (
                   <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-4 py-1">
@@ -407,7 +407,6 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
                       <AllergenResultRow
                         key={a.id}
                         id={a.id}
-                        name={a.name}
                         level={result.allergen_warnings[a.id]}
                       />
                     ))}
@@ -419,11 +418,11 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
               <details className="mb-4 group">
                 <summary className="text-xs text-gray-400 cursor-pointer hover:text-gray-600 list-none flex items-center gap-1">
                   <ChevronRight className="h-3 w-3 group-open:rotate-90 transition-transform" />
-                  {14 - detectedAllergens.length} allergens not found
+                  {t('ingredientsPortal.allergensNotFound', { count: 14 - detectedAllergens.length })}
                 </summary>
                 <div className="mt-1.5 pl-4 space-y-1">
                   {ALLERGEN_LIST.filter(a => result.allergen_warnings[a.id] === 'none').map(a => (
-                    <p key={a.id} className="text-xs text-gray-400">{a.name}</p>
+                    <p key={a.id} className="text-xs text-gray-400">{t(`allergenNames.${a.id}`)}</p>
                   ))}
                 </div>
               </details>
@@ -433,7 +432,7 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
                 <div className="mb-4 flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
                   <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1">AI notes</p>
+                    <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-1">{t('ingredientsPortal.aiNotes')}</p>
                     {result.notes.map((n, i) => (
                       <p key={i} className="text-xs text-amber-700 dark:text-amber-300">{n}</p>
                     ))}
@@ -445,8 +444,7 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
               <div className="mb-5 flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
                 <Info className="h-4 w-4 text-blue-500 shrink-0 mt-0.5" />
                 <p className="text-xs text-blue-700 dark:text-blue-300">
-                  Always verify extracted information against the original label. AI may make errors —
-                  you remain responsible for the accuracy of allergen declarations.
+                  {t('ingredientsPortal.verifyScanDisclaimer')}
                 </p>
               </div>
 
@@ -457,7 +455,7 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
                   onClick={reset}
                   className="flex-1 py-2.5 px-4 rounded-lg border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
-                  Rescan
+                  {t('ingredientsPortal.rescan')}
                 </button>
                 <button
                   type="button"
@@ -465,7 +463,7 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
                   className="flex-[2] py-2.5 px-4 rounded-lg bg-gradient-to-r from-[#42b8ac] to-[#003842] text-sm font-semibold text-white hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
                 >
                   <CheckCircle className="h-4 w-4" />
-                  Use these results
+                  {t('ingredientsPortal.useScanResults')}
                 </button>
               </div>
             </div>
@@ -478,7 +476,7 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
                 <AlertTriangle className="h-8 w-8 text-red-500" />
               </div>
               <div>
-                <p className="font-semibold text-gray-800 dark:text-gray-200 mb-1">Scan failed</p>
+                <p className="font-semibold text-gray-800 dark:text-gray-200 mb-1">{t('ingredientsPortal.scanFailed')}</p>
                 <p className="text-sm text-gray-500">{errorMsg}</p>
               </div>
               <button
@@ -487,7 +485,7 @@ export function LabelScanModal({ open, onClose, onAccept }: Props) {
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 <RefreshCw className="h-4 w-4" />
-                Try again
+                {t('kioskPortal.tryAgain')}
               </button>
             </div>
           )}

@@ -18,6 +18,7 @@ import {
   type SupplierSafetyProfile,
 } from '@/lib/ingredient-supplier-profiles'
 import type { AllergenWarnings } from '@/types/allergen'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 type CertificationOption = {
   name: string
@@ -46,6 +47,7 @@ export default function IngredientSupplierVariantsEditor({
   certificationOptions,
   onChange,
 }: IngredientSupplierVariantsEditorProps) {
+  const { t } = useTranslation()
   const [selectedSupplier, setSelectedSupplier] = useState('')
   const [newSupplier, setNewSupplier] = useState('')
   const [expandedSuppliers, setExpandedSuppliers] = useState<Set<string>>(() => new Set())
@@ -115,16 +117,16 @@ export default function IngredientSupplierVariantsEditor({
         <div>
           <div className="flex items-center gap-2">
             <Truck className="h-5 w-5 text-[#0f766e]" />
-            <h2 className="text-xl font-semibold text-[#003842] dark:text-[#42b8ac]">Supplier variants</h2>
+            <h2 className="text-xl font-semibold text-[#003842] dark:text-[#42b8ac]">{t('ingredientsPortal.supplierVariants')}</h2>
           </div>
           <p className="mt-1 max-w-2xl text-sm text-gray-600 dark:text-gray-300">
-            Record the allergen and dietary profile supplied by each company. AllyJen automatically uses the safest combined result.
+            {t('ingredientsPortal.supplierVariantsHelp')}
           </p>
         </div>
         {suppliers.length > 0 && (
           <div className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${reviewCount > 0 ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'}`}>
             {reviewCount > 0 ? <AlertTriangle className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-            {reviewCount > 0 ? `${reviewCount} need review` : 'All profiles reviewed'}
+            {reviewCount > 0 ? t('ingredientsPortal.profilesNeedReview', { count: reviewCount }) : t('ingredientsPortal.allProfilesReviewed')}
           </div>
         )}
       </div>
@@ -139,7 +141,7 @@ export default function IngredientSupplierVariantsEditor({
           }}
           className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-transparent focus:ring-2 focus:ring-[#42b8ac] dark:border-gray-600 dark:bg-gray-800 dark:text-white"
         >
-          <option value="">{loadingSuppliers ? 'Loading suppliers…' : 'Choose an existing supplier…'}</option>
+          <option value="">{loadingSuppliers ? t('ingredientsPortal.loadingSuppliers') : t('ingredientsPortal.chooseExistingSupplier')}</option>
           {unselectedSuppliers.map((supplier) => <option key={supplier} value={supplier}>{supplier}</option>)}
         </select>
         <div className="flex min-w-0 gap-2">
@@ -154,7 +156,7 @@ export default function IngredientSupplierVariantsEditor({
                 setNewSupplier('')
               }
             }}
-            placeholder="Or enter a new supplier"
+            placeholder={t('ingredientsPortal.enterNewSupplier')}
             className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2.5 text-sm focus:border-transparent focus:ring-2 focus:ring-[#42b8ac] dark:border-gray-600 dark:bg-gray-800 dark:text-white"
           />
           <Button
@@ -167,14 +169,14 @@ export default function IngredientSupplierVariantsEditor({
               setNewSupplier('')
             }}
           >
-            Add
+            {t('admin.add')}
           </Button>
         </div>
       </div>
 
       {suppliers.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500 dark:border-gray-600 dark:bg-gray-800/50 dark:text-gray-400">
-          No supplier variants yet. You can still record a general allergen profile below.
+          {t('ingredientsPortal.noSupplierVariants')}
         </div>
       ) : (
         <div className="space-y-3">
@@ -195,13 +197,13 @@ export default function IngredientSupplierVariantsEditor({
                     {isExpanded ? <ChevronDown className="h-5 w-5 shrink-0 text-gray-500" /> : <ChevronRight className="h-5 w-5 shrink-0 text-gray-500" />}
                     <span className="min-w-0 flex-1 truncate font-semibold text-gray-900 dark:text-white">{supplier}</span>
                     <span className={`hidden rounded-full px-2.5 py-1 text-xs font-semibold sm:inline ${isAssessed ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'}`}>
-                      {isAssessed ? 'Reviewed' : 'Needs review'}
+                      {isAssessed ? t('ingredientsPortal.reviewed') : t('ingredientsPortal.needsReview')}
                     </span>
                   </button>
                   <button
                     type="button"
                     onClick={() => removeSupplier(supplier)}
-                    aria-label={`Remove ${supplier}`}
+                    aria-label={t('ingredientsPortal.removeSupplier', { supplier })}
                     className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -213,12 +215,12 @@ export default function IngredientSupplierVariantsEditor({
                     {!isAssessed && (
                       <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
                         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                        <p>This profile currently carries the ingredient’s existing safety values. Review it against this supplier’s documentation before marking it reviewed.</p>
+                        <p>{t('ingredientsPortal.inheritedSafetyHelp')}</p>
                       </div>
                     )}
 
                     <div>
-                      <h3 className="mb-3 text-sm font-semibold text-gray-800 dark:text-gray-200">Allergens supplied by {supplier}</h3>
+                      <h3 className="mb-3 text-sm font-semibold text-gray-800 dark:text-gray-200">{t('ingredientsPortal.allergensSuppliedBy', { supplier })}</h3>
                       <AllergenWarningSelector
                         value={profile?.allergen_warnings || fallbackAllergens}
                         onChange={(allergen_warnings) => updateProfile(supplier, {
@@ -230,7 +232,7 @@ export default function IngredientSupplierVariantsEditor({
                     </div>
 
                     <div>
-                      <h3 className="mb-3 text-sm font-semibold text-gray-800 dark:text-gray-200">Dietary certifications</h3>
+                      <h3 className="mb-3 text-sm font-semibold text-gray-800 dark:text-gray-200">{t('ingredientsPortal.dietaryCertifications')}</h3>
                       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                         {certificationOptions.map(({ name, color, icon: Icon }) => {
                           const selected = (profile?.certifications || []).includes(name)
@@ -259,14 +261,14 @@ export default function IngredientSupplierVariantsEditor({
 
                     <div>
                       <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor={`supplier-notes-${supplier}`}>
-                        Profile notes
+                        {t('ingredientsPortal.profileNotes')}
                       </label>
                       <textarea
                         id={`supplier-notes-${supplier}`}
                         value={profile?.notes || ''}
                         onChange={(event) => updateProfile(supplier, { notes: event.target.value })}
                         rows={2}
-                        placeholder="Optional reference, product code, or assessment note"
+                        placeholder={t('ingredientsPortal.profileNotesPlaceholder')}
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-[#42b8ac] dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                       />
                     </div>
@@ -281,7 +283,7 @@ export default function IngredientSupplierVariantsEditor({
                           last_reviewed_at: new Date().toISOString(),
                         })}
                       >
-                        {isAssessed ? 'Reviewed' : 'Mark profile reviewed'}
+                        {isAssessed ? t('ingredientsPortal.reviewed') : t('ingredientsPortal.markProfileReviewed')}
                       </Button>
                     </div>
                   </div>

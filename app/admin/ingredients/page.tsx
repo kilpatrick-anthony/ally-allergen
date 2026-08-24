@@ -334,19 +334,19 @@ export default function IngredientsPage() {
       const response = await fetch('/api/ingredients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...orig, id: undefined, name: `Copy of ${name}`, status: 'active' })
+        body: JSON.stringify({ ...orig, id: undefined, name: t('ingredientsPortal.copyOfIngredient', { name }), status: 'active' })
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'Failed to duplicate')
       await fetchIngredients(false)
-      showNotification('Ingredient duplicated', 'success')
+      showNotification(t('ingredientsPortal.ingredientDuplicated'), 'success')
     } catch (error: any) {
-      showNotification('Failed to duplicate: ' + error?.message, 'error')
+      showNotification(t('ingredientsPortal.duplicateIngredientFailed', { error: error?.message ?? '' }), 'error')
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this ingredient?')) return
+    if (!confirm(t('ingredientsPortal.deleteIngredientConfirm'))) return
     
     try {
       const response = await fetch(`/api/ingredients/${id}`, { method: 'DELETE' })
@@ -357,7 +357,7 @@ export default function IngredientsPage() {
       setIngredients(ingredients.filter(ing => ing.id !== id))
     } catch (error: any) {
       console.error('Error deleting ingredient:', error)
-      showNotification('Failed to delete ingredient: ' + error?.message, 'error')
+      showNotification(t('ingredientsPortal.deleteIngredientFailed', { error: error?.message ?? '' }), 'error')
     }
   }
 
@@ -386,7 +386,7 @@ export default function IngredientsPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
             <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
           </div>
-          <p className="text-gray-600 dark:text-gray-400">Loading ingredients...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('ingredientsPortal.loadingIngredients')}</p>
         </div>
       </div>
     )
@@ -533,13 +533,13 @@ export default function IngredientsPage() {
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                 className="text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
               >
-                <option value="name">Name</option>
-                <option value="date">Date Added</option>
+                <option value="name">{t('accessPoints.name')}</option>
+                <option value="date">{t('admin.dateAdded')}</option>
               </select>
               <button
                 onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
                 className="p-1.5 rounded-lg text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700"
-                title={sortDir === 'asc' ? 'Ascending' : 'Descending'}
+                title={sortDir === 'asc' ? t('ingredientsPortal.ascending') : t('ingredientsPortal.descending')}
               >
                 {sortDir === 'asc' ? <SortAsc className="h-4 w-4" /> : <SortDesc className="h-4 w-4" />}
               </button>
@@ -618,18 +618,18 @@ export default function IngredientsPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Category
+                  {t('admin.category')}
                 </label>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
                   className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                 >
-                  <option value="all">All categories</option>
+                  <option value="all">{t('admin.allCategories')}</option>
                   {uniqueCategories.map(cat => (
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
-                  <option value="uncategorized">Uncategorized</option>
+                  <option value="uncategorized">{t('admin.uncategorized')}</option>
                 </select>
               </div>
             </div>
@@ -739,7 +739,7 @@ export default function IngredientsPage() {
                 <th className="w-1/4 text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.dietaryAttributes')}</th>
                 <th className="w-1/6 text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.suppliers')}</th>
                 <th className="w-20 text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.status')}</th>
-                <th className="w-24 text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">Edit</th>
+                <th className="w-24 text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">{t('team.edit')}</th>
               </tr>
             </thead>
             <tbody className="divide-y dark:divide-gray-700">
@@ -935,7 +935,7 @@ export default function IngredientsPage() {
                           console.error('Error rendering allergen:', error, allergen);
                           return (
                             <Badge key={index} variant="default" size="sm">
-                              Error rendering allergen
+                              {t('ingredientsPortal.allergenRenderError')}
                             </Badge>
                           );
                         }
@@ -946,7 +946,7 @@ export default function IngredientsPage() {
                   <td className="w-1/4 py-3 px-4">
                     <div className="flex flex-wrap gap-1.5 max-w-full overflow-hidden">
                       {ingredient.certifications.length === 0 ? (
-                        <span className="text-xs text-gray-400 italic">None listed</span>
+                        <span className="text-xs text-gray-400 italic">{t('ingredientsPortal.noneListed')}</span>
                       ) : (
                       ingredient.certifications.map((cert, index) => {
                         const attr = dietaryAttributes.find(a => 
@@ -986,7 +986,7 @@ export default function IngredientsPage() {
                   </td>
                   <td className="w-1/6 py-3 px-4">
                     <div className="text-sm text-gray-600 dark:text-gray-300">
-                      {ingredient.suppliers.length} {t('admin.supplier')}{ingredient.suppliers.length !== 1 ? 's' : ''}
+                      {t(ingredient.suppliers.length === 1 ? 'ingredientsPortal.supplierCountOne' : 'ingredientsPortal.supplierCountOther', { count: ingredient.suppliers.length })}
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400">
                       {ingredient.suppliers.slice(0, 2).join(', ')}
@@ -1027,7 +1027,7 @@ export default function IngredientsPage() {
                         size="sm"
                         icon={Copy}
                         onClick={() => handleDuplicate(ingredient.id, ingredient.name)}
-                        title="Duplicate"
+                        title={t('admin.duplicate')}
                       />
                       {canDeleteContent && (
                         <Button variant="ghost" size="sm" icon={Trash2} onClick={() => handleDelete(ingredient.id)} title={t('admin.deleteIngredient')} />
@@ -1070,16 +1070,16 @@ export default function IngredientsPage() {
                 </div>
 
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
-                  {ingredient.suppliers.length > 0 ? ingredient.suppliers.join(', ') : 'No suppliers'}
+                  {ingredient.suppliers.length > 0 ? ingredient.suppliers.join(', ') : t('ingredientsPortal.noSuppliers')}
                 </p>
 
                 <div>
-                  <label className="text-xs font-medium text-gray-500 mb-2 block">Allergens</label>
+                  <label className="text-xs font-medium text-gray-500 mb-2 block">{t('admin.allergens')}</label>
                   <div className="flex flex-wrap gap-1.5">
                     {ingredient.allergens.length === 0 ? (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                         <Check className="h-3 w-3" />
-                        None
+                        {t('admin.none')}
                       </span>
                     ) : (
                       ingredient.allergens.slice(0, 3).map((allergen, idx) => (
@@ -1104,7 +1104,7 @@ export default function IngredientsPage() {
                   size="sm"
                   icon={Copy}
                   onClick={() => handleDuplicate(ingredient.id, ingredient.name)}
-                  title="Duplicate"
+                  title={t('admin.duplicate')}
                 />
                 {canDeleteContent && (
                   <Button variant="ghost" size="sm" icon={Trash2} onClick={() => handleDelete(ingredient.id)} title={t('admin.delete')} />
