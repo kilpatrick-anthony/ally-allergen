@@ -41,7 +41,7 @@ export default function KioskPairPage() {
 
       if (!res.ok) {
         setStatus('error')
-        setErrorMsg(data.error || t('kioskPortal.invalidSetupCode'))
+        setErrorMsg(t('kioskPortal.invalidSetupCode'))
         setDigits(Array(CODE_LENGTH).fill(''))
         inputRefs.current[0]?.focus()
         return
@@ -169,6 +169,7 @@ export default function KioskPairPage() {
                 onChange={e => handleChange(i, e.target.value)}
                 onKeyDown={e => handleKeyDown(i, e)}
                 onPaste={handlePaste}
+                aria-label={`${t('kioskPortal.enterSetupCode')} ${i + 1}`}
                 className={`
                   w-12 h-14 text-center text-2xl font-mono font-bold rounded-lg border-2
                   focus:outline-none focus:ring-2 focus:ring-[#42b8ac] focus:border-[#42b8ac]
@@ -188,6 +189,7 @@ export default function KioskPairPage() {
           )}
 
           <button
+            type="button"
             onClick={submit}
             disabled={!isComplete || status === 'loading'}
             className={`
