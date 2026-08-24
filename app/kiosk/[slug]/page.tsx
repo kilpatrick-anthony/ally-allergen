@@ -22,7 +22,6 @@ import { generateAllergenTablePDF } from '@/lib/pdf/allergenTablePDF'
 import { GLUTEN_TYPES, TREE_NUT_TYPES, type GlutenType, type TreeNutType } from '@/types/allergen'
 import { hasAnalyticsConsent } from '@/lib/cookie-consent'
 import { useAnalyticsConsent } from '@/lib/hooks/useAnalyticsConsent'
-import PortalLocalizationBridge from '@/components/shared/PortalLocalizationBridge'
 
 // Import your design system components
 import { Container } from '@/components/layout/Container'
@@ -1115,7 +1114,6 @@ export default function KioskPage() {
   if (loading && !business && menuItems.length === 0) {
     return (
       <div className="min-h-screen bg-[#003842] flex items-center justify-center px-6" data-context="kiosk">
-        <PortalLocalizationBridge />
         <div className="text-center text-white max-w-md">
           <div className="relative h-12 w-12 mx-auto mb-4">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/25 border-t-[#42b8ac]" />
@@ -1130,7 +1128,6 @@ export default function KioskPage() {
   if (error && !business && menuItems.length === 0) {
     return (
       <div className="min-h-screen bg-[#003842] flex items-center justify-center px-6" data-context="kiosk">
-        <PortalLocalizationBridge />
         <div className="bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl">
           <div className="flex items-start gap-3">
             <AlertCircle className="h-6 w-6 text-red-600 mt-0.5" />
@@ -1201,7 +1198,6 @@ export default function KioskPage() {
         data-context="kiosk"
         onClick={enterFullscreen}
       >
-        <PortalLocalizationBridge />
         {/* Decorative blobs for depth */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div
@@ -1288,7 +1284,6 @@ export default function KioskPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 relative" data-context="kiosk">
-      <PortalLocalizationBridge />
       {showInactivityWarning && <InactivityWarning />}
 
       {/* Header */}
@@ -2044,7 +2039,7 @@ export default function KioskPage() {
                   <button
                     onClick={() => setMenuViewMode('table')}
                     disabled={isSmallScreen}
-                    title={isSmallScreen ? t.tableViewDisabled : 'Show table view'}
+                    title={isSmallScreen ? t.tableViewDisabled : t.tableView}
                     className={`flex items-center gap-2 px-4 py-2 rounded-md transition ${
                       menuViewMode === 'table'
                         ? 'bg-white text-[#003842] shadow-sm'
