@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { AlertTriangle, ExternalLink, RefreshCw, Rss } from 'lucide-react'
 import { Card } from '@/components/layout/Card'
 import type { AlertItem } from '@/app/api/fsai-alerts/route'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 function SourceBadge({ source }: { source: AlertItem['source'] }) {
   const styles: Record<string, string> = {
@@ -24,6 +25,7 @@ function SourceBadge({ source }: { source: AlertItem['source'] }) {
 }
 
 export default function FoodSafetyPage() {
+  const { t, language } = useTranslation()
   const [alerts, setAlerts] = useState<AlertItem[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -31,7 +33,7 @@ export default function FoodSafetyPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [filter, setFilter] = useState<string>('all')
 
-  async function fetchAlerts(force = false) {
+  const fetchAlerts = useCallback(async (force = false) => {
     setRefreshing(true)
     setError(false)
     try {
@@ -47,11 +49,11 @@ export default function FoodSafetyPage() {
       setLoading(false)
       setRefreshing(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
-    fetchAlerts()
-  }, [])
+    void fetchAlerts()
+  }, [fetchAlerts])
 
   const filtered = (filter === 'all' ? alerts : alerts.filter(a => a.source === filter))
     .slice()
@@ -62,13 +64,13 @@ export default function FoodSafetyPage() {
     })
 
   const sources: Array<{ value: string; label: string }> = [
-    { value: 'all', label: 'All Sources' },
-    { value: 'FSAI', label: 'FSAI (Ireland)' },
-    { value: 'IE', label: 'IE (Ireland)' },
-    { value: 'EU', label: 'EU RASFF' },
-    { value: 'EFSA', label: 'EFSA (EU Authority)' },
-    { value: 'UK', label: 'FSA UK / UK Alerts' },
-    { value: 'FSN', label: 'Food Safety News' },
+    { value: 'all', label: t('corePortal.allSources') },
+    { value: 'FSAI', label: t('corePortal.fsaiIreland') },
+    { value: 'IE', label: t('corePortal.ieIreland') },
+    { value: 'EU', label: t('corePortal.euRasff') },
+    { value: 'EFSA', label: t('corePortal.efsaAuthority') },
+    { value: 'UK', label: t('corePortal.ukAlertSource') },
+    { value: 'FSN', label: t('corePortal.foodSafetyNews') },
   ]
 
   return (
@@ -80,11 +82,11 @@ export default function FoodSafetyPage() {
             <AlertTriangle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Food Safety Alerts</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{t('corePortal.foodSafetyAlerts')}</h1>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              Live feed from FSAI, EU RASFF, and Food Safety News
+              {t('corePortal.foodSafetyFeed')}
               {lastUpdated && (
-                <> · Last updated {lastUpdated.toLocaleTimeString()}</>
+                <> {t('corePortal.lastUpdatedPrefix')} {lastUpdated.toLocaleTimeString(language)}</>
               )}
             </p>
           </div>
@@ -96,7 +98,7 @@ export default function FoodSafetyPage() {
           className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
         >
           <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          Refresh
+          {t('admin.refresh')}
         </button>
       </div>
 
@@ -107,6 +109,7 @@ export default function FoodSafetyPage() {
             key={s.value}
             type="button"
             onClick={() => setFilter(s.value)}
+            aria-pressed={filter === s.value}
             className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
               filter === s.value
                 ? 'bg-[#003842] text-white border-[#003842]'
@@ -128,19 +131,19 @@ export default function FoodSafetyPage() {
       ) : error ? (
         <Card className="p-8 text-center">
           <AlertTriangle className="h-10 w-10 text-amber-500 mx-auto mb-3" />
-          <p className="text-gray-600 dark:text-gray-400 mb-4">Unable to load food safety alerts.</p>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">{t('corePortal.foodSafetyLoadError')}</p>
           <button
             type="button"
             onClick={() => fetchAlerts(true)}
             className="px-4 py-2 rounded-lg bg-[#003842] text-white text-sm font-medium hover:bg-[#004a57] transition-colors"
           >
-            Try again
+            {t('kioskPortal.tryAgain')}
           </button>
         </Card>
       ) : filtered.length === 0 ? (
         <Card className="p-8 text-center">
           <Rss className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 dark:text-gray-400">No alerts found for this source.</p>
+          <p className="text-gray-500 dark:text-gray-400">{t('corePortal.noSourceAlerts')}</p>
         </Card>
       ) : (
         <div className="space-y-3">
@@ -159,7 +162,7 @@ export default function FoodSafetyPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="shrink-0 text-gray-400 hover:text-[#42b8ac] transition-colors"
-                        aria-label="Open alert"
+                        aria-label={t('corePortal.openAlert')}
                       >
                         <ExternalLink className="h-4 w-4" />
                       </a>
@@ -167,7 +170,7 @@ export default function FoodSafetyPage() {
                   </div>
                   {alert.date && (
                     <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
-                      {new Date(alert.date).toLocaleDateString('en-IE', {
+                      {new Date(alert.date).toLocaleDateString(language, {
                         day: 'numeric', month: 'short', year: 'numeric'
                       })}
                     </p>

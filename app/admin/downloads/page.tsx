@@ -818,7 +818,7 @@ export default function DownloadsPage() {
                   onClick={handleGenerateSiteOverviewReport}
                   disabled={siteOverviewReportLoading}
                 >
-                  {siteOverviewReportLoading ? 'Generating...' : 'Generate Report'}
+                  {siteOverviewReportLoading ? t('admin.generating') : t('admin.generateReport')}
                 </Button>
               </div>
 
@@ -826,9 +826,9 @@ export default function DownloadsPage() {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <Clock className="h-5 w-5 text-teal-500" />
-                    <h3 className="font-medium text-gray-900 dark:text-white">Audit Trail Report</h3>
+                    <h3 className="font-medium text-gray-900 dark:text-white">{t('corePortal.auditTrailReport')}</h3>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Full history of every ingredient and menu item edit, with who changed what and when.</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('corePortal.auditTrailDescription')}</p>
                 </div>
                 <Button
                   variant="secondary"
@@ -849,9 +849,9 @@ export default function DownloadsPage() {
                 <div className="space-y-1">
                   <h3 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
                     <BarChart3 className="h-5 w-5 text-teal-500" />
-                    Kiosk Usage Analytics
+                    {t('corePortal.kioskUsageAnalytics')}
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Real-time usage statistics and customer interaction data</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('corePortal.kioskUsageDescription')}</p>
                 </div>
                 <Link href="/admin/analytics" className="flex-shrink-0">
                   <Button
@@ -859,7 +859,7 @@ export default function DownloadsPage() {
                     icon={<BarChart3 className="h-4 w-4" />}
                     size="md"
                   >
-                    View Analytics
+                    {t('corePortal.viewAnalytics')}
                   </Button>
                 </Link>
               </div>
