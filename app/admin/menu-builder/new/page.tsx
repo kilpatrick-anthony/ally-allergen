@@ -319,7 +319,7 @@ export default function NewMenuItemPage() {
           <div className="relative h-12 w-12 mx-auto mb-4">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
           </div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('admin.loading')}</p>
         </div>
       </div>
     )
@@ -335,7 +335,7 @@ export default function NewMenuItemPage() {
             className="inline-flex items-center gap-2 text-[#42b8ac] hover:text-[#003842] dark:hover:text-[#42b8ac] font-medium mb-4"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Menu Builder
+            {t('admin.backToMenuBuilder')}
           </Link>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
             {t('admin.createNewMenuItem')}
@@ -437,7 +437,7 @@ export default function NewMenuItemPage() {
                 {t('admin.tileColour')} <span className="text-gray-400 font-normal">({t('admin.optional')})</span>
               </label>
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                Choose a background colour for this item's tile on the kiosk. Leave blank to use the default white tile.
+                {t('admin.tileColourDesc')}
               </p>
               <div className="flex items-center gap-4">
                 <input
@@ -545,7 +545,7 @@ export default function NewMenuItemPage() {
                   {t('admin.selectedIngredients')}
                 </label>
                 <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {menuItem.ingredients.length} selected
+                  {menuItem.ingredients.length} {t('admin.selected')}
                 </span>
               </div>
 
@@ -714,8 +714,8 @@ export default function NewMenuItemPage() {
             <div className="p-6 border-b dark:border-gray-700">
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">Select Ingredients</h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Choose ingredients for your menu item</p>
+                  <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">{t('admin.selectIngredientsTitle')}</h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.chooseIngredientsForMenuItem')}</p>
                 </div>
                 <button
                   onClick={() => setShowIngredientSelector(false)}
@@ -732,7 +732,7 @@ export default function NewMenuItemPage() {
                   type="text"
                   value={ingredientSearch}
                   onChange={(e) => setIngredientSearch(e.target.value)}
-                  placeholder="Search ingredients..."
+                  placeholder={t('admin.searchIngredients')}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 />
               </div>
@@ -758,7 +758,7 @@ export default function NewMenuItemPage() {
                     <span className="ml-3 min-w-0">
                       <span className="block text-gray-900 dark:text-white">{ingredient.name}</span>
                       <span className="block truncate text-xs text-gray-500">
-                        {ingredient.suppliers.length > 0 ? ingredient.suppliers.join(', ') : 'No supplier linked'}
+                        {ingredient.suppliers.length > 0 ? ingredient.suppliers.join(', ') : t('menuBuilderPortal.noSupplierLinked')}
                       </span>
                     </span>
                   </label>

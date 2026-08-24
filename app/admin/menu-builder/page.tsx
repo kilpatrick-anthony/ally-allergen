@@ -201,12 +201,12 @@ export default function MenuBuilderPage() {
         body: JSON.stringify({
           ...item,
           id: undefined,
-          name: `Copy of ${item.name}`,
+          name: `${t('menuBuilderPortal.copyOf')} ${item.name}`,
           status: 'draft',
         })
       })
       const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'Failed to duplicate')
+      if (!response.ok) throw new Error(data.error || t('menuBuilderPortal.duplicateFailed'))
 
       const refreshResponse = await fetch('/api/menu-items', { cache: 'no-store' })
       const refreshData = await refreshResponse.json()
@@ -227,25 +227,25 @@ export default function MenuBuilderPage() {
         status: menuItem.status || (menuItem.is_active ? 'active' : 'draft'),
         item_type: menuItem.item_type || 'prepared'
       })))
-      showNotification('Menu item duplicated', 'success')
+      showNotification(t('menuBuilderPortal.duplicated'), 'success')
     } catch (error: any) {
-      showNotification(error?.message || 'Failed to duplicate menu item', 'error')
+      showNotification(error?.message || t('menuBuilderPortal.duplicateFailed'), 'error')
     }
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this menu item?')) return
+    if (!confirm(t('menuBuilderPortal.deleteConfirm'))) return
     
     try {
       const response = await fetch(`/api/menu-items/${id}`, { method: 'DELETE' })
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || 'Failed to delete menu item')
+        throw new Error(data.error || t('menuBuilderPortal.deleteFailed'))
       }
       setMenuItems(menuItems.filter(item => item.id !== id))
     } catch (error: any) {
       console.error('Error deleting menu item:', error)
-      showNotification('Failed to delete menu item: ' + error?.message, 'error')
+      showNotification(error?.message || t('menuBuilderPortal.deleteFailed'), 'error')
     }
   }
 

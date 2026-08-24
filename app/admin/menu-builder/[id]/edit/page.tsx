@@ -348,7 +348,7 @@ export default function EditMenuItemPage() {
   )
 
   const handleDelete = async () => {
-    if (!menuItem || !confirm(`Are you sure you want to delete "${menuItem.name}"? This cannot be undone.`)) {
+    if (!menuItem || !confirm(t('menuBuilderPortal.deleteNamedConfirm', { name: menuItem.name }))) {
       return
     }
 
@@ -360,13 +360,13 @@ export default function EditMenuItemPage() {
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || 'Failed to delete menu item')
+        throw new Error(data.error || t('menuBuilderPortal.deleteFailed'))
       }
 
       router.push('/admin/menu-builder')
     } catch (error: any) {
       console.error('Error deleting menu item:', error)
-      showNotification(error.message || 'Failed to delete menu item', 'error')
+      showNotification(error.message || t('menuBuilderPortal.deleteFailed'), 'error')
     } finally {
       setDeleting(false)
     }
@@ -403,15 +403,15 @@ export default function EditMenuItemPage() {
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || 'Failed to mark as reviewed')
+        throw new Error(data.error || t('menuBuilderPortal.reviewFailed'))
       }
 
       // Refresh compliance status
       await fetchCompliance()
-      showNotification('Menu item marked as reviewed!', 'success')
+      showNotification(t('menuBuilderPortal.reviewSuccess'), 'success')
     } catch (error: any) {
       console.error('Error marking as reviewed:', error)
-      showNotification(error.message || 'Failed to mark as reviewed', 'error')
+      showNotification(error.message || t('menuBuilderPortal.reviewFailed'), 'error')
     } finally {
       setMarking(false)
     }
@@ -570,7 +570,7 @@ export default function EditMenuItemPage() {
           <div className="relative h-12 w-12 mx-auto mb-4">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
           </div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t('admin.loading')}</p>
         </div>
       </div>
     )
@@ -1222,7 +1222,7 @@ export default function EditMenuItemPage() {
                     <span className="ml-3 min-w-0">
                       <span className="block text-gray-900 dark:text-white">{ingredient.name}</span>
                       <span className="block truncate text-xs text-gray-500">
-                        {ingredient.suppliers.length > 0 ? ingredient.suppliers.join(', ') : 'No supplier linked'}
+                        {ingredient.suppliers.length > 0 ? ingredient.suppliers.join(', ') : t('menuBuilderPortal.noSupplierLinked')}
                       </span>
                     </span>
                   </label>

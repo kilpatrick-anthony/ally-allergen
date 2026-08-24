@@ -38,6 +38,10 @@ const recentFiles = new Set([
   'app/admin/ingredients/[id]/edit/page.tsx',
   'app/admin/ingredients/[id]/page.tsx',
   'app/admin/ingredients/new/page.tsx',
+  'app/admin/menu-builder/page.tsx',
+  'app/admin/menu-builder/new/page.tsx',
+  'app/admin/menu-builder/[id]/page.tsx',
+  'app/admin/menu-builder/[id]/edit/page.tsx',
   'app/admin/qr-codes/page.tsx',
   'app/admin/sites/page.tsx',
 ])
@@ -95,6 +99,14 @@ function loadTypeScriptExport(filename, exportName) {
         ingredientsPortalTranslations: loadTypeScriptExport(
           path.join(root, 'lib/ingredients-portal-translations.ts'),
           'ingredientsPortalTranslations',
+        ),
+      }
+    }
+    if (request === '@/lib/menu-builder-translations') {
+      return {
+        menuBuilderTranslations: loadTypeScriptExport(
+          path.join(root, 'lib/menu-builder-translations.ts'),
+          'menuBuilderTranslations',
         ),
       }
     }

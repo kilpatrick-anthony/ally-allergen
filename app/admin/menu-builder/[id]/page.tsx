@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useNotification } from '@/lib/hooks/useNotification'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 import { 
   Package, ArrowLeft, Edit, Trash2, AlertCircle, Check,
   Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck, Truck, FileText, Download, ExternalLink, X, CircleDot
@@ -22,6 +23,7 @@ const isImageIcon = (icon?: string) => Boolean(icon && /^https?:\/\//.test(icon)
 
 export default function ViewMenuItemPage() {
   const { showNotification } = useNotification()
+  const { t } = useTranslation()
   const { canDeleteContent } = useContentPermissions()
   const router = useRouter()
   const params = useParams()
@@ -56,7 +58,7 @@ export default function ViewMenuItemPage() {
         const data = await response.json()
         
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to fetch menu item')
+          throw new Error(data.error || t('menuBuilderPortal.loadFailed'))
         }
         
         console.log('Menu item data:', data.menuItem)
@@ -94,7 +96,7 @@ export default function ViewMenuItemPage() {
         
       } catch (error: any) {
         console.error('Error fetching menu item:', error)
-        showNotification('Failed to load menu item', 'error')
+        showNotification(t('menuBuilderPortal.loadFailed'), 'error')
       } finally {
         setLoading(false)
         setLoadingDatasheets(false)
@@ -102,10 +104,10 @@ export default function ViewMenuItemPage() {
     }
     
     fetchData()
-  }, [menuItemId])
+  }, [menuItemId, showNotification, t])
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this menu item?')) {
+    if (!confirm(t('menuBuilderPortal.deleteConfirm'))) {
       return
     }
 
@@ -116,13 +118,13 @@ export default function ViewMenuItemPage() {
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || 'Failed to delete menu item')
+        throw new Error(data.error || t('menuBuilderPortal.deleteFailed'))
       }
 
       router.push('/admin/menu-builder')
     } catch (error: any) {
       console.error('Error deleting menu item:', error)
-      showNotification(error.message || 'Failed to delete menu item', 'error')
+      showNotification(error.message || t('menuBuilderPortal.deleteFailed'), 'error')
     }
   }
 
@@ -142,7 +144,7 @@ export default function ViewMenuItemPage() {
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
               <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
             </div>
-            <p className="text-gray-600 dark:text-gray-400">Loading menu item...</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('menuBuilderPortal.loadingItem')}</p>
           </div>
         </div>
       </Container>
@@ -155,10 +157,10 @@ export default function ViewMenuItemPage() {
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <p className="text-gray-600">Menu item not found</p>
+            <p className="text-gray-600">{t('menuBuilderPortal.itemNotFound')}</p>
             <Link href="/admin/menu-builder">
               <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} className="mt-4">
-                Back to Menu Builder
+                {t('admin.backToMenuBuilder')}
               </Button>
             </Link>
           </div>
@@ -181,7 +183,7 @@ export default function ViewMenuItemPage() {
         Object.entries(hasSubLevels).forEach(([subKey, subValue]: [string, any]) => {
           if (subValue !== 'none') {
             subAllergens.push({
-              name: subKey.replace(/_/g, ' '),
+              key: subKey,
               level: subValue
             })
           }
@@ -197,7 +199,7 @@ export default function ViewMenuItemPage() {
       <div className="mb-6">
         <Link href="/admin/menu-builder">
           <Button variant="ghost" icon={<ArrowLeft />}>
-            Back to Menu Builder
+            {t('admin.backToMenuBuilder')}
           </Button>
         </Link>
       </div>
@@ -218,19 +220,19 @@ export default function ViewMenuItemPage() {
           <div className="min-w-0">
             <h1 className="text-2xl sm:text-3xl font-bold text-[#003842] truncate">{menuItem.name}</h1>
             <p className="text-gray-600">
-              Created {new Date(menuItem.created_at).toLocaleDateString()}
+              {t('ingredientsPortal.created')} {new Date(menuItem.created_at).toLocaleDateString()}
             </p>
           </div>
         </div>
         <div className="flex gap-3 flex-shrink-0">
           <Link href={`/admin/menu-builder/${menuItemId}/edit`}>
             <Button icon={<Edit />} className="bg-[#42b8ac] text-white hover:bg-[#3a9d95]">
-              Edit
+              {t('team.edit')}
             </Button>
           </Link>
           {canDeleteContent && (
             <Button variant="outline" onClick={handleDelete} icon={<Trash2 />} className="text-red-600 hover:text-red-700 hover:border-red-300">
-              Delete
+              {t('accessPoints.delete')}
             </Button>
           )}
         </div>
@@ -241,28 +243,28 @@ export default function ViewMenuItemPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Basic Information */}
           <Card>
-            <h2 className="text-xl font-semibold text-[#003842] mb-4">Basic Information</h2>
+            <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('ingredientsPortal.basicInformation')}</h2>
             
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-500">Name</label>
+                <label className="text-sm font-medium text-gray-500">{t('accessPoints.name')}</label>
                 <p className="text-lg text-gray-900 mt-1">{menuItem.name}</p>
               </div>
 
               {menuItem.description && (
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Description</label>
+                  <label className="text-sm font-medium text-gray-500">{t('ingredientsPortal.description')}</label>
                   <p className="text-gray-900 mt-1 whitespace-pre-wrap">{menuItem.description}</p>
                 </div>
               )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Category</label>
-                  <p className="text-gray-900 mt-1">{menuItem.category || 'Not specified'}</p>
+                  <label className="text-sm font-medium text-gray-500">{t('admin.category')}</label>
+                  <p className="text-gray-900 mt-1">{menuItem.category || t('menuBuilderPortal.notSpecified')}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Status</label>
+                  <label className="text-sm font-medium text-gray-500">{t('admin.status')}</label>
                   <div className="mt-1">
                     <Badge
                       variant={
@@ -271,7 +273,7 @@ export default function ViewMenuItemPage() {
                         'default'
                       }
                     >
-                      {menuItem.status || 'draft'}
+                      {t(`admin.${menuItem.status || 'draft'}`)}
                     </Badge>
                   </div>
                 </div>
@@ -279,7 +281,7 @@ export default function ViewMenuItemPage() {
 
               {menuItem.color && (
                 <div className="pt-4 border-t">
-                  <label className="text-sm font-medium text-gray-500">Tile Colour</label>
+                  <label className="text-sm font-medium text-gray-500">{t('admin.tileColour')}</label>
                   <div className="flex items-center gap-3 mt-2">
                     <div
                       className="h-10 w-10 rounded-lg border-2 border-gray-200"
@@ -292,7 +294,7 @@ export default function ViewMenuItemPage() {
 
               {menuItem.icon && (
                 <div className="pt-4 border-t">
-                  <label className="text-sm font-medium text-gray-500">Icon or Picture</label>
+                  <label className="text-sm font-medium text-gray-500">{t('admin.iconOrPicture')}</label>
                   <div className="flex items-center gap-3 mt-2">
                     <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border-2 border-gray-200 bg-white text-3xl">
                       {isImageIcon(menuItem.icon) ? (
@@ -302,7 +304,7 @@ export default function ViewMenuItemPage() {
                       )}
                     </div>
                     <span className="text-gray-900 text-sm">
-                      {isImageIcon(menuItem.icon) ? 'Custom uploaded image' : 'Preset icon'}
+                      {isImageIcon(menuItem.icon) ? t('admin.customUploadedImage') : t('admin.presetIcon')}
                     </span>
                   </div>
                 </div>
@@ -312,12 +314,12 @@ export default function ViewMenuItemPage() {
 
           {/* Allergen Information */}
           <Card>
-            <h2 className="text-xl font-semibold text-[#003842] mb-4">Allergen Information</h2>
+            <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('admin.allergenInformation')}</h2>
             
             {activeAllergens.length === 0 ? (
               <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <Check className="h-5 w-5 text-green-600" />
-                <span className="text-green-800 font-medium">No allergens present</span>
+                <span className="text-green-800 font-medium">{t('ingredientsPortal.noAllergensPresent')}</span>
               </div>
             ) : (
               <div className="space-y-3">
@@ -354,7 +356,7 @@ export default function ViewMenuItemPage() {
                         <div className="flex items-center gap-3">
                           <Icon className="h-5 w-5" style={{ color: allergenData.color }} />
                           <span className="font-medium" style={{ color: allergenData.color }}>
-                            {allergenData.name}
+                            {t(`allergenNames.${allergenData.id}`)}
                           </span>
                         </div>
                         {!subAllergens && (
@@ -365,11 +367,11 @@ export default function ViewMenuItemPage() {
                               'default'
                             }
                           >
-                            {value === 'contains' ? 'Contains' : 
-                             value === 'may_contain' ? 'May Contain' : 
-                             value === 'traces' ? 'May Contain Traces' :
-                             value === 'cross_contamination' ? 'Cross-Contamination Risk' :
-                             'Processed In Facility'}
+                            {value === 'contains' ? t('ingredientsPortal.contains') :
+                             value === 'may_contain' ? t('mayContain') :
+                             value === 'traces' ? t('ingredientsPortal.mayContainTraces') :
+                             value === 'cross_contamination' ? t('ingredientsPortal.crossContaminationRisk') :
+                             t('ingredientsPortal.processedInFacility')}
                           </Badge>
                         )}
                       </div>
@@ -388,7 +390,7 @@ export default function ViewMenuItemPage() {
                                 }}
                               >
                                 <span className="font-medium text-sm" style={{ color: severityColor }}>
-                                  ↳ {sub.name.charAt(0).toUpperCase() + sub.name.slice(1)}
+                                  ↳ {t(`allergenSubtypes.${sub.key}`)}
                                 </span>
                                 <Badge
                                   variant={
@@ -397,11 +399,11 @@ export default function ViewMenuItemPage() {
                                     'default'
                                   }
                                 >
-                                  {sub.level === 'contains' ? 'Contains' : 
-                                   sub.level === 'may_contain' ? 'May Contain' : 
-                                   sub.level === 'traces' ? 'May Contain Traces' :
-                                   sub.level === 'cross_contamination' ? 'Cross-Contamination Risk' :
-                                   'Not Suitable'}
+                                  {sub.level === 'contains' ? t('ingredientsPortal.contains') :
+                                   sub.level === 'may_contain' ? t('mayContain') :
+                                   sub.level === 'traces' ? t('ingredientsPortal.mayContainTraces') :
+                                   sub.level === 'cross_contamination' ? t('ingredientsPortal.crossContaminationRisk') :
+                                   t('notSuitable')}
                                 </Badge>
                               </div>
                             );
@@ -418,7 +420,7 @@ export default function ViewMenuItemPage() {
           {/* Ingredients */}
           {ingredients && ingredients.length > 0 && (
             <Card>
-              <h2 className="text-xl font-semibold text-[#003842] mb-4">Ingredients</h2>
+              <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('adminPortal.ingredients')}</h2>
               
               <div className="space-y-2">
                 {ingredients.map((ingredient: any, index: number) => (
@@ -443,24 +445,24 @@ export default function ViewMenuItemPage() {
           {/* Datasheets */}
           <Card>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-[#003842]">Product Datasheets</h2>
+              <h2 className="text-xl font-semibold text-[#003842]">{t('admin.productDatasheets')}</h2>
               <Link href={`/admin/menu-builder/${menuItemId}/edit`}>
                 <Button variant="ghost" size="sm">
-                  Upload
+                  {t('ingredientsPortal.upload')}
                 </Button>
               </Link>
             </div>
             
             {loadingDatasheets ? (
               <div className="text-center py-8">
-                <p className="text-gray-600 text-sm">Loading datasheets...</p>
+                <p className="text-gray-600 text-sm">{t('admin.loadingDatasheets')}</p>
               </div>
             ) : datasheets.length === 0 ? (
               <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
                 <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-600 text-sm mb-2">No datasheets uploaded</p>
+                <p className="text-gray-600 text-sm mb-2">{t('ingredientsPortal.noDatasheetsUploaded')}</p>
                 <p className="text-gray-500 text-xs">
-                  Edit this menu item to add specification sheets
+                  {t('menuBuilderPortal.editToAddDatasheets')}
                 </p>
               </div>
             ) : (
@@ -501,7 +503,7 @@ export default function ViewMenuItemPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                        title="View/Download"
+                        title={t('ingredientsPortal.viewDownload')}
                       >
                         <ExternalLink className="h-4 w-4 text-gray-600" />
                       </a>
@@ -514,7 +516,7 @@ export default function ViewMenuItemPage() {
             {/* Ingredient datasheets */}
             {ingredientDatasheets.length > 0 && (
               <div className="mt-6 pt-6 border-t border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-600 mb-3">From Linked Ingredients</h3>
+                <h3 className="text-sm font-semibold text-gray-600 mb-3">{t('menuBuilderPortal.fromLinkedIngredients')}</h3>
                 <div className="space-y-3">
                   {ingredientDatasheets.map((datasheet: any) => {
                     const ingredient = ingredients.find((ing: any) => ing.id === datasheet.ingredient_id)
@@ -550,7 +552,7 @@ export default function ViewMenuItemPage() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                            title="View/Download"
+                            title={t('ingredientsPortal.viewDownload')}
                           >
                             <ExternalLink className="h-4 w-4 text-gray-600" />
                           </a>
@@ -568,11 +570,11 @@ export default function ViewMenuItemPage() {
         <div className="space-y-6">
           {/* Dietary Attributes */}
           <Card>
-            <h2 className="text-xl font-semibold text-[#003842] mb-4">Dietary Attributes</h2>
+            <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('admin.dietaryAttributes')}</h2>
             
             <div className="space-y-2">
               {(!menuItem.dietary || menuItem.dietary.length === 0) ? (
-                <p className="text-sm text-gray-500">No dietary attributes set</p>
+                <p className="text-sm text-gray-500">{t('ingredientsPortal.noDietaryAttributes')}</p>
               ) : (
                 menuItem.dietary.map((dietary: string, index: number) => {
                   const certData = certificationOptions.find(c => c.name === dietary)
@@ -610,17 +612,17 @@ export default function ViewMenuItemPage() {
 
           {/* Metadata */}
           <Card>
-            <h2 className="text-xl font-semibold text-[#003842] mb-4">Metadata</h2>
+            <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('ingredientsPortal.metadata')}</h2>
             
             <div className="space-y-3 text-sm">
               <div>
-                <label className="text-gray-500">Created</label>
+                <label className="text-gray-500">{t('ingredientsPortal.created')}</label>
                 <p className="text-gray-900 mt-1">
                   {new Date(menuItem.created_at).toLocaleString()}
                 </p>
               </div>
               <div>
-                <label className="text-gray-500">Last Updated</label>
+                <label className="text-gray-500">{t('ingredientsPortal.lastUpdated')}</label>
                 <p className="text-gray-900 mt-1">
                   {new Date(menuItem.updated_at).toLocaleString()}
                 </p>
