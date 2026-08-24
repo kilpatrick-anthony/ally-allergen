@@ -92,7 +92,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         const data = await response.json()
         
         if (data.authenticated && data.user) {
-          setUserName(data.user.name || data.user.email?.split('@')[0] || 'Admin User')
+          setUserName(data.user.name || data.user.email?.split('@')[0] || '')
           setUserEmail(data.user.email || '')
           setIsImpersonating(Boolean(data.user.isImpersonating))
           setImpersonatedByEmail(data.user.impersonatedByEmail || '')
@@ -179,7 +179,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <button
               type="button"
               onClick={() => setIsSidebarOpen(false)}
-              aria-label="Close navigation menu"
+              aria-label={t('corePortal.closeNavigationMenu')}
               className="text-white p-1.5 rounded-md hover:bg-white/10 transition-colors"
             >
               <X className="h-6 w-6" />
@@ -188,7 +188,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <button
               type="button"
               onClick={() => setIsSidebarOpen(true)}
-              aria-label="Open navigation menu"
+              aria-label={t('corePortal.openNavigationMenu')}
               className="text-white p-1.5 rounded-md hover:bg-white/10 transition-colors"
             >
               <Menu className="h-6 w-6" />
@@ -231,9 +231,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-white truncate">
-                  {userName || 'Admin User'}
+                  {userName || t('corePortal.adminUser')}
                 </div>
-                <div className="text-xs text-white/70">Administrator</div>
+                <div className="text-xs text-white/70">{t('corePortal.administrator')}</div>
               </div>
             </div>
             <button
@@ -256,10 +256,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   <div className="flex items-start gap-3">
                     <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0" />
                     <div>
-                      <p className="text-sm font-semibold">Impersonation mode is active</p>
+                      <p className="text-sm font-semibold">{t('corePortal.impersonationActive')}</p>
                       <p className="text-sm text-amber-800 dark:text-amber-200">
-                        You are browsing as {userName || userEmail || 'this business owner'}.
-                        {impersonatedByEmail ? ` Original super admin: ${impersonatedByEmail}.` : ''}
+                        {t('corePortal.browsingAs', { name: userName || userEmail || t('corePortal.businessOwnerFallback') })}
+                        {impersonatedByEmail ? ` ${t('corePortal.originalSuperAdmin', { email: impersonatedByEmail })}` : ''}
                       </p>
                     </div>
                   </div>
@@ -270,7 +270,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     className="inline-flex items-center justify-center gap-2 rounded-lg border border-amber-300 bg-white px-4 py-2 text-sm font-semibold text-amber-900 transition-colors hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-70 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-100 dark:hover:bg-amber-900/30"
                   >
                     <Undo2 className="h-4 w-4" />
-                    {isStoppingImpersonation ? 'Returning…' : 'Return to Super Admin'}
+                    {isStoppingImpersonation ? t('corePortal.returning') : t('corePortal.returnToSuperAdmin')}
                   </button>
                 </div>
               </div>

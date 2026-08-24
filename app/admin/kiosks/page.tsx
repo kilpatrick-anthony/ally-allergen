@@ -1,14 +1,13 @@
 // app/admin/kiosks/page.tsx
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { 
   Tablet, Wifi, WifiOff, Monitor, Smartphone,
   Building, MapPin, Clock, Settings, RefreshCw,
-  AlertCircle, ArrowLeft,
-  Filter, Search
+  ArrowLeft, Search
 } from 'lucide-react'
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
@@ -37,12 +36,8 @@ export default function AllKiosksPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'online' | 'offline'>('all')
   const [typeFilter, setTypeFilter] = useState<'all' | Device['device_type']>('all')
 
-  useEffect(() => {
-    loadAllDevices()
-  }, [])
-
-  const loadAllDevices = async () => {
-              try {
+  const loadAllDevices = useCallback(async () => {
+    try {
       const response = await fetch('/api/devices')
       const data = await response.json()
 
@@ -57,7 +52,11 @@ export default function AllKiosksPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    void loadAllDevices()
+  }, [loadAllDevices])
 
   const getDeviceIcon = (type: Device['device_type']) => {
     switch (type) {
@@ -68,15 +67,22 @@ export default function AllKiosksPage() {
     }
   }
   const getTimeSince = (dateString?: string | null) => {
-    if (!dateString) return 'Never'
+    if (!dateString) return t('corePortal.never')
     const date = new Date(dateString)
     const seconds = Math.floor((Date.now() - date.getTime()) / 1000)
     
-    if (seconds < 60) return 'Just now'
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
-    return `${Math.floor(seconds / 86400)}d ago`
+    if (seconds < 60) return t('corePortal.justNow')
+    if (seconds < 3600) return t('corePortal.minutesAgo', { count: Math.floor(seconds / 60) })
+    if (seconds < 86400) return t('corePortal.hoursAgo', { count: Math.floor(seconds / 3600) })
+    return t('corePortal.daysAgo', { count: Math.floor(seconds / 86400) })
   }
+
+  const getDeviceTypeLabel = (type: Device['device_type']) => ({
+    kiosk: t('admin.kiosks'),
+    tablet: t('corePortal.tablets'),
+    display: t('corePortal.displays'),
+    mobile: t('corePortal.mobile'),
+  })[type]
 
   const filteredDevices = devices.filter(device => {
     const matchesSearch = device.device_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -153,7 +159,7 @@ export default function AllKiosksPage() {
           <Card className="hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Devices</p>
+                <p className="text-sm font-medium text-gray-600">{t('admin.devices')}</p>
                 <p className="text-2xl font-bold text-[#003842] mt-1">{stats.total}</p>
               </div>
               <Tablet className="h-8 w-8 text-[#42b8ac]" />
@@ -163,7 +169,7 @@ export default function AllKiosksPage() {
           <Card className="hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Online</p>
+                <p className="text-sm font-medium text-gray-600">{t('kioskPortal.online')}</p>
                 <p className="text-2xl font-bold text-green-600 mt-1">{stats.online}</p>
               </div>
               <Wifi className="h-8 w-8 text-green-600" />
@@ -173,7 +179,7 @@ export default function AllKiosksPage() {
           <Card className="hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Offline</p>
+                <p className="text-sm font-medium text-gray-600">{t('kioskPortal.offline')}</p>
                 <p className="text-2xl font-bold text-gray-600 mt-1">{stats.offline}</p>
               </div>
               <WifiOff className="h-8 w-8 text-gray-600" />
@@ -183,7 +189,7 @@ export default function AllKiosksPage() {
           <Card className="hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Kiosks</p>
+                <p className="text-sm font-medium text-gray-600">{t('admin.kiosks')}</p>
                 <p className="text-2xl font-bold text-blue-600 mt-1">{stats.kiosks}</p>
               </div>
               <Monitor className="h-8 w-8 text-blue-600" />
@@ -193,7 +199,7 @@ export default function AllKiosksPage() {
           <Card className="hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Tablets</p>
+                <p className="text-sm font-medium text-gray-600">{t('corePortal.tablets')}</p>
                 <p className="text-2xl font-bold text-purple-600 mt-1">{stats.tablets}</p>
               </div>
               <Tablet className="h-8 w-8 text-purple-600" />
@@ -210,6 +216,7 @@ export default function AllKiosksPage() {
                 <input
                   type="text"
                   placeholder={t('admin.search') + ' ' + t('admin.devices').toLowerCase() + '...'}
+                  aria-label={t('admin.search') + ' ' + t('admin.devices').toLowerCase()}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
@@ -218,25 +225,27 @@ export default function AllKiosksPage() {
             </div>
             
             <select
+              aria-label={t('admin.allStatus')}
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
             >
-              <option value="all">All Status</option>
-              <option value="online">Online Only</option>
-              <option value="offline">Offline Only</option>
+              <option value="all">{t('admin.allStatus')}</option>
+              <option value="online">{t('corePortal.onlineOnly')}</option>
+              <option value="offline">{t('corePortal.offlineOnly')}</option>
             </select>
 
             <select
+              aria-label={t('corePortal.allTypes')}
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value as any)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
             >
-              <option value="all">All Types</option>
-              <option value="kiosk">Kiosks</option>
-              <option value="tablet">Tablets</option>
-              <option value="display">Displays</option>
-              <option value="mobile">Mobile</option>
+              <option value="all">{t('corePortal.allTypes')}</option>
+              <option value="kiosk">{t('admin.kiosks')}</option>
+              <option value="tablet">{t('corePortal.tablets')}</option>
+              <option value="display">{t('corePortal.displays')}</option>
+              <option value="mobile">{t('corePortal.mobile')}</option>
             </select>
           </div>
         </Card>
@@ -268,10 +277,10 @@ export default function AllKiosksPage() {
                           {device.device_name}
                         </h3>
                         <Badge variant={device.status === 'online' ? 'success' : 'default'}>
-                          {device.status === 'online' ? 'Online' : 'Offline'}
+                          {device.status === 'online' ? t('kioskPortal.online') : t('kioskPortal.offline')}
                         </Badge>
                         <Badge variant="info">
-                          {device.device_type}
+                          {getDeviceTypeLabel(device.device_type)}
                         </Badge>
                       </div>
                       
@@ -286,7 +295,7 @@ export default function AllKiosksPage() {
                               {device.site.name}
                             </Link>
                           ) : (
-                            <span>Unassigned</span>
+                            <span>{t('corePortal.unassigned')}</span>
                           )}
                         </div>
                         {device.site?.city && (
@@ -297,7 +306,7 @@ export default function AllKiosksPage() {
                         )}
                         <div className="flex items-center gap-2">
                           <Clock className="h-4 w-4" />
-                          Last seen {getTimeSince(device.last_heartbeat)}
+                          {t('admin.lastSeenLabel')} {getTimeSince(device.last_heartbeat)}
                         </div>
                       </div>
                     </div>
@@ -311,7 +320,7 @@ export default function AllKiosksPage() {
                         size="sm"
                         icon={<Settings className="h-4 w-4" />}
                       >
-                        Manage
+                        {t('corePortal.manage')}
                       </Button>
                       </Link>
                     )}
@@ -326,11 +335,11 @@ export default function AllKiosksPage() {
         {filteredDevices.length === 0 && (
           <Card className="text-center py-12">
             <Tablet className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No devices found</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{t('corePortal.noDevicesFound')}</h3>
             <p className="text-gray-500 mb-6">
               {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
-                ? 'Try adjusting your search or filters'
-                : 'Add devices to your sites to see them here'}
+                ? t('admin.tryAdjustingSearch')
+                : t('corePortal.addDevicesEmpty')}
             </p>
           </Card>
         )}
