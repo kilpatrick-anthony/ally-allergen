@@ -8,6 +8,7 @@ import { menuBuilderTranslations } from '@/lib/menu-builder-translations'
 import { complianceDocumentsTranslations } from '@/lib/compliance-documents-translations'
 import { helpPortalTranslations } from '@/lib/help-portal-translations'
 import { supplierPortalTranslations } from '@/lib/supplier-portal-translations'
+import { sitePortalTranslations } from '@/lib/site-portal-translations'
 
 export const recentUiTranslations = {
   en: {
@@ -21,6 +22,7 @@ export const recentUiTranslations = {
     complianceDocuments: complianceDocumentsTranslations.en,
     helpPortal: helpPortalTranslations.en.helpPortal,
     ...supplierPortalTranslations.en,
+    ...sitePortalTranslations.en,
     shared: { closeNotification: 'Close notification', loadingDashboard: 'Loading your dashboard...' },
     cookieConsent: {
       consentAria: 'Cookie consent', privacyChoices: 'Your privacy choices', bannerDescription: 'We use strictly necessary storage to keep AllyJen secure and working. With your permission, we also use analytics to understand how the service is used. Analytics stays off unless you accept it.', readOur: 'Read our', cookiePolicy: 'Cookie Policy', and: 'and', privacyPolicy: 'Privacy Policy', rejectNonEssential: 'Reject non-essential', acceptAnalytics: 'Accept analytics', managePreferences: 'Manage preferences', openSettings: 'Open cookie settings', settings: 'Cookie settings', preferences: 'Cookie preferences', preferencesDescription: 'Choose whether AllyJen may use optional analytics. Necessary storage cannot be switched off because it supports security and requested features.', closePreferences: 'Close cookie preferences', strictlyNecessary: 'Strictly necessary', necessaryDescription: 'Authentication, security, consent choices, accessibility, and requested kiosk functionality.', alwaysOn: 'Always on', analytics: 'Analytics', analyticsDescription: 'Google Analytics and Vercel Analytics help us understand visits and improve AllyJen.', savePreferences: 'Save preferences',
@@ -40,6 +42,7 @@ export const recentUiTranslations = {
     complianceDocuments: complianceDocumentsTranslations.ga,
     helpPortal: helpPortalTranslations.ga.helpPortal,
     ...supplierPortalTranslations.ga,
+    ...sitePortalTranslations.ga,
     shared: { closeNotification: 'Dún an fógra', loadingDashboard: 'Do dheais á luchtú...' },
     cookieConsent: {
       consentAria: 'Toiliú fianán', privacyChoices: 'Do roghanna príobháideachais', bannerDescription: 'Úsáidimid stóráil atá fíor-riachtanach chun AllyJen a choinneáil slán agus ag obair. Le do chead, úsáidimid anailísíocht freisin chun tuiscint a fháil ar úsáid na seirbhíse. Fanann an anailísíocht múchta mura nglacann tú léi.', readOur: 'Léigh ár', cookiePolicy: 'mBeartas Fianán', and: 'agus ár', privacyPolicy: 'mBeartas Príobháideachais', rejectNonEssential: 'Diúltaigh do rudaí neamhriachtanacha', acceptAnalytics: 'Glac le hanailísíocht', managePreferences: 'Bainistigh sainroghanna', openSettings: 'Oscail socruithe fianán', settings: 'Socruithe fianán', preferences: 'Sainroghanna fianán', preferencesDescription: 'Roghnaigh an féidir le AllyJen anailísíocht roghnach a úsáid. Ní féidir stóráil riachtanach a mhúchadh mar tacaíonn sí le slándáil agus gnéithe iarrtha.', closePreferences: 'Dún sainroghanna fianán', strictlyNecessary: 'Fíor-riachtanach', necessaryDescription: 'Fíordheimhniú, slándáil, roghanna toilithe, inrochtaineacht agus feidhmiúlacht bhoth iarrtha.', alwaysOn: 'Ar siúl i gcónaí', analytics: 'Anailísíocht', analyticsDescription: 'Cuidíonn Google Analytics agus Vercel Analytics linn cuairteanna a thuiscint agus AllyJen a fheabhsú.', savePreferences: 'Sábháil sainroghanna',
@@ -59,6 +62,7 @@ export const recentUiTranslations = {
     complianceDocuments: complianceDocumentsTranslations.pt,
     helpPortal: helpPortalTranslations.pt.helpPortal,
     ...supplierPortalTranslations.pt,
+    ...sitePortalTranslations.pt,
     shared: { closeNotification: 'Fechar notificação', loadingDashboard: 'A carregar o seu painel...' },
     cookieConsent: {
       consentAria: 'Consentimento de cookies', privacyChoices: 'As suas escolhas de privacidade', bannerDescription: 'Utilizamos armazenamento estritamente necessário para manter o AllyJen seguro e funcional. Com a sua autorização, também utilizamos análises para compreender como o serviço é utilizado. As análises permanecem desativadas até que as aceite.', readOur: 'Leia a nossa', cookiePolicy: 'Política de Cookies', and: 'e a', privacyPolicy: 'Política de Privacidade', rejectNonEssential: 'Rejeitar não essenciais', acceptAnalytics: 'Aceitar análises', managePreferences: 'Gerir preferências', openSettings: 'Abrir definições de cookies', settings: 'Definições de cookies', preferences: 'Preferências de cookies', preferencesDescription: 'Escolha se o AllyJen pode utilizar análises opcionais. O armazenamento necessário não pode ser desativado porque suporta a segurança e as funcionalidades solicitadas.', closePreferences: 'Fechar preferências de cookies', strictlyNecessary: 'Estritamente necessário', necessaryDescription: 'Autenticação, segurança, escolhas de consentimento, acessibilidade e funcionalidades de quiosque solicitadas.', alwaysOn: 'Sempre ativo', analytics: 'Análises', analyticsDescription: 'O Google Analytics e o Vercel Analytics ajudam-nos a compreender as visitas e a melhorar o AllyJen.', savePreferences: 'Guardar preferências',
@@ -78,6 +82,7 @@ export const recentUiTranslations = {
     complianceDocuments: complianceDocumentsTranslations.fr,
     helpPortal: helpPortalTranslations.fr.helpPortal,
     ...supplierPortalTranslations.fr,
+    ...sitePortalTranslations.fr,
     shared: { closeNotification: 'Fermer la notification', loadingDashboard: 'Chargement de votre tableau de bord...' },
     cookieConsent: {
       consentAria: 'Consentement aux cookies', privacyChoices: 'Vos choix de confidentialité', bannerDescription: 'Nous utilisons un stockage strictement nécessaire pour assurer la sécurité et le fonctionnement d’AllyJen. Avec votre autorisation, nous utilisons également des outils d’analyse pour comprendre l’utilisation du service. Ils restent désactivés tant que vous ne les acceptez pas.', readOur: 'Consultez notre', cookiePolicy: 'Politique relative aux cookies', and: 'et notre', privacyPolicy: 'Politique de confidentialité', rejectNonEssential: 'Refuser les cookies non essentiels', acceptAnalytics: 'Accepter les outils d’analyse', managePreferences: 'Gérer les préférences', openSettings: 'Ouvrir les paramètres des cookies', settings: 'Paramètres des cookies', preferences: 'Préférences relatives aux cookies', preferencesDescription: 'Choisissez si AllyJen peut utiliser des outils d’analyse facultatifs. Le stockage nécessaire ne peut pas être désactivé, car il assure la sécurité et les fonctionnalités demandées.', closePreferences: 'Fermer les préférences relatives aux cookies', strictlyNecessary: 'Strictement nécessaires', necessaryDescription: 'Authentification, sécurité, choix de consentement, accessibilité et fonctionnalités de borne demandées.', alwaysOn: 'Toujours actifs', analytics: 'Analyse', analyticsDescription: 'Google Analytics et Vercel Analytics nous aident à comprendre les visites et à améliorer AllyJen.', savePreferences: 'Enregistrer les préférences',
@@ -97,6 +102,7 @@ export const recentUiTranslations = {
     complianceDocuments: complianceDocumentsTranslations.es,
     helpPortal: helpPortalTranslations.es.helpPortal,
     ...supplierPortalTranslations.es,
+    ...sitePortalTranslations.es,
     shared: { closeNotification: 'Cerrar notificación', loadingDashboard: 'Cargando tu panel...' },
     cookieConsent: {
       consentAria: 'Consentimiento de cookies', privacyChoices: 'Tus opciones de privacidad', bannerDescription: 'Utilizamos almacenamiento estrictamente necesario para mantener AllyJen seguro y en funcionamiento. Con tu permiso, también utilizamos analíticas para comprender cómo se usa el servicio. Las analíticas permanecen desactivadas hasta que las aceptes.', readOur: 'Consulta nuestra', cookiePolicy: 'Política de cookies', and: 'y nuestra', privacyPolicy: 'Política de privacidad', rejectNonEssential: 'Rechazar las no esenciales', acceptAnalytics: 'Aceptar analíticas', managePreferences: 'Gestionar preferencias', openSettings: 'Abrir configuración de cookies', settings: 'Configuración de cookies', preferences: 'Preferencias de cookies', preferencesDescription: 'Elige si AllyJen puede utilizar analíticas opcionales. El almacenamiento necesario no puede desactivarse porque permite ofrecer seguridad y las funciones solicitadas.', closePreferences: 'Cerrar preferencias de cookies', strictlyNecessary: 'Estrictamente necesarias', necessaryDescription: 'Autenticación, seguridad, opciones de consentimiento, accesibilidad y funciones de quiosco solicitadas.', alwaysOn: 'Siempre activas', analytics: 'Analíticas', analyticsDescription: 'Google Analytics y Vercel Analytics nos ayudan a comprender las visitas y mejorar AllyJen.', savePreferences: 'Guardar preferencias',
@@ -116,6 +122,7 @@ export const recentUiTranslations = {
     complianceDocuments: complianceDocumentsTranslations.de,
     helpPortal: helpPortalTranslations.de.helpPortal,
     ...supplierPortalTranslations.de,
+    ...sitePortalTranslations.de,
     shared: { closeNotification: 'Benachrichtigung schließen', loadingDashboard: 'Ihr Dashboard wird geladen...' },
     cookieConsent: {
       consentAria: 'Cookie-Einwilligung', privacyChoices: 'Ihre Datenschutzauswahl', bannerDescription: 'Wir verwenden unbedingt erforderlichen Speicher, damit AllyJen sicher und funktionsfähig bleibt. Mit Ihrer Einwilligung nutzen wir außerdem Analysen, um die Nutzung des Dienstes zu verstehen. Analysen bleiben deaktiviert, bis Sie zustimmen.', readOur: 'Lesen Sie unsere', cookiePolicy: 'Cookie-Richtlinie', and: 'und unsere', privacyPolicy: 'Datenschutzerklärung', rejectNonEssential: 'Nicht erforderliche ablehnen', acceptAnalytics: 'Analysen akzeptieren', managePreferences: 'Einstellungen verwalten', openSettings: 'Cookie-Einstellungen öffnen', settings: 'Cookie-Einstellungen', preferences: 'Cookie-Einstellungen', preferencesDescription: 'Wählen Sie, ob AllyJen optionale Analysen verwenden darf. Erforderlicher Speicher kann nicht deaktiviert werden, da er Sicherheit und angeforderte Funktionen unterstützt.', closePreferences: 'Cookie-Einstellungen schließen', strictlyNecessary: 'Unbedingt erforderlich', necessaryDescription: 'Authentifizierung, Sicherheit, Einwilligungsauswahl, Barrierefreiheit und angeforderte Kioskfunktionen.', alwaysOn: 'Immer aktiv', analytics: 'Analysen', analyticsDescription: 'Google Analytics und Vercel Analytics helfen uns, Besuche zu verstehen und AllyJen zu verbessern.', savePreferences: 'Einstellungen speichern',

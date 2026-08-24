@@ -11,9 +11,11 @@ import {
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 export default function NewSitePage() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
@@ -57,6 +59,7 @@ export default function NewSitePage() {
           address: formData.address,
           city: formData.city,
           country: formData.country,
+          eircode: formData.eircode,
           phone: formData.phone,
           email: formData.email,
           is_active: formData.status === 'active'
@@ -64,7 +67,7 @@ export default function NewSitePage() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create site')
+        throw new Error(t('sitePortal.createError'))
       }
 
       const data = await response.json()
@@ -73,7 +76,7 @@ export default function NewSitePage() {
       router.push(`/admin/sites/${data.site.slug}`)
     } catch (err) {
       console.error('Error creating site:', err)
-      setError(err instanceof Error ? err.message : 'Failed to create site')
+      setError(err instanceof Error ? err.message : t('sitePortal.createError'))
       setLoading(false)
     }
   }
@@ -88,12 +91,12 @@ export default function NewSitePage() {
             className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Back to Sites
+            {t('admin.backToSites')}
           </Link>
           
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Add New Site</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('admin.addNewSite')}</h1>
           <p className="text-gray-600 dark:text-gray-300 mt-2">
-            Create a new location for your business
+            {t('sitePortal.createDescription')}
           </p>
         </div>
 
@@ -102,7 +105,7 @@ export default function NewSitePage() {
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
             <AlertCircle className="w-5 h-5 text-red-600 mr-3 mt-0.5 flex-shrink-0" />
             <div>
-              <h3 className="text-sm font-medium text-red-800">Error</h3>
+              <h3 className="text-sm font-medium text-red-800">{t('sitePortal.error')}</h3>
               <p className="text-sm text-red-700 mt-1">{error}</p>
             </div>
           </div>
@@ -116,37 +119,39 @@ export default function NewSitePage() {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Building className="w-5 h-5 mr-2" />
-                  Basic Information
+                  {t('ingredientsPortal.basicInformation')}
                 </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Site Name */}
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Site Name *
+                    <label htmlFor="site-name" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('sitePortal.siteName')} *
                     </label>
                     <input
                       type="text"
+                      id="site-name"
                       required
                       value={formData.name}
                       onChange={(e) => handleNameChange(e.target.value)}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                      placeholder="e.g., Oakberry Dublin City Centre"
+                      placeholder={t('sitePortal.siteNamePlaceholder')}
                     />
                   </div>
 
                   {/* Status */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Status
+                    <label htmlFor="site-status" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('admin.status')}
                     </label>
                     <select
+                      id="site-status"
                       value={formData.status}
                       onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                     >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
+                      <option value="active">{t('accessPoints.active')}</option>
+                      <option value="inactive">{t('accessPoints.inactive')}</option>
                     </select>
                   </div>
                 </div>
@@ -156,67 +161,71 @@ export default function NewSitePage() {
               <div className="pt-6 border-t border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <MapPin className="w-5 h-5 mr-2" />
-                  Location Details
+                  {t('sitePortal.locationDetails')}
                 </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Address */}
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Street Address
+                    <label htmlFor="site-address" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('settingsPortal.streetAddress')}
                     </label>
                     <input
                       type="text"
+                      id="site-address"
                       value={formData.address}
                       onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                      placeholder="e.g., 12 Grafton Street"
+                      placeholder={t('sitePortal.addressPlaceholder')}
                     />
                   </div>
 
                   {/* City */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      City
+                    <label htmlFor="site-city" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('settingsPortal.city')}
                     </label>
                     <input
                       type="text"
+                      id="site-city"
                       value={formData.city}
                       onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                      placeholder="e.g., Dublin"
+                      placeholder={t('sitePortal.cityPlaceholder')}
                     />
                   </div>
 
                   {/* Country */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Country
+                    <label htmlFor="site-country" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('settingsPortal.country')}
                     </label>
                     <input
                       type="text"
+                      id="site-country"
                       value={formData.country}
                       onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                      placeholder="e.g., Ireland"
+                      placeholder={t('sitePortal.countryPlaceholder')}
                     />
                   </div>
 
                   {/* Eircode */}
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Eircode (Irish Postcode)
+                    <label htmlFor="site-eircode" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('sitePortal.eircode')}
                     </label>
                     <input
                       type="text"
+                      id="site-eircode"
                       value={formData.eircode}
                       onChange={(e) => setFormData(prev => ({ ...prev, eircode: e.target.value.toUpperCase() }))}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white uppercase"
-                      placeholder="e.g., D02 XY45"
+                      placeholder={t('sitePortal.eircodePlaceholder')}
                       maxLength={8}
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Used to display location on map
+                      {t('sitePortal.mapHint')}
                     </p>
                   </div>
                 </div>
@@ -226,17 +235,18 @@ export default function NewSitePage() {
               <div className="pt-6 border-t border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Phone className="w-5 h-5 mr-2" />
-                  Contact Information
+                  {t('sitePortal.contactInformation')}
                 </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Phone */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number
+                    <label htmlFor="site-phone" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('sitePortal.phoneNumber')}
                     </label>
                     <input
                       type="tel"
+                      id="site-phone"
                       value={formData.phone}
                       onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
@@ -246,15 +256,16 @@ export default function NewSitePage() {
 
                   {/* Email */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address
+                    <label htmlFor="site-email" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('emailAddress')}
                     </label>
                     <input
                       type="email"
+                      id="site-email"
                       value={formData.email}
                       onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                      placeholder="location@example.com"
+                      placeholder={t('sitePortal.emailPlaceholder')}
                     />
                   </div>
                 </div>
@@ -271,7 +282,7 @@ export default function NewSitePage() {
                   disabled={loading}
                   className="flex-1"
                 >
-                  Cancel
+                  {t('accessPoints.cancel')}
                 </Button>
               </Link>
               
@@ -281,7 +292,7 @@ export default function NewSitePage() {
                 icon={<Save className="h-4 w-4" />}
                 disabled={loading}
               >
-                {loading ? 'Creating...' : 'Create Site'}
+                {loading ? t('supplierPortal.creating') : t('sitePortal.createSite')}
               </Button>
             </div>
           </Card>

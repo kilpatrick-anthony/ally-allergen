@@ -10,10 +10,12 @@ import {
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 export default function EditSitePage() {
   const params = useParams()
   const router = useRouter()
+  const { t } = useTranslation()
   const slug = params.slug as string
   
   const [loading, setLoading] = useState(true)
@@ -39,40 +41,32 @@ export default function EditSitePage() {
     : ''
 
   useEffect(() => {
-    loadSiteData()
-  }, [slug])
+    const loadSiteData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
 
-  const loadSiteData = async () => {
-    try {
-      setLoading(true)
-      setError(null)
+        const response = await fetch(`/api/sites/${slug}`)
+        const data = await response.json()
 
-      const response = await fetch(`/api/sites/${slug}`)
-      const data = await response.json()
+        if (!response.ok) throw new Error(t('sitePortal.loadError'))
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to load site')
+        setFormData({
+          name: data.site.name || '', slug: data.site.slug || slug,
+          address: data.site.address || '', city: data.site.city || '', country: data.site.country || '',
+          eircode: data.site.eircode || '', phone: data.site.phone || '', email: data.site.email || '',
+          status: data.site.is_active ? 'active' : 'inactive'
+        })
+      } catch (err) {
+        console.error('Error loading site:', err)
+        setError(t('sitePortal.loadError'))
+      } finally {
+        setLoading(false)
       }
-
-      setFormData({
-        name: data.site.name || '',
-        slug: data.site.slug || slug,
-        address: data.site.address || '',
-        city: data.site.city || '',
-        country: data.site.country || '',
-        eircode: data.site.eircode || '',
-        phone: data.site.phone || '',
-        email: data.site.email || '',
-        status: data.site.is_active ? 'active' : 'inactive'
-      })
-
-    } catch (err) {
-      console.error('Error loading site:', err)
-      setError('Failed to load site data')
-    } finally {
-      setLoading(false)
     }
-  }
+
+    void loadSiteData()
+  }, [slug, t])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -98,21 +92,20 @@ export default function EditSitePage() {
       })
 
       if (!response.ok) {
-        const errData = await response.json().catch(() => ({}))
-        throw new Error(errData.error || 'Failed to update site')
+        throw new Error(t('sitePortal.updateError'))
       }
 
       // Redirect to the site's detail page
       router.push(`/admin/sites/${formData.slug}`)
     } catch (err) {
       console.error('Error updating site:', err)
-      setError(err instanceof Error ? err.message : 'Failed to update site')
+      setError(err instanceof Error ? err.message : t('sitePortal.updateError'))
       setSaving(false)
     }
   }
 
   const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this site? This action cannot be undone.')) {
+    if (!confirm(t('sitePortal.deleteConfirm'))) {
       return
     }
 
@@ -125,14 +118,14 @@ export default function EditSitePage() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to delete site')
+        throw new Error(t('sitePortal.deleteError'))
       }
 
       // Redirect to sites list
       router.push('/admin/sites')
     } catch (err) {
       console.error('Error deleting site:', err)
-      setError(err instanceof Error ? err.message : 'Failed to delete site')
+      setError(err instanceof Error ? err.message : t('sitePortal.deleteError'))
       setSaving(false)
     }
   }
@@ -146,7 +139,7 @@ export default function EditSitePage() {
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
               <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
             </div>
-            <p className="text-gray-600 dark:text-gray-400 font-medium">Loading site...</p>
+            <p className="text-gray-600 dark:text-gray-400 font-medium">{t('admin.loadingSite')}</p>
           </div>
         </div>
       </Container>
@@ -163,12 +156,12 @@ export default function EditSitePage() {
             className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            Back to Site Details
+            {t('sitePortal.backToDetails')}
           </Link>
           
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Edit Site</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('sitePortal.editSite')}</h1>
           <p className="text-gray-600 mt-2">
-            Update information for {formData.name}
+            {t('sitePortal.updateFor', { name: formData.name })}
           </p>
         </div>
 
@@ -177,7 +170,7 @@ export default function EditSitePage() {
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start">
             <AlertCircle className="w-5 h-5 text-red-600 mr-3 mt-0.5 flex-shrink-0" />
             <div>
-              <h3 className="text-sm font-medium text-red-800">Error</h3>
+              <h3 className="text-sm font-medium text-red-800">{t('sitePortal.error')}</h3>
               <p className="text-sm text-red-700 mt-1">{error}</p>
             </div>
           </div>
@@ -191,12 +184,12 @@ export default function EditSitePage() {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <MapPin className="w-5 h-5 mr-2" />
-                  Map Preview
+                  {t('sitePortal.mapPreview')}
                 </h2>
                 {mapEmbedUrl ? (
                   <div className="rounded-lg overflow-hidden border border-gray-200">
                     <iframe
-                      title="Site location map"
+                      title={t('sitePortal.mapTitle')}
                       src={mapEmbedUrl}
                       className="w-full h-64"
                       loading="lazy"
@@ -204,7 +197,7 @@ export default function EditSitePage() {
                   </div>
                 ) : (
                   <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-sm text-gray-600">
-                    Add an address to see the map preview.
+                    {t('sitePortal.mapEmpty')}
                   </div>
                 )}
               </div>
@@ -213,37 +206,39 @@ export default function EditSitePage() {
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Building className="w-5 h-5 mr-2" />
-                  Basic Information
+                  {t('ingredientsPortal.basicInformation')}
                 </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Site Name */}
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Site Name *
+                    <label htmlFor="site-name" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('sitePortal.siteName')} *
                     </label>
                     <input
                       type="text"
+                      id="site-name"
                       required
                       value={formData.name}
                       onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                      placeholder="e.g., Oakberry Dublin City Centre"
+                      placeholder={t('sitePortal.siteNamePlaceholder')}
                     />
                   </div>
 
                   {/* Status */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Status
+                    <label htmlFor="site-status" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('admin.status')}
                     </label>
                     <select
+                      id="site-status"
                       value={formData.status}
                       onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value }))}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
                     >
-                      <option value="active">Active</option>
-                      <option value="inactive">Inactive</option>
+                      <option value="active">{t('accessPoints.active')}</option>
+                      <option value="inactive">{t('accessPoints.inactive')}</option>
                     </select>
                   </div>
                 </div>
@@ -253,67 +248,71 @@ export default function EditSitePage() {
               <div className="pt-6 border-t border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <MapPin className="w-5 h-5 mr-2" />
-                  Location Details
+                  {t('sitePortal.locationDetails')}
                 </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Address */}
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Street Address
+                    <label htmlFor="site-address" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('settingsPortal.streetAddress')}
                     </label>
                     <input
                       type="text"
+                      id="site-address"
                       value={formData.address}
                       onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                      placeholder="e.g., 12 Grafton Street"
+                      placeholder={t('sitePortal.addressPlaceholder')}
                     />
                   </div>
 
                   {/* City */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      City
+                    <label htmlFor="site-city" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('settingsPortal.city')}
                     </label>
                     <input
                       type="text"
+                      id="site-city"
                       value={formData.city}
                       onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                      placeholder="e.g., Dublin"
+                      placeholder={t('sitePortal.cityPlaceholder')}
                     />
                   </div>
 
                   {/* Country */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Country
+                    <label htmlFor="site-country" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('settingsPortal.country')}
                     </label>
                     <input
                       type="text"
+                      id="site-country"
                       value={formData.country}
                       onChange={(e) => setFormData(prev => ({ ...prev, country: e.target.value }))}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                      placeholder="e.g., Ireland"
+                      placeholder={t('sitePortal.countryPlaceholder')}
                     />
                   </div>
 
                   {/* Eircode */}
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Eircode (Irish Postcode)
+                    <label htmlFor="site-eircode" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('sitePortal.eircode')}
                     </label>
                     <input
                       type="text"
+                      id="site-eircode"
                       value={formData.eircode}
                       onChange={(e) => setFormData(prev => ({ ...prev, eircode: e.target.value.toUpperCase() }))}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white uppercase"
-                      placeholder="e.g., D02 XY45"
+                      placeholder={t('sitePortal.eircodePlaceholder')}
                       maxLength={8}
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Used to display location on map
+                      {t('sitePortal.mapHint')}
                     </p>
                   </div>
                 </div>
@@ -323,17 +322,18 @@ export default function EditSitePage() {
               <div className="pt-6 border-t border-gray-200">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Phone className="w-5 h-5 mr-2" />
-                  Contact Information
+                  {t('sitePortal.contactInformation')}
                 </h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Phone */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number
+                    <label htmlFor="site-phone" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('sitePortal.phoneNumber')}
                     </label>
                     <input
                       type="tel"
+                      id="site-phone"
                       value={formData.phone}
                       onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
@@ -343,15 +343,16 @@ export default function EditSitePage() {
 
                   {/* Email */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email Address
+                    <label htmlFor="site-email" className="block text-sm font-medium text-gray-700 mb-2">
+                      {t('emailAddress')}
                     </label>
                     <input
                       type="email"
+                      id="site-email"
                       value={formData.email}
                       onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                      placeholder="location@example.com"
+                      placeholder={t('sitePortal.emailPlaceholder')}
                     />
                   </div>
                 </div>
@@ -369,7 +370,7 @@ export default function EditSitePage() {
                 disabled={saving}
                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
               >
-                Delete Site
+                {t('sitePortal.deleteSite')}
               </Button>
               
               <div className="flex gap-3">
@@ -380,7 +381,7 @@ export default function EditSitePage() {
                     icon={<X className="h-4 w-4" />}
                     disabled={saving}
                   >
-                    Cancel
+                    {t('accessPoints.cancel')}
                   </Button>
                 </Link>
                 
@@ -390,7 +391,7 @@ export default function EditSitePage() {
                   icon={<Save className="h-4 w-4" />}
                   disabled={saving}
                 >
-                  {saving ? 'Saving...' : 'Save Changes'}
+                  {saving ? t('supplierPortal.saving') : t('admin.saveChanges')}
                 </Button>
               </div>
             </div>

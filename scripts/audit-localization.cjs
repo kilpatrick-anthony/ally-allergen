@@ -43,6 +43,8 @@ const recentFiles = new Set([
   'app/admin/suppliers/[id]/docs/page.tsx',
   'app/admin/suppliers/[id]/edit/page.tsx',
   'app/admin/suppliers/[id]/page.tsx',
+  'app/admin/sites/new/page.tsx',
+  'app/admin/sites/[slug]/edit/page.tsx',
   'app/admin/kiosks/page.tsx',
   'app/admin/layout.tsx',
   'app/admin/ingredients/page.tsx',
@@ -102,6 +104,14 @@ function loadTypeScriptExport(filename, exportName) {
         supplierPortalTranslations: loadTypeScriptExport(
           path.join(root, 'lib/supplier-portal-translations.ts'),
           'supplierPortalTranslations',
+        ),
+      }
+    }
+    if (request === '@/lib/site-portal-translations') {
+      return {
+        sitePortalTranslations: loadTypeScriptExport(
+          path.join(root, 'lib/site-portal-translations.ts'),
+          'sitePortalTranslations',
         ),
       }
     }
