@@ -251,6 +251,8 @@ export default function PortalLocalizationBridge() {
       if (node.nodeType !== Node.ELEMENT_NODE) return
 
       const element = node as Element
+      const containsPortalScope = element.matches(SCOPED_ROOT_SELECTOR) || Boolean(element.querySelector(SCOPED_ROOT_SELECTOR))
+      if (!isWithinPortalScope(element) && !containsPortalScope) return
       if (element.closest('[data-no-translate]')) return
       translateAttributes(element)
       const walker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT)
@@ -265,10 +267,29 @@ export default function PortalLocalizationBridge() {
     document.querySelectorAll(SCOPED_ROOT_SELECTOR).forEach(translateTree)
 
     const observer = new MutationObserver((mutations) => {
+      const addedNodes = new Set<Node>()
+
       for (const mutation of mutations) {
         if (mutation.type === 'characterData') translateTextNode(mutation.target as Text)
         if (mutation.type === 'attributes') translateAttributes(mutation.target as Element)
-        mutation.addedNodes.forEach(translateTree)
+        mutation.addedNodes.forEach(node => addedNodes.add(node))
+      }
+
+      // React can report a newly mounted results tree as both a parent insertion
+      // and many nested insertions in the same mutation batch. Walking every one
+      // of those nodes repeats the localization work for the full subtree and can
+      // lock up large kiosk menus. Only process the highest added roots.
+      for (const node of addedNodes) {
+        let ancestor = node.parentNode
+        let isCoveredByAddedAncestor = false
+        while (ancestor) {
+          if (addedNodes.has(ancestor)) {
+            isCoveredByAddedAncestor = true
+            break
+          }
+          ancestor = ancestor.parentNode
+        }
+        if (!isCoveredByAddedAncestor) translateTree(node)
       }
     })
 
