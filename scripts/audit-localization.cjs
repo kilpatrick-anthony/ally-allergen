@@ -38,6 +38,7 @@ const recentFiles = new Set([
   'app/admin/downloads/datasheets/page.tsx',
   'app/admin/downloads/page.tsx',
   'app/admin/food-safety/page.tsx',
+  'app/admin/help/page.tsx',
   'app/admin/kiosks/page.tsx',
   'app/admin/layout.tsx',
   'app/admin/ingredients/page.tsx',
@@ -81,6 +82,14 @@ function loadTypeScriptExport(filename, exportName) {
         corePortalTranslations: loadTypeScriptExport(
           path.join(root, 'lib/core-portal-translations.ts'),
           'corePortalTranslations',
+        ),
+      }
+    }
+    if (request === '@/lib/help-portal-translations') {
+      return {
+        helpPortalTranslations: loadTypeScriptExport(
+          path.join(root, 'lib/help-portal-translations.ts'),
+          'helpPortalTranslations',
         ),
       }
     }

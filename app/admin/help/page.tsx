@@ -564,34 +564,40 @@ export default function HelpPage() {
       5: { title: 'Bainistíocht soláthraithe', description: 'Bainistigh leaganacha comhábhair de réir soláthraí agus an phróifíl chomhcheangailte is sábháilte.' },
       6: { title: 'Míreanna ullmhaithe a chruthú', description: 'Cruthaigh míreanna ó chomhábhair le ríomh uathoibríoch ailléirginí agus tréithe aiste bia.' },
       17: { title: 'Táirgí pacáistithe ceannaithe isteach', description: 'Taifead lipéid, ailléirginí, maímh chothaithe, soláthraithe agus fianaise do tháirgí séalaithe.' },
+      16: { title: 'Úsáideoirí a chruthú agus róil a roghnú', description: 'Tabhair cuireadh do bhall foirne, roghnaigh an leibhéal rochtana ceart agus tuig ceadanna gach róil.' },
     },
     pt: {
       3: { title: 'Adicionar ingredientes', description: 'Crie ingredientes, variantes por fornecedor, perfis de alergénios e fichas técnicas.' },
       5: { title: 'Gestão de fornecedores', description: 'Gira versões do ingrediente por fornecedor e o perfil combinado mais seguro.' },
       6: { title: 'Criar itens preparados', description: 'Crie itens a partir de ingredientes com cálculo automático de alergénios e atributos dietéticos.' },
       17: { title: 'Adicionar produtos embalados comprados', description: 'Registe rótulos, alergénios, alegações dietéticas, fornecedores e provas para produtos selados.' },
+      16: { title: 'Criar utilizadores e escolher funções', description: 'Convide um membro da equipa, escolha o nível de acesso certo e compreenda as permissões de cada função.' },
     },
     fr: {
       3: { title: 'Ajouter des ingrédients', description: 'Créez des ingrédients, variantes fournisseur, profils allergènes et fiches techniques.' },
       5: { title: 'Gestion des fournisseurs', description: 'Gérez chaque version fournisseur et le profil combiné le plus prudent.' },
       6: { title: 'Créer des articles préparés', description: 'Créez des articles à partir d’ingrédients avec calcul automatique des allergènes et attributs alimentaires.' },
       17: { title: 'Ajouter des produits emballés achetés', description: 'Enregistrez étiquettes, allergènes, allégations, fournisseurs et justificatifs des produits scellés.' },
+      16: { title: 'Créer des utilisateurs et choisir les rôles', description: 'Invitez un membre, choisissez le bon niveau d’accès et comprenez les autorisations de chaque rôle.' },
     },
     es: {
       3: { title: 'Añadir ingredientes', description: 'Crea ingredientes, variantes por proveedor, perfiles de alérgenos y fichas técnicas.' },
       5: { title: 'Gestión de proveedores', description: 'Gestiona versiones por proveedor y el perfil combinado más seguro.' },
       6: { title: 'Crear artículos preparados', description: 'Crea artículos con ingredientes y cálculo automático de alérgenos y atributos dietéticos.' },
       17: { title: 'Añadir productos envasados comprados', description: 'Registra etiquetas, alérgenos, declaraciones, proveedores y pruebas para productos sellados.' },
+      16: { title: 'Crear usuarios y elegir roles', description: 'Invita a un miembro, elige el nivel de acceso adecuado y comprende los permisos de cada rol.' },
     },
     de: {
       3: { title: 'Zutaten hinzufügen', description: 'Erstellen Sie Zutaten, Lieferantenvarianten, Allergenprofile und Datenblätter.' },
       5: { title: 'Lieferantenverwaltung', description: 'Verwalten Sie Lieferantenversionen und das sicherste kombinierte Profil.' },
       6: { title: 'Zubereitete Menüpunkte erstellen', description: 'Erstellen Sie Menüpunkte aus Zutaten mit automatischer Allergen- und Ernährungsberechnung.' },
       17: { title: 'Zugekaufte verpackte Produkte', description: 'Erfassen Sie Etiketten, Allergene, Angaben, Lieferanten und Nachweise für versiegelte Produkte.' },
+      16: { title: 'Benutzer erstellen und Rollen auswählen', description: 'Laden Sie ein Teammitglied ein, wählen Sie die passende Zugriffsstufe und verstehen Sie die Berechtigungen jeder Rolle.' },
     },
   }
   const revisedTopicDetails: Record<string, Record<number, string[]>> = {
     ga: {
+      16: ['Ní féidir ach le hÚinéir rochtain foirne a bhainistiú. Oscail Socruithe → Foireann.', 'Roghnaigh Cuir ball foirne leis agus cuir ainm iomlán agus ríomhphost an duine isteach.', 'Roghnaigh Úinéir, Bainisteoir nó Ball Foirne de réir an leibhéil rochtana atá ag teastáil.', 'Seol an cuireadh; is féidir rochtain a athrú nó a bhaint níos déanaí ón gcluaisín Foireann.'],
       3: ['Cuir leagan soláthraí ar leith le gach foinse nó foirmliú.', 'Taifead na 14 ailléirgin, tréithe aiste bia agus bileog sonraí don leagan.', 'Úsáideann an achoimre an rabhadh is déine agus is é bliain an mhinicíocht athbhreithnithe réamhshocraithe.'],
       4: ['Uaslódáil bileoga sonraí chuig comhábhar nó táirge pacáistithe.', 'Taifead an soláthraí, an leagan agus an chéad dáta athbhreithnithe eile.', 'Coinnigh an fhianaise reatha mar chuid den rian iniúchta.'],
       5: ['Athúsáid taifid soláthraithe ar fud comhábhar agus táirgí.', 'Coinnigh próifíl ar leith do gach foirmliú soláthraí.', 'Ní iompraítear maíomh aiste bia ach nuair a thacaíonn na próifílí ábhartha go léir leis.'],
@@ -602,6 +608,7 @@ export default function HelpPage() {
       17: ['Úsáid é seo do tháirge a cheannaítear séalaithe agus a dhíoltar díreach leis an gcustaiméir.', 'Taifead an soláthraí, monaróir, cód, barrachód agus dearbhú iomlán comhábhar.', 'Socraigh ailléirginí agus maímh ón lipéad; ná nasc comhábhair oidis.', 'Uaslódáil fianaise reatha agus marcáil seiceáil an lipéid tar éis fíoraithe.'],
     },
     pt: {
+      16: ['Apenas um Proprietário pode gerir o acesso da equipa. Abra Definições → Equipa.', 'Selecione Adicionar membro e introduza o nome completo e o email.', 'Escolha Proprietário, Gestor ou Colaborador conforme o nível de acesso necessário.', 'Envie o convite; o acesso pode ser alterado ou removido mais tarde no separador Equipa.'],
       3: ['Adicione uma variante por fornecedor para cada origem ou fórmula.', 'Registe os 14 alergénios, atributos dietéticos e a ficha técnica de cada variante.', 'O resumo usa o aviso mais grave e a revisão predefinida é anual.'],
       4: ['Carregue fichas num ingrediente ou produto embalado.', 'Registe fornecedor, versão e próxima data de revisão.', 'Mantenha provas atuais para a auditoria.'],
       5: ['Reutilize fornecedores em ingredientes e produtos.', 'Mantenha um perfil separado para cada fórmula do fornecedor.', 'Uma alegação dietética só é propagada quando todos os perfis aplicáveis a suportam.'],
@@ -612,6 +619,7 @@ export default function HelpPage() {
       17: ['Use para um produto comprado selado e vendido diretamente ao consumidor.', 'Registe fornecedor, fabricante, código, código de barras e declaração completa de ingredientes.', 'Defina alergénios e alegações a partir do rótulo; não associe ingredientes de receita.', 'Carregue provas atuais e confirme a verificação do rótulo.'],
     },
     fr: {
+      16: ['Seul un Propriétaire peut gérer les accès. Ouvrez Paramètres → Équipe.', 'Sélectionnez Ajouter un membre, puis saisissez son nom complet et son e-mail.', 'Choisissez Propriétaire, Responsable ou Employé selon le niveau d’accès requis.', 'Envoyez l’invitation ; l’accès pourra ensuite être modifié ou retiré depuis l’onglet Équipe.'],
       3: ['Ajoutez une variante pour chaque fournisseur ou formulation.', 'Renseignez les 14 allergènes, attributs alimentaires et la fiche technique de chaque variante.', 'Le résumé retient l’avertissement le plus sévère et la révision par défaut est annuelle.'],
       4: ['Ajoutez des fiches à un ingrédient ou produit emballé.', 'Renseignez fournisseur, version et prochaine date de révision.', 'Conservez des justificatifs actuels pour la piste d’audit.'],
       5: ['Réutilisez les fournisseurs entre ingrédients et produits.', 'Conservez un profil distinct pour chaque formulation fournisseur.', 'Une allégation n’est transmise que si tous les profils concernés la confirment.'],
@@ -622,6 +630,7 @@ export default function HelpPage() {
       17: ['Utilisez ce type pour un produit acheté scellé et revendu directement.', 'Renseignez fournisseur, fabricant, code, code-barres et déclaration complète des ingrédients.', 'Saisissez allergènes et allégations depuis l’étiquette sans associer d’ingrédients de recette.', 'Ajoutez les justificatifs actuels et confirmez la vérification de l’étiquette.'],
     },
     es: {
+      16: ['Solo un Propietario puede gestionar el acceso del equipo. Abre Configuración → Equipo.', 'Selecciona Añadir miembro e introduce su nombre completo y correo.', 'Elige Propietario, Responsable o Personal según el nivel de acceso necesario.', 'Envía la invitación; después podrás cambiar o retirar el acceso desde la pestaña Equipo.'],
       3: ['Añade una variante por cada proveedor o formulación.', 'Registra los 14 alérgenos, atributos dietéticos y ficha técnica de cada variante.', 'El resumen usa la advertencia más grave y la revisión predeterminada es anual.'],
       4: ['Sube fichas a un ingrediente o producto envasado.', 'Registra proveedor, versión y próxima fecha de revisión.', 'Conserva pruebas actuales para la auditoría.'],
       5: ['Reutiliza proveedores en ingredientes y productos.', 'Mantén un perfil separado por cada formulación del proveedor.', 'Una declaración solo se transmite si todos los perfiles aplicables la respaldan.'],
@@ -632,6 +641,7 @@ export default function HelpPage() {
       17: ['Úsalo para un producto comprado sellado y vendido directamente.', 'Registra proveedor, fabricante, código, código de barras y declaración completa de ingredientes.', 'Define alérgenos y declaraciones desde la etiqueta sin asociar ingredientes de receta.', 'Sube pruebas actuales y confirma la verificación de la etiqueta.'],
     },
     de: {
+      16: ['Nur ein Inhaber kann Teamzugänge verwalten. Öffnen Sie Einstellungen → Team.', 'Wählen Sie Teammitglied hinzufügen und geben Sie vollständigen Namen und E-Mail-Adresse ein.', 'Wählen Sie je nach benötigtem Zugriff Inhaber, Manager oder Mitarbeiter.', 'Senden Sie die Einladung; der Zugriff kann später im Team-Tab geändert oder entfernt werden.'],
       3: ['Fügen Sie für jede Bezugsquelle oder Rezeptur eine Lieferantenvariante hinzu.', 'Erfassen Sie die 14 Allergene, Ernährungsmerkmale und das Datenblatt je Variante.', 'Die Zusammenfassung verwendet die strengste Warnung; Standardprüfung ist jährlich.'],
       4: ['Laden Sie Datenblätter zu einer Zutat oder einem verpackten Produkt hoch.', 'Erfassen Sie Lieferant, Version und nächstes Prüfdatum.', 'Bewahren Sie aktuelle Nachweise für den Prüfpfad auf.'],
       5: ['Verwenden Sie Lieferanten für Zutaten und Produkte wieder.', 'Pflegen Sie ein eigenes Profil je Lieferantenrezeptur.', 'Eine Ernährungsangabe wird nur übernommen, wenn alle relevanten Profile sie bestätigen.'],
@@ -689,28 +699,28 @@ export default function HelpPage() {
   const quickLinks = [
     {
       title: t('admin.documentation'),
-      description: 'Read the full help guide',
+      description: t('helpPortal.readGuide'),
       icon: Book,
       href: '#help-topics',
       color: 'blue'
     },
     {
       title: t('admin.contactSupport'),
-      description: 'Get help from our team',
+      description: t('helpPortal.getTeamHelp'),
       icon: MessageCircle,
       href: 'mailto:info@allyjen.ie',
       color: 'green'
     },
     {
       title: t('admin.email'),
-      description: 'Email the AllyJen team',
+      description: t('helpPortal.emailTeam'),
       icon: Mail,
       href: 'mailto:info@allyjen.ie',
       color: 'purple'
     },
     {
-      title: 'Suggest a feature or report a bug',
-      description: 'Share an idea, issue or improvement request',
+      title: t('helpPortal.suggestFeatureOrBug'),
+      description: t('helpPortal.shareIdea'),
       icon: Lightbulb,
       href: '#feedback-form',
       color: 'teal'
@@ -745,13 +755,13 @@ export default function HelpPage() {
 
       const data = await response.json()
       if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Unable to send your feedback right now.')
+        throw new Error(t('helpPortal.feedbackSendError'))
       }
 
       setFeedbackSubmitted(true)
       setFeedbackForm({ name: '', email: '', type: 'feature', subject: '', message: '' })
     } catch (error) {
-      setFeedbackError(error instanceof Error ? error.message : 'Unable to send your feedback right now.')
+      setFeedbackError(error instanceof Error ? error.message : t('helpPortal.feedbackSendError'))
     } finally {
       setIsFeedbackSubmitting(false)
     }
@@ -831,20 +841,20 @@ export default function HelpPage() {
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-sm font-medium text-[#bfece7]">
                 <Lightbulb className="h-4 w-4" />
-                Share feedback
+                {t('helpPortal.shareFeedback')}
               </div>
               <div>
-                <h2 className="text-2xl font-semibold text-white">Suggest a feature or report a problem</h2>
+                <h2 className="text-2xl font-semibold text-white">{t('helpPortal.suggestOrReport')}</h2>
                 <p className="mt-2 text-sm leading-6 text-white/75">
-                  Tell us about a feature you would like to see, a bug you have found, or anything else that could improve AllyJen for your team.
+                  {t('helpPortal.feedbackIntro')}
                 </p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/10 p-4 text-sm text-white/80">
-                <p className="font-medium text-white">What to include</p>
+                <p className="font-medium text-white">{t('helpPortal.whatToInclude')}</p>
                 <ul className="mt-2 space-y-2 text-white/75">
-                  <li>• The feature you would like to see</li>
-                  <li>• The issue or bug you have noticed</li>
-                  <li>• Any steps to reproduce it, if relevant</li>
+                  <li>• {t('helpPortal.desiredFeature')}</li>
+                  <li>• {t('helpPortal.noticedIssue')}</li>
+                  <li>• {t('helpPortal.reproductionSteps')}</li>
                 </ul>
               </div>
             </div>
@@ -853,16 +863,16 @@ export default function HelpPage() {
               {feedbackSubmitted ? (
                 <div className="rounded-2xl border border-white/15 bg-white/10 p-6 text-center">
                   <CheckCircle className="mx-auto mb-3 h-10 w-10 text-[#42b8ac]" />
-                  <h3 className="text-lg font-semibold text-white">Thanks for your feedback</h3>
+                  <h3 className="text-lg font-semibold text-white">{t('helpPortal.feedbackThanks')}</h3>
                   <p className="mt-2 text-sm text-white/75">
-                    We have received your message and will review it shortly.
+                    {t('helpPortal.feedbackReceived')}
                   </p>
                 </div>
               ) : (
                 <form onSubmit={handleFeedbackSubmit} className="space-y-4">
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <label htmlFor="feedback-name" className="mb-1.5 block text-sm font-medium text-white/80">Your name</label>
+                      <label htmlFor="feedback-name" className="mb-1.5 block text-sm font-medium text-white/80">{t('helpPortal.yourName')}</label>
                       <input
                         id="feedback-name"
                         name="name"
@@ -870,11 +880,11 @@ export default function HelpPage() {
                         onChange={handleFeedbackChange}
                         required
                         className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2.5 text-sm text-white placeholder-white/40 outline-none ring-0"
-                        placeholder="Aoife Murphy"
+                        placeholder={t('helpPortal.namePlaceholder')}
                       />
                     </div>
                     <div>
-                      <label htmlFor="feedback-email" className="mb-1.5 block text-sm font-medium text-white/80">Email address</label>
+                      <label htmlFor="feedback-email" className="mb-1.5 block text-sm font-medium text-white/80">{t('helpPortal.emailAddress')}</label>
                       <input
                         id="feedback-email"
                         name="email"
@@ -883,14 +893,14 @@ export default function HelpPage() {
                         onChange={handleFeedbackChange}
                         required
                         className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2.5 text-sm text-white placeholder-white/40 outline-none ring-0"
-                        placeholder="you@business.ie"
+                        placeholder={t('helpPortal.emailPlaceholder')}
                       />
                     </div>
                   </div>
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <label htmlFor="feedback-type" className="mb-1.5 block text-sm font-medium text-white/80">Type</label>
+                      <label htmlFor="feedback-type" className="mb-1.5 block text-sm font-medium text-white/80">{t('helpPortal.type')}</label>
                       <select
                         id="feedback-type"
                         name="type"
@@ -898,13 +908,13 @@ export default function HelpPage() {
                         onChange={handleFeedbackChange}
                         className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2.5 text-sm text-white outline-none"
                       >
-                        <option value="feature" className="text-[#003842]">Feature suggestion</option>
-                        <option value="bug" className="text-[#003842]">Bug report</option>
-                        <option value="other" className="text-[#003842]">Other</option>
+                        <option value="feature" className="text-[#003842]">{t('helpPortal.featureSuggestion')}</option>
+                        <option value="bug" className="text-[#003842]">{t('helpPortal.bugReport')}</option>
+                        <option value="other" className="text-[#003842]">{t('helpPortal.other')}</option>
                       </select>
                     </div>
                     <div>
-                      <label htmlFor="feedback-subject" className="mb-1.5 block text-sm font-medium text-white/80">Subject</label>
+                      <label htmlFor="feedback-subject" className="mb-1.5 block text-sm font-medium text-white/80">{t('helpPortal.subject')}</label>
                       <input
                         id="feedback-subject"
                         name="subject"
@@ -912,13 +922,13 @@ export default function HelpPage() {
                         onChange={handleFeedbackChange}
                         required
                         className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2.5 text-sm text-white placeholder-white/40 outline-none ring-0"
-                        placeholder="For example: Add bulk editing"
+                        placeholder={t('helpPortal.subjectPlaceholder')}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label htmlFor="feedback-message" className="mb-1.5 block text-sm font-medium text-white/80">Details</label>
+                    <label htmlFor="feedback-message" className="mb-1.5 block text-sm font-medium text-white/80">{t('helpPortal.details')}</label>
                     <textarea
                       id="feedback-message"
                       name="message"
@@ -927,7 +937,7 @@ export default function HelpPage() {
                       required
                       rows={5}
                       className="w-full rounded-lg border border-white/20 bg-white/10 px-3 py-2.5 text-sm text-white placeholder-white/40 outline-none ring-0 resize-none"
-                      placeholder="Please describe the idea or issue in a bit of detail."
+                      placeholder={t('helpPortal.detailsPlaceholder')}
                     />
                   </div>
 
@@ -940,7 +950,7 @@ export default function HelpPage() {
                     disabled={isFeedbackSubmitting}
                     className="flex items-center justify-center gap-2 rounded-lg bg-[#42b8ac] px-4 py-2.5 text-sm font-semibold text-[#003842] transition hover:bg-white disabled:opacity-70"
                   >
-                    {isFeedbackSubmitting ? 'Sending…' : 'Send feedback'}
+                    {isFeedbackSubmitting ? t('messaging.sending') : t('helpPortal.sendFeedback')}
                     <Send className="h-4 w-4" />
                   </button>
                 </form>
@@ -958,6 +968,7 @@ export default function HelpPage() {
             <input
               type="text"
               placeholder={t('admin.searchHelpTopics')}
+              aria-label={t('admin.searchHelpTopics')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-3 w-full border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-lg bg-white dark:bg-gray-700 dark:text-white dark:placeholder-gray-400"
@@ -971,7 +982,9 @@ export default function HelpPage() {
               return (
                 <button
                   key={category.id}
+                  type="button"
                   onClick={() => setActiveCategory(category.id)}
+                  aria-pressed={isActive}
                   className={`
                     flex items-center gap-2 px-4 py-2 rounded-full border transition-all
                     ${isActive
@@ -994,7 +1007,7 @@ export default function HelpPage() {
       {/* Help Topics */}
       <div className="order-2 mb-6" id="help-topics">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          {activeCategory === 'all' ? (categoryNamesByLanguage[language]?.all || 'All Topics') : localizedCategories.find(c => c.id === activeCategory)?.name}
+          {activeCategory === 'all' ? t('helpPortal.allTopics') : localizedCategories.find(c => c.id === activeCategory)?.name}
           <span className="text-gray-500 dark:text-gray-400 font-normal ml-2">({filteredTopics.length})</span>
         </h2>
       </div>
@@ -1005,7 +1018,7 @@ export default function HelpPage() {
           <div className="text-center py-12">
             <HelpCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t('admin.noTopicsFound')}</h3>
-            <p className="text-gray-600 dark:text-gray-400">Try changing your search or filters</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('helpPortal.changeSearch')}</p>
           </div>
         </Card>
       ) : (
