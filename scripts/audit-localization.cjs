@@ -26,6 +26,7 @@ const recentFiles = new Set([
   'components/admin/AdminTopBar.tsx',
   'components/admin/QRCodeManagement.tsx',
   'components/admin/NotificationsPanel.tsx',
+  'components/admin/SiteAllergenGuide.tsx',
   'components/admin/ReviewFrequencySelector.tsx',
   'components/layout/LoadingScreen.tsx',
   'components/layout/Navigation.tsx',
