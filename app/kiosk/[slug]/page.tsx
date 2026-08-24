@@ -518,6 +518,10 @@ export default function KioskPage() {
     }
   }, [])
 
+  useEffect(() => {
+    document.documentElement.lang = currentLanguage
+  }, [currentLanguage])
+
   // Keep table view off on smaller screens where it becomes hard to read.
   useEffect(() => {
     const handleResize = () => {
