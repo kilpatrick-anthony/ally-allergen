@@ -7,8 +7,10 @@ import Link from 'next/link'
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react'
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 export default function ResetPassword() {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -35,7 +37,7 @@ export default function ResetPassword() {
     })
 
     if (error) {
-      setError(error.message)
+      setError(t('authFlow.resetRequestFailed'))
       setLoading(false)
     } else {
       setSent(true)
@@ -58,10 +60,10 @@ export default function ResetPassword() {
           />
           <div className="flex flex-col md:items-center">
             <h2 className="text-xl md:text-3xl font-extrabold text-white mb-1 md:mb-3 leading-tight">
-              Serving <span className="text-[#42b8ac]">Confidence</span>
+              {t('authFlow.servingConfidence')}
             </h2>
             <p className="text-white/60 text-xs md:text-sm md:max-w-xs">
-              The complete allergen management solution for Irish &amp; EU food businesses
+              {t('authFlow.brandDescription')}
             </p>
           </div>
         </div>
@@ -72,9 +74,9 @@ export default function ResetPassword() {
       <div className="flex flex-1 flex-col justify-center items-center bg-white px-4 py-12">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
-            <h1 className="text-2xl font-extrabold text-[#003842] mb-1">Reset your password</h1>
+            <h1 className="text-2xl font-extrabold text-[#003842] mb-1">{t('authFlow.resetTitle')}</h1>
             <p className="text-gray-500 text-sm">
-              Enter your email and we'll send you a reset link
+              {t('authFlow.resetSubtitle')}
             </p>
           </div>
 
@@ -85,20 +87,19 @@ export default function ResetPassword() {
                   <CheckCircle className="h-7 w-7 text-green-600" />
                 </div>
                 <div>
-                  <p className="font-semibold text-[#003842] text-lg mb-1">Check your inbox</p>
+                  <p className="font-semibold text-[#003842] text-lg mb-1">{t('authFlow.checkInbox')}</p>
                   <p className="text-gray-500 text-sm">
-                    We've sent a password reset link to <span className="font-semibold text-[#003842]">{email}</span>.
-                    The link will expire in 1 hour.
+                    {t('authFlow.resetSent', { email })}
                   </p>
                 </div>
                 <p className="text-xs text-gray-400 mt-2">
-                  Sent from info@allyjen.ie — check your spam folder if you don't see it.
+                  {t('authFlow.checkSpam')}
                 </p>
                 <Link
                   href="/auth/signin"
                   className="mt-2 inline-flex items-center gap-2 text-sm text-[#42b8ac] hover:text-[#003842] font-semibold"
                 >
-                  <ArrowLeft className="h-4 w-4" /> Back to sign in
+                  <ArrowLeft className="h-4 w-4" /> {t('authFlow.backSignIn')}
                 </Link>
               </div>
             ) : (
@@ -110,7 +111,7 @@ export default function ResetPassword() {
                 )}
                 <div>
                   <label htmlFor="email" className="block text-base font-semibold text-gray-800 mb-2">
-                    Email Address
+                    {t('authFlow.emailAddress')}
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -122,7 +123,7 @@ export default function ResetPassword() {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       autoComplete="email"
-                      placeholder="you@example.com"
+                      placeholder={t('authFlow.emailPlaceholder')}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-lg"
                     />
                   </div>
@@ -133,14 +134,14 @@ export default function ResetPassword() {
                   className="w-full py-3 text-base font-bold bg-[#003842] hover:bg-[#42b8ac] text-white rounded-lg transition-colors"
                   disabled={loading}
                 >
-                  {loading ? 'Sending…' : 'Send Reset Link'}
+                  {loading ? t('authFlow.sending') : t('authFlow.sendResetLink')}
                 </Button>
                 <div className="text-center">
                   <Link
                     href="/auth/signin"
                     className="inline-flex items-center gap-1 text-sm text-[#42b8ac] hover:text-[#003842] font-semibold"
                   >
-                    <ArrowLeft className="h-4 w-4" /> Back to sign in
+                    <ArrowLeft className="h-4 w-4" /> {t('authFlow.backSignIn')}
                   </Link>
                 </div>
               </form>

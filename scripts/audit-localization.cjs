@@ -8,6 +8,7 @@ const scanRoots = [
   'components/admin',
   'components/messaging',
   'components/auth',
+  'app/auth',
   'components/layout',
   'components/shared',
   'components/team',
@@ -32,6 +33,11 @@ const recentFiles = new Set([
   'components/admin/TrialBanner.tsx',
   'components/admin/DatasheetReviewNotifications.tsx',
   'components/admin/ReviewFrequencySelector.tsx',
+  'app/auth/signin/page.tsx',
+  'app/auth/reset-password/page.tsx',
+  'app/auth/update-password/page.tsx',
+  'app/auth/confirm/page.tsx',
+  'components/auth/ProtectedRoute.tsx',
   'components/layout/LoadingScreen.tsx',
   'components/layout/Navigation.tsx',
   'components/messaging/CharacterMessageForm.tsx',
@@ -135,6 +141,14 @@ function loadTypeScriptExport(filename, exportName) {
         sharedProductionTranslations: loadTypeScriptExport(
           path.join(root, 'lib/shared-production-translations.ts'),
           'sharedProductionTranslations',
+        ),
+      }
+    }
+    if (request === '@/lib/auth-flow-translations') {
+      return {
+        authFlowTranslations: loadTypeScriptExport(
+          path.join(root, 'lib/auth-flow-translations.ts'),
+          'authFlowTranslations',
         ),
       }
     }

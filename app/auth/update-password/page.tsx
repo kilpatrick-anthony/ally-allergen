@@ -1,14 +1,16 @@
 // app/auth/update-password/page.tsx
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, Suspense, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Lock, CheckCircle } from 'lucide-react'
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 function UpdatePasswordContent() {
+  const { t } = useTranslation()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
@@ -18,9 +20,13 @@ function UpdatePasswordContent() {
   // Hold the raw access token from the URL hash — used directly in the REST call.
   // We never touch Supabase's client session to avoid the navigator.locks race.
   const [accessToken, setAccessToken] = useState<string | null>(null)
+  const tokenCheckedRef = useRef(false)
   const router = useRouter()
 
   useEffect(() => {
+    if (tokenCheckedRef.current) return
+    tokenCheckedRef.current = true
+
     // Parse #access_token=...&type=recovery from the URL hash directly.
     // We do NOT call supabase.auth.setSession() — that acquires a navigator.locks
     // lock which conflicts with the shared client in the layout, causing
@@ -36,29 +42,29 @@ function UpdatePasswordContent() {
         setAccessToken(token)
         setFormReady(true)
       } else {
-        setError('Invalid or expired password link. Please request a new one.')
+        setError(t('authFlow.invalidPasswordLink'))
         setFormReady(true)
       }
     } else {
-      setError('No password token found. Please request a new invitation or password reset link.')
+      setError(t('authFlow.missingPasswordToken'))
       setFormReady(true)
     }
-  }, [])
+  }, [t])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
     if (!accessToken) {
-      setError('Reset token missing. Please request a new password reset link.')
+      setError(t('authFlow.resetTokenMissing'))
       return
     }
     if (password !== confirm) {
-      setError('Passwords do not match.')
+      setError(t('authFlow.passwordMismatch'))
       return
     }
     if (password.length < 8) {
-      setError('Password must be at least 8 characters.')
+      setError(t('authFlow.passwordTooShort'))
       return
     }
 
@@ -78,13 +84,12 @@ function UpdatePasswordContent() {
         }
       )
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.msg ?? data.message ?? data.error_description ?? 'Failed to update password.')
+        throw new Error(t('authFlow.updateFailed'))
       }
       setDone(true)
       setTimeout(() => router.push('/auth/signin'), 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
+      setError(err instanceof Error ? err.message : t('authFlow.genericError'))
       setLoading(false)
     }
   }
@@ -98,10 +103,10 @@ function UpdatePasswordContent() {
         <div className="relative z-10 flex flex-col items-center text-center -mt-24">
           <img src="/Logo-AllyJen-Transparent%20BG.svg" alt="AllyJen" className="h-80 w-auto mb-10" />
           <h2 className="text-3xl font-extrabold text-white mb-3 leading-tight">
-            Serving <span className="text-[#42b8ac]">Confidence</span>
+            {t('authFlow.servingConfidence')}
           </h2>
           <p className="text-white/60 text-sm max-w-xs">
-            The complete allergen management solution for Irish &amp; EU food businesses
+            {t('authFlow.brandDescription')}
           </p>
         </div>
         <div className="absolute bottom-8 text-xs text-white/40">&copy; {new Date().getFullYear()} AllyJen Solutions LTD.</div>
@@ -116,8 +121,8 @@ function UpdatePasswordContent() {
           </div>
 
           <div className="mb-8">
-            <h1 className="text-2xl font-extrabold text-[#003842] mb-1">Choose a new password</h1>
-            <p className="text-gray-500 text-sm">Must be at least 8 characters</p>
+            <h1 className="text-2xl font-extrabold text-[#003842] mb-1">{t('authFlow.newPasswordTitle')}</h1>
+            <p className="text-gray-500 text-sm">{t('authFlow.minimumEight')}</p>
           </div>
 
           <Card className="w-full p-8 shadow-xl rounded-2xl border border-gray-100 bg-white">
@@ -127,8 +132,8 @@ function UpdatePasswordContent() {
                   <CheckCircle className="h-7 w-7 text-green-600" />
                 </div>
                 <div>
-                  <p className="font-semibold text-[#003842] text-lg mb-1">Password updated!</p>
-                  <p className="text-gray-500 text-sm">Redirecting you to sign in…</p>
+                  <p className="font-semibold text-[#003842] text-lg mb-1">{t('authFlow.passwordUpdated')}</p>
+                  <p className="text-gray-500 text-sm">{t('authFlow.redirecting')}</p>
                 </div>
               </div>
             ) : !formReady ? (
@@ -137,7 +142,7 @@ function UpdatePasswordContent() {
                   <div className="absolute inset-0 rounded-full border-4 border-[#003842]/20"></div>
                   <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#42b8ac] animate-spin"></div>
                 </div>
-                <p className="text-gray-500 text-sm">Verifying reset link…</p>
+                <p className="text-gray-500 text-sm">{t('authFlow.verifyingLink')}</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -148,7 +153,7 @@ function UpdatePasswordContent() {
                 )}
                 <div>
                   <label htmlFor="password" className="block text-base font-semibold text-gray-800 mb-2">
-                    New Password
+                    {t('authFlow.newPassword')}
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -160,14 +165,14 @@ function UpdatePasswordContent() {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       autoComplete="new-password"
-                      placeholder="At least 8 characters"
+                      placeholder={t('authFlow.minimumEight')}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-lg"
                     />
                   </div>
                 </div>
                 <div>
                   <label htmlFor="confirm" className="block text-base font-semibold text-gray-800 mb-2">
-                    Confirm New Password
+                    {t('authFlow.confirmPassword')}
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -179,7 +184,7 @@ function UpdatePasswordContent() {
                       onChange={(e) => setConfirm(e.target.value)}
                       required
                       autoComplete="new-password"
-                      placeholder="Repeat your new password"
+                      placeholder={t('authFlow.repeatPassword')}
                       className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-lg"
                     />
                   </div>
@@ -190,11 +195,11 @@ function UpdatePasswordContent() {
                   className="w-full py-3 text-base font-bold bg-[#003842] hover:bg-[#42b8ac] text-white rounded-lg transition-colors"
                   disabled={loading}
                 >
-                  {loading ? 'Updating…' : 'Update Password'}
+                  {loading ? t('authFlow.updating') : t('authFlow.updatePassword')}
                 </Button>
                 <div className="text-center">
                   <Link href="/auth/signin" className="text-sm text-[#42b8ac] hover:text-[#003842] font-semibold">
-                    Back to sign in
+                    {t('authFlow.backSignIn')}
                   </Link>
                 </div>
               </form>

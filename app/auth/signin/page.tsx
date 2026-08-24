@@ -1,16 +1,16 @@
 // app/auth/signin/page.tsx
 'use client'
 
-import { useState, useEffect, Suspense, useRef } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, CheckCircle, ShieldCheck } from 'lucide-react'
-import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 function SignInContent() {
+  const { t } = useTranslation()
   const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -20,8 +20,6 @@ function SignInContent() {
   const [rememberMe, setRememberMe] = useState(false)
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false)
   const [twoFactorCode, setTwoFactorCode] = useState('')
-  const router = useRouter()
-  const supabaseRef = useRef(createClient())
 
   // Get email and message from URL params; restore remembered email
   useEffect(() => {
@@ -75,11 +73,11 @@ function SignInContent() {
       }
 
       if (!response.ok) {
-        throw new Error(result.error || 'Invalid email or password')
+        throw new Error(t('authFlow.invalidCredentials'))
       }
 
       if (!result.success) {
-        throw new Error('Sign in was not successful')
+        throw new Error(t('authFlow.signInFailed'))
       }
 
       console.log('✅ Sign-in successful, user:', result.email)
@@ -97,7 +95,7 @@ function SignInContent() {
       window.location.href = redirectTo
     } catch (error: any) {
       console.error('❌ Sign in error:', error)
-      setError(error.message || 'Invalid email or password')
+      setError(error.message || t('authFlow.invalidCredentials'))
       setLoading(false)
     }
   }
@@ -119,10 +117,10 @@ function SignInContent() {
           />
           <div className="flex flex-col md:items-center">
             <h2 className="text-xl md:text-3xl font-extrabold text-white mb-1 md:mb-3 leading-tight">
-              Serving <span className="text-[#42b8ac]">Confidence</span>
+              {t('authFlow.servingConfidence')}
             </h2>
             <p className="text-white/60 text-xs md:text-sm md:max-w-xs">
-              The complete allergen management solution for Irish &amp; EU food businesses
+              {t('authFlow.brandDescription')}
             </p>
           </div>
         </div>
@@ -132,8 +130,8 @@ function SignInContent() {
       <div className="flex flex-1 flex-col justify-center items-center bg-white px-4 py-12">
         <div className="w-full max-w-md">
           <div className="mb-8 text-center">
-            <h1 className="text-2xl font-extrabold text-[#003842] mb-1">Welcome back</h1>
-            <p className="text-gray-500 text-sm">Sign in to your AllyJen account</p>
+            <h1 className="text-2xl font-extrabold text-[#003842] mb-1">{t('authFlow.welcomeBack')}</h1>
+            <p className="text-gray-500 text-sm">{t('authFlow.signInSubtitle')}</p>
           </div>
           <Card className="w-full p-8 shadow-xl rounded-2xl border border-gray-100 bg-white">
             <form onSubmit={handleSignIn} className="space-y-7">
@@ -150,7 +148,7 @@ function SignInContent() {
               )}
               {!requiresTwoFactor && <div>
                 <label htmlFor="email" className="block text-base font-semibold text-gray-800 mb-2">
-                  Email Address
+                  {t('authFlow.emailAddress')}
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -162,14 +160,14 @@ function SignInContent() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     autoComplete="email"
-                    placeholder="you@example.com"
+                    placeholder={t('authFlow.emailPlaceholder')}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-lg text-gray-900"
                   />
                 </div>
               </div>}
               {!requiresTwoFactor && <div>
                 <label htmlFor="password" className="block text-base font-semibold text-gray-800 mb-2">
-                  Password
+                  {t('authFlow.password')}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -181,7 +179,7 @@ function SignInContent() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     autoComplete="current-password"
-                    placeholder="Enter your password"
+                    placeholder={t('authFlow.passwordPlaceholder')}
                     className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-lg text-gray-900"
                   />
                 </div>
@@ -190,12 +188,12 @@ function SignInContent() {
                 <div>
                   <div className="mb-5 rounded-xl border border-[#42b8ac]/30 bg-[#42b8ac]/10 p-4 text-sm text-[#003842]">
                     <div className="mb-1 flex items-center gap-2 font-bold">
-                      <ShieldCheck className="h-5 w-5" /> Two-factor verification
+                      <ShieldCheck className="h-5 w-5" /> {t('authFlow.twoFactorTitle')}
                     </div>
-                    Enter the 6-digit code from your authenticator app, or one unused backup code.
+                    {t('authFlow.twoFactorHelp')}
                   </div>
                   <label htmlFor="twoFactorCode" className="block text-base font-semibold text-gray-800 mb-2">
-                    Authenticator code
+                    {t('authFlow.authenticatorCode')}
                   </label>
                   <input
                     id="twoFactorCode"
@@ -218,7 +216,7 @@ function SignInContent() {
                     onChange={(e) => setRememberMe(e.target.checked)}
                     className="h-4 w-4 rounded border-gray-300 text-[#42b8ac] focus:ring-[#42b8ac] cursor-pointer"
                   />
-                  <span className="text-sm text-gray-600">Remember me</span>
+                  <span className="text-sm text-gray-600">{t('authFlow.rememberMe')}</span>
                 </label>
               </div>}
               <Button
@@ -227,7 +225,11 @@ function SignInContent() {
                 className="w-full py-3 text-base font-bold bg-[#003842] hover:bg-[#42b8ac] text-white rounded-lg transition-colors"
                 disabled={loading}
               >
-                {loading ? 'Verifying…' : requiresTwoFactor ? 'Verify and sign in' : 'Sign In'}
+                {loading
+                  ? t('authFlow.verifying')
+                  : requiresTwoFactor
+                    ? t('authFlow.verifyAndSignIn')
+                    : t('authFlow.signIn')}
               </Button>
               {requiresTwoFactor && (
                 <button
@@ -235,24 +237,24 @@ function SignInContent() {
                   onClick={() => { setRequiresTwoFactor(false); setTwoFactorCode(''); setError('') }}
                   className="w-full text-sm font-semibold text-gray-500 hover:text-[#003842]"
                 >
-                  Use a different account
+                  {t('authFlow.differentAccount')}
                 </button>
               )}
               <div className="text-center space-y-2">
                 <div>
                   <Link href="/auth/reset-password" className="text-sm text-[#42b8ac] hover:text-[#003842] font-semibold">
-                    Forgot password?
+                    {t('authFlow.forgotPassword')}
                   </Link>
                 </div>
                 <div className="text-base text-gray-600">
-                  Don't have an account?{' '}
+                  {t('authFlow.noAccount')}{' '}
                   <Link href="/#contact-form" className="text-[#42b8ac] hover:text-[#003842] font-semibold">
-                    Contact us
+                    {t('authFlow.contactUs')}
                   </Link>
                 </div>
                 <div>
                   <Link href="/" className="text-sm text-gray-400 hover:text-[#003842]">
-                    ← Back to home
+                    ← {t('authFlow.backHome')}
                   </Link>
                 </div>
               </div>

@@ -9,6 +9,7 @@ export const uiLiteralOverrides: UiLiteralOverrides = {
     'Cookie settings': 'Cookie settings', 'Save preferences': 'Save preferences', 'Accept analytics': 'Accept analytics',
     'MB': 'MB', 'v': 'v', 'application/pdf': 'application/pdf', 'allyjen.ie/kiosk/pair': 'allyjen.ie/kiosk/pair', 'IP:': 'IP:',
     'IE': 'IE', 'EU': 'EU', 'FSN': 'FSN', 'FSAI': 'FSAI', 'UK': 'UK', 'EFSA': 'EFSA', 'FSAI.ie': 'FSAI.ie',
+    '&copy;': '&copy;', 'AllyJen Solutions LTD.': 'AllyJen Solutions LTD.',
     // English help-topic cards are explicit fallbacks; each card is replaced by the page's locale-specific topic catalogue.
     'Getting started with AllyJen': 'Getting started with AllyJen', 'Learn the essentials of setting up and using AllyJen for allergen management.': 'Learn the essentials of setting up and using AllyJen for allergen management.',
     'Platform overview': 'Platform overview', 'See the main features and how to move around the admin dashboard with ease.': 'See the main features and how to move around the admin dashboard with ease.',

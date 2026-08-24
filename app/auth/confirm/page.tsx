@@ -5,16 +5,22 @@ import { useEffect, useState, Suspense, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 function ConfirmPageContent() {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabaseRef = useRef(createClient())
+  const confirmationStartedRef = useRef(false)
 
   useEffect(() => {
+    if (confirmationStartedRef.current) return
+    confirmationStartedRef.current = true
+
     const confirmEmail = async () => {
       const supabase = supabaseRef.current
       const token_hash = searchParams.get('token_hash')
@@ -33,19 +39,19 @@ function ConfirmPageContent() {
           setTimeout(() => {
             router.push('/admin')
           }, 3000)
-        } catch (error: any) {
-          setError(error.message || 'Failed to confirm email')
+        } catch {
+          setError(t('authFlow.confirmFailed'))
         } finally {
           setLoading(false)
         }
       } else {
-        setError('Invalid confirmation link')
+        setError(t('authFlow.invalidConfirmation'))
         setLoading(false)
       }
     }
 
     confirmEmail()
-  }, [searchParams, router])
+  }, [searchParams, router, t])
 
   if (loading) {
     return (
@@ -55,7 +61,7 @@ function ConfirmPageContent() {
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
             <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
           </div>
-          <p className="mt-4 text-gray-600">Confirming your email...</p>
+          <p className="mt-4 text-gray-600">{t('authFlow.confirmingEmail')}</p>
         </div>
       </div>
     )
@@ -78,15 +84,15 @@ function ConfirmPageContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="mt-6 text-2xl font-bold text-gray-900">Email Confirmed!</h2>
+            <h2 className="mt-6 text-2xl font-bold text-gray-900">{t('authFlow.emailConfirmed')}</h2>
             <p className="mt-2 text-gray-600">
-              Your email has been successfully confirmed. Redirecting to admin dashboard...
+              {t('authFlow.confirmedRedirect')}
             </p>
             <Link
               href="/admin"
               className="mt-4 inline-block text-blue-600 hover:text-blue-500 font-medium"
             >
-              Go to dashboard now
+              {t('authFlow.dashboardNow')}
             </Link>
           </div>
         ) : (
@@ -96,13 +102,13 @@ function ConfirmPageContent() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </div>
-            <h2 className="mt-6 text-2xl font-bold text-gray-900">Confirmation Failed</h2>
+            <h2 className="mt-6 text-2xl font-bold text-gray-900">{t('authFlow.confirmationFailed')}</h2>
             <p className="mt-2 text-gray-600">{error}</p>
             <Link
               href="/auth/signin"
               className="mt-4 inline-block text-blue-600 hover:text-blue-500 font-medium"
             >
-              Try signing in
+              {t('authFlow.trySignIn')}
             </Link>
           </div>
         )}
@@ -111,21 +117,26 @@ function ConfirmPageContent() {
   )
 }
 
-export default function ConfirmPage() {
+function ConfirmLoadingFallback() {
+  const { t } = useTranslation()
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center">
-            <div className="relative h-12 w-12 mx-auto mb-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
-              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
-            </div>
-            <h2 className="text-xl font-semibold text-gray-900">Loading...</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="max-w-md w-full space-y-8">
+        <div className="text-center">
+          <div className="relative h-12 w-12 mx-auto mb-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
           </div>
+          <h2 className="text-xl font-semibold text-gray-900">{t('authFlow.loading')}</h2>
         </div>
       </div>
-    }>
+    </div>
+  )
+}
+
+export default function ConfirmPage() {
+  return (
+    <Suspense fallback={<ConfirmLoadingFallback />}>
       <ConfirmPageContent />
     </Suspense>
   )
