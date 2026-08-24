@@ -9,6 +9,7 @@ import { ArrowLeft, Edit, Save, AlertCircle, MessageSquare, Trash2 } from 'lucid
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 interface SupplierForm {
   name: string
@@ -29,6 +30,7 @@ interface SupplierNote {
 export default function SupplierEditPage() {
   const params = useParams()
   const router = useRouter()
+  const { t, language } = useTranslation()
   const supplierId = params.id as string
 
   const [loading, setLoading] = useState(true)
@@ -45,8 +47,12 @@ export default function SupplierEditPage() {
     const fetchSupplier = async () => {
       try {
         setLoading(true)
-        const response = await fetch(`/api/suppliers/${supplierId}`)
-        const data = await response.json()
+        setNotesLoading(true)
+        const [response, notesResponse] = await Promise.all([
+          fetch(`/api/suppliers/${supplierId}`),
+          fetch(`/api/suppliers/${supplierId}/notes`),
+        ])
+        const [data, notesData] = await Promise.all([response.json(), notesResponse.json()])
 
         if (!response.ok) {
           throw new Error(data.error || 'Failed to fetch supplier')
@@ -59,31 +65,13 @@ export default function SupplierEditPage() {
           email: data.supplier.email || '',
           website: data.supplier.website || ''
         })
-        await fetchNotes()
+        setNotes(notesResponse.ok ? notesData.notes || [] : [])
       } catch (error: any) {
         console.error('Error fetching supplier:', error)
         setForm(null)
         setNotes([])
       } finally {
         setLoading(false)
-      }
-    }
-
-    const fetchNotes = async () => {
-      try {
-        setNotesLoading(true)
-        const response = await fetch(`/api/suppliers/${supplierId}/notes`)
-        const data = await response.json()
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to fetch supplier notes')
-        }
-
-        setNotes(data.notes || [])
-      } catch (error: any) {
-        console.error('Error fetching supplier notes:', error)
-        setNotes([])
-      } finally {
         setNotesLoading(false)
       }
     }
@@ -92,14 +80,13 @@ export default function SupplierEditPage() {
   }, [supplierId])
 
   const handleChange = (field: keyof SupplierForm, value: string) => {
-    if (!form) return
-    setForm({ ...form, [field]: value })
+    setForm((current) => current ? { ...current, [field]: value } : current)
   }
 
   const handleSave = async () => {
     if (!form) return
     if (!form.name.trim()) {
-      alert('Supplier name is required')
+      alert(t('supplierPortal.nameRequired'))
       return
     }
 
@@ -111,16 +98,14 @@ export default function SupplierEditPage() {
         body: JSON.stringify(form)
       })
 
-      const data = await response.json()
-
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to update supplier')
+        throw new Error(t('supplierPortal.updateError'))
       }
 
       router.push(`/admin/suppliers/${supplierId}`)
     } catch (error: any) {
       console.error('Error updating supplier:', error)
-      alert(error.message || 'Failed to update supplier')
+      alert(error.message || t('supplierPortal.updateError'))
     } finally {
       setSaving(false)
     }
@@ -142,14 +127,14 @@ export default function SupplierEditPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to add note')
+        throw new Error(t('supplierPortal.addNoteError'))
       }
 
       setNotes((prev) => [data.note, ...prev])
       setNoteDraft('')
     } catch (error: any) {
       console.error('Error adding supplier note:', error)
-      alert(error.message || 'Failed to add note')
+      alert(error.message || t('supplierPortal.addNoteError'))
     } finally {
       setNotesSaving(false)
     }
@@ -181,21 +166,21 @@ export default function SupplierEditPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to update note')
+        throw new Error(t('supplierPortal.updateNoteError'))
       }
 
       setNotes((prev) => prev.map((note) => (note.id === data.note.id ? data.note : note)))
       handleCancelEditNote()
     } catch (error: any) {
       console.error('Error updating supplier note:', error)
-      alert(error.message || 'Failed to update note')
+      alert(error.message || t('supplierPortal.updateNoteError'))
     } finally {
       setNotesSaving(false)
     }
   }
 
   const handleDeleteNote = async (noteId: string) => {
-    if (!confirm('Delete this note?')) {
+    if (!confirm(t('supplierPortal.deleteNoteConfirm'))) {
       return
     }
 
@@ -206,8 +191,7 @@ export default function SupplierEditPage() {
       })
 
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to delete note')
+        throw new Error(t('supplierPortal.deleteNoteError'))
       }
 
       setNotes((prev) => prev.filter((note) => note.id !== noteId))
@@ -216,7 +200,7 @@ export default function SupplierEditPage() {
       }
     } catch (error: any) {
       console.error('Error deleting supplier note:', error)
-      alert(error.message || 'Failed to delete note')
+      alert(error.message || t('supplierPortal.deleteNoteError'))
     } finally {
       setNotesSaving(false)
     }
@@ -231,7 +215,7 @@ export default function SupplierEditPage() {
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
               <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
             </div>
-            <p className="text-gray-600">Loading supplier...</p>
+            <p className="text-gray-600">{t('supplierPortal.loadingSupplier')}</p>
           </div>
         </div>
       </Container>
@@ -244,10 +228,10 @@ export default function SupplierEditPage() {
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <p className="text-gray-600">Supplier not found</p>
+            <p className="text-gray-600">{t('supplierPortal.supplierNotFound')}</p>
             <Link href="/admin/suppliers">
               <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} className="mt-4">
-                Back to Suppliers
+                {t('supplierPortal.backToSuppliers')}
               </Button>
             </Link>
           </div>
@@ -262,17 +246,17 @@ export default function SupplierEditPage() {
         <div className="flex items-center justify-between">
           <Link href={`/admin/suppliers/${supplierId}`}>
             <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />}>
-              Back to Supplier
+              {t('supplierPortal.backToSupplier')}
             </Button>
           </Link>
           <div className="flex items-center gap-3">
             <Link href="/admin/suppliers">
               <Button variant="ghost">
-                Cancel
+                {t('accessPoints.cancel')}
               </Button>
             </Link>
             <Button variant="primary" icon={<Save className="h-4 w-4" />} onClick={handleSave} disabled={saving}>
-              {saving ? 'Saving...' : 'Save Changes'}
+              {saving ? t('supplierPortal.saving') : t('admin.saveChanges')}
             </Button>
           </div>
         </div>
@@ -283,16 +267,17 @@ export default function SupplierEditPage() {
               <Edit className="h-6 w-6 text-amber-600" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-[#003842] dark:text-white">Edit Supplier</h1>
-              <p className="text-gray-600">Supplier ID: {supplierId}</p>
+              <h1 className="text-3xl font-bold text-[#003842] dark:text-white">{t('supplierPortal.editSupplier')}</h1>
+              <p className="text-gray-600">{t('supplierPortal.supplierId')} {supplierId}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-600">Name</label>
+                <label htmlFor="supplier-name" className="text-sm font-medium text-gray-600">{t('accessPoints.name')}</label>
                 <input
+                  id="supplier-name"
                   type="text"
                   value={form.name}
                   onChange={(e) => handleChange('name', e.target.value)}
@@ -300,8 +285,9 @@ export default function SupplierEditPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600">Contact</label>
+                <label htmlFor="supplier-contact" className="text-sm font-medium text-gray-600">{t('supplierPortal.contact')}</label>
                 <input
+                  id="supplier-contact"
                   type="text"
                   value={form.contact}
                   onChange={(e) => handleChange('contact', e.target.value)}
@@ -309,8 +295,9 @@ export default function SupplierEditPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600">Phone</label>
+                <label htmlFor="supplier-phone" className="text-sm font-medium text-gray-600">{t('supplierPortal.phone')}</label>
                 <input
+                  id="supplier-phone"
                   type="text"
                   value={form.phone}
                   onChange={(e) => handleChange('phone', e.target.value)}
@@ -318,8 +305,9 @@ export default function SupplierEditPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600">Email</label>
+                <label htmlFor="supplier-email" className="text-sm font-medium text-gray-600">{t('admin.email')}</label>
                 <input
+                  id="supplier-email"
                   type="email"
                   value={form.email}
                   onChange={(e) => handleChange('email', e.target.value)}
@@ -327,8 +315,9 @@ export default function SupplierEditPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-600">Website</label>
+                <label htmlFor="supplier-website" className="text-sm font-medium text-gray-600">{t('messaging.website')}</label>
                 <input
+                  id="supplier-website"
                   type="text"
                   value={form.website}
                   onChange={(e) => handleChange('website', e.target.value)}
@@ -338,8 +327,7 @@ export default function SupplierEditPage() {
             </div>
 
             <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
-              Ingredient totals are calculated automatically from the ingredients linked to this supplier.
-              Renaming the supplier will safely update its existing ingredient references.
+              {t('supplierPortal.automaticTotals')}
             </div>
           </div>
         </Card>
@@ -350,37 +338,38 @@ export default function SupplierEditPage() {
               <MessageSquare className="h-6 w-6 text-emerald-600" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-[#003842] dark:text-white">Supplier Notes</h2>
-              <p className="text-gray-600">Add time-stamped notes for this supplier.</p>
+              <h2 className="text-xl font-bold text-[#003842] dark:text-white">{t('supplierPortal.supplierNotes')}</h2>
+              <p className="text-gray-600">{t('supplierPortal.notesDescription')}</p>
             </div>
           </div>
 
           <div className="mb-6">
-            <label className="text-sm font-medium text-gray-600">New note</label>
+            <label htmlFor="supplier-note" className="text-sm font-medium text-gray-600">{t('supplierPortal.newNote')}</label>
             <textarea
+              id="supplier-note"
               value={noteDraft}
               onChange={(e) => setNoteDraft(e.target.value)}
               rows={4}
               className="mt-1 w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-              placeholder="Add any supplier notes..."
+              placeholder={t('supplierPortal.notePlaceholder')}
             />
             <div className="mt-3 flex justify-end">
               <Button variant="primary" onClick={handleAddNote} disabled={notesSaving || !noteDraft.trim()}>
-                {notesSaving ? 'Saving...' : 'Add Note'}
+                {notesSaving ? t('supplierPortal.saving') : t('supplierPortal.addNote')}
               </Button>
             </div>
           </div>
 
           {notesLoading ? (
-            <p className="text-sm text-gray-500">Loading notes...</p>
+            <p className="text-sm text-gray-500">{t('supplierPortal.loadingNotes')}</p>
           ) : notes.length === 0 ? (
-            <p className="text-sm text-gray-500">No notes yet.</p>
+            <p className="text-sm text-gray-500">{t('supplierPortal.noNotes')}</p>
           ) : (
             <div className="space-y-4">
               {notes.map((note) => {
-                const createdAt = new Date(note.created_at).toLocaleString()
+                const createdAt = new Date(note.created_at).toLocaleString(language)
                 const updatedAt = note.updated_at && note.updated_at !== note.created_at
-                  ? new Date(note.updated_at).toLocaleString()
+                  ? new Date(note.updated_at).toLocaleString(language)
                   : null
 
                 return (
@@ -398,28 +387,28 @@ export default function SupplierEditPage() {
                           <p className="text-sm text-gray-900 whitespace-pre-wrap">{note.note}</p>
                         )}
                         <div className="mt-2 text-xs text-gray-500">
-                          <span>Created {createdAt}</span>
-                          {updatedAt && <span className="ml-2">Updated {updatedAt}</span>}
-                          {note.created_by && <span className="ml-2">By {note.created_by}</span>}
+                          <span>{t('ingredientsPortal.created')} {createdAt}</span>
+                          {updatedAt && <span className="ml-2">{t('admin.updated')} {updatedAt}</span>}
+                          {note.created_by && <span className="ml-2">{t('supplierPortal.by')} {note.created_by}</span>}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {editingNoteId === note.id ? (
                           <>
                             <Button variant="outline" size="sm" onClick={handleUpdateNote} disabled={notesSaving || !editingNoteText.trim()}>
-                              Save
+                              {t('team.save')}
                             </Button>
                             <Button variant="ghost" size="sm" onClick={handleCancelEditNote} disabled={notesSaving}>
-                              Cancel
+                              {t('accessPoints.cancel')}
                             </Button>
                           </>
                         ) : (
                           <>
                             <Button variant="outline" size="sm" onClick={() => handleStartEditNote(note)}>
-                              Edit
+                              {t('team.edit')}
                             </Button>
                             <Button variant="ghost" size="sm" icon={<Trash2 className="h-4 w-4" />} onClick={() => handleDeleteNote(note.id)}>
-                              Delete
+                              {t('accessPoints.delete')}
                             </Button>
                           </>
                         )}
