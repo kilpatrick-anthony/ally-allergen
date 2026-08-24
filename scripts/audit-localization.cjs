@@ -45,6 +45,7 @@ const recentFiles = new Set([
   'app/admin/suppliers/[id]/page.tsx',
   'app/admin/sites/new/page.tsx',
   'app/admin/sites/[slug]/edit/page.tsx',
+  'app/admin/sites/[slug]/page.tsx',
   'app/admin/kiosks/page.tsx',
   'app/admin/layout.tsx',
   'app/admin/ingredients/page.tsx',

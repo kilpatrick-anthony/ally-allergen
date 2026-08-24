@@ -28,6 +28,10 @@ const rows = [
   ['loadError', 'Failed to load site data', 'Níorbh fhéidir sonraí an tsuímh a luchtú', 'Não foi possível carregar os dados do local', 'Impossible de charger les données du site', 'No se pudieron cargar los datos del sitio', 'Standortdaten konnten nicht geladen werden'],
   ['deleteError', 'Failed to delete site', 'Níorbh fhéidir an suíomh a scriosadh', 'Não foi possível eliminar o local', 'Impossible de supprimer le site', 'No se pudo eliminar el sitio', 'Standort konnte nicht gelöscht werden'],
   ['deleteSite', 'Delete Site', 'Scrios Suíomh', 'Eliminar local', 'Supprimer le site', 'Eliminar sitio', 'Standort löschen'],
+  ['allergenGuide', 'Allergen Guide', 'Treoir Ailléirginí', 'Guia de alergénios', 'Guide des allergènes', 'Guía de alérgenos', 'Allergenleitfaden'],
+  ['deleteMenuConfirm', 'Delete this menu item? This cannot be undone.', 'Scrios an mhír biachláir seo? Ní féidir é seo a chealú.', 'Eliminar este item do menu? Esta ação não pode ser anulada.', 'Supprimer cet article du menu ? Cette action est irréversible.', '¿Eliminar este elemento del menú? Esta acción no se puede deshacer.', 'Diesen Menüeintrag löschen? Dies kann nicht rückgängig gemacht werden.'],
+  ['menuLoadError', 'Failed to load menu items', 'Níorbh fhéidir míreanna biachláir a luchtú', 'Não foi possível carregar os itens do menu', 'Impossible de charger les articles du menu', 'No se pudieron cargar los elementos del menú', 'Menüeinträge konnten nicht geladen werden'],
+  ['menuDeleteError', 'Failed to delete menu item', 'Níorbh fhéidir an mhír biachláir a scriosadh', 'Não foi possível eliminar o item do menu', 'Impossible de supprimer l’article du menu', 'No se pudo eliminar el elemento del menú', 'Menüeintrag konnte nicht gelöscht werden'],
 ] as const
 
 function locale(index: LocaleIndex) {

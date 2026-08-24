@@ -65,7 +65,7 @@ export default function SiteKioskPage() {
       }
     } catch (error) {
       console.error('Error loading data:', error);
-      setError('Failed to load site data');
+      setError(t('sitePortal.loadError'));
     } finally {
       setLoading(false);
     }
@@ -85,13 +85,13 @@ export default function SiteKioskPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to load menu items');
+        throw new Error(t('sitePortal.menuLoadError'));
       }
 
       setMenuItems(data.menuItems || []);
     } catch (menuError: any) {
       console.error('Error loading menu items:', menuError);
-      setMenuError(menuError?.message || 'Failed to load menu items');
+      setMenuError(menuError?.message || t('sitePortal.menuLoadError'));
       setMenuItems([]);
     } finally {
       setMenuLoading(false);
@@ -99,19 +99,19 @@ export default function SiteKioskPage() {
   }
 
   async function handleDeleteMenuItem(itemId: string) {
-    const confirmed = window.confirm('Delete this menu item? This cannot be undone.')
+    const confirmed = window.confirm(t('sitePortal.deleteMenuConfirm'))
     if (!confirmed) return
 
     try {
       const response = await fetch(`/api/menu-items/${itemId}`, { method: 'DELETE' })
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || 'Failed to delete menu item')
+        throw new Error(t('sitePortal.menuDeleteError'))
       }
       setMenuItems((prev) => prev.filter((item) => item.id !== itemId))
     } catch (deleteError: any) {
       console.error('Error deleting menu item:', deleteError)
-      setMenuError(deleteError?.message || 'Failed to delete menu item')
+      setMenuError(deleteError?.message || t('sitePortal.menuDeleteError'))
     }
   }
 
@@ -174,7 +174,7 @@ export default function SiteKioskPage() {
               </div>
               <div className="text-left min-w-0">
                 <h1 className="text-xl sm:text-3xl font-bold text-gray-900 truncate">
-                  {site.business?.name || 'Allergen Guide'}
+                  {site.business?.name || t('sitePortal.allergenGuide')}
                 </h1>
                 <h2 className="text-base sm:text-xl text-gray-700 font-medium truncate">{site.name}</h2>
               </div>
@@ -198,7 +198,7 @@ export default function SiteKioskPage() {
               </p>
               <div className="rounded-lg overflow-hidden border border-gray-200">
                 <iframe
-                  title="Site location map"
+                  title={t('sitePortal.mapTitle')}
                   src={`https://maps.google.com/maps?q=${encodeURIComponent(
                     [site.address, site.city, site.country, site.eircode].filter(Boolean).join(', ')
                   )}&output=embed`}
@@ -273,7 +273,7 @@ export default function SiteKioskPage() {
                 }`}
               >
                 <QrCode className="h-4 w-4" />
-                QR Codes
+                {t('accessPoints.qrCodes')}
               </button>
               <button
                 onClick={() => setActiveTab('devices')}
