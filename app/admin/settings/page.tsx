@@ -11,7 +11,7 @@ import {
   Building, Download, Lock, ChevronRight,
   CheckCircle, AlertCircle, Trash2,
   Upload, Copy, Eye, EyeOff, Plus, Sparkles,
-  Moon, Sun, ChefHat, Truck
+  Moon, Sun, ChefHat, Truck, Cookie
 } from 'lucide-react'
 
 
@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Select } from '@/components/ui/Select'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import TeamMembersPanel from '@/components/team/TeamMembersPanel'
+import { COOKIE_SETTINGS_OPEN_EVENT } from '@/lib/cookie-consent'
 
 const ChangePasswordModal = dynamic(() => import('./ChangePasswordModal'), { ssr: false })
 const TwoFactorModal = dynamic(() => import('./TwoFactorModal'), { ssr: false })
@@ -646,6 +647,7 @@ export default function SettingsPage() {
     ...(currentUserRole === 'owner' ? [{ id: 'team', label: 'Team', icon: Users }] : []),
     { id: 'security', label: t('admin.security'), icon: Shield },
     { id: 'accessibility', label: 'Accessibility', icon: Eye },
+    { id: 'privacy', label: t('cookieConsent.settings'), icon: Cookie },
 
   ]
 
@@ -1250,6 +1252,28 @@ export default function SettingsPage() {
                 </div>
               </Card>
             </div>
+          )}
+
+          {activeTab === 'privacy' && (
+            <Card>
+              <div className="p-6 border-b border-gray-200 dark:border-gray-600">
+                <h2 className="text-xl font-bold text-[#003842] dark:text-[#42b8ac]">
+                  {t('cookieConsent.preferences')}
+                </h2>
+                <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                  {t('cookieConsent.preferencesDescription')}
+                </p>
+              </div>
+              <div className="p-6">
+                <Button
+                  variant="primary"
+                  icon={<Cookie className="h-4 w-4" />}
+                  onClick={() => window.dispatchEvent(new Event(COOKIE_SETTINGS_OPEN_EVENT))}
+                >
+                  {t('cookieConsent.openSettings')}
+                </Button>
+              </div>
+            </Card>
           )}
 
           {/* Security Settings */}

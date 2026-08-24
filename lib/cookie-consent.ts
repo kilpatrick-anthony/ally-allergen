@@ -2,6 +2,7 @@ export const COOKIE_CONSENT_NAME = 'allyjen_cookie_consent'
 export const COOKIE_CONSENT_VERSION = 1
 export const COOKIE_CONSENT_MAX_AGE_SECONDS = 60 * 60 * 24 * 180
 export const COOKIE_CONSENT_CHANGED_EVENT = 'allyjen:cookie-consent-changed'
+export const COOKIE_SETTINGS_OPEN_EVENT = 'allyjen:open-cookie-settings'
 
 export type CookieConsentPreferences = {
   version: number

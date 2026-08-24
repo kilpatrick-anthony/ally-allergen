@@ -9,6 +9,7 @@ import Script from 'next/script'
 import { useEffect, useState } from 'react'
 import {
   clearGoogleAnalyticsCookies,
+  COOKIE_SETTINGS_OPEN_EVENT,
   readCookieConsent,
   saveCookieConsent,
   type CookieConsentPreferences,
@@ -72,8 +73,22 @@ export default function CookieConsentManager() {
     setSettingsOpen(true)
   }
 
+  useEffect(() => {
+    const handleOpenSettings = () => {
+      setAnalyticsEnabled(readCookieConsent()?.analytics ?? false)
+      setSettingsOpen(true)
+    }
+
+    window.addEventListener(COOKIE_SETTINGS_OPEN_EVENT, handleOpenSettings)
+    return () => window.removeEventListener(COOKIE_SETTINGS_OPEN_EVENT, handleOpenSettings)
+  }, [])
+
   const analyticsAllowed = preferences?.analytics === true
   const showBanner = hasLoadedPreferences && preferences === null
+  const showFloatingSettings = !pathname.startsWith('/admin')
+    && !pathname.startsWith('/super-admin')
+    && !pathname.startsWith('/internal')
+    && !pathname.startsWith('/kiosk')
   const portalContext = pathname.startsWith('/admin')
     ? 'admin'
     : pathname.startsWith('/kiosk')
@@ -151,7 +166,7 @@ export default function CookieConsentManager() {
         </section>
       ) : null}
 
-      {hasLoadedPreferences && !showBanner ? (
+      {hasLoadedPreferences && !showBanner && showFloatingSettings ? (
         <button
           type="button"
           onClick={openSettings}
