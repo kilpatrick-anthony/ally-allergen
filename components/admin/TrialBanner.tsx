@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react'
 import { AlertCircle, Clock, Zap, X } from 'lucide-react'
 import Link from 'next/link'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 interface TrialStatus {
   isTrialActive: boolean
@@ -18,27 +19,28 @@ interface TrialBannerProps {
 }
 
 export function TrialBanner({ className = '' }: TrialBannerProps) {
+  const { t } = useTranslation()
   const [status, setStatus] = useState<TrialStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
-    fetchTrialStatus()
-  }, [])
-
-  const fetchTrialStatus = async () => {
-    try {
-      const response = await fetch('/api/trial/check')
-      if (response.ok) {
-        const data = await response.json()
-        setStatus(data.status)
+    const fetchTrialStatus = async () => {
+      try {
+        const response = await fetch('/api/trial/check')
+        if (response.ok) {
+          const data = await response.json()
+          setStatus(data.status)
+        }
+      } catch (error) {
+        console.error('Failed to fetch trial status:', error)
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error('Failed to fetch trial status:', error)
-    } finally {
-      setLoading(false)
     }
-  }
+
+    void fetchTrialStatus()
+  }, [])
 
   if (loading || !status || dismissed) return null
 
@@ -54,17 +56,17 @@ export function TrialBanner({ className = '' }: TrialBannerProps) {
             <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
               <h3 className="text-sm font-semibold text-red-900 mb-1">
-                Your trial has expired
+                {t('sharedProduction.trialExpired')}
               </h3>
               <p className="text-sm text-red-800 mb-3">
-                Upgrade now to continue using AllyJen and access all features.
+                {t('sharedProduction.upgradeExpired')}
               </p>
               <Link
                 href="/admin/settings?tab=billing"
                 className="inline-flex items-center px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
               >
                 <Zap className="h-4 w-4 mr-2" />
-                Upgrade Now
+                {t('sharedProduction.upgradeNow')}
               </Link>
             </div>
           </div>
@@ -90,12 +92,12 @@ export function TrialBanner({ className = '' }: TrialBannerProps) {
             <div className="flex-1">
               <h3 className={`text-sm font-semibold ${textColor} mb-1`}>
                 {status.daysRemaining === 0 
-                  ? 'Last day of your trial!' 
-                  : `${status.daysRemaining} day${status.daysRemaining > 1 ? 's' : ''} left in your trial`
+                  ? t('sharedProduction.lastTrialDay')
+                  : t(status.daysRemaining === 1 ? 'sharedProduction.trialDayLeft' : 'sharedProduction.trialDaysLeft', { count: status.daysRemaining })
                 }
               </h3>
               <p className={`text-sm ${textColor} mb-3`}>
-                Upgrade to unlock unlimited PDF downloads, multiple locations, and more.
+                {t('sharedProduction.upgradeBenefits')}
               </p>
               <div className="flex items-center gap-3">
                 <Link
@@ -103,19 +105,22 @@ export function TrialBanner({ className = '' }: TrialBannerProps) {
                   className={`inline-flex items-center px-4 py-2 ${buttonColor} text-white text-sm font-medium rounded-lg transition-colors`}
                 >
                   <Zap className="h-4 w-4 mr-2" />
-                  View Plans
+                  {t('sharedProduction.viewPlans')}
                 </Link>
                 <button
+                  type="button"
                   onClick={() => setDismissed(true)}
                   className={`text-sm ${textColor} hover:underline`}
                 >
-                  Dismiss
+                  {t('accessibility.dismiss')}
                 </button>
               </div>
             </div>
           </div>
           <button
+            type="button"
             onClick={() => setDismissed(true)}
+            aria-label={t('accessibility.dismiss')}
             className={`${iconColor} hover:opacity-70 transition-opacity ml-2`}
           >
             <X className="h-4 w-4" />

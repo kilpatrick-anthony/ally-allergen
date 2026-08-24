@@ -3,9 +3,10 @@
 // Scrolling food-safety news ticker sourced from FSAI / EU RASFF RSS feeds.
 // Sits at the bottom of every admin page.
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { AlertTriangle, ExternalLink, RefreshCw, Rss, X } from 'lucide-react'
 import type { AlertItem } from '@/app/api/fsai-alerts/route'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 const POLL_INTERVAL = 10 * 60 * 1000 // re-fetch every 10 minutes
 const SESSION_KEY = 'fsai_ticker_dismissed'
@@ -57,6 +58,7 @@ function SourceBadge({ source }: { source: AlertItem['source'] }) {
 }
 
 export function FsaiNewsTicker() {
+  const { t, language } = useTranslation()
   const [alerts, setAlerts] = useState<AlertItem[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -71,7 +73,7 @@ export function FsaiNewsTicker() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const animRef = useRef<Animation | null>(null)
 
-  async function fetchAlerts(force = false) {
+  const fetchAlerts = useCallback(async (force = false) => {
     try {
       const url = force ? '/api/fsai-alerts?force=true' : '/api/fsai-alerts'
       const res = await fetch(url)
@@ -86,14 +88,14 @@ export function FsaiNewsTicker() {
       setLoading(false)
       setRefreshing(false)
     }
-  }
+  }, [])
 
   // Initial fetch + polling
   useEffect(() => {
-    fetchAlerts()
+    void fetchAlerts()
     const timer = setInterval(fetchAlerts, POLL_INTERVAL)
     return () => clearInterval(timer)
-  }, [])
+  }, [fetchAlerts])
 
   // CSS-based marquee animation via Web Animations API
   useEffect(() => {
@@ -140,19 +142,19 @@ export function FsaiNewsTicker() {
     <div
       className="relative flex items-stretch bg-amber-50 dark:bg-amber-950/40 border-t-2 border-amber-300 dark:border-amber-700 overflow-hidden select-none"
       style={{ minHeight: '44px' }}
-      aria-label="Food safety news ticker"
+      aria-label={t('sharedProduction.tickerLabel')}
     >
       {/* Static left label */}
       <div className="shrink-0 flex flex-col items-center justify-center gap-0.5 px-3 bg-amber-100 dark:bg-amber-900/60 border-r border-amber-200 dark:border-amber-700 z-10 min-w-[72px]">
         <div className="flex items-center gap-1.5">
           <Rss className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
           <span className="text-[11px] font-bold text-amber-700 dark:text-amber-300 whitespace-nowrap uppercase tracking-wide">
-            Food Safety
+            {t('sharedProduction.foodSafety')}
           </span>
         </div>
         {alertCount > 0 && (
           <span className="text-[9px] font-semibold text-amber-600 dark:text-amber-400">
-            {alertCount} alert{alertCount !== 1 ? 's' : ''}
+            {t(alertCount === 1 ? 'sharedProduction.alertCount' : 'sharedProduction.alertsCount', { count: alertCount })}
           </span>
         )}
       </div>
@@ -162,12 +164,12 @@ export function FsaiNewsTicker() {
         {loading ? (
           <div className="flex items-center gap-2 px-4 text-xs text-amber-600 dark:text-amber-400">
             <RefreshCw className="h-3 w-3 animate-spin" />
-            Loading latest alerts…
+            {t('sharedProduction.loadingAlerts')}
           </div>
         ) : error ? (
           <div className="flex items-center gap-2 px-4 text-xs text-amber-600 dark:text-amber-400">
             <AlertTriangle className="h-3 w-3" />
-            Unable to load feed — visit{' '}
+            {t('sharedProduction.feedErrorBefore')}{' '}
             <a
               href="https://www.fsai.ie/industry/food-safety-alerts.html"
               target="_blank"
@@ -176,7 +178,7 @@ export function FsaiNewsTicker() {
             >
               FSAI.ie
             </a>{' '}
-            for the latest alerts.
+            {t('sharedProduction.feedErrorAfter')}
           </div>
         ) : (
           <div
@@ -213,15 +215,15 @@ export function FsaiNewsTicker() {
       <div className="shrink-0 flex items-center border-l border-amber-200 dark:border-amber-700">
         {lastUpdated && (
           <span className="hidden sm:block text-[10px] text-amber-500 dark:text-amber-500 px-2 whitespace-nowrap">
-            {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {lastUpdated.toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' })}
           </span>
         )}
         <button
           type="button"
           onClick={handleRefresh}
           disabled={refreshing}
-          aria-label="Refresh news feed"
-          title="Refresh"
+          aria-label={t('sharedProduction.refreshFeed')}
+          title={t('admin.refresh')}
           className="px-2 h-full flex items-center text-amber-400 hover:text-amber-700 dark:hover:text-amber-200 transition-colors disabled:opacity-40"
         >
           <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
@@ -229,8 +231,8 @@ export function FsaiNewsTicker() {
         <button
           type="button"
           onClick={dismiss}
-          aria-label="Dismiss news ticker for this session"
-          title="Dismiss for this session"
+          aria-label={t('sharedProduction.dismissTicker')}
+          title={t('sharedProduction.dismissSession')}
           className="px-2 h-full flex items-center text-amber-400 hover:text-amber-700 dark:hover:text-amber-200 transition-colors border-l border-amber-200 dark:border-amber-700"
         >
           <X className="h-3.5 w-3.5" />
@@ -239,4 +241,3 @@ export function FsaiNewsTicker() {
     </div>
   )
 }
-

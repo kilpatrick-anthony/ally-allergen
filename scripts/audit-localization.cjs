@@ -28,6 +28,8 @@ const recentFiles = new Set([
   'components/admin/QRCodeManagement.tsx',
   'components/admin/NotificationsPanel.tsx',
   'components/admin/SiteAllergenGuide.tsx',
+  'components/admin/FsaiNewsTicker.tsx',
+  'components/admin/TrialBanner.tsx',
   'components/admin/ReviewFrequencySelector.tsx',
   'components/layout/LoadingScreen.tsx',
   'components/layout/Navigation.tsx',
@@ -123,6 +125,14 @@ function loadTypeScriptExport(filename, exportName) {
         deviceManagementTranslations: loadTypeScriptExport(
           path.join(root, 'lib/device-management-translations.ts'),
           'deviceManagementTranslations',
+        ),
+      }
+    }
+    if (request === '@/lib/shared-production-translations') {
+      return {
+        sharedProductionTranslations: loadTypeScriptExport(
+          path.join(root, 'lib/shared-production-translations.ts'),
+          'sharedProductionTranslations',
         ),
       }
     }
