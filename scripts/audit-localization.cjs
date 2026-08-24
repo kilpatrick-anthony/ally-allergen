@@ -18,6 +18,25 @@ const scanRoots = [
   'components/kiosk',
 ]
 const recentOnly = process.argv.includes('--recent')
+// These tracked files are prototypes, demos, or legacy route copies with no
+// production import or App Router route. Keep them out of the production UI
+// audit while retaining the source for future reference.
+const nonProductionFiles = new Set([
+  'app/admin/sites/simple-page.tsx',
+  'components/admin/AdminNavbar.tsx',
+  'components/admin/AllergenSelectorDemo.tsx',
+  'components/admin/suppliers/[id]/page.tsx',
+  'components/admin/suppliers/certifications/page.tsx',
+  'components/admin/suppliers/comparison/page.tsx',
+  'components/admin/suppliers/new/page.tsx',
+  'components/admin/suppliers/products/page.tsx',
+  'components/auth/signin/page.tsx',
+  'components/auth/signup/page.tsx',
+  'components/kiosk/AllergenFilter.tsx',
+  'components/kiosk/AllyChat.tsx',
+  'components/ui/FormValidation.tsx',
+  'components/ui/MicroInteractionsDemo.tsx',
+])
 const recentFiles = new Set([
   'components/admin/MenuItemSupplyFields.tsx',
   'components/admin/IngredientSupplierVariantsEditor.tsx',
@@ -33,6 +52,10 @@ const recentFiles = new Set([
   'components/admin/TrialBanner.tsx',
   'components/admin/DatasheetReviewNotifications.tsx',
   'components/admin/ReviewFrequencySelector.tsx',
+  'components/admin/DatasheetViewer.tsx',
+  'components/admin/EditHistory.tsx',
+  'components/admin/JenCoach.tsx',
+  'app/admin/page.tsx',
   'app/auth/signin/page.tsx',
   'app/auth/reset-password/page.tsx',
   'app/auth/update-password/page.tsx',
@@ -152,6 +175,14 @@ function loadTypeScriptExport(filename, exportName) {
         authFlowTranslations: loadTypeScriptExport(
           path.join(root, 'lib/auth-flow-translations.ts'),
           'authFlowTranslations',
+        ),
+      }
+    }
+    if (request === '@/lib/live-dashboard-translations') {
+      return {
+        liveDashboardTranslations: loadTypeScriptExport(
+          path.join(root, 'lib/live-dashboard-translations.ts'),
+          'liveDashboardTranslations',
         ),
       }
     }
@@ -381,6 +412,7 @@ const usedTranslationKeys = new Set()
 for (const relativeRoot of scanRoots) {
   for (const filename of walkFiles(path.join(root, relativeRoot))) {
     const relativeFilename = path.relative(root, filename)
+    if (nonProductionFiles.has(relativeFilename)) continue
     if (recentOnly && !recentFiles.has(relativeFilename)) continue
     const source = fs.readFileSync(filename, 'utf8')
     const sourceFile = ts.createSourceFile(filename, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX)

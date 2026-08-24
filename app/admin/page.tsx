@@ -119,6 +119,18 @@ export default function AdminDashboard() {
     checkForData()
   }, [router])
 
+  const frequentPageCopy: Record<string, { label: string; description: string }> = {
+    '/admin': { label: t('liveDashboard.dashboard'), description: t('liveDashboard.dashboardDescription') },
+    '/admin/ingredients': { label: t('liveDashboard.ingredients'), description: t('liveDashboard.ingredientsDescription') },
+    '/admin/menu-builder': { label: t('liveDashboard.menuBuilder'), description: t('liveDashboard.menuBuilderDescription') },
+    '/admin/sites': { label: t('liveDashboard.locations'), description: t('liveDashboard.locationsDescription') },
+    '/admin/analytics': { label: t('liveDashboard.analytics'), description: t('liveDashboard.analyticsDescription') },
+    '/admin/downloads': { label: t('liveDashboard.downloads'), description: t('liveDashboard.downloadsDescription') },
+    '/admin/devices': { label: t('liveDashboard.devices'), description: t('liveDashboard.devicesDescription') },
+    '/admin/suppliers': { label: t('liveDashboard.suppliers'), description: t('liveDashboard.suppliersDescription') },
+    '/admin/settings': { label: t('liveDashboard.settings'), description: t('liveDashboard.settingsDescription') },
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
@@ -137,33 +149,36 @@ export default function AdminDashboard() {
   if (hasData) {
     const statCards = [
       {
-        label: 'Menu items',
+        label: t('liveDashboard.menuItems'),
         value: stats.menuItems,
-        detail: 'Across your menus',
+        detail: t('liveDashboard.acrossMenus'),
         href: '/admin/menu-builder',
         icon: ChefHat,
         iconClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
       },
       {
-        label: 'Ingredients',
+        label: t('liveDashboard.ingredients'),
         value: stats.ingredients,
-        detail: `${stats.suppliers} supplier${stats.suppliers === 1 ? '' : 's'} linked`,
+        detail: t(
+          stats.suppliers === 1 ? 'liveDashboard.supplierLinked' : 'liveDashboard.suppliersLinked',
+          { count: stats.suppliers }
+        ),
         href: '/admin/ingredients',
         icon: Package,
         iconClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
       },
       {
-        label: 'Datasheets',
+        label: t('liveDashboard.datasheets'),
         value: stats.datasheets,
-        detail: 'Active documents',
+        detail: t('liveDashboard.activeDocuments'),
         href: '/admin/downloads/datasheets',
         icon: FileText,
         iconClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
       },
       {
-        label: 'Locations',
+        label: t('liveDashboard.locations'),
         value: stats.sites,
-        detail: 'Sites being managed',
+        detail: t('liveDashboard.sitesManaged'),
         href: '/admin/sites',
         icon: Building,
         iconClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
@@ -225,6 +240,7 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {frequentPages.map((page) => {
               const Icon = page.icon
+              const copy = frequentPageCopy[page.href] ?? page
               return (
                 <Link key={page.href} href={page.href}>
                   <Card className="hover:shadow-lg transition-all cursor-pointer group h-full">
@@ -234,10 +250,10 @@ export default function AdminDashboard() {
                       </div>
                       <div className="min-w-0">
                         <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-[#42b8ac] transition-colors truncate">
-                          {page.label}
+                          {copy.label}
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                          {page.description}
+                          {copy.description}
                         </p>
                       </div>
                     </div>
@@ -264,10 +280,10 @@ export default function AdminDashboard() {
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
-                {t('businessDisclaimerTitle') || 'Business Data Accuracy Responsibility'}
+                {t('businessDisclaimerTitle')}
               </h3>
               <p className="text-sm text-amber-800 dark:text-amber-200 leading-relaxed">
-                {t('businessDisclaimerText') || 'AllyJen provides tools to help manage allergen information. However, your business is responsible for the accuracy, completeness, and correctness of all data entered into this system.'}
+                {t('businessDisclaimerText')}
               </p>
             </div>
           </div>
@@ -316,7 +332,7 @@ export default function AdminDashboard() {
                   <Building className="h-8 w-8 text-white" />
                 </div>
                 <div className="mb-4">
-                  <Badge variant="info" size="sm">Step 1</Badge>
+                  <Badge variant="info" size="sm">{t('liveDashboard.step', { count: 1 })}</Badge>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                   {t('admin.addFirstLocation')}
@@ -340,7 +356,7 @@ export default function AdminDashboard() {
                   <Monitor className="h-8 w-8 text-white" />
                 </div>
                 <div className="mb-4">
-                  <Badge variant="info" size="sm">Step 2</Badge>
+                  <Badge variant="info" size="sm">{t('liveDashboard.step', { count: 2 })}</Badge>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                   {t('admin.pairFirstDevice')}
@@ -364,7 +380,7 @@ export default function AdminDashboard() {
                   <ChefHat className="h-8 w-8 text-white" />
                 </div>
                 <div className="mb-4">
-                  <Badge variant="info" size="sm">Step 3</Badge>
+                  <Badge variant="info" size="sm">{t('liveDashboard.step', { count: 3 })}</Badge>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                   {t('admin.buildYourMenu')}
@@ -393,6 +409,7 @@ export default function AdminDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {frequentPages.map((page) => {
             const Icon = page.icon
+            const copy = frequentPageCopy[page.href] ?? page
             return (
               <Link key={page.href} href={page.href}>
                 <Card className="hover:shadow-lg transition-all cursor-pointer group h-full">
@@ -402,10 +419,10 @@ export default function AdminDashboard() {
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-[#42b8ac] transition-colors truncate">
-                        {page.label}
+                        {copy.label}
                       </h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                        {page.description}
+                        {copy.description}
                       </p>
                     </div>
                   </div>

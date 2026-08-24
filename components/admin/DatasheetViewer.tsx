@@ -1,15 +1,13 @@
 // components/admin/DatasheetViewer.tsx
 'use client'
 
-import { useState } from 'react'
 import { 
-  FileText, Download, Eye, X, Calendar, User, 
-  AlertCircle, Clock, CheckCircle, ExternalLink,
-  RefreshCw, Archive, Tag
+  FileText, Download, Eye, Calendar, CheckCircle, Archive
 } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { Card } from '../layout/Card'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 interface Datasheet {
   id: string
@@ -47,19 +45,20 @@ export default function DatasheetViewer({
   onMarkReviewed,
   compact = false
 }: DatasheetViewerProps) {
-  const [selectedDatasheet, setSelectedDatasheet] = useState<Datasheet | null>(null)
+  const { t, language } = useTranslation()
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes'
+    if (bytes === 0) return '0 B'
     const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const sizes = ['B', 'KB', 'MB', 'GB']
     const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+    const value = Math.round(bytes / Math.pow(k, i) * 100) / 100
+    return `${new Intl.NumberFormat(language, { maximumFractionDigits: 2 }).format(value)} ${sizes[i]}`
   }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', { 
+    return date.toLocaleDateString(language, {
       year: 'numeric', 
       month: 'short', 
       day: 'numeric' 
@@ -73,9 +72,9 @@ export default function DatasheetViewer({
     const today = new Date()
     const daysUntil = Math.floor((nextReview.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
     
-    if (daysUntil < 0) return { status: 'overdue', label: 'Overdue', color: 'red' }
-    if (daysUntil <= 7) return { status: 'due_soon', label: 'Due Soon', color: 'yellow' }
-    return { status: 'up_to_date', label: 'Up to Date', color: 'green' }
+    if (daysUntil < 0) return { status: 'overdue', label: t('liveDashboard.overdue'), color: 'red' }
+    if (daysUntil <= 7) return { status: 'due_soon', label: t('liveDashboard.dueSoon'), color: 'yellow' }
+    return { status: 'up_to_date', label: t('liveDashboard.upToDate'), color: 'green' }
   }
 
   const getFileIcon = (fileType: string) => {
@@ -92,7 +91,7 @@ export default function DatasheetViewer({
         {datasheets.length === 0 ? (
           <div className="text-center py-4 bg-gray-50 rounded-lg border border-gray-200">
             <FileText className="h-6 w-6 text-gray-400 mx-auto mb-2" />
-            <p className="text-sm text-gray-500">No datasheets available</p>
+            <p className="text-sm text-gray-500">{t('liveDashboard.noDatasheets')}</p>
           </div>
         ) : (
           datasheets.map((datasheet) => {
@@ -140,6 +139,7 @@ export default function DatasheetViewer({
                       variant="secondary"
                       size="sm"
                       onClick={() => onPreview(datasheet)}
+                      aria-label={t('liveDashboard.previewNamed', { name: datasheet.file_name })}
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -150,6 +150,7 @@ export default function DatasheetViewer({
                       variant="secondary"
                       size="sm"
                       onClick={() => onDownload(datasheet)}
+                      aria-label={t('liveDashboard.downloadNamed', { name: datasheet.file_name })}
                     >
                       <Download className="h-4 w-4" />
                     </Button>
@@ -169,10 +170,10 @@ export default function DatasheetViewer({
         <div className="text-center py-12 bg-gray-50 rounded-xl border border-gray-200">
           <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-gray-900 mb-1">
-            No Datasheets Available
+            {t('liveDashboard.noDatasheets')}
           </h3>
           <p className="text-sm text-gray-500">
-            Upload product datasheets to track compliance and reviews
+            {t('liveDashboard.noDatasheetsHelp')}
           </p>
         </div>
       ) : (
@@ -202,21 +203,21 @@ export default function DatasheetViewer({
                         {datasheet.status === 'archived' && (
                           <Badge variant="default" size="md">
                             <Archive className="h-3 w-3 mr-1" />
-                            Archived
+                            {t('liveDashboard.archived')}
                           </Badge>
                         )}
                       </div>
 
                       <div className="grid grid-cols-2 gap-4 mb-3">
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">File Size</p>
+                          <p className="text-xs text-gray-500 mb-1">{t('liveDashboard.fileSize')}</p>
                           <p className="text-sm font-medium text-gray-900">
                             {formatFileSize(datasheet.file_size)}
                           </p>
                         </div>
                         {datasheet.supplier_name && (
                           <div>
-                            <p className="text-xs text-gray-500 mb-1">Supplier</p>
+                            <p className="text-xs text-gray-500 mb-1">{t('liveDashboard.supplier')}</p>
                             <p className="text-sm font-medium text-gray-900">
                               {datasheet.supplier_name}
                             </p>
@@ -224,14 +225,14 @@ export default function DatasheetViewer({
                         )}
                         {datasheet.version && (
                           <div>
-                            <p className="text-xs text-gray-500 mb-1">Version</p>
+                            <p className="text-xs text-gray-500 mb-1">{t('liveDashboard.version')}</p>
                             <p className="text-sm font-medium text-gray-900">
                               {datasheet.version}
                             </p>
                           </div>
                         )}
                         <div>
-                          <p className="text-xs text-gray-500 mb-1">Uploaded</p>
+                          <p className="text-xs text-gray-500 mb-1">{t('liveDashboard.uploaded')}</p>
                           <p className="text-sm font-medium text-gray-900">
                             {formatDate(datasheet.uploaded_at)}
                           </p>
@@ -243,7 +244,7 @@ export default function DatasheetViewer({
                           <div className="flex items-center space-x-2">
                             <Calendar className="h-4 w-4 text-gray-600" />
                             <div>
-                              <p className="text-xs text-gray-500">Next Review Date</p>
+                              <p className="text-xs text-gray-500">{t('liveDashboard.nextReviewDate')}</p>
                               <p className="text-sm font-medium text-gray-900">
                                 {formatDate(datasheet.next_review_date)}
                               </p>
@@ -252,7 +253,7 @@ export default function DatasheetViewer({
                           {datasheet.last_reviewed_at && (
                             <div className="mt-2 pt-2 border-t border-gray-200">
                               <p className="text-xs text-gray-500">
-                                Last reviewed {formatDate(datasheet.last_reviewed_at)}
+                                {t('liveDashboard.lastReviewed', { date: formatDate(datasheet.last_reviewed_at) })}
                               </p>
                             </div>
                           )}
@@ -261,7 +262,7 @@ export default function DatasheetViewer({
 
                       {datasheet.notes && (
                         <div className="mb-3">
-                          <p className="text-xs text-gray-500 mb-1">Notes</p>
+                          <p className="text-xs text-gray-500 mb-1">{t('liveDashboard.notes')}</p>
                           <p className="text-sm text-gray-700">{datasheet.notes}</p>
                         </div>
                       )}
@@ -277,7 +278,7 @@ export default function DatasheetViewer({
                         onClick={() => onPreview(datasheet)}
                       >
                         <Eye className="h-4 w-4 mr-2" />
-                        Preview
+                        {t('liveDashboard.preview')}
                       </Button>
                     )}
                     {onDownload && (
@@ -288,7 +289,7 @@ export default function DatasheetViewer({
                         onClick={() => onDownload(datasheet)}
                       >
                         <Download className="h-4 w-4 mr-2" />
-                        Download
+                        {t('liveDashboard.download')}
                       </Button>
                     )}
                     {onMarkReviewed && reviewStatus?.status !== 'up_to_date' && (
@@ -299,7 +300,7 @@ export default function DatasheetViewer({
                         onClick={() => onMarkReviewed(datasheet)}
                       >
                         <CheckCircle className="h-4 w-4 mr-2" />
-                        Mark Reviewed
+                        {t('liveDashboard.markReviewed')}
                       </Button>
                     )}
                   </div>
