@@ -1,7 +1,7 @@
 // components/admin/DeviceManagement.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Tablet, Wifi, WifiOff, Monitor, Smartphone,
   Plus, Trash2, RefreshCw, X,
@@ -11,6 +11,7 @@ import {
 import { Card } from '@/components/layout/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 interface Device {
   id: string;
@@ -49,6 +50,7 @@ export default function DeviceManagement({
   siteId, 
   siteName 
 }: DeviceManagementProps) {
+  const { t, language } = useTranslation();
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDevice, setShowAddDevice] = useState(false);
@@ -64,10 +66,6 @@ export default function DeviceManagement({
   const [nowMs, setNowMs] = useState(Date.now());
 
   useEffect(() => {
-    loadDevices();
-  }, [siteId]);
-
-  useEffect(() => {
     const timer = setInterval(() => {
       setNowMs(Date.now());
     }, 30000);
@@ -75,7 +73,7 @@ export default function DeviceManagement({
     return () => clearInterval(timer);
   }, []);
 
-  const loadDevices = async () => {
+  const loadDevices = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch(`/api/devices?siteId=${siteId}`)
@@ -92,7 +90,11 @@ export default function DeviceManagement({
     } finally {
       setLoading(false)
     }
-  };
+  }, [siteId]);
+
+  useEffect(() => {
+    void loadDevices();
+  }, [loadDevices]);
 
   const addDevice = async () => {
     if (!newDeviceName.trim()) return;
@@ -115,13 +117,13 @@ export default function DeviceManagement({
         throw new Error(data.error || 'Failed to create device')
       }
 
-      setDevices([
+      setDevices((current) => [
         {
           ...data.device,
           active_pairing_code: data.pairing_code ?? null,
           pairing_code_expires_at: data.expires_at ?? null,
         },
-        ...devices,
+        ...current,
       ])
       setPairingCode(data.pairing_code)
       setPairingExpiry(data.expires_at)
@@ -155,7 +157,7 @@ export default function DeviceManagement({
       })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error || 'Failed to regenerate code')
-      setDevices(devices.map(d =>
+      setDevices((current) => current.map(d =>
         d.id === deviceId
           ? { ...d, active_pairing_code: data.pairing_code, pairing_code_expires_at: data.expires_at }
           : d
@@ -174,7 +176,7 @@ export default function DeviceManagement({
   }
 
   const removeDevice = async (deviceId: string) => {
-    if (!confirm('Are you sure you want to remove this device?')) return;
+    if (!confirm(t('deviceManagement.removeConfirm'))) return;
 
     try {
       const response = await fetch(`/api/devices/${deviceId}`, { method: 'DELETE' })
@@ -182,7 +184,7 @@ export default function DeviceManagement({
         const data = await response.json()
         throw new Error(data.error || 'Failed to remove device')
       }
-      setDevices(devices.filter(d => d.id !== deviceId))
+      setDevices((current) => current.filter(d => d.id !== deviceId))
     } catch (error: any) {
       console.error('Error removing device:', error)
     }
@@ -226,7 +228,7 @@ export default function DeviceManagement({
         throw new Error(data.error || 'Failed to update device')
       }
 
-      setDevices(devices.map(d => d.id === deviceId ? data.device : d))
+      setDevices((devices) => devices.map(d => d.id === deviceId ? data.device : d))
     } catch (error: any) {
       console.error('Error updating device:', error)
     }
@@ -242,14 +244,14 @@ export default function DeviceManagement({
   };
 
   const getTimeSince = (dateString?: string | null) => {
-    if (!dateString) return 'Never'
+    if (!dateString) return t('corePortal.never')
     const date = new Date(dateString);
     const seconds = Math.floor((Date.now() - date.getTime()) / 1000);
     
-    if (seconds < 60) return 'Just now';
-    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
-    return `${Math.floor(seconds / 86400)}d ago`;
+    if (seconds < 60) return t('corePortal.justNow');
+    if (seconds < 3600) return t('corePortal.minutesAgo', { count: Math.floor(seconds / 60) });
+    if (seconds < 86400) return t('corePortal.hoursAgo', { count: Math.floor(seconds / 3600) });
+    return t('corePortal.daysAgo', { count: Math.floor(seconds / 86400) });
   };
 
   const getExpiryCountdown = (expiry?: string | null) => {
@@ -259,7 +261,7 @@ export default function DeviceManagement({
     const remainingMs = expiryMs - nowMs
 
     if (Number.isNaN(expiryMs) || remainingMs <= 0) {
-      return { label: 'Expired', urgency: 'expired' as const }
+      return { label: t('deviceManagement.expired'), urgency: 'expired' as const }
     }
 
     const totalMinutes = Math.ceil(remainingMs / 60000)
@@ -280,6 +282,11 @@ export default function DeviceManagement({
     return { label, urgency }
   }
 
+  const getDeviceTypeLabel = (type: Device['device_type']) => ({
+    kiosk: t('deviceManagement.kioskFixed'), tablet: t('deviceManagement.tabletMobile'),
+    display: t('deviceManagement.displayScreen'), mobile: t('deviceManagement.mobileDevice'),
+  })[type]
+
   const stats = {
     total: devices.length,
     online: devices.filter(d => d.status === 'online').length,
@@ -294,7 +301,7 @@ export default function DeviceManagement({
           <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
           <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
         </div>
-        <p className="text-gray-600">Loading devices...</p>
+        <p className="text-gray-600">{t('admin.loadingDevices')}</p>
       </div>
     );
   }
@@ -306,7 +313,7 @@ export default function DeviceManagement({
         <Card>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total Devices</p>
+              <p className="text-sm font-medium text-gray-600">{t('admin.totalDevices')}</p>
               <p className="text-2xl font-bold text-[#003842] mt-1">{stats.total}</p>
             </div>
             <Tablet className="h-8 w-8 text-[#42b8ac]" />
@@ -316,7 +323,7 @@ export default function DeviceManagement({
         <Card>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Online</p>
+              <p className="text-sm font-medium text-gray-600">{t('kioskPortal.online')}</p>
               <p className="text-2xl font-bold text-green-600 mt-1">{stats.online}</p>
             </div>
             <Wifi className="h-8 w-8 text-green-600" />
@@ -326,7 +333,7 @@ export default function DeviceManagement({
         <Card>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Errors</p>
+              <p className="text-sm font-medium text-gray-600">{t('admin.complianceErrors')}</p>
               <p className="text-2xl font-bold text-red-600 mt-1">{stats.errors}</p>
             </div>
             <AlertCircle className="h-8 w-8 text-red-600" />
@@ -336,7 +343,7 @@ export default function DeviceManagement({
         <Card>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Offline</p>
+              <p className="text-sm font-medium text-gray-600">{t('kioskPortal.offline')}</p>
               <p className="text-2xl font-bold text-gray-600 mt-1">{stats.offline}</p>
             </div>
             <WifiOff className="h-8 w-8 text-gray-600" />
@@ -349,10 +356,10 @@ export default function DeviceManagement({
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h3 className="text-lg font-semibold text-[#003842]">
-              Devices for {siteName}
+              {t('deviceManagement.devicesFor', { name: siteName })}
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              Add, pair, and monitor devices for this location
+              {t('deviceManagement.description')}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -361,14 +368,14 @@ export default function DeviceManagement({
               icon={<RefreshCw className="h-5 w-5" />}
               onClick={loadDevices}
             >
-              Refresh
+              {t('admin.refresh')}
             </Button>
             <Button
               variant="primary"
               icon={<Plus className="h-5 w-5" />}
               onClick={() => setShowAddDevice(true)}
             >
-              Add Device
+              {t('deviceManagement.addDevice')}
             </Button>
           </div>
         </div>
@@ -379,9 +386,11 @@ export default function DeviceManagement({
         <Card className="border-2 border-[#42b8ac]">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-[#003842]">Add New Device</h3>
+              <h3 className="text-lg font-semibold text-[#003842]">{t('deviceManagement.addNewDevice')}</h3>
               <button
+                type="button"
                 onClick={() => setShowAddDevice(false)}
+                aria-label={t('accessPoints.cancel')}
                 className="text-gray-400 hover:text-gray-600"
               >
                 <X className="h-5 w-5" />
@@ -389,36 +398,38 @@ export default function DeviceManagement({
             </div>
 
             <p className="text-sm text-gray-600">
-              Create the device first, then use the setup code to link the physical kiosk.
+              {t('deviceManagement.createFirstDescription')}
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Device Name
+                <label htmlFor="new-device-name" className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('deviceManagement.deviceName')}
                 </label>
                 <input
                   type="text"
+                  id="new-device-name"
                   value={newDeviceName}
                   onChange={(e) => setNewDeviceName(e.target.value)}
-                  placeholder="e.g., Main Entrance Kiosk"
+                  placeholder={t('deviceManagement.deviceNamePlaceholder')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Device Type
+                <label htmlFor="new-device-type" className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('deviceManagement.deviceType')}
                 </label>
                 <select
+                  id="new-device-type"
                   value={newDeviceType}
                   onChange={(e) => setNewDeviceType(e.target.value as Device['device_type'])}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                 >
-                  <option value="kiosk">Kiosk (Fixed Display)</option>
-                  <option value="tablet">Tablet (Mobile)</option>
-                  <option value="display">Display Screen</option>
-                  <option value="mobile">Mobile Device</option>
+                  <option value="kiosk">{t('deviceManagement.kioskFixed')}</option>
+                  <option value="tablet">{t('deviceManagement.tabletMobile')}</option>
+                  <option value="display">{t('deviceManagement.displayScreen')}</option>
+                  <option value="mobile">{t('deviceManagement.mobileDevice')}</option>
                 </select>
               </div>
             </div>
@@ -428,14 +439,14 @@ export default function DeviceManagement({
                 variant="outline"
                 onClick={() => setShowAddDevice(false)}
               >
-                Cancel
+                {t('accessPoints.cancel')}
               </Button>
               <Button
                 variant="primary"
                 onClick={addDevice}
                 disabled={!newDeviceName.trim() || generatingCode}
               >
-                {generatingCode ? 'Creating…' : 'Create Setup Code'}
+                {generatingCode ? t('accessPoints.creating') : t('deviceManagement.createSetupCode')}
               </Button>
             </div>
           </div>
@@ -447,15 +458,15 @@ export default function DeviceManagement({
         <Card className="border-2 border-[#42b8ac] bg-[#f0faf9]">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-[#003842]">Setup Code Ready</h3>
-              <button onClick={dismissPairingCode} className="text-gray-400 hover:text-gray-600">
+              <h3 className="text-lg font-semibold text-[#003842]">{t('deviceManagement.setupCodeReady')}</h3>
+              <button type="button" onClick={dismissPairingCode} aria-label={t('accessPoints.cancel')} className="text-gray-400 hover:text-gray-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
 
             <p className="text-sm text-gray-600">
-              Step 1: On the kiosk, open <span className="font-semibold">allyjen.ie/kiosk/pair</span>.<br />
-              Step 2: Enter this code to link the device.
+              {t('deviceManagement.stepOne')} <span className="font-semibold">allyjen.ie/kiosk/pair</span>.<br />
+              {t('deviceManagement.stepTwo')}
             </p>
 
             <div className="flex items-center gap-3">
@@ -465,20 +476,21 @@ export default function DeviceManagement({
                 </p>
               </div>
               <button
+                type="button"
                 onClick={copyCode}
                 className="flex flex-col items-center gap-1 px-4 py-3 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
               >
                 {codeCopied
                   ? <Check className="h-5 w-5 text-green-600" />
                   : <Copy className="h-5 w-5 text-gray-500" />}
-                <span className="text-xs text-gray-500">{codeCopied ? 'Copied!' : 'Copy'}</span>
+                <span className="text-xs text-gray-500">{codeCopied ? t('deviceManagement.copiedBang') : t('accessPoints.copy')}</span>
               </button>
             </div>
 
             {pairingExpiry && (
               <div className="flex items-center gap-2 text-sm text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
                 <Clock className="h-4 w-4 flex-shrink-0" />
-                <span>Code expires {new Date(pairingExpiry).toLocaleString()} - one-time use for setup only</span>
+                <span>{t('deviceManagement.codeExpires', { date: new Date(pairingExpiry).toLocaleString(language) })}</span>
               </div>
             )}
           </div>
@@ -490,17 +502,17 @@ export default function DeviceManagement({
         <Card className="text-center py-12">
           <Tablet className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            No Devices Added
+            {t('deviceManagement.noDevices')}
           </h3>
           <p className="text-gray-600 mb-6">
-            Add your first kiosk or tablet to get started
+            {t('deviceManagement.addFirstDescription')}
           </p>
           <Button
             variant="primary"
             icon={<Plus className="h-5 w-5" />}
             onClick={() => setShowAddDevice(true)}
           >
-            Add First Device
+            {t('deviceManagement.addFirstDevice')}
           </Button>
         </Card>
       ) : (
@@ -540,11 +552,11 @@ export default function DeviceManagement({
                                 : <WifiOff className="h-3 w-3" />
                             }
                           >
-                            {device.status === 'online' ? 'Online' : 'Offline'}
+                            {device.status === 'online' ? t('kioskPortal.online') : t('kioskPortal.offline')}
                           </Badge>
                           {device.status === 'error' && (
                             <Badge variant="error">
-                              Error
+                              {t('sitePortal.error')}
                             </Badge>
                           )}
                         </div>
@@ -556,13 +568,13 @@ export default function DeviceManagement({
                   <div className="rounded-xl border border-[#42b8ac]/30 bg-[#f0faf9] p-3 space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-[#003842] uppercase tracking-wide">
-                        Setup Code
+                        {t('deviceManagement.setupCode')}
                       </span>
                       {device.active_pairing_code && device.pairing_code_expires_at && (
                         <div className="flex flex-col items-end gap-1">
                           {device.active_pairing_code_redeemed && (
                             <span className="text-[11px] font-semibold rounded-full px-2 py-0.5 bg-blue-100 text-blue-700">
-                              Already used
+                              {t('deviceManagement.alreadyUsed')}
                             </span>
                           )}
                           {expiryCountdown && (
@@ -576,11 +588,11 @@ export default function DeviceManagement({
                                 : 'bg-emerald-100 text-emerald-700'
                             }`}>
                               <Clock className="h-3 w-3" />
-                              Code expires in {expiryCountdown.label}
+                              {t('deviceManagement.expiresIn', { time: expiryCountdown.label })}
                             </span>
                           )}
                           <span className="text-[11px] text-gray-500">
-                            {new Date(device.pairing_code_expires_at).toLocaleString()}
+                            {new Date(device.pairing_code_expires_at).toLocaleString(language)}
                           </span>
                         </div>
                       )}
@@ -603,7 +615,7 @@ export default function DeviceManagement({
                             {cardCopied === device.id
                               ? <Check className="h-4 w-4 mr-2 text-green-600" />
                               : <Copy className="h-4 w-4 mr-2" />}
-                            {cardCopied === device.id ? 'Copied' : 'Copy Code'}
+                            {cardCopied === device.id ? t('accessPoints.copied') : t('deviceManagement.copyCode')}
                           </Button>
                           <Button
                             size="sm"
@@ -613,22 +625,22 @@ export default function DeviceManagement({
                             className="flex-1"
                           >
                             <RefreshCw className={`h-4 w-4 mr-2 ${regeneratingFor === device.id ? 'animate-spin' : ''}`} />
-                            {regeneratingFor === device.id ? 'Generating…' : 'New Code'}
+                            {regeneratingFor === device.id ? t('deviceManagement.generating') : t('deviceManagement.newCode')}
                           </Button>
                         </div>
                         <p className="text-xs text-gray-600">
-                          Open <span className="font-semibold">allyjen.ie/kiosk/pair</span> on the kiosk and enter this code.
+                          {t('deviceManagement.openPairInstruction')}
                         </p>
                         {device.active_pairing_code_redeemed && (
                           <p className="text-xs text-blue-700">
-                            This code was used successfully and will remain visible until it expires.
+                            {t('deviceManagement.redeemedNote')}
                           </p>
                         )}
                       </div>
                     ) : (
                       <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-3">
                         <p className="text-xs text-amber-800 mb-2">
-                          No active setup code for this device.
+                          {t('deviceManagement.noActiveCode')}
                         </p>
                         <Button
                           size="sm"
@@ -638,10 +650,10 @@ export default function DeviceManagement({
                           className="w-full"
                         >
                           <RefreshCw className={`h-4 w-4 mr-2 ${regeneratingFor === device.id ? 'animate-spin' : ''}`} />
-                          {regeneratingFor === device.id ? 'Creating…' : 'Create Setup Code'}
+                          {regeneratingFor === device.id ? t('accessPoints.creating') : t('deviceManagement.createSetupCode')}
                         </Button>
                         <p className="text-xs text-amber-800 mt-2">
-                          Create a code, then enter it on allyjen.ie/kiosk/pair.
+                          {t('deviceManagement.createCodeInstruction')}
                         </p>
                       </div>
                     )}
@@ -651,7 +663,7 @@ export default function DeviceManagement({
                   <div className="space-y-2 text-sm">
                     {kioskUrl && (
                       <div className="rounded-lg border border-[#42b8ac]/30 bg-[#f0faf9] p-2.5 space-y-2">
-                        <p className="text-xs font-semibold text-[#003842] uppercase tracking-wide">Kiosk URL</p>
+                        <p className="text-xs font-semibold text-[#003842] uppercase tracking-wide">{t('admin.kioskUrl')}</p>
                         <p className="text-xs text-gray-700 break-all leading-relaxed">{kioskUrl}</p>
                         <div className="flex items-center gap-2">
                           <Button
@@ -663,7 +675,7 @@ export default function DeviceManagement({
                             {kioskUrlCopied === device.id
                               ? <Check className="h-4 w-4 mr-2 text-green-600" />
                               : <Copy className="h-4 w-4 mr-2" />}
-                            {kioskUrlCopied === device.id ? 'Copied' : 'Copy URL'}
+                            {kioskUrlCopied === device.id ? t('accessPoints.copied') : t('admin.copyUrl')}
                           </Button>
                           <a
                             href={kioskUrl}
@@ -672,26 +684,26 @@ export default function DeviceManagement({
                             className="inline-flex flex-1 items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                           >
                             <ExternalLink className="h-4 w-4 mr-2" />
-                            Open
+                            {t('accessPoints.open')}
                           </a>
                         </div>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Type:</span>
+                      <span className="text-gray-600">{t('deviceManagement.type')}</span>
                       <span className="font-medium text-gray-900 capitalize">
-                        {device.device_type}
+                        {getDeviceTypeLabel(device.device_type)}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Last Seen:</span>
+                      <span className="text-gray-600">{t('deviceManagement.lastSeen')}</span>
                       <span className="font-medium text-gray-900">
                         {getTimeSince(device.last_heartbeat)}
                       </span>
                     </div>
                     {typeof device.is_on_expected_screen === 'boolean' && (
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Screen:</span>
+                        <span className="text-gray-600">{t('deviceManagement.screen')}</span>
                         <span
                           className={`text-xs font-semibold rounded-full px-2 py-1 ${
                             device.is_on_expected_screen
@@ -699,19 +711,19 @@ export default function DeviceManagement({
                               : 'bg-red-100 text-red-700'
                           }`}
                         >
-                          {device.is_on_expected_screen ? 'Correct kiosk screen' : 'Wrong screen'}
+                          {device.is_on_expected_screen ? t('admin.correctKioskScreen') : t('admin.wrongScreen')}
                         </span>
                       </div>
                     )}
                     {device.last_page_url && (
                       <div>
-                        <p className="text-gray-600 mb-1">Current page:</p>
+                        <p className="text-gray-600 mb-1">{t('deviceManagement.currentPage')}</p>
                         <p className="text-xs text-gray-700 break-all leading-relaxed">{device.last_page_url}</p>
                       </div>
                     )}
                     {device.ip_address && (
                       <div className="flex justify-between">
-                        <span className="text-gray-600">IP:</span>
+                      <span className="text-gray-600">IP:</span>
                         <span className="font-medium text-gray-900">
                           {device.ip_address}
                         </span>
@@ -721,6 +733,7 @@ export default function DeviceManagement({
 
                   <div className="flex items-center gap-2 pt-2">
                     <button
+                      type="button"
                       onClick={() => toggleDeviceStatus(device.id)}
                       className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg transition-colors ${
                         device.status === 'online'
@@ -730,11 +743,13 @@ export default function DeviceManagement({
                     >
                       <Power className="h-4 w-4" />
                       <span className="text-sm font-medium">
-                        {device.status === 'online' ? 'Set Offline' : 'Set Online'}
+                        {device.status === 'online' ? t('deviceManagement.setOffline') : t('deviceManagement.setOnline')}
                       </span>
                     </button>
                     <button
+                      type="button"
                       onClick={() => removeDevice(device.id)}
+                      aria-label={t('deviceManagement.removeConfirm')}
                       className="flex items-center justify-center gap-2 px-3 py-2 bg-red-50 text-red-700 hover:bg-red-100 rounded-lg transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -753,15 +768,15 @@ export default function DeviceManagement({
           <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
           <div>
             <h4 className="font-semibold text-blue-900 mb-2">
-              Device Management Tips
+              {t('deviceManagement.tips')}
             </h4>
             <ul className="text-sm text-blue-800 space-y-1 ml-4 list-disc">
-              <li>Click <strong>Add Device</strong>, enter a name, and click <strong>Create Setup Code</strong></li>
-              <li>On the kiosk, go to <strong>allyjen.ie/kiosk/pair</strong> and enter the setup code</li>
-              <li>Each setup code is one-time use and for linking only</li>
-              <li>The kiosk then opens the correct allergen menu for this site automatically</li>
-              <li>Devices send a heartbeat every minute so status updates automatically</li>
-              <li>Offline devices continue showing cached allergen data</li>
+              <li>{t('deviceManagement.tipOne')}</li>
+              <li>{t('deviceManagement.tipTwo')}</li>
+              <li>{t('deviceManagement.tipThree')}</li>
+              <li>{t('deviceManagement.tipFour')}</li>
+              <li>{t('deviceManagement.tipFive')}</li>
+              <li>{t('deviceManagement.tipSix')}</li>
             </ul>
           </div>
         </div>

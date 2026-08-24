@@ -22,6 +22,7 @@ const recentFiles = new Set([
   'components/admin/IngredientSupplierVariantsEditor.tsx',
   'components/admin/AllergenWarningSelector.tsx',
   'components/admin/DatasheetUploader.tsx',
+  'components/admin/DeviceManagement.tsx',
   'components/admin/LabelScanModal.tsx',
   'components/admin/AdminTopBar.tsx',
   'components/admin/QRCodeManagement.tsx',
@@ -114,6 +115,14 @@ function loadTypeScriptExport(filename, exportName) {
         sitePortalTranslations: loadTypeScriptExport(
           path.join(root, 'lib/site-portal-translations.ts'),
           'sitePortalTranslations',
+        ),
+      }
+    }
+    if (request === '@/lib/device-management-translations') {
+      return {
+        deviceManagementTranslations: loadTypeScriptExport(
+          path.join(root, 'lib/device-management-translations.ts'),
+          'deviceManagementTranslations',
         ),
       }
     }
