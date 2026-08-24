@@ -9,9 +9,11 @@ import { ArrowLeft, Plus, Truck } from 'lucide-react'
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 export default function NewSupplierPage() {
   const router = useRouter()
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
@@ -34,11 +36,11 @@ export default function NewSupplierPage() {
         body: JSON.stringify(formData),
       })
       const data = await response.json()
-      if (!response.ok) throw new Error(data.error || 'Failed to create supplier')
+      if (!response.ok) throw new Error(t('supplierPortal.createError'))
       const newId = data.supplier?.id || data.id || data.suppliers?.[0]?.id
       router.push(`/admin/suppliers/${newId}`)
     } catch (err: any) {
-      setError(err.message || 'Failed to create supplier')
+      setError(err.message || t('supplierPortal.createError'))
       setLoading(false)
     }
   }
@@ -48,7 +50,7 @@ export default function NewSupplierPage() {
       <div className="mb-6">
         <Link href="/admin/suppliers">
           <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />}>
-            Back to Suppliers
+            {t('supplierPortal.backToSuppliers')}
           </Button>
         </Link>
       </div>
@@ -59,8 +61,8 @@ export default function NewSupplierPage() {
             <Truck className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-[#003842] dark:text-white">Add New Supplier</h1>
-            <p className="text-gray-600 dark:text-gray-300">Create a supplier record for your business.</p>
+            <h1 className="text-3xl font-bold text-[#003842] dark:text-white">{t('supplierPortal.addNewSupplier')}</h1>
+            <p className="text-gray-600 dark:text-gray-300">{t('supplierPortal.createDescription')}</p>
           </div>
         </div>
 
@@ -72,8 +74,9 @@ export default function NewSupplierPage() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Supplier Name *</label>
+            <label htmlFor="supplier-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('supplierPortal.supplierName')} *</label>
             <input
+              id="supplier-name"
               type="text"
               required
               value={formData.name}
@@ -82,8 +85,9 @@ export default function NewSupplierPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Contact Name</label>
+            <label htmlFor="supplier-contact" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('supplierPortal.contactName')}</label>
             <input
+              id="supplier-contact"
               type="text"
               value={formData.contact}
               onChange={(e) => setFormData(p => ({ ...p, contact: e.target.value }))}
@@ -92,8 +96,9 @@ export default function NewSupplierPage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+              <label htmlFor="supplier-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('admin.email')}</label>
               <input
+                id="supplier-email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData(p => ({ ...p, email: e.target.value }))}
@@ -101,8 +106,9 @@ export default function NewSupplierPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
+              <label htmlFor="supplier-phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('supplierPortal.phone')}</label>
               <input
+                id="supplier-phone"
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData(p => ({ ...p, phone: e.target.value }))}
@@ -111,8 +117,9 @@ export default function NewSupplierPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Website</label>
+            <label htmlFor="supplier-website" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('messaging.website')}</label>
             <input
+              id="supplier-website"
               type="url"
               value={formData.website}
               onChange={(e) => setFormData(p => ({ ...p, website: e.target.value }))}
@@ -122,10 +129,10 @@ export default function NewSupplierPage() {
           </div>
           <div className="flex gap-3 pt-2">
             <Button type="submit" variant="primary" icon={<Plus className="h-4 w-4" />} disabled={loading}>
-              {loading ? 'Creating...' : 'Create Supplier'}
+              {loading ? t('supplierPortal.creating') : t('supplierPortal.createSupplier')}
             </Button>
             <Link href="/admin/suppliers">
-              <Button variant="ghost">Cancel</Button>
+              <Button variant="ghost">{t('accessPoints.cancel')}</Button>
             </Link>
           </div>
         </form>

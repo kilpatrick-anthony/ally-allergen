@@ -1,0 +1,40 @@
+type LocaleIndex = 1 | 2 | 3 | 4 | 5 | 6
+
+const rows = [
+  ['backToSuppliers', 'Back to Suppliers', 'Ar ais chuig Soláthraithe', 'Voltar aos fornecedores', 'Retour aux fournisseurs', 'Volver a Proveedores', 'Zurück zu Lieferanten'],
+  ['backToSupplier', 'Back to Supplier', 'Ar ais chuig an Soláthraí', 'Voltar ao fornecedor', 'Retour au fournisseur', 'Volver al Proveedor', 'Zurück zum Lieferanten'],
+  ['addNewSupplier', 'Add New Supplier', 'Cuir Soláthraí Nua Leis', 'Adicionar novo fornecedor', 'Ajouter un fournisseur', 'Añadir nuevo proveedor', 'Neuen Lieferanten hinzufügen'],
+  ['createDescription', 'Create a supplier record for your business.', 'Cruthaigh taifead soláthraí do do ghnó.', 'Crie um registo de fornecedor para a sua empresa.', 'Créez une fiche fournisseur pour votre entreprise.', 'Crea un registro de proveedor para tu empresa.', 'Erstellen Sie einen Lieferanteneintrag für Ihr Unternehmen.'],
+  ['supplierName', 'Supplier Name', 'Ainm an tSoláthraí', 'Nome do fornecedor', 'Nom du fournisseur', 'Nombre del proveedor', 'Lieferantenname'],
+  ['contactName', 'Contact Name', 'Ainm Teagmhála', 'Nome do contacto', 'Nom du contact', 'Nombre del contacto', 'Kontaktname'],
+  ['phone', 'Phone', 'Fón', 'Telefone', 'Téléphone', 'Teléfono', 'Telefon'],
+  ['creating', 'Creating...', 'Á chruthú...', 'A criar...', 'Création...', 'Creando...', 'Wird erstellt...'],
+  ['createSupplier', 'Create Supplier', 'Cruthaigh Soláthraí', 'Criar fornecedor', 'Créer le fournisseur', 'Crear proveedor', 'Lieferanten erstellen'],
+  ['createError', 'Failed to create supplier', 'Níorbh fhéidir an soláthraí a chruthú', 'Não foi possível criar o fornecedor', 'Impossible de créer le fournisseur', 'No se pudo crear el proveedor', 'Lieferant konnte nicht erstellt werden'],
+  ['uploadError', 'Failed to upload supplier documents', 'Níorbh fhéidir doiciméid an tsoláthraí a uaslódáil', 'Não foi possível carregar os documentos do fornecedor', 'Impossible d’importer les documents du fournisseur', 'No se pudieron subir los documentos del proveedor', 'Lieferantendokumente konnten nicht hochgeladen werden'],
+  ['downloadError', 'Failed to download file', 'Níorbh fhéidir an comhad a íoslódáil', 'Não foi possível transferir o ficheiro', 'Impossible de télécharger le fichier', 'No se pudo descargar el archivo', 'Datei konnte nicht heruntergeladen werden'],
+  ['loadingDocuments', 'Loading documents...', 'Doiciméid á luchtú...', 'A carregar documentos...', 'Chargement des documents...', 'Cargando documentos...', 'Dokumente werden geladen...'],
+  ['supplierNotFound', 'Supplier not found', 'Níor aimsíodh an soláthraí', 'Fornecedor não encontrado', 'Fournisseur introuvable', 'Proveedor no encontrado', 'Lieferant nicht gefunden'],
+  ['supplierDocuments', 'Supplier Documents', 'Doiciméid Soláthraí', 'Documentos do fornecedor', 'Documents du fournisseur', 'Documentos del proveedor', 'Lieferantendokumente'],
+  ['uploadDocuments', 'Upload documents', 'Uaslódáil doiciméid', 'Carregar documentos', 'Importer des documents', 'Subir documentos', 'Dokumente hochladen'],
+  ['attachDocuments', 'Attach datasheets directly to this supplier.', 'Ceangail bileoga sonraí go díreach leis an soláthraí seo.', 'Anexe fichas técnicas diretamente a este fornecedor.', 'Associez des fiches techniques directement à ce fournisseur.', 'Adjunta fichas técnicas directamente a este proveedor.', 'Datenblätter direkt diesem Lieferanten zuordnen.'],
+  ['autoUploadEnabled', 'Auto upload enabled', 'Uath-uaslódáil cumasaithe', 'Carregamento automático ativo', 'Import automatique activé', 'Carga automática activada', 'Automatischer Upload aktiviert'],
+  ['queued', 'Queued', 'Sa chiú', 'Em fila', 'En attente', 'En cola', 'In Warteschlange'],
+  ['uploading', 'Uploading', 'Á uaslódáil', 'A carregar', 'Import en cours', 'Subiendo', 'Wird hochgeladen'],
+  ['uploaded', 'Uploaded', 'Uaslódáilte', 'Carregado', 'Importé', 'Subido', 'Hochgeladen'],
+  ['failed', 'Failed', 'Theip air', 'Falhou', 'Échec', 'Error', 'Fehlgeschlagen'],
+  ['noDocuments', 'No documents yet', 'Níl aon doiciméid ann fós', 'Ainda não existem documentos', 'Aucun document pour le moment', 'Aún no hay documentos', 'Noch keine Dokumente'],
+  ['documentsAppearHere', 'Datasheets uploaded with this supplier name will appear here.', 'Beidh bileoga sonraí a uaslódáiltear le hainm an tsoláthraí seo le feiceáil anseo.', 'As fichas carregadas com o nome deste fornecedor aparecerão aqui.', 'Les fiches importées avec le nom de ce fournisseur apparaîtront ici.', 'Las fichas subidas con el nombre de este proveedor aparecerán aquí.', 'Datenblätter mit diesem Lieferantennamen werden hier angezeigt.'],
+  ['unknownIngredient', 'Unknown ingredient', 'Comhábhar anaithnid', 'Ingrediente desconhecido', 'Ingrédient inconnu', 'Ingrediente desconocido', 'Unbekannte Zutat'],
+  ['direct', 'Direct', 'Díreach', 'Direto', 'Direct', 'Directo', 'Direkt'],
+  ['review', 'Review', 'Athbhreithniú', 'Revisão', 'Révision', 'Revisión', 'Prüfung'],
+] as const
+
+function locale(index: LocaleIndex) {
+  return Object.fromEntries(rows.map((row) => [row[0], row[index]]))
+}
+
+export const supplierPortalTranslations = {
+  en: { supplierPortal: locale(1) }, ga: { supplierPortal: locale(2) }, pt: { supplierPortal: locale(3) },
+  fr: { supplierPortal: locale(4) }, es: { supplierPortal: locale(5) }, de: { supplierPortal: locale(6) },
+} as const

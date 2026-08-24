@@ -11,6 +11,7 @@ import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import DatasheetUploader from '@/components/admin/DatasheetUploader'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 interface Supplier {
   id: string
@@ -49,6 +50,7 @@ interface IngredientSummary {
 }
 
 export default function SupplierDocsPage() {
+  const { t, language } = useTranslation()
   const params = useParams()
   const supplierId = params.id as string
 
@@ -100,7 +102,7 @@ export default function SupplierDocsPage() {
         )
         const ingredientNameLookup = (ingredientsData.ingredients || []).reduce(
           (acc: Record<string, string>, ingredient: IngredientSummary) => {
-            acc[String(ingredient.id)] = ingredient.name || 'Unknown ingredient'
+            acc[String(ingredient.id)] = ingredient.name || t('supplierPortal.unknownIngredient')
             return acc
           },
           {}
@@ -133,7 +135,7 @@ export default function SupplierDocsPage() {
     }
 
     fetchData()
-  }, [supplierId])
+  }, [supplierId, t])
 
   const getUploadKey = (file: UploadFile, index: number) => {
     return `${file.file_name}-${file.file_size}-${index}`
@@ -180,7 +182,7 @@ export default function SupplierDocsPage() {
     )
     const ingredientNameLookup = (ingredientsData.ingredients || []).reduce(
       (acc: Record<string, string>, ingredient: IngredientSummary) => {
-        acc[String(ingredient.id)] = ingredient.name || 'Unknown ingredient'
+        acc[String(ingredient.id)] = ingredient.name || t('supplierPortal.unknownIngredient')
         return acc
       },
       {}
@@ -239,12 +241,11 @@ export default function SupplierDocsPage() {
         })
 
         if (!response.ok) {
-          const errorData = await response.json()
           setUploadStatuses((prev) => ({
             ...prev,
             [getUploadKey(datasheet, index)]: 'error'
           }))
-          throw new Error(errorData.error || `Failed to upload ${datasheet.file_name}`)
+          throw new Error(t('supplierPortal.uploadError'))
         }
 
         setUploadStatuses((prev) => ({
@@ -269,7 +270,7 @@ export default function SupplierDocsPage() {
         })
         return next
       })
-      alert(error.message || 'Failed to upload supplier documents')
+      alert(error.message || t('supplierPortal.uploadError'))
     } finally {
       setUploading(false)
     }
@@ -291,7 +292,7 @@ export default function SupplierDocsPage() {
     try {
       const response = await fetch(url)
       if (!response.ok) {
-        throw new Error('Failed to download file')
+        throw new Error(t('supplierPortal.downloadError'))
       }
       const blob = await response.blob()
       const objectUrl = URL.createObjectURL(blob)
@@ -304,7 +305,7 @@ export default function SupplierDocsPage() {
       URL.revokeObjectURL(objectUrl)
     } catch (error) {
       console.error('Download failed:', error)
-      alert('Failed to download file')
+      alert(t('supplierPortal.downloadError'))
     }
   }
 
@@ -317,7 +318,7 @@ export default function SupplierDocsPage() {
               <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
               <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
             </div>
-            <p className="text-gray-600">Loading documents...</p>
+            <p className="text-gray-600">{t('supplierPortal.loadingDocuments')}</p>
           </div>
         </div>
       </Container>
@@ -330,10 +331,10 @@ export default function SupplierDocsPage() {
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <p className="text-gray-600">Supplier not found</p>
+            <p className="text-gray-600">{t('supplierPortal.supplierNotFound')}</p>
             <Link href="/admin/suppliers">
               <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} className="mt-4">
-                Back to Suppliers
+                {t('supplierPortal.backToSuppliers')}
               </Button>
             </Link>
           </div>
@@ -347,7 +348,7 @@ export default function SupplierDocsPage() {
       <div className="py-8">
         <Link href={`/admin/suppliers/${supplierId}`}>
           <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />}>
-            Back to Supplier
+            {t('supplierPortal.backToSupplier')}
           </Button>
         </Link>
 
@@ -357,7 +358,7 @@ export default function SupplierDocsPage() {
               <FileText className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-[#003842] dark:text-white">Supplier Documents</h1>
+              <h1 className="text-3xl font-bold text-[#003842] dark:text-white">{t('supplierPortal.supplierDocuments')}</h1>
               <p className="text-gray-600">{supplier.name}</p>
             </div>
           </div>
@@ -365,10 +366,10 @@ export default function SupplierDocsPage() {
           <div className="mb-8 border border-gray-200 rounded-xl p-5 bg-gray-50">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">Upload documents</h2>
-                <p className="text-sm text-gray-600">Attach datasheets directly to this supplier.</p>
+                <h2 className="text-lg font-semibold text-gray-900">{t('supplierPortal.uploadDocuments')}</h2>
+                <p className="text-sm text-gray-600">{t('supplierPortal.attachDocuments')}</p>
               </div>
-              <Badge variant="info">Auto upload enabled</Badge>
+              <Badge variant="info">{t('supplierPortal.autoUploadEnabled')}</Badge>
             </div>
             <DatasheetUploader
               key={uploaderKey}
@@ -391,12 +392,12 @@ export default function SupplierDocsPage() {
                   const key = getUploadKey(file, index)
                   const status = uploadStatuses[key] || 'queued'
                   const statusLabel = status === 'queued'
-                    ? 'Queued'
+                    ? t('supplierPortal.queued')
                     : status === 'uploading'
-                      ? 'Uploading'
+                      ? t('supplierPortal.uploading')
                       : status === 'uploaded'
-                        ? 'Uploaded'
-                        : 'Failed'
+                        ? t('supplierPortal.uploaded')
+                        : t('supplierPortal.failed')
 
                   return (
                     <div key={key} className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2">
@@ -425,9 +426,9 @@ export default function SupplierDocsPage() {
           {datasheets.length === 0 ? (
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
               <AlertCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">No documents yet</h2>
+              <h2 className="text-lg font-semibold text-gray-900 mb-2">{t('supplierPortal.noDocuments')}</h2>
               <p className="text-gray-600 mb-6">
-                Datasheets uploaded with this supplier name will appear here.
+                {t('supplierPortal.documentsAppearHere')}
               </p>
             </div>
           ) : (
@@ -435,8 +436,8 @@ export default function SupplierDocsPage() {
               {datasheets.map((sheet) => {
                 const ingredientKey = sheet.ingredient_id ? String(sheet.ingredient_id) : ''
                 const ingredientLabel = ingredientKey
-                  ? ingredientNameLookup[ingredientKey] || 'Unknown ingredient'
-                  : 'Direct'
+                  ? ingredientNameLookup[ingredientKey] || t('supplierPortal.unknownIngredient')
+                  : t('supplierPortal.direct')
                 const tagVariant = ingredientKey ? 'info' : 'success'
 
                 return (
@@ -449,7 +450,7 @@ export default function SupplierDocsPage() {
                       </div>
                       <p className="text-sm text-gray-500">
                         {sheet.file_type || 'application/pdf'}
-                        {sheet.next_review_date ? ` • Review ${new Date(sheet.next_review_date).toLocaleDateString()}` : ''}
+                        {sheet.next_review_date ? ` • ${t('supplierPortal.review')} ${new Date(sheet.next_review_date).toLocaleDateString(language)}` : ''}
                       </p>
                       {sheet.notes && <p className="text-sm text-gray-600 mt-1">{sheet.notes}</p>}
                     </div>
@@ -461,11 +462,11 @@ export default function SupplierDocsPage() {
                           icon={<Download className="h-4 w-4" />}
                           onClick={() => handleDownload(sheet.file_path, sheet.file_name)}
                         >
-                          Download
+                          {t('corePortal.download')}
                         </Button>
                         <a href={sheet.file_path} target="_blank" rel="noreferrer">
                           <Button variant="ghost" size="sm" icon={<Eye className="h-4 w-4" />}>
-                            View
+                            {t('admin.view')}
                           </Button>
                         </a>
                       </div>
