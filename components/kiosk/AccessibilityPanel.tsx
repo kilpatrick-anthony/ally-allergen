@@ -26,8 +26,10 @@ interface AccessibilitySettings {
 import { Card } from '@/components/layout/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import { useTranslation } from '@/lib/hooks/useTranslation';
 
 export default function AccessibilityPanel() {
+  const { t, language } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
   const [settings, setSettings] = useState<AccessibilitySettings>({
@@ -42,6 +44,12 @@ export default function AccessibilityPanel() {
     lineHeight: 'normal'
   });
   const [showDefaultsNotice, setShowDefaultsNotice] = useState(false);
+  const fontSizeLabels = {
+    normal: t('kioskAccessibility.fontNormal'),
+    large: t('kioskAccessibility.fontLarge'),
+    'x-large': t('kioskAccessibility.fontExtraLarge'),
+    'xx-large': t('kioskAccessibility.fontLargest'),
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined' && !localStorage.getItem('accessibilityDefaultsMigrated')) {
@@ -154,7 +162,7 @@ export default function AccessibilityPanel() {
   // Speech functions
   const startSpeech = () => {
     if (!('speechSynthesis' in window)) {
-      alert('Text-to-speech is not supported in your browser');
+      alert(t('kioskAccessibility.speechUnsupported'));
       applySettings({ speech: false });
       return;
     }
@@ -170,7 +178,8 @@ export default function AccessibilityPanel() {
       speechRef.current.rate = settings.speechRate;
       speechRef.current.pitch = 1;
       speechRef.current.volume = 1;
-      speechRef.current.lang = 'en-US';
+      const speechLocales = { en: 'en-IE', ga: 'ga-IE', pt: 'pt-PT', fr: 'fr-FR', es: 'es-ES', de: 'de-DE' };
+      speechRef.current.lang = speechLocales[language];
       
       speechRef.current.onend = () => {
         applySettings({ speech: false });
@@ -191,7 +200,7 @@ export default function AccessibilityPanel() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.altKey && e.key === 'a') {
         e.preventDefault();
-        setIsOpen(!isOpen);
+        setIsOpen(current => !current);
       }
       if (e.ctrlKey && e.altKey && e.key === 's') {
         e.preventDefault();
@@ -245,9 +254,10 @@ export default function AccessibilityPanel() {
     <>
       {/* KIOSK VERSION - Top right floating button */}
       <button 
-        onClick={() => setIsOpen(!isOpen)}
+        type="button"
+        onClick={() => setIsOpen(current => !current)}
         className="fixed top-24 right-6 z-50 bg-gradient-to-br from-[#42b8ac] to-[#003842] text-white p-3 rounded-xl shadow-lg hover:shadow-xl focus:outline-none focus:ring-4 focus:ring-[#42b8ac]/30 transition-all duration-200 flex items-center justify-center gap-2"
-        aria-label="Accessibility settings"
+        aria-label={t('accessibility.settings')}
         aria-expanded={isOpen}
         style={{ 
           minWidth: 'auto',
@@ -256,7 +266,7 @@ export default function AccessibilityPanel() {
         }}
       >
         <User className="h-5 w-5" />
-        <span className="font-medium text-sm hidden md:inline">Accessibility</span>
+        <span className="font-medium text-sm hidden md:inline">{t('accessibility.settings')}</span>
         {isOpen ? <X className="h-4 w-4 ml-1" /> : null}
       </button>
 
@@ -273,14 +283,14 @@ export default function AccessibilityPanel() {
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-[#003842]">
-                      Accessibility
+                      {t('accessibility.settings')}
                     </h2>
                     <p className="text-sm text-gray-600">
-                      Adjust for your needs
+                      {t('accessibility.description')}
                     </p>
                     {showDefaultsNotice && (
                       <div className="mt-3 p-2 rounded bg-yellow-50 border border-yellow-100 text-yellow-800 text-sm flex items-center justify-between gap-3">
-                        <div>Accessibility defaults updated — <strong>highlight links</strong> are now OFF by default.</div>
+                        <div>{t('accessibility.defaultsUpdated')}</div>
                         <div className="flex gap-2">
                           <Button size="sm" onClick={() => {
                             const defaults = {
@@ -298,20 +308,21 @@ export default function AccessibilityPanel() {
                             try { localStorage.setItem('accessibilitySettings', JSON.stringify(defaults)) } catch {}
                             localStorage.setItem('accessibilityDefaultsMigrated', 'true')
                             setShowDefaultsNotice(false)
-                          }}>Apply new defaults</Button>
+                          }}>{t('accessibility.applyDefaults')}</Button>
                           <Button size="sm" variant="ghost" onClick={() => {
                             localStorage.setItem('accessibilityDefaultsMigrated', 'true')
                             setShowDefaultsNotice(false)
-                          }}>Dismiss</Button>
+                          }}>{t('accessibility.dismiss')}</Button>
                         </div>
                       </div>
                     )}
                   </div>
                 </div>
                 <button
-                  onClick={() => setIsExpanded(!isExpanded)}
+                  type="button"
+                  onClick={() => setIsExpanded(current => !current)}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                  aria-label={isExpanded ? "Show fewer options" : "Show all options"}
+                  aria-label={isExpanded ? t('kioskAccessibility.showFewer') : t('kioskAccessibility.showAll')}
                 >
                   {isExpanded ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
                 </button>
@@ -322,7 +333,7 @@ export default function AccessibilityPanel() {
             <div className="p-6 overflow-y-auto max-h-[50vh]">
               {/* Quick Controls - Always visible */}
               <div className="mb-6">
-                <h3 className="font-semibold text-[#003842] mb-3">Quick Adjustments</h3>
+                <h3 className="font-semibold text-[#003842] mb-3">{t('kioskAccessibility.quickAdjustments')}</h3>
                 <div className="grid grid-cols-2 gap-3">
                   <Button
                     variant="outline"
@@ -336,7 +347,7 @@ export default function AccessibilityPanel() {
                     }}
                     icon={Text}
                   >
-                    Text Size
+                    {t('kioskAccessibility.textSize')}
                   </Button>
                   <Button
                     variant="outline"
@@ -349,7 +360,7 @@ export default function AccessibilityPanel() {
                     }}
                     icon={Contrast}
                   >
-                    Contrast
+                    {t('kioskAccessibility.contrast')}
                   </Button>
                 </div>
               </div>
@@ -357,14 +368,15 @@ export default function AccessibilityPanel() {
               {/* Font Size Selector */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-[#003842]">Font Size</h3>
+                  <h3 className="font-semibold text-[#003842]">{t('accessibility.fontSize')}</h3>
                   <Badge variant="primary">
-                    {settings.fontSize.replace('-', ' ')}
+                    {fontSizeLabels[settings.fontSize]}
                   </Badge>
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                   {(['normal', 'large', 'x-large', 'xx-large'] as const).map((size) => (
                     <button
+                      type="button"
                       key={size}
                       onClick={() => applySettings({ fontSize: size })}
                       className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
@@ -386,31 +398,32 @@ export default function AccessibilityPanel() {
                 <div className="space-y-6">
                   {/* Text Appearance */}
                   <div>
-                    <h3 className="font-semibold text-[#003842] mb-3">Text Appearance</h3>
+                    <h3 className="font-semibold text-[#003842] mb-3">{t('accessibility.textAppearance')}</h3>
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Font Type
+                          {t('accessibility.fontType')}
                         </label>
                         <select 
                           value={settings.fontFamily}
                           onChange={(e) => applySettings({ fontFamily: e.target.value as any })}
                           className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                         >
-                          <option value="default">Default Font</option>
-                          <option value="dyslexic">Dyslexia-friendly</option>
-                          <option value="high-contrast">High Visibility</option>
+                          <option value="default">{t('accessibility.defaultFont')}</option>
+                          <option value="dyslexic">{t('accessibility.accessibilityFont')}</option>
+                          <option value="high-contrast">{t('accessibility.highVisibility')}</option>
                         </select>
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Letter Spacing
+                            {t('accessibility.letterSpacing')}
                           </label>
                           <div className="flex flex-col gap-2">
                             {(['normal', 'wide', 'extra-wide'] as const).map((spacing) => (
                               <button
+                                type="button"
                                 key={spacing}
                                 onClick={() => applySettings({ letterSpacing: spacing })}
                                 className={`py-2 px-3 rounded-lg text-sm ${
@@ -419,7 +432,7 @@ export default function AccessibilityPanel() {
                                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                               >
-                                {spacing.replace('-', ' ')}
+                                {t(`accessibility.${spacing === 'extra-wide' ? 'extraWide' : spacing}`)}
                               </button>
                             ))}
                           </div>
@@ -427,11 +440,12 @@ export default function AccessibilityPanel() {
 
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Line Height
+                            {t('accessibility.lineHeight')}
                           </label>
                           <div className="flex flex-col gap-2">
                             {(['normal', 'relaxed', 'very-relaxed'] as const).map((height) => (
                               <button
+                                type="button"
                                 key={height}
                                 onClick={() => applySettings({ lineHeight: height })}
                                 className={`py-2 px-3 rounded-lg text-sm ${
@@ -440,7 +454,7 @@ export default function AccessibilityPanel() {
                                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                 }`}
                               >
-                                {height.replace('-', ' ')}
+                                {t(`accessibility.${height === 'very-relaxed' ? 'veryRelaxed' : height}`)}
                               </button>
                             ))}
                           </div>
@@ -451,15 +465,16 @@ export default function AccessibilityPanel() {
 
                   {/* Visual Preferences */}
                   <div>
-                    <h3 className="font-semibold text-[#003842] mb-3">Visual Preferences</h3>
+                    <h3 className="font-semibold text-[#003842] mb-3">{t('accessibility.visualPreferences')}</h3>
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Color Contrast
+                          {t('accessibility.colorContrast')}
                         </label>
                         <div className="grid grid-cols-3 gap-2">
                           {(['normal', 'high', 'inverted'] as const).map((mode) => (
                             <button
+                              type="button"
                               key={mode}
                               onClick={() => applySettings({ contrast: mode })}
                               className={`py-2 rounded-lg font-medium ${
@@ -472,7 +487,7 @@ export default function AccessibilityPanel() {
                                 'bg-yellow-300 text-black'
                               }`}
                             >
-                              {mode}
+                              {t(`accessibility.${mode}`)}
                             </button>
                           ))}
                         </div>
@@ -480,12 +495,15 @@ export default function AccessibilityPanel() {
 
                       <div className="space-y-3">
                         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <span className="font-medium text-gray-900">Reduce Motion</span>
+                          <span className="font-medium text-gray-900">{t('accessibility.reduceMotion')}</span>
                           <button
+                            type="button"
                             onClick={() => applySettings({ reducedMotion: !settings.reducedMotion })}
                             className={`relative inline-flex h-6 w-11 items-center rounded-full ${
                               settings.reducedMotion ? 'bg-[#42b8ac]' : 'bg-gray-300'
                             }`}
+                            aria-label={t('accessibility.reduceMotion')}
+                            aria-pressed={settings.reducedMotion}
                           >
                             <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
                               settings.reducedMotion ? 'translate-x-6' : 'translate-x-1'
@@ -494,12 +512,15 @@ export default function AccessibilityPanel() {
                         </div>
 
                         <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <span className="font-medium text-gray-900">Highlight Links</span>
+                          <span className="font-medium text-gray-900">{t('accessibility.highlightInteractive')}</span>
                           <button
+                            type="button"
                             onClick={() => applySettings({ highlightLinks: !settings.highlightLinks })}
                             className={`relative inline-flex h-6 w-11 items-center rounded-full ${
                               settings.highlightLinks ? 'bg-[#42b8ac]' : 'bg-gray-300'
                             }`}
+                            aria-label={t('accessibility.highlightInteractive')}
+                            aria-pressed={settings.highlightLinks}
                           >
                             <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${
                               settings.highlightLinks ? 'translate-x-6' : 'translate-x-1'
@@ -512,7 +533,7 @@ export default function AccessibilityPanel() {
 
                   {/* Text-to-Speech */}
                   <div>
-                    <h3 className="font-semibold text-[#003842] mb-3">Read Aloud</h3>
+                    <h3 className="font-semibold text-[#003842] mb-3">{t('accessibility.textToSpeech')}</h3>
                     <div className="space-y-4">
                       <Button
                         variant={settings.speech ? "danger" : "primary"}
@@ -520,13 +541,13 @@ export default function AccessibilityPanel() {
                         onClick={() => applySettings({ speech: !settings.speech })}
                         fullWidth
                       >
-                        {settings.speech ? 'Stop Reading' : 'Start Reading'}
+                        {settings.speech ? t('accessibility.stopReading') : t('accessibility.readAloud')}
                       </Button>
 
                       {settings.speech && (
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Speech Speed: {settings.speechRate.toFixed(1)}x
+                            {t('accessibility.speechSpeed')}: {settings.speechRate.toFixed(1)}x
                           </label>
                           <input
                             type="range"
@@ -553,7 +574,7 @@ export default function AccessibilityPanel() {
                     fullWidth
                     icon={Maximize2}
                   >
-                    Show More Options
+                    {t('kioskAccessibility.showMore')}
                   </Button>
                 )}
                 
@@ -563,11 +584,11 @@ export default function AccessibilityPanel() {
                   fullWidth
                   icon={RotateCcw}
                 >
-                  Reset to Defaults
+                  {t('accessibility.reset')}
                 </Button>
 
                 <div className="text-xs text-gray-500 pt-4 border-t text-center">
-                  Press <kbd className="px-2 py-1 bg-gray-100 rounded">Ctrl+Alt+A</kbd> to toggle
+                  {t('kioskAccessibility.shortcut', { shortcut: 'Ctrl+Alt+A' })}
                 </div>
               </div>
             </div>

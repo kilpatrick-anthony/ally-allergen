@@ -6,6 +6,7 @@ import { AlertTriangle, Calendar, CheckCircle, X, Bell, Eye, FileText } from 'lu
 import { Card } from '../layout/Card'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 interface DatasheetNotification {
   id: string
@@ -30,9 +31,9 @@ export default function DatasheetReviewNotifications({
   onViewDatasheet,
   compact = false
 }: DatasheetReviewNotificationsProps) {
+  const { t, language } = useTranslation()
   const [notifications, setNotifications] = useState<DatasheetNotification[]>([])
   const [loading, setLoading] = useState(true)
-  const [showDismissed, setShowDismissed] = useState(false)
 
   useEffect(() => {
     // In production, fetch from API
@@ -78,8 +79,16 @@ export default function DatasheetReviewNotifications({
   }, [])
 
   const handleDismiss = (notificationId: string) => {
-    setNotifications(notifications.filter(n => n.id !== notificationId))
+    setNotifications(current => current.filter(n => n.id !== notificationId))
     onDismiss?.(notificationId)
+  }
+
+  const dueText = (notification: DatasheetNotification) => {
+    const count = Math.abs(notification.days_until_review)
+    const key = notification.status === 'overdue'
+      ? count === 1 ? 'datasheetReview.overdueByDay' : 'datasheetReview.overdueByDays'
+      : count === 1 ? 'datasheetReview.dueInDay' : 'datasheetReview.dueInDays'
+    return t(key, { count })
   }
 
   const overdueCount = notifications.filter(n => n.status === 'overdue').length
@@ -93,7 +102,7 @@ export default function DatasheetReviewNotifications({
             <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
             <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
           </div>
-          <p className="text-sm text-gray-500 mt-2">Loading notifications...</p>
+          <p className="text-sm text-gray-500 mt-2">{t('datasheetReview.loading')}</p>
         </div>
       </Card>
     )
@@ -105,10 +114,10 @@ export default function DatasheetReviewNotifications({
         <div className="p-6 text-center">
           <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-3" />
           <h3 className="text-lg font-semibold text-gray-900 mb-1">
-            All Up to Date!
+            {t('datasheetReview.allUpToDate')}
           </h3>
           <p className="text-sm text-gray-600">
-            No datasheets require review at this time
+            {t('datasheetReview.noneRequireReview')}
           </p>
         </div>
       </Card>
@@ -143,14 +152,14 @@ export default function DatasheetReviewNotifications({
                   {notification.file_name}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {notification.status === 'overdue'
-                    ? `Overdue by ${Math.abs(notification.days_until_review)} days`
-                    : `Due in ${notification.days_until_review} days`}
+                  {dueText(notification)}
                 </p>
               </div>
               <button
+                type="button"
                 onClick={() => handleDismiss(notification.id)}
                 className="ml-2 p-1 hover:bg-white rounded"
+                aria-label={t('datasheetReview.dismissNamed', { name: notification.entity_name })}
               >
                 <X className="h-4 w-4 text-gray-500" />
               </button>
@@ -159,7 +168,12 @@ export default function DatasheetReviewNotifications({
         ))}
         {notifications.length > 3 && (
           <p className="text-xs text-center text-gray-500 pt-2">
-            +{notifications.length - 3} more notifications
+            {t(
+              notifications.length - 3 === 1
+                ? 'datasheetReview.moreNotification'
+                : 'datasheetReview.moreNotifications',
+              { count: notifications.length - 3 }
+            )}
           </p>
         )}
       </div>
@@ -177,22 +191,27 @@ export default function DatasheetReviewNotifications({
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
-                Datasheet Review Reminders
+                {t('datasheetReview.title')}
               </h3>
               <p className="text-sm text-gray-600">
-                {notifications.length} datasheet{notifications.length !== 1 ? 's' : ''} need{notifications.length === 1 ? 's' : ''} review
+                {t(
+                  notifications.length === 1
+                    ? 'datasheetReview.needsReview'
+                    : 'datasheetReview.needReview',
+                  { count: notifications.length }
+                )}
               </p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
             {overdueCount > 0 && (
               <Badge variant="error">
-                {overdueCount} Overdue
+                {overdueCount} {t('datasheetReview.overdue')}
               </Badge>
             )}
             {dueSoonCount > 0 && (
               <Badge variant="warning">
-                {dueSoonCount} due soon
+                {dueSoonCount} {t('datasheetReview.dueSoon')}
               </Badge>
             )}
           </div>
@@ -226,11 +245,13 @@ export default function DatasheetReviewNotifications({
                       variant={notification.entity_type === 'ingredient' ? 'info' : 'info'}
                       size="sm"
                     >
-                      {notification.entity_type === 'ingredient' ? 'Ingredient' : 'Menu Item'}
+                      {notification.entity_type === 'ingredient'
+                        ? t('datasheetReview.ingredient')
+                        : t('datasheetReview.menuItem')}
                     </Badge>
                     {notification.status === 'overdue' && (
                       <Badge variant="error" size="sm">
-                        Overdue
+                        {t('datasheetReview.overdue')}
                       </Badge>
                     )}
                   </div>
@@ -242,21 +263,28 @@ export default function DatasheetReviewNotifications({
                     </div>
                     {notification.supplier_name && (
                       <div className="flex items-center space-x-2 text-sm text-gray-600">
-                        <span className="font-medium">Supplier:</span>
+                        <span className="font-medium">{t('datasheetReview.supplier')}</span>
                         <span>{notification.supplier_name}</span>
                       </div>
                     )}
                     <div className="flex items-center space-x-2 text-sm text-gray-600">
                       <Calendar className="h-4 w-4 text-gray-400" />
                       <span>
-                        Review date: {new Date(notification.next_review_date).toLocaleDateString()}
+                        {t('datasheetReview.reviewDate', {
+                          date: new Date(notification.next_review_date).toLocaleDateString(language)
+                        })}
                       </span>
                       <span className={`font-medium ${
                         notification.status === 'overdue' ? 'text-red-600' : 'text-amber-600'
                       }`}>
                         {notification.status === 'overdue'
-                          ? `(${Math.abs(notification.days_until_review)} days overdue)`
-                          : `(Due in ${notification.days_until_review} days)`}
+                          ? t(
+                              Math.abs(notification.days_until_review) === 1
+                                ? 'datasheetReview.daysOverdue'
+                                : 'datasheetReview.daysOverduePlural',
+                              { count: Math.abs(notification.days_until_review) }
+                            )
+                          : `(${dueText(notification)})`}
                       </span>
                     </div>
                   </div>
@@ -271,7 +299,7 @@ export default function DatasheetReviewNotifications({
                     onClick={() => onViewDatasheet(notification.datasheet_id)}
                   >
                     <Eye className="h-4 w-4 mr-1" />
-                    Review Now
+                    {t('datasheetReview.reviewNow')}
                   </Button>
                 )}
                 <Button
@@ -280,7 +308,7 @@ export default function DatasheetReviewNotifications({
                   onClick={() => handleDismiss(notification.id)}
                 >
                   <X className="h-4 w-4 mr-1" />
-                  Dismiss
+                  {t('datasheetReview.dismiss')}
                 </Button>
               </div>
             </div>
