@@ -26,6 +26,7 @@ import {
   type SupplierProfileMap,
 } from '@/lib/ingredient-supplier-profiles'
 import { useTranslation } from '@/lib/hooks/useTranslation'
+import { translateComplianceReason } from '@/lib/compliance-documents-translations'
 
 export default function EditIngredientPage() {
   const { showNotification } = useNotification()
@@ -607,7 +608,7 @@ export default function EditIngredientPage() {
                     {compliance.reasons.map((reason: string, idx: number) => (
                       <div key={idx} className="text-sm text-gray-600 flex items-start gap-2">
                         <span className="text-gray-400 mt-0.5">•</span>
-                        <span>{reason}</span>
+                        <span>{translateComplianceReason(reason, t)}</span>
                       </div>
                     ))}
                   </div>

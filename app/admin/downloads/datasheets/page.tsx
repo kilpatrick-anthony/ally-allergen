@@ -1,12 +1,12 @@
 // app/admin/downloads/datasheets/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { 
-  FileText, Download, Calendar, Clock,  AlertCircle, 
+  FileText, Download, AlertCircle,
   Filter, Search, RefreshCw, Eye, Package, ChefHat,
-  CheckCircle, AlertTriangle, ArrowLeft, Truck, Tag
+  CheckCircle, AlertTriangle, ArrowLeft
 } from 'lucide-react'
 
 // Import design system components
@@ -14,8 +14,8 @@ import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
-import DatasheetViewer from '@/components/admin/DatasheetViewer'
 import { createClient } from '@/lib/supabase/client'
+import { useTranslation } from '@/lib/hooks/useTranslation'
 
 interface DatasheetWithEntity {
   id: string
@@ -37,6 +37,7 @@ interface DatasheetWithEntity {
 }
 
 export default function DatasheetsPage() {
+  const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
@@ -46,8 +47,7 @@ export default function DatasheetsPage() {
   const [datasheets, setDatasheets] = useState<DatasheetWithEntity[]>([])
   const [showFilters, setShowFilters] = useState(false)
 
-  useEffect(() => {
-    const loadDatasheets = async () => {
+  const loadDatasheets = useCallback(async () => {
       try {
         console.log('📄 Datasheets page loading')
         setLoading(true)
@@ -57,7 +57,7 @@ export default function DatasheetsPage() {
         const { data: auth, error: authError } = await supabase.auth.getUser()
 
         if (authError || !auth?.user) {
-          throw new Error('Please sign in to view datasheets.')
+          throw new Error(t('complianceDocuments.signInForDatasheets'))
         }
 
         const { data: sheets, error: sheetsError } = await supabase
@@ -67,7 +67,7 @@ export default function DatasheetsPage() {
           .order('created_at', { ascending: false })
 
         if (sheetsError) {
-          throw new Error(sheetsError.message || 'Failed to load datasheets')
+          throw new Error(sheetsError.message || t('complianceDocuments.datasheetLoadFailed'))
         }
 
         const rawDatasheets = Array.isArray(sheets) ? sheets : []
@@ -84,27 +84,21 @@ export default function DatasheetsPage() {
         const ingredientMap = new Map<string, string>()
         const menuItemMap = new Map<string, string>()
 
-        if (ingredientIds.length > 0) {
-          const { data: ingredientsData } = await supabase
-            .from('ingredients')
-            .select('id, name')
-            .in('id', ingredientIds)
+        const [ingredientsResult, menuItemsResult] = await Promise.all([
+          ingredientIds.length > 0
+            ? supabase.from('ingredients').select('id, name').in('id', ingredientIds)
+            : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
+          menuItemIds.length > 0
+            ? supabase.from('menu_items').select('id, name').in('id', menuItemIds)
+            : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
+        ])
 
-          ;(ingredientsData || []).forEach((ingredient: { id: string; name: string }) => {
-            ingredientMap.set(ingredient.id, ingredient.name)
-          })
-        }
-
-        if (menuItemIds.length > 0) {
-          const { data: menuItemsData } = await supabase
-            .from('menu_items')
-            .select('id, name')
-            .in('id', menuItemIds)
-
-          ;(menuItemsData || []).forEach((menuItem: { id: string; name: string }) => {
-            menuItemMap.set(menuItem.id, menuItem.name)
-          })
-        }
+        ;(ingredientsResult.data || []).forEach((ingredient: { id: string; name: string }) => {
+          ingredientMap.set(ingredient.id, ingredient.name)
+        })
+        ;(menuItemsResult.data || []).forEach((menuItem: { id: string; name: string }) => {
+          menuItemMap.set(menuItem.id, menuItem.name)
+        })
 
         const computeReviewStatus = (nextReviewDate?: string | null) => {
           if (!nextReviewDate) return 'up_to_date' as const
@@ -124,15 +118,15 @@ export default function DatasheetsPage() {
           if (sheet.ingredient_id) {
             entityType = 'ingredient';
             entityId = String(sheet.ingredient_id);
-            entityName = ingredientMap.get(entityId) || 'Ingredient';
+            entityName = ingredientMap.get(entityId) || t('complianceDocuments.ingredient');
           } else if (sheet.menu_item_id) {
             entityType = 'menu_item';
             entityId = String(sheet.menu_item_id);
-            entityName = menuItemMap.get(entityId) || 'Menu Item';
+            entityName = menuItemMap.get(entityId) || t('complianceDocuments.menuItem');
           } else {
             entityType = 'ingredient';
             entityId = '';
-            entityName = 'Unknown';
+            entityName = t('complianceDocuments.unknown');
           }
 
           return {
@@ -157,26 +151,24 @@ export default function DatasheetsPage() {
 
         console.log('✅ Datasheets loaded, mapped:', mapped)
         setDatasheets(mapped)
-        if (mapped.length === 0) {
-          setLoadError('No datasheets found. Please upload a datasheet or check your filters.')
-        }
         console.log('✅ Datasheets loaded')
       } catch (err: any) {
         if (err?.name === 'AbortError') {
           console.error('Datasheets request timed out')
-          setLoadError('Loading datasheets timed out. Please try again.')
+          setLoadError(t('complianceDocuments.datasheetTimeout'))
         } else {
           console.error('Error loading datasheets:', err)
-          setLoadError(err?.message || 'Failed to load datasheets.')
+          setLoadError(err?.message || t('complianceDocuments.datasheetLoadFailed'))
         }
         setDatasheets([])
       } finally {
         setLoading(false)
       }
-    }
+  }, [t])
 
-    loadDatasheets()
-  }, [])
+  useEffect(() => {
+    void loadDatasheets()
+  }, [loadDatasheets])
 
   // Get unique suppliers
   const suppliers = Array.from(new Set(
@@ -219,7 +211,7 @@ export default function DatasheetsPage() {
   const handleMarkReviewed = (datasheet: DatasheetWithEntity) => {
     console.log('Mark reviewed:', datasheet.file_name)
     // In production, update database
-    setDatasheets(datasheets.map(d => 
+    setDatasheets(current => current.map(d =>
       d.id === datasheet.id 
         ? { ...d, last_reviewed_at: new Date().toISOString(), review_status: 'up_to_date' as const }
         : d
@@ -234,7 +226,7 @@ export default function DatasheetsPage() {
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#42b8ac]/20 border-t-[#42b8ac]"></div>
             <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#003842] animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
           </div>
-          <p className="text-gray-600">Loading datasheets...</p>
+          <p className="text-gray-600">{t('admin.loadingDatasheets')}</p>
         </div>
       </div>
     )
@@ -247,7 +239,7 @@ export default function DatasheetsPage() {
         <div className="flex items-center gap-3 mb-4">
           <Link href="/admin/downloads">
             <Button variant="ghost" size="sm" icon={<ArrowLeft className="h-4 w-4" />}>
-              Back to Downloads
+              {t('corePortal.backToDownloads')}
             </Button>
           </Link>
         </div>
@@ -259,16 +251,16 @@ export default function DatasheetsPage() {
                 <FileText className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-[#003842]">Product Datasheets</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-[#003842]">{t('admin.productDatasheets')}</h1>
                 <p className="text-gray-600">
-                  View and manage all product specification sheets and compliance documents
+                  {t('corePortal.datasheetDescription')}
                 </p>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             <Badge variant="primary" icon={FileText}>
-              {stats.total} datasheets
+              {stats.total} {t('corePortal.datasheets')}
             </Badge>
           </div>
         </div>
@@ -285,7 +277,7 @@ export default function DatasheetsPage() {
         <Card className="hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total</p>
+              <p className="text-sm font-medium text-gray-600">{t('corePortal.total')}</p>
               <p className="text-2xl font-bold text-[#003842] mt-1">{stats.total}</p>
             </div>
             <FileText className="h-8 w-8 text-[#42b8ac]" />
@@ -295,7 +287,7 @@ export default function DatasheetsPage() {
         <Card className="hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Ingredients</p>
+              <p className="text-sm font-medium text-gray-600">{t('adminPortal.ingredients')}</p>
               <p className="text-2xl font-bold text-[#003842] mt-1">{stats.ingredients}</p>
             </div>
             <Package className="h-8 w-8 text-blue-500" />
@@ -305,7 +297,7 @@ export default function DatasheetsPage() {
         <Card className="hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Menu Items</p>
+              <p className="text-sm font-medium text-gray-600">{t('admin.menuItems')}</p>
               <p className="text-2xl font-bold text-[#003842] mt-1">{stats.menuItems}</p>
             </div>
             <ChefHat className="h-8 w-8 text-purple-500" />
@@ -315,7 +307,7 @@ export default function DatasheetsPage() {
         <Card className="hover:shadow-lg transition-shadow border-amber-200 bg-amber-50">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-amber-700">Due Soon</p>
+              <p className="text-sm font-medium text-amber-700">{t('corePortal.dueSoon')}</p>
               <p className="text-2xl font-bold text-amber-800 mt-1">{stats.dueSoon}</p>
             </div>
             <AlertTriangle className="h-8 w-8 text-amber-500" />
@@ -325,7 +317,7 @@ export default function DatasheetsPage() {
         <Card className="hover:shadow-lg transition-shadow border-red-200 bg-red-50">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-red-700">Overdue</p>
+              <p className="text-sm font-medium text-red-700">{t('corePortal.overdue')}</p>
               <p className="text-2xl font-bold text-red-800 mt-1">{stats.overdue}</p>
             </div>
             <AlertCircle className="h-8 w-8 text-red-500" />
@@ -341,7 +333,8 @@ export default function DatasheetsPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search datasheets or items..."
+                aria-label={t('corePortal.searchDatasheets')}
+                placeholder={t('corePortal.searchDatasheets')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
@@ -354,12 +347,18 @@ export default function DatasheetsPage() {
               icon={<Filter className="h-4 w-4" />}
               onClick={() => setShowFilters(!showFilters)}
             >
-              Filters
+              {t('admin.filters')}
             </Button>
           </div>
 
-          <Button variant="secondary" size="md" icon={<RefreshCw className="h-4 w-4" />}>
-            Refresh
+          <Button
+            variant="secondary"
+            size="md"
+            icon={<RefreshCw className="h-4 w-4" />}
+            loading={loading}
+            onClick={() => void loadDatasheets()}
+          >
+            {t('admin.refresh')}
           </Button>
         </div>
 
@@ -368,46 +367,49 @@ export default function DatasheetsPage() {
           <div className="mt-6 pt-6 border-t">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Entity Type
+                <label htmlFor="datasheet-entity-type" className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('corePortal.entityType')}
                 </label>
                 <select
+                  id="datasheet-entity-type"
                   value={selectedEntityType}
                   onChange={(e) => setSelectedEntityType(e.target.value as any)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                 >
-                  <option value="all">All Types</option>
-                  <option value="ingredient">Ingredients</option>
-                  <option value="menu_item">Menu Items</option>
+                  <option value="all">{t('corePortal.allTypes')}</option>
+                  <option value="ingredient">{t('adminPortal.ingredients')}</option>
+                  <option value="menu_item">{t('admin.menuItems')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Review Status
+                <label htmlFor="datasheet-review-status" className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('corePortal.reviewStatus')}
                 </label>
                 <select
+                  id="datasheet-review-status"
                   value={selectedReviewStatus}
                   onChange={(e) => setSelectedReviewStatus(e.target.value as any)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                 >
-                  <option value="all">All Statuses</option>
-                  <option value="up_to_date">Up to Date</option>
-                  <option value="due_soon">Due Soon</option>
-                  <option value="overdue">Overdue</option>
+                  <option value="all">{t('corePortal.allStatuses')}</option>
+                  <option value="up_to_date">{t('corePortal.upToDate')}</option>
+                  <option value="due_soon">{t('corePortal.dueSoon')}</option>
+                  <option value="overdue">{t('corePortal.overdue')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Supplier
+                <label htmlFor="datasheet-supplier" className="block text-sm font-medium text-gray-700 mb-2">
+                  {t('supplierLabel')}
                 </label>
                 <select
+                  id="datasheet-supplier"
                   value={selectedSupplier}
                   onChange={(e) => setSelectedSupplier(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                 >
-                  <option value="all">All Suppliers</option>
+                  <option value="all">{t('corePortal.allSuppliers')}</option>
                   {suppliers.map(supplier => (
                     <option key={supplier} value={supplier}>{supplier}</option>
                   ))}
@@ -421,7 +423,7 @@ export default function DatasheetsPage() {
       {/* Results */}
       <div className="mb-4">
         <p className="text-sm text-gray-600">
-          Showing {filteredDatasheets.length} of {stats.total} datasheets
+          {t('admin.showing')} {filteredDatasheets.length} {t('admin.of')} {stats.total} {t('corePortal.datasheets')}
         </p>
       </div>
 
@@ -430,10 +432,12 @@ export default function DatasheetsPage() {
           <div className="text-center py-12">
             <FileText className="h-16 w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              No datasheets found
+              {t('corePortal.noDatasheetsFound')}
             </h3>
             <p className="text-gray-600">
-              Try adjusting your search or filters
+              {stats.total === 0
+                ? t('complianceDocuments.noDatasheetsHelp')
+                : t('admin.tryAdjustingSearch')}
             </p>
           </div>
         </Card>
@@ -453,19 +457,19 @@ export default function DatasheetsPage() {
                         {datasheet.file_name}
                       </h3>
                       {datasheet.review_status === 'overdue' && (
-                        <Badge variant="error">Overdue</Badge>
+                        <Badge variant="error">{t('corePortal.overdue')}</Badge>
                       )}
                       {datasheet.review_status === 'due_soon' && (
-                        <Badge variant="warning">Due Soon</Badge>
+                        <Badge variant="warning">{t('corePortal.dueSoon')}</Badge>
                       )}
                       {datasheet.review_status === 'up_to_date' && (
-                        <Badge variant="success">Up to Date</Badge>
+                        <Badge variant="success">{t('corePortal.upToDate')}</Badge>
                       )}
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                       <div>
-                        <p className="text-xs text-gray-500">Associated With</p>
+                        <p className="text-xs text-gray-500">{t('corePortal.associatedWith')}</p>
                         <div className="flex items-center space-x-2 mt-1">
                           {datasheet.entity_type === 'ingredient' ? (
                             <Package className="h-4 w-4 text-blue-500" />
@@ -480,7 +484,7 @@ export default function DatasheetsPage() {
 
                       {datasheet.supplier_name && (
                         <div>
-                          <p className="text-xs text-gray-500">Supplier</p>
+                          <p className="text-xs text-gray-500">{t('supplierLabel')}</p>
                           <p className="text-sm font-medium text-gray-900 mt-1">
                             {datasheet.supplier_name}
                           </p>
@@ -489,7 +493,7 @@ export default function DatasheetsPage() {
 
                       {datasheet.version && (
                         <div>
-                          <p className="text-xs text-gray-500">Version</p>
+                          <p className="text-xs text-gray-500">{t('corePortal.version')}</p>
                           <p className="text-sm font-medium text-gray-900 mt-1">
                             {datasheet.version}
                           </p>
@@ -498,7 +502,7 @@ export default function DatasheetsPage() {
 
                       {datasheet.next_review_date && (
                         <div>
-                          <p className="text-xs text-gray-500">Next Review</p>
+                          <p className="text-xs text-gray-500">{t('corePortal.nextReview')}</p>
                           <p className="text-sm font-medium text-gray-900 mt-1">
                             {new Date(datasheet.next_review_date).toLocaleDateString()}
                           </p>
@@ -515,7 +519,7 @@ export default function DatasheetsPage() {
                     icon={<Eye className="h-4 w-4" />}
                     onClick={() => handlePreview(datasheet)}
                   >
-                    Preview
+                    {t('corePortal.preview')}
                   </Button>
                   <Button
                     variant="secondary"
@@ -523,7 +527,7 @@ export default function DatasheetsPage() {
                     icon={<Download className="h-4 w-4" />}
                     onClick={() => handleDownload(datasheet)}
                   >
-                    Download
+                    {t('corePortal.download')}
                   </Button>
                   {datasheet.review_status !== 'up_to_date' && (
                     <Button
@@ -532,7 +536,7 @@ export default function DatasheetsPage() {
                       icon={<CheckCircle className="h-4 w-4" />}
                       onClick={() => handleMarkReviewed(datasheet)}
                     >
-                      Mark Reviewed
+                      {t('corePortal.markReviewed')}
                     </Button>
                   )}
                 </div>

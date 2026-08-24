@@ -34,6 +34,8 @@ const recentFiles = new Set([
   'components/shared/NotificationContainer.tsx',
   'components/team/TeamMembersPanel.tsx',
   'app/admin/devices/page.tsx',
+  'app/admin/compliance/page.tsx',
+  'app/admin/downloads/datasheets/page.tsx',
   'app/admin/ingredients/page.tsx',
   'app/admin/ingredients/[id]/edit/page.tsx',
   'app/admin/ingredients/[id]/page.tsx',
@@ -107,6 +109,14 @@ function loadTypeScriptExport(filename, exportName) {
         menuBuilderTranslations: loadTypeScriptExport(
           path.join(root, 'lib/menu-builder-translations.ts'),
           'menuBuilderTranslations',
+        ),
+      }
+    }
+    if (request === '@/lib/compliance-documents-translations') {
+      return {
+        complianceDocumentsTranslations: loadTypeScriptExport(
+          path.join(root, 'lib/compliance-documents-translations.ts'),
+          'complianceDocumentsTranslations',
         ),
       }
     }

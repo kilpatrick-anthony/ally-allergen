@@ -24,6 +24,7 @@ import { MenuItemSupplyFields, type MenuItemType, type SupplierOption } from '@/
 import type { AllergenWarnings } from '@/types/allergen'
 import { computeWorstCaseAllergens } from '@/types/allergen'
 import { useContentPermissions } from '@/lib/hooks/useContentPermissions'
+import { translateComplianceReason } from '@/lib/compliance-documents-translations'
 
 interface MenuItem {
   id: string
@@ -719,7 +720,7 @@ export default function EditMenuItemPage() {
                       {compliance.reasons.map((reason: string, idx: number) => (
                         <div key={idx} className="text-sm text-gray-600 flex items-start gap-2">
                           <span className="text-gray-400 mt-0.5">•</span>
-                          <span>{reason}</span>
+                          <span>{translateComplianceReason(reason, t)}</span>
                         </div>
                       ))}
                     </div>

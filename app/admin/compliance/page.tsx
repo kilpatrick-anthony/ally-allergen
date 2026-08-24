@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { AlertCircle, CheckCircle2, Clock, Filter, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslation } from '@/lib/hooks/useTranslation';
+import { translateComplianceReason } from '@/lib/compliance-documents-translations';
 
 interface ComplianceItem {
   id: string;
@@ -33,14 +34,14 @@ export default function ComplianceDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCompliance = async () => {
+  const fetchCompliance = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       const res = await fetch('/api/compliance/status?scope=all');
       
       if (!res.ok) {
-        setError('Failed to fetch compliance data');
+        setError(t('complianceDocuments.loadFailed'));
         console.error('Failed to fetch compliance data:', res.status);
         return;
       }
@@ -49,19 +50,21 @@ export default function ComplianceDashboard() {
       if (data.compliance) {
         setSummary(data.compliance);
       } else {
-        setError('No compliance data returned');
+        setError(t('complianceDocuments.noData'));
       }
     } catch (error) {
-      setError('Error fetching compliance: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      setError(t('complianceDocuments.fetchError', {
+        message: error instanceof Error ? error.message : t('complianceDocuments.unknownError'),
+      }));
       console.error('Error fetching compliance:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
-    fetchCompliance();
-  }, []);
+    void fetchCompliance();
+  }, [fetchCompliance]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -153,7 +156,7 @@ export default function ComplianceDashboard() {
           <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
             <AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-semibold text-red-900">Error Loading Compliance Data</h3>
+              <h3 className="font-semibold text-red-900">{t('corePortal.errorLoadingCompliance')}</h3>
               <p className="text-red-700 text-sm mt-1">{error}</p>
             </div>
           </div>
@@ -165,7 +168,7 @@ export default function ComplianceDashboard() {
             <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-slate-600 text-sm font-medium">Total Non-Compliant</p>
+                  <p className="text-slate-600 text-sm font-medium">{t('corePortal.totalNonCompliant')}</p>
                   <p className="text-3xl font-bold text-red-600 mt-2">{summary.totalNonCompliant}</p>
                 </div>
                 <AlertCircle size={32} className="text-red-600 opacity-20" />
@@ -175,7 +178,7 @@ export default function ComplianceDashboard() {
             <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-slate-600 text-sm font-medium">Errors</p>
+                  <p className="text-slate-600 text-sm font-medium">{t('admin.complianceErrors')}</p>
                   <p className="text-3xl font-bold text-red-600 mt-2">{summary.totalErrors}</p>
                 </div>
                 <AlertCircle size={32} className="text-red-600 opacity-20" />
@@ -185,7 +188,7 @@ export default function ComplianceDashboard() {
             <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-slate-600 text-sm font-medium">Warnings</p>
+                  <p className="text-slate-600 text-sm font-medium">{t('admin.complianceWarnings')}</p>
                   <p className="text-3xl font-bold text-amber-600 mt-2">{summary.totalWarnings}</p>
                 </div>
                 <Clock size={32} className="text-amber-600 opacity-20" />
@@ -195,7 +198,7 @@ export default function ComplianceDashboard() {
             <div className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-slate-600 text-sm font-medium">Total Items</p>
+                  <p className="text-slate-600 text-sm font-medium">{t('corePortal.totalItems')}</p>
                   <p className="text-3xl font-bold text-emerald-600 mt-2">
                     {(summary.ingredients.length + summary.menuItems.length)}
                   </p>
@@ -210,17 +213,17 @@ export default function ComplianceDashboard() {
         <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm mb-8">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="compliance-status-filter" className="block text-sm font-medium text-slate-700 mb-2">
                 <Filter size={16} className="inline mr-2" />
                 {t('admin.filter')}
               </label>
               <select
+                id="compliance-status-filter"
                 value={filter}
                 onChange={(e) => setFilter(e.target.value as any)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="all">All Statuses</option>
-                <option value="all">{t('admin.allStatus')}</option>
+                <option value="all">{t('corePortal.allStatuses')}</option>
                 <option value="error">{t('admin.notCompliant')}</option>
                 <option value="warning">{t('admin.reviewDueSoon')}</option>
                 <option value="compliant">{t('admin.compliant')}</option>
@@ -228,17 +231,18 @@ export default function ComplianceDashboard() {
             </div>
 
             <div className="flex-1">
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Item Type
+              <label htmlFor="compliance-item-type-filter" className="block text-sm font-medium text-slate-700 mb-2">
+                {t('corePortal.itemType')}
               </label>
               <select
+                id="compliance-item-type-filter"
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value as any)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="all">All Types</option>
-                <option value="ingredient">Ingredients</option>
-                <option value="menu_item">Menu Items</option>
+                <option value="all">{t('corePortal.allTypes')}</option>
+                <option value="ingredient">{t('adminPortal.ingredients')}</option>
+                <option value="menu_item">{t('admin.menuItems')}</option>
               </select>
             </div>
           </div>
@@ -255,11 +259,9 @@ export default function ComplianceDashboard() {
         ) : allFiltered.length === 0 ? (
           <div className="bg-white rounded-lg border border-slate-200 p-12 text-center shadow-sm">
             <CheckCircle2 size={48} className="mx-auto text-emerald-600 mb-4 opacity-50" />
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">All Clear!</h3>
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">{t('corePortal.allClear')}</h3>
             <p className="text-slate-600">
-              {filter === 'all'
-                ? 'No items to display with current filters.'
-                : `No ${filter} items found.`}
+              {t('corePortal.noFilteredItems')}
             </p>
           </div>
         ) : (
@@ -267,7 +269,7 @@ export default function ComplianceDashboard() {
             {/* Ingredients Section */}
             {filteredIngredients.length > 0 && (
               <div>
-                <h2 className="text-xl font-bold text-slate-900 mb-4">Ingredients ({filteredIngredients.length})</h2>
+                <h2 className="text-xl font-bold text-slate-900 mb-4">{t('adminPortal.ingredients')} ({filteredIngredients.length})</h2>
                 <div className="space-y-3">
                   {filteredIngredients.map((item) => (
                     <div
@@ -286,7 +288,7 @@ export default function ComplianceDashboard() {
                               {item.reasons.map((reason, idx) => (
                                 <li key={idx} className="flex items-start gap-2">
                                   <span className="text-slate-400 mt-0.5">•</span>
-                                  <span>{reason}</span>
+                                  <span>{translateComplianceReason(reason, t)}</span>
                                 </li>
                               ))}
                             </ul>
@@ -294,7 +296,7 @@ export default function ComplianceDashboard() {
 
                           {item.lastReviewedAt && (
                             <p className="text-xs text-slate-500 mt-2">
-                              Last reviewed: {new Date(item.lastReviewedAt).toLocaleDateString()}
+                              {t('corePortal.lastReviewed')} {new Date(item.lastReviewedAt).toLocaleDateString()}
                             </p>
                           )}
                         </div>
@@ -303,7 +305,7 @@ export default function ComplianceDashboard() {
                           href={`/admin/ingredients/${item.id}/edit`}
                           className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-semibold whitespace-nowrap shadow-sm transition-colors hover:shadow-md"
                         >
-                          Review
+                          {t('corePortal.review')}
                         </Link>
                       </div>
                     </div>
@@ -315,7 +317,7 @@ export default function ComplianceDashboard() {
             {/* Menu Items Section */}
             {filteredMenuItems.length > 0 && (
               <div>
-                <h2 className="text-xl font-bold text-slate-900 mb-4">Menu Items ({filteredMenuItems.length})</h2>
+                <h2 className="text-xl font-bold text-slate-900 mb-4">{t('admin.menuItems')} ({filteredMenuItems.length})</h2>
                 <div className="space-y-3">
                   {filteredMenuItems.map((item) => (
                     <div
@@ -334,7 +336,7 @@ export default function ComplianceDashboard() {
                               {item.reasons.map((reason, idx) => (
                                 <li key={idx} className="flex items-start gap-2">
                                   <span className="text-slate-400 mt-0.5">•</span>
-                                  <span>{reason}</span>
+                                  <span>{translateComplianceReason(reason, t)}</span>
                                 </li>
                               ))}
                             </ul>
@@ -342,7 +344,7 @@ export default function ComplianceDashboard() {
 
                           {item.lastReviewedAt && (
                             <p className="text-xs text-slate-500 mt-2">
-                              Last reviewed: {new Date(item.lastReviewedAt).toLocaleDateString()}
+                              {t('corePortal.lastReviewed')} {new Date(item.lastReviewedAt).toLocaleDateString()}
                             </p>
                           )}
                         </div>
@@ -351,7 +353,7 @@ export default function ComplianceDashboard() {
                           href={`/admin/menu-builder/${item.id}/edit`}
                           className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-semibold whitespace-nowrap shadow-sm transition-colors hover:shadow-md"
                         >
-                          Review
+                          {t('corePortal.review')}
                         </Link>
                       </div>
                     </div>
