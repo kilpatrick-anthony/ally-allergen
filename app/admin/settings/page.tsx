@@ -644,9 +644,9 @@ export default function SettingsPage() {
   const tabs = [
     { id: 'general', label: t('admin.settings'), icon: Settings },
     { id: 'branding', label: t('admin.branding'), icon: Palette },
-    ...(currentUserRole === 'owner' ? [{ id: 'team', label: 'Team', icon: Users }] : []),
+    ...(currentUserRole === 'owner' ? [{ id: 'team', label: t('settingsPortal.team'), icon: Users }] : []),
     { id: 'security', label: t('admin.security'), icon: Shield },
-    { id: 'accessibility', label: 'Accessibility', icon: Eye },
+    { id: 'accessibility', label: t('settingsPortal.accessibility'), icon: Eye },
     { id: 'privacy', label: t('cookieConsent.settings'), icon: Cookie },
 
   ]
@@ -681,6 +681,7 @@ export default function SettingsPage() {
                 const Icon = tab.icon
                 return (
                   <button
+                    type="button"
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`
@@ -691,12 +692,12 @@ export default function SettingsPage() {
                       }
                     `}
                   >
-                    <div className="flex items-center">
-                      {typeof Icon === 'function' && React.createElement(Icon as React.ComponentType<{className: string}>, { className: `mr-3 h-5 w-5 ${activeTab === tab.id ? 'text-teal-500' : 'text-gray-400 dark:text-gray-500'}` })}
-                      {tab.label}
+                    <div className="flex min-w-0 flex-1 items-center text-left">
+                      {typeof Icon === 'function' && React.createElement(Icon as React.ComponentType<{className: string}>, { className: `mr-3 h-5 w-5 shrink-0 ${activeTab === tab.id ? 'text-teal-500' : 'text-gray-400 dark:text-gray-500'}` })}
+                      <span className="min-w-0 flex-1 text-left leading-5">{tab.label}</span>
                     </div>
                     {activeTab === tab.id && (
-                      <ChevronRight className="h-4 w-4 text-teal-500" />
+                      <ChevronRight className="ml-2 h-4 w-4 shrink-0 text-teal-500" />
                     )}
                   </button>
                 )
@@ -704,7 +705,7 @@ export default function SettingsPage() {
             </nav>
             
             {/* Language Selector */}
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-600">
+            <div id="language-settings" className="scroll-mt-6 pt-4 border-t border-gray-200 dark:border-gray-600">
               <div className="px-4 py-2 pb-6">
                 <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">
                   {t('admin.defaultLanguage')}

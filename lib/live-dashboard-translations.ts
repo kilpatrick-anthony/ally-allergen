@@ -57,6 +57,9 @@ const rows = [
   ['hide','Hide','Folaigh','Ocultar','Masquer','Ocultar','Ausblenden'],
   ['closeMessage','Close {name} message form','Dún foirm teachtaireachta {name}','Fechar formulário de mensagem de {name}','Fermer le formulaire de message de {name}','Cerrar formulario de mensaje de {name}','Nachrichtenformular von {name} schließen'],
   ['contactUs','Contact us','Déan teagmháil linn','Contacte-nos','Nous contacter','Contáctanos','Kontakt'],
+  ['languageTitle','Use AllyJen in your language','Úsáid AllyJen i do theanga','Utilize o AllyJen no seu idioma','Utilisez AllyJen dans votre langue','Usa AllyJen en tu idioma','Nutzen Sie AllyJen in Ihrer Sprache'],
+  ['languageDescription','Choose English, Irish, Portuguese, French, Spanish or German. You can change this at any time in Settings.','Roghnaigh Béarla, Gaeilge, Portaingéilis, Fraincis, Spáinnis nó Gearmáinis. Is féidir é seo a athrú am ar bith sna Socruithe.','Escolha inglês, irlandês, português, francês, espanhol ou alemão. Pode alterar o idioma a qualquer momento nas Definições.','Choisissez l’anglais, l’irlandais, le portugais, le français, l’espagnol ou l’allemand. Vous pouvez changer de langue à tout moment dans les Paramètres.','Elige inglés, irlandés, portugués, francés, español o alemán. Puedes cambiar el idioma en cualquier momento desde Ajustes.','Wählen Sie Englisch, Irisch, Portugiesisch, Französisch, Spanisch oder Deutsch. Sie können die Sprache jederzeit in den Einstellungen ändern.'],
+  ['changeLanguage','Change language','Athraigh teanga','Alterar idioma','Changer de langue','Cambiar idioma','Sprache ändern'],
 ] as const
 
 function locale(index: LocaleIndex) {

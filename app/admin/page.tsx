@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Package, ChefHat, Building, Shield,
-  ArrowRight, Star, Monitor, FileText
+  ArrowRight, Star, Monitor, FileText, Languages
 } from 'lucide-react'
 
 import { Container } from '@/components/layout/Container'
@@ -131,6 +131,26 @@ export default function AdminDashboard() {
     '/admin/settings': { label: t('liveDashboard.settings'), description: t('liveDashboard.settingsDescription') },
   }
 
+  const languagePrompt = (
+    <Link href="/admin/settings#language-settings" className="group mb-8 block">
+      <Card className="border-[#42b8ac]/30 bg-gradient-to-r from-[#42b8ac]/10 to-white transition-all group-hover:border-[#42b8ac]/60 group-hover:shadow-md dark:to-gray-800">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#003842] text-white">
+            <Languages className="h-6 w-6" aria-hidden="true" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-semibold text-[#003842] dark:text-white">{t('liveDashboard.languageTitle')}</h2>
+            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{t('liveDashboard.languageDescription')}</p>
+          </div>
+          <span className="inline-flex shrink-0 items-center font-semibold text-[#007c73] group-hover:text-[#003842]">
+            {t('liveDashboard.changeLanguage')}
+            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+          </span>
+        </div>
+      </Card>
+    </Link>
+  )
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[60vh]">
@@ -205,6 +225,8 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+
+        {languagePrompt}
 
         {/* At-a-glance stats */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 mb-8">
@@ -315,6 +337,8 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      {languagePrompt}
 
       {/* Quick Start Guide */}
       <Card className="mb-8 bg-gradient-to-br from-[#42b8ac]/5 to-[#003842]/5">
