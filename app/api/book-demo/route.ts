@@ -4,9 +4,9 @@ import { sendMail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, company, phone, teamSize, message } = await request.json()
+    const { name, email, company, phone, teamSize, message, privacyAccepted } = await request.json()
 
-    if (!name || !email || !company) {
+    if (!name || !email || !company || privacyAccepted !== true) {
       return NextResponse.json({ error: 'Name, email, and company are required' }, { status: 400 })
     }
 
@@ -46,6 +46,28 @@ export async function POST(request: NextRequest) {
       `,
       text: `New Demo Request\n\nName: ${name}\nEmail: ${email}\nCompany: ${company}${phone ? `\nPhone: ${phone}` : ''}${teamSize ? `\nTeam Size: ${teamSize}` : ''}${message ? `\n\nNotes:\n${message}` : ''}\n\nSubmitted at ${submittedAt}`,
     })
+
+    // Submit the demo request to the published AllyJen HubSpot form as well as notifying the team.
+    const hubspotPortalId = '149233820'
+    const hubspotFormId = '1fc460a4-02d7-4a08-9d64-ea4d1fa902e9'
+    const nameParts = String(name).trim().split(/\\s+/)
+    const hubspotFields = [
+      { name: 'firstname', value: nameParts[0] || '' },
+      { name: 'lastname', value: nameParts.slice(1).join(' ') },
+      { name: 'email', value: email },
+      { name: 'phone', value: phone || '' },
+      { name: 'message', value: [`Business: ${company}`, teamSize ? `Locations: ${teamSize}` : '', message || ''].filter(Boolean).join('\\n\\n') },
+    ]
+    try {
+      const hubspotResponse = await fetch(`https://api.hsforms.com/submissions/v3/integration/submit/${hubspotPortalId}/${hubspotFormId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: hubspotFields, context: { pageUri: 'https://allyjen.ie/book-demo', pageName: 'AllyJen book a demo form' } }),
+      })
+      if (!hubspotResponse.ok) console.error('HubSpot demo form submission failed:', await hubspotResponse.text())
+    } catch (hubspotError) {
+      console.error('HubSpot demo form submission error:', hubspotError)
+    }
 
     // Confirmation to prospect
     await sendMail({
