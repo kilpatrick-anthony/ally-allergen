@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
       { name: 'firstname', value: nameParts[0] || '' },
       { name: 'lastname', value: nameParts.slice(1).join(' ') },
       { name: 'email', value: email },
+      { name: 'company', value: company },
       { name: 'phone', value: phone || '' },
       { name: 'message', value: [`Business: ${company}`, teamSize ? `Locations: ${teamSize}` : '', message || ''].filter(Boolean).join('\\n\\n') },
     ]
