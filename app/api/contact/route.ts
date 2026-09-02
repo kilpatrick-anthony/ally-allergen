@@ -4,10 +4,10 @@ import { sendMail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, company, phone, message } = await request.json()
+    const { name, email, company, phone, message, privacyAccepted } = await request.json()
 
     // Validate required fields
-    if (!name || !email || !company) {
+    if (!name || !email || !company || privacyAccepted !== true) {
       return NextResponse.json(
         { error: 'Name, email, and company are required' },
         { status: 400 }
