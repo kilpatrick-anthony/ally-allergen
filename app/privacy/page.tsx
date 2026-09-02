@@ -43,7 +43,7 @@ export default function PrivacyPolicyPage() {
 
       <section>
         <h2>4. Service providers and disclosures</h2>
-        <p>We use vetted providers to operate AllyJen, including Vercel for hosting and performance services, Supabase for database and authentication services, Stripe for payment processing, and Google Analytics only where analytics consent is granted. Providers process data under their own terms and applicable data-processing commitments. We may also disclose information where legally required or as part of a properly managed corporate transaction.</p>
+        <p>We use vetted providers to operate AllyJen, including Vercel for hosting and performance services, Supabase for database and authentication services, Stripe for payment processing, HubSpot for CRM, enquiry management and sales communications, and Google Analytics only where analytics consent is granted. Providers process data under their own terms and applicable data-processing commitments. We may also disclose information where legally required or as part of a properly managed corporate transaction.</p>
       </section>
 
       <section>
