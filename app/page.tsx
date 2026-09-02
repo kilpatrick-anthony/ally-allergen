@@ -30,6 +30,7 @@ export default function LandingPage() {
     company: '',
     phone: '',
     message: '',
+    privacyAccepted: false,
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -119,7 +120,7 @@ export default function LandingPage() {
       })
       if (response.ok) {
         setSubmitted(true)
-        setContactForm({ name: '', email: '', company: '', phone: '', message: '' })
+        setContactForm({ name: '', email: '', company: '', phone: '', message: '', privacyAccepted: false })
       } else {
         alert('Failed to send message. Please try again.')
       }
@@ -631,6 +632,19 @@ export default function LandingPage() {
                         className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm resize-none"
                       />
                     </div>
+                    <label className="flex items-start gap-3 text-xs text-white/70">
+                      <input
+                        type="checkbox"
+                        name="privacyAccepted"
+                        checked={contactForm.privacyAccepted}
+                        onChange={(e) => setContactForm(prev => ({ ...prev, privacyAccepted: e.target.checked }))}
+                        required
+                        className="mt-0.5 h-4 w-4 rounded border-white/30 bg-white/10 text-[#42b8ac] focus:ring-[#42b8ac]"
+                      />
+                      <span>
+                        I have read the <Link href="/privacy" className="underline hover:text-[#42b8ac]">Privacy Notice</Link> and understand how AllyJen will use my information to respond to this enquiry.
+                      </span>
+                    </label>
                     <button
                       type="submit"
                       disabled={isSubmitting}

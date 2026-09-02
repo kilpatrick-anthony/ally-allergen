@@ -4,10 +4,10 @@ import { sendMail } from '@/lib/email'
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, company, phone, message } = await request.json()
+    const { name, email, company, phone, message, privacyAccepted } = await request.json()
 
     // Validate required fields
-    if (!name || !email || !company) {
+    if (!name || !email || !company || privacyAccepted !== true) {
       return NextResponse.json(
         { error: 'Name, email, and company are required' },
         { status: 400 }
@@ -33,6 +33,29 @@ export async function POST(request: NextRequest) {
       `,
       text: `New Contact Form Submission\n\nName: ${name}\nEmail: ${email}\nCompany: ${company}${phone ? `\nPhone: ${phone}` : ''}${message ? `\n\nMessage:\n${message}` : ''}\n\nSubmitted at ${submittedAt}`
     })
+
+    // Submit the enquiry to the AllyJen HubSpot form so it creates/updates the contact record.
+    // The website retains its own acknowledgement email as a fallback if HubSpot is unavailable.
+    const hubspotPortalId = '149233820'
+    const hubspotFormId = '1fc460a4-02d7-4a08-9d64-ea4d1fa902e9'
+    const nameParts = String(name).trim().split(/\\s+/)
+    const hubspotFields = [
+      { name: 'firstname', value: nameParts[0] || '' },
+      { name: 'lastname', value: nameParts.slice(1).join(' ') },
+      { name: 'email', value: email },
+      { name: 'phone', value: phone || '' },
+      { name: 'message', value: [`Business: ${company}`, message || ''].filter(Boolean).join('\\n\\n') },
+    ]
+    try {
+      const hubspotResponse = await fetch(`https://api.hsforms.com/submissions/v3/integration/submit/${hubspotPortalId}/${hubspotFormId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fields: hubspotFields, context: { pageUri: 'https://allyjen.ie/', pageName: 'AllyJen website contact form' } }),
+      })
+      if (!hubspotResponse.ok) console.error('HubSpot form submission failed:', await hubspotResponse.text())
+    } catch (hubspotError) {
+      console.error('HubSpot form submission error:', hubspotError)
+    }
 
     // Send confirmation to the submitter
     await sendMail({
