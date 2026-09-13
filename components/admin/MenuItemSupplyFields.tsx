@@ -1,7 +1,6 @@
 'use client'
 
-import { ChefHat, Package, ScanLine } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
+import { ChefHat, Package } from 'lucide-react'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 
 export type MenuItemType = 'prepared' | 'packaged_product'
@@ -25,12 +24,11 @@ interface Props {
   value: PackagedProductFields
   suppliers: SupplierOption[]
   onChange: (changes: Partial<PackagedProductFields>) => void
-  onScanLabel?: () => void
 }
 
 const fieldClass = 'w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-900 focus:border-transparent focus:ring-2 focus:ring-[#42b8ac] dark:border-gray-600 dark:bg-gray-700 dark:text-white'
 
-export function MenuItemSupplyFields({ value, suppliers, onChange, onScanLabel }: Props) {
+export function MenuItemSupplyFields({ value, suppliers, onChange }: Props) {
   const { t } = useTranslation()
   const packaged = value.item_type === 'packaged_product'
 
@@ -66,12 +64,9 @@ export function MenuItemSupplyFields({ value, suppliers, onChange, onScanLabel }
 
       {packaged && (
         <div className="space-y-4 rounded-xl border border-amber-200 bg-amber-50/60 p-4 dark:border-amber-800 dark:bg-amber-950/20">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">{t('admin.manufacturerLabelDetails')}</h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{t('admin.manufacturerLabelHelp')}</p>
-            </div>
-            {onScanLabel && <Button type="button" variant="outline" size="sm" icon={<ScanLine className="h-4 w-4" />} onClick={onScanLabel}>{t('admin.scanLabel')}</Button>}
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-white">{t('admin.manufacturerLabelDetails')}</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{t('admin.manufacturerLabelHelp')}</p>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.supplier')}

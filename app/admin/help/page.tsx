@@ -388,7 +388,6 @@ export default function HelpPage() {
         'Select the supplier and record the manufacturer or brand, product or SKU code, and barcode where available.',
         'Transcribe the full ingredient declaration from the current manufacturer label or specification.',
         'Set the allergen warnings and dietary claims directly from that evidence. These values are not calculated from AllyJen ingredients because packaged products do not have recipe links.',
-        'Use Scan label to help capture the product name, description and allergens, then review the result carefully against the physical pack.',
         'Upload the current manufacturer datasheet, specification or clear label evidence directly to the menu item.',
         'Tick Label details checked only after comparing the saved details with the current label or specification.',
         'Packaged-product compliance requires label evidence, an ingredient declaration and label verification. Linking a supplier is also strongly recommended.',

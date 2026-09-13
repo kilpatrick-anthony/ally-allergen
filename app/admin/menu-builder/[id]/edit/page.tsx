@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import {
-  ArrowLeft, Save, X, Plus, ScanLine, Trash2,
+  ArrowLeft, Save, X, Plus, Trash2,
   Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck, FileText, CheckCircle
 } from 'lucide-react'
 
@@ -19,7 +19,6 @@ import AllergenWarningSelector from '@/components/admin/AllergenWarningSelector'
 import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay'
 import DatasheetUploader from '@/components/admin/DatasheetUploader'
 import { ReviewFrequencySelector } from '@/components/admin/ReviewFrequencySelector'
-import { LabelScanModal } from '@/components/admin/LabelScanModal'
 import { MenuItemSupplyFields, type MenuItemType, type SupplierOption } from '@/components/admin/MenuItemSupplyFields'
 import type { AllergenWarnings } from '@/types/allergen'
 import { computeWorstCaseAllergens } from '@/types/allergen'
@@ -102,7 +101,6 @@ export default function EditMenuItemPage() {
   const [datasheets, setDatasheets] = useState<any[]>([])
   const [existingDatasheets, setExistingDatasheets] = useState<any[]>([])
   const [datasheetsTouched, setDatasheetsTouched] = useState(false)
-  const [showScan, setShowScan] = useState(false)
   const [customDietaryInput, setCustomDietaryInput] = useState('')
   const [showCustomDietaryInput, setShowCustomDietaryInput] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
@@ -610,7 +608,6 @@ export default function EditMenuItemPage() {
                   ...changes,
                   ...(changes.item_type === 'packaged_product' ? { ingredients: [] } : {}),
                 }) : current)}
-                onScanLabel={() => setShowScan(true)}
               />
             </Card>
             {/* Menu Item Name */}
@@ -1244,15 +1241,6 @@ export default function EditMenuItemPage() {
         </div>
       )}
 
-      {/* Label Scan Modal */}
-      <LabelScanModal
-        open={showScan}
-        onClose={() => setShowScan(false)}
-        onAccept={(scanData) => {
-          setMenuItem(current => current ? ({ ...current, name: scanData.name || current.name, description: scanData.description || current.description, allergen_warnings: scanData.allergen_warnings || current.allergen_warnings }) : current)
-          setShowScan(false)
-        }}
-      />
     </>
   )
 }

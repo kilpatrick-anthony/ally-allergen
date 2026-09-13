@@ -12,7 +12,6 @@ import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay'
-import { LabelScanModal } from '@/components/admin/LabelScanModal'
 import AllergenWarningSelector from '@/components/admin/AllergenWarningSelector'
 import DatasheetUploader from '@/components/admin/DatasheetUploader'
 import { MenuItemSupplyFields, type MenuItemType, type SupplierOption } from '@/components/admin/MenuItemSupplyFields'
@@ -84,7 +83,6 @@ export default function NewMenuItemPage() {
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([])
   const [datasheets, setDatasheets] = useState<any[]>([])
   const [showIngredientSelector, setShowIngredientSelector] = useState(false)
-  const [showScan, setShowScan] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
   const [saveMessage, setSaveMessage] = useState('')
   const [ingredientSearch, setIngredientSearch] = useState('')
@@ -358,7 +356,6 @@ export default function NewMenuItemPage() {
                   ...changes,
                   ...(changes.item_type === 'packaged_product' ? { ingredients: [] } : {}),
                 }))}
-                onScanLabel={() => setShowScan(true)}
               />
             </Card>
             {/* Menu Item Name */}
@@ -779,15 +776,6 @@ export default function NewMenuItemPage() {
         </div>
       )}
 
-      {/* Label Scan Modal */}
-      <LabelScanModal
-        open={showScan}
-        onClose={() => setShowScan(false)}
-        onAccept={(scanData) => {
-          setMenuItem(current => ({ ...current, name: scanData.name || current.name, description: scanData.description || current.description, allergen_warnings: scanData.allergen_warnings || current.allergen_warnings }))
-          setShowScan(false)
-        }}
-      />
     </>
   )
 }
