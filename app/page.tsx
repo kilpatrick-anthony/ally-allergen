@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { Container } from '@/components/layout/Container'
 import { Button } from '@/components/ui/Button'
@@ -21,6 +22,13 @@ import {
   X,
 } from 'lucide-react'
 import { getPlanDefinition } from '@/lib/plans'
+
+const TEAM_PREVIEW = [
+  { photo: '/Anthony.png', name: 'Anthony Kilpatrick', role: 'Co-Founder' },
+  { photo: '/Alvin.png', name: 'Alvin Galligan', role: 'Co-Founder' },
+  { photo: '/James.png', name: "James O'Brien", role: 'Sales and Accounts Manager' },
+  { photo: '/Alex.png', name: 'Alex Murphy', role: 'Brand Ambassador' },
+]
 
 export default function LandingPage() {
   const [isNavOpen, setIsNavOpen] = useState(false)
@@ -524,16 +532,35 @@ export default function LandingPage() {
       {/* ── ABOUT TEASER ── */}
       <section className="py-16 bg-gray-50">
         <Container>
-          <div className="max-w-3xl mx-auto text-center">
+          <div className="max-w-4xl mx-auto text-center">
+            <span className="inline-block mb-3 text-[#42b8ac] text-xs font-bold uppercase tracking-widest">Meet the Team</span>
             <h2 className="text-2xl md:text-3xl font-bold text-[#003842] mb-3">Built by people who've faced this problem first-hand</h2>
-            <p className="text-gray-500 text-base leading-relaxed mb-6">
+            <p className="text-gray-500 text-base leading-relaxed max-w-2xl mx-auto">
               AllyJen was founded by a team who experienced the challenges of allergen management up close, and built a platform to solve it properly.
             </p>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 my-8">
+              {TEAM_PREVIEW.map((member) => (
+                <div key={member.name} className="flex flex-col items-center rounded-2xl border border-gray-200 bg-white px-3 py-5 shadow-sm">
+                  <Image
+                    src={member.photo}
+                    alt={member.name}
+                    width={80}
+                    height={80}
+                    sizes="80px"
+                    className="h-20 w-20 rounded-full object-cover ring-2 ring-[#42b8ac]/30"
+                  />
+                  <h3 className="mt-3 text-sm font-bold text-[#003842]">{member.name}</h3>
+                  <p className="mt-1 text-xs font-semibold text-[#42b8ac]">{member.role}</p>
+                </div>
+              ))}
+            </div>
+
             <Link
               href="/about"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#003842] text-white font-semibold text-sm hover:bg-[#004d5c] transition-colors"
             >
-              Meet the Team <ArrowRight className="h-4 w-4" />
+              Read More About Us <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         </Container>

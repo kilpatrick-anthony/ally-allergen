@@ -2,6 +2,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { Container } from '@/components/layout/Container'
 import { ArrowRight, Menu, Phone, X } from 'lucide-react'
@@ -42,6 +43,17 @@ const TEAM: { photo: string; name: string; role: string; phone?: string; phoneHr
       "His role is centred around people: understanding how a business currently manages its allergen information, identifying where AllyJen can make life easier, and helping customers find the right solution for their operation.",
       "From the first conversation through to becoming an AllyJen customer, James works closely with businesses to make the process straightforward and personal. He also supports our existing accounts, building long-term customer relationships and ensuring our customers continue to get real value from the platform.",
       "For James, sales isn't simply about bringing new businesses on board. It's about listening, understanding what each customer actually needs and building relationships that last.",
+    ],
+  },
+  {
+    photo: '/Alex.png',
+    name: 'Alex Murphy',
+    role: 'Brand Ambassador',
+    bio: [
+      "Alex is AllyJen’s Brand Ambassador, helping us explain what the platform does and why it matters to food businesses and their customers.",
+      "A graduate of University College Dublin, Alex holds a BSc in Economics and Information & Communication Studies and is currently studying for an MSc in Strategic Management at UCD Michael Smurfit Graduate Business School. She is qualified in HACCP and Allergen Awareness and has years of experience working in a busy food service environment. That experience gives her a first-hand appreciation of the care and attention food safety requires.",
+      "Through AllyJen’s videos and content, Alex puts a friendly face to the platform. She helps turn topics like allergen management, ingredient records and customer information into clear, useful conversations that busy business owners can relate to.",
+      "For Alex, representing AllyJen is about making an important subject easier to understand and helping more businesses see how they can serve their customers with confidence.",
     ],
   },
 ]
@@ -184,9 +196,11 @@ export default function AboutPage() {
             {TEAM.map((member) => (
               <div key={member.name} className="flex flex-col sm:flex-row gap-6 bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
                 <div className="flex-shrink-0 mx-auto sm:mx-0">
-                  <img
+                  <Image
                     src={member.photo}
                     alt={member.name}
+                    width={96}
+                    height={96}
                     className="w-24 h-24 rounded-full object-cover"
                   />
                 </div>
