@@ -2,12 +2,13 @@
 'use client'
 
 import Link from 'next/link'
+import AccessPointNavigation from '@/components/admin/AccessPointNavigation'
 import { useState, useEffect } from 'react'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { 
   Wifi, WifiOff, Monitor, Clock, AlertCircle, CheckCircle,
   RefreshCw, MapPin, Calendar, Activity, Smartphone, Tablet,
-  Bell, Plus, Copy, ExternalLink, Check, QrCode
+  Bell, Plus, Copy, ExternalLink, Check
 } from 'lucide-react'
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
@@ -168,10 +169,7 @@ export default function DeviceMonitoringPage() {
   return (
     <Container>
       <div className="py-8 space-y-6">
-        <div className="flex gap-2 border-b border-gray-200">
-          <Link href="/admin/qr-codes" className="inline-flex items-center gap-2 border-b-2 border-transparent px-3 py-3 text-sm font-medium text-gray-500 hover:text-gray-800"><QrCode className="h-4 w-4" />{t('accessPoints.qrCodes')}</Link>
-          <Link href="/admin/devices" className="inline-flex items-center gap-2 border-b-2 border-[#42b8ac] px-3 py-3 text-sm font-semibold text-[#003842]"><Monitor className="h-4 w-4" />{t('adminPortal.kioskDevices')}</Link>
-        </div>
+        <AccessPointNavigation />
         {/* Header */}
         <div className="flex flex-wrap justify-between items-start gap-3">
           <div>

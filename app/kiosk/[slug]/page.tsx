@@ -359,16 +359,17 @@ export default function KioskPage() {
   const searchParams = useSearchParams()
   const slug = params.slug as string
   const siteIdParam = searchParams.get('site_id')
-  const qrDeploymentCode = searchParams.get('qr')
+  const isWebsiteLink = searchParams.get('mode') === 'web'
+  const qrDeploymentCode = isWebsiteLink ? null : searchParams.get('qr')
   const pdfAutoDownload = searchParams.get('pdf')
   const analyticsAllowed = useAnalyticsConsent()
 
   // Persist slug so the PWA start_url (/kiosk) can redirect back here
   useEffect(() => {
-    if (slug && typeof window !== 'undefined') {
+    if (!isWebsiteLink && slug && typeof window !== 'undefined') {
       localStorage.setItem('allyjen_kiosk_slug', slug)
     }
-  }, [slug])
+  }, [slug, isWebsiteLink])
   
   // Use offline-enabled data hook
   const {
@@ -387,7 +388,7 @@ export default function KioskPage() {
   useDeviceHeartbeat({
     siteId: siteIdParam || undefined,
     businessId: business?.id,
-    enabled: !loading && !!business,
+    enabled: !isWebsiteLink && !loading && !!business,
     intervalMs: 60000 // 1 minute
   })
   
@@ -1055,6 +1056,7 @@ export default function KioskPage() {
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
 
   const requestWakeLock = async () => {
+    if (isWebsiteLink) return
     try {
       if ('wakeLock' in navigator) {
         wakeLockRef.current = await (navigator as any).wakeLock.request('screen')
@@ -1072,12 +1074,12 @@ export default function KioskPage() {
 
   // Release wake lock when kiosk stops
   useEffect(() => {
-    kioskStartedRef.current = kioskStarted
-    if (!kioskStarted && wakeLockRef.current) {
+    kioskStartedRef.current = kioskStarted && !isWebsiteLink
+    if ((!kioskStarted || isWebsiteLink) && wakeLockRef.current) {
       wakeLockRef.current.release().catch(() => {})
       wakeLockRef.current = null
     }
-  }, [kioskStarted])
+  }, [kioskStarted, isWebsiteLink])
 
   // Re-acquire wake lock when tab becomes visible again
   useEffect(() => {
@@ -1092,6 +1094,7 @@ export default function KioskPage() {
 
   // Request fullscreen — must be called from a user gesture handler
   const enterFullscreen = () => {
+    if (isWebsiteLink) return
     const el = document.documentElement
     if (document.fullscreenElement) return // already fullscreen
     if (el.requestFullscreen) {

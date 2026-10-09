@@ -1,5 +1,14 @@
 export const adminAccessTranslations = {
   en: {
+    websiteLinks: {
+      title: 'Website Links',
+      description: 'Copy a location link into your website navigation. Visitors stay in their browser when they select Get Started.',
+      loading: 'Loading locations…',
+      loadError: 'Unable to load website links. Please try again.',
+      copyError: 'Unable to copy. Select the link below and copy it manually.',
+      empty: 'Add a location to create a website link.',
+      retry: 'Try again',
+    },
     messaging: {
       sendError: 'We could not send your message.', messageSent: 'Message sent', thanks: 'Thanks for getting in touch. Our team will respond as quickly as we can.', sendAnother: 'Send another message', intro: "Hi, I'm {name}. Leave a message below and a member of the AllyJen team will respond as quickly as possible.", urgentAllergen: 'For urgent allergen questions, please speak directly with a member of staff before ordering.', yourName: 'Your name', replyEmail: 'Email for our reply', howCanWeHelp: 'How can we help?', website: 'Website', sending: 'Sending…', sendMessage: 'Send message',
     },

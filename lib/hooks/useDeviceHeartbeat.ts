@@ -83,6 +83,7 @@ export function useDeviceHeartbeat(options: HeartbeatOptions = {}) {
 
   // Send heartbeat
   const sendHeartbeat = async () => {
+    if (!enabled) return
     try {
       const deviceId = getDeviceId()
 
@@ -138,6 +139,8 @@ export function useDeviceHeartbeat(options: HeartbeatOptions = {}) {
   }
 
   useEffect(() => {
+    if (!enabled) return
+
     // Send initial heartbeat immediately (works for both paired and unpaired)
     sendHeartbeat()
 
