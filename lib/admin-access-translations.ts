@@ -2,7 +2,12 @@ export const adminAccessTranslations = {
   en: {
     websiteLinks: {
       title: 'Website Links',
-      description: 'Copy a location link into your website navigation. Visitors stay in their browser when they select Get Started.',
+      createLink: 'Create Website Link',
+      createError: 'Unable to create the website link. Please try again.',
+      namePlaceholder: 'Main website',
+      placementPlaceholder: 'Navigation bar, footer or social profile',
+      noLinks: 'No website links yet. Create one to share your allergen menu.',
+      description: 'Create named links for your website, footer or social profiles. Each link opens the selected location’s menu in the browser without full screen.',
       loading: 'Loading locations…',
       loadError: 'Unable to load website links. Please try again.',
       copyError: 'Unable to copy. Select the link below and copy it manually.',
