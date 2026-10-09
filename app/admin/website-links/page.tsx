@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Container } from '@/components/layout/Container'
 import AccessPointNavigation from '@/components/admin/AccessPointNavigation'
@@ -22,7 +22,9 @@ export default function WebsiteLinksPage() {
   const [placement, setPlacement] = useState('')
   const [origin, setOrigin] = useState('')
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<'loadError' | 'copyError' | 'createError' | null>(null)
+  const [error, setError] = useState<'loadError' | 'copyError' | 'createError' | 'deleteError' | 'deleteForbidden' | null>(null)
+  const [removingId, setRemovingId] = useState<string | null>(null)
+  const removing = useRef(false)
   const [copied, setCopied] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
 
@@ -77,6 +79,29 @@ export default function WebsiteLinksPage() {
     } finally {
       submitting.current = false
       setSaving(false)
+    }
+  }
+
+  async function removeLink(link: WebsiteLink) {
+    if (removing.current || !window.confirm(t('websiteLinks.deleteConfirm', { name: link.name }))) return
+    removing.current = true
+    setRemovingId(link.id)
+    setError(null)
+    try {
+      const response = await fetch(`/api/website-links/${link.id}`, { method: 'DELETE' })
+      if (response.status === 403) {
+        setError('deleteForbidden')
+        return
+      }
+      // A previously removed link can safely be removed from this stale list too.
+      if (!response.ok && response.status !== 404) throw new Error('Unable to remove website link')
+      setLinks(current => current.filter(item => item.id !== link.id))
+      setCopied(current => current === link.id ? null : current)
+    } catch {
+      setError('deleteError')
+    } finally {
+      removing.current = false
+      setRemovingId(null)
     }
   }
 
@@ -153,6 +178,14 @@ export default function WebsiteLinksPage() {
                   </button>
                   <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm underline">{t('accessPoints.open')}</a>
                   <span role="status" className="text-sm">{copied === link.id ? t('accessPoints.copied') : ''}</span>
+                </div>
+                <div className="mt-3 flex justify-end">
+                  <button type="button" onClick={() => removeLink(link)} disabled={removingId !== null}
+                    aria-label={t('websiteLinks.deleteLabel', { name: link.name })}
+                    className="inline-flex min-h-[44px] items-center gap-1 text-xs text-gray-400 hover:text-red-600 disabled:cursor-wait disabled:opacity-50">
+                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    {t(removingId === link.id ? 'websiteLinks.deleting' : 'accessPoints.delete')}
+                  </button>
                 </div>
               </section>
             )

@@ -3,6 +3,11 @@ export const adminAccessTranslations = {
     websiteLinks: {
       title: 'Website Links',
       createLink: 'Create Website Link',
+      deleteConfirm: 'Delete “{name}” from your saved website links? URLs already shared will still open the menu.',
+      deleteLabel: 'Delete website link: {name}',
+      deleting: 'Deleting…',
+      deleteError: 'Unable to delete the website link. Please try again.',
+      deleteForbidden: 'Staff members cannot delete website links. Please ask an administrator.',
       createError: 'Unable to create the website link. Please try again.',
       namePlaceholder: 'Main website',
       placementPlaceholder: 'Navigation bar, footer or social profile',
