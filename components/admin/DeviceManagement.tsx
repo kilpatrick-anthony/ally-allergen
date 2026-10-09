@@ -193,7 +193,7 @@ export default function DeviceManagement({
   const getKioskPath = (device: Device) => {
     const kioskTarget = device.business?.slug?.trim() || device.business_id
     if (!kioskTarget || !device.site_id) return null
-    const params = new URLSearchParams({ site_id: device.site_id })
+    const params = new URLSearchParams({ site_id: device.site_id, mode: 'kiosk', device: device.id })
     return `/kiosk/${kioskTarget}?${params.toString()}`
   }
 

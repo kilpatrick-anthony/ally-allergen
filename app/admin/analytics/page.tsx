@@ -1,6 +1,8 @@
 // app/admin/analytics/page.tsx - Enhanced with Design System
 'use client'
 
+import EngagementInsights from '@/components/admin/EngagementInsights'
+import type { EngagementReport } from '@/lib/analytics/engagement'
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import * as Dialog from '@radix-ui/react-dialog'
@@ -39,6 +41,7 @@ export default function AnalyticsPage() {
   const [draftRange, setDraftRange] = useState<DateRange | undefined>()
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [analyticsData, setAnalyticsData] = useState<{ 
+    engagement?: EngagementReport
     overview: {
       reportDownloads: number
       kioskUsage: number
@@ -119,6 +122,7 @@ export default function AnalyticsPage() {
         setError(null)
 
         const params = new URLSearchParams()
+        params.set('timezone', Intl.DateTimeFormat().resolvedOptions().timeZone)
         if (siteId) {
           params.set('site_id', siteId)
         }
@@ -695,6 +699,8 @@ export default function AnalyticsPage() {
           </div>
         </Card>
       </div>
+
+      <EngagementInsights report={analyticsData.engagement} />
 
       {/* Engagement & Top Items */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">

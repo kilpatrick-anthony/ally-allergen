@@ -1,3 +1,4 @@
+import { loadEngagement } from '@/lib/analytics/load-engagement'
 import { getJwtSecret } from '@/lib/auth'
 // Analytics API
 // Tracks business metrics including downloads, kiosk usage, and content counts
@@ -553,6 +554,8 @@ export async function GET(request: NextRequest) {
     const rangeParam = (searchParams.get('range') || 'week') as RangeKey
     const range: RangeKey = rangeParam in rangeToDays ? rangeParam : 'week'
     const siteId = searchParams.get('site_id')
+    let timezone = searchParams.get('timezone') || 'UTC'
+    try { new Intl.DateTimeFormat('en', { timeZone: timezone }).format() } catch { timezone = 'UTC' }
     const startParam = searchParams.get('start')
     const endParam = searchParams.get('end')
 
@@ -631,7 +634,8 @@ export async function GET(request: NextRequest) {
       activeMenuIngredientsPrevious,
       kioskEventsCurrent,
       kioskEventsPrevious,
-      pairedDevices
+      pairedDevices,
+      engagement
     ] = await Promise.all([
       countPdfDownloads(supabase, businessId, siteId, currentStart, currentEnd),
       countPdfDownloads(supabase, businessId, siteId, previousStart, previousEnd),
@@ -644,6 +648,7 @@ export async function GET(request: NextRequest) {
       getKioskEvents(supabase, businessId, siteId, currentStart, currentEnd, ['page_view', 'search', 'filter']),
       getKioskEvents(supabase, businessId, siteId, previousStart, previousEnd, ['search', 'filter']),
       countPairedDevices(supabase, businessId, siteId),
+      loadEngagement(supabase, businessId, siteId, currentStart, currentEnd, timezone),
     ])
 
     const trends = buildTrends(kioskEventsCurrent)
@@ -653,6 +658,7 @@ export async function GET(request: NextRequest) {
     const siteBreakdown = await buildSiteBreakdown(supabase, businessId, siteId, kioskEventsCurrent)
 
     return NextResponse.json({
+      engagement,
       overview: {
         reportDownloads: reportDownloadsCurrent,
         kioskUsage: kioskInteractionsCurrent,

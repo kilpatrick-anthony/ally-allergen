@@ -6,6 +6,7 @@ const UUID_PATTERN =
 
 const EVENT_TYPES = new Set([
   'page_view',
+  'start',
   'search',
   'filter',
   'time_on_page',
@@ -51,12 +52,42 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
+    // Public analytics must not attach activity to another business or location.
+    if (siteId) {
+      const { data: site, error } = await supabase.from('sites').select('id')
+        .eq('id', siteId).eq('business_id', business.id).maybeSingle()
+      if (error) throw error
+      if (!site) return NextResponse.json({ error: 'Site not found' }, { status: 404 })
+    }
+    const sources = ['website', 'qr', 'kiosk', 'direct', 'unknown']
+    const source = typeof body.source === 'string' && sources.includes(body.source) ? body.source : 'unknown'
+    const sessionId = typeof body.sessionId === 'string' && UUID_PATTERN.test(body.sessionId) ? body.sessionId : null
+    let accessPointId: string | null = null
+    if (typeof body.accessPointId === 'string' && UUID_PATTERN.test(body.accessPointId)) {
+      const table = source === 'website' ? 'website_links' : source === 'qr' ? 'qr_code_deployments' : source === 'kiosk' ? 'devices' : null
+      if (table && siteId) {
+        const { data: point, error } = await supabase.from(table).select('id')
+          .eq(source === 'qr' ? 'public_code' : 'id', body.accessPointId)
+          .eq('business_id', business.id).eq('site_id', siteId).maybeSingle()
+        if (error) throw error
+        // Removed or mismatched access points still count toward the source total.
+        if (point) accessPointId = body.accessPointId
+      }
+    }
+    const resultCount = eventType === 'search' && Number.isSafeInteger(body.resultCount) && body.resultCount >= 0 && body.resultCount <= 2147483647
+      ? body.resultCount : null
+
     const insertPayload = {
+      source,
+      session_id: sessionId,
+      access_point_id: accessPointId,
+      result_count: resultCount,
+      filters_active: typeof body.filtersActive === 'boolean' ? body.filtersActive : null,
       business_id: business.id,
       site_id: siteId,
       slug: business.slug || slug,
       event_type: eventType,
-      search_query: searchQuery,
+      search_query: searchQuery?.slice(0, 200) || null,
       selected_allergens: selectedAllergens,
       download_type: downloadType,
       scan_source: scanSource,

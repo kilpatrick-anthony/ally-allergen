@@ -1,5 +1,22 @@
 export const adminAccessTranslations = {
   en: {
+    engagementInsights: {
+      title: 'Customer engagement',
+      unavailable: 'Detailed engagement is temporarily unavailable. Try again or select a shorter date range. Existing reports remain available.',
+      consentNote: 'These figures reflect activity recorded with analytics consent, not all visitors. Allergen and dietary filters show interest, not medical conditions.',
+      sessionNote: 'Sessions group activity in one browser tab until 30 minutes of inactivity or a kiosk reset. Sessions are not unique people; repeated page loads can add views within one session.',
+      historyNote: 'Source, session, journey and search-result details are available only for activity recorded after this update. Older activity remains unattributed. Plain links and older unpaired tablet links appear as Direct / unclassified.',
+      sourceBreakdown: 'Access sources', accessPoints: 'Access-point performance',
+      journey: 'Visitor journey', journeyNote: 'Counts sessions that opened the menu, then started, then searched or used a filter, in that order within the selected period. Steps outside the period are excluded.',
+      noResults: 'Searches with no results', noResultsNote: 'Top 20 recorded queries with zero matches. The With filters column shows how often active allergen or dietary filters may have removed matches.',
+      busy: 'Busiest days and hours', busyNote: 'Session openings grouped by weekday and hour. Time zone:', dayHour: 'Day / hour',
+      locations: 'Location comparison', locationNote: 'Uses the selected date and location filters. Select all locations to compare branches.',
+      views: 'Page views', sessions: 'Sessions', searches: 'Searches', filters: 'Filter uses', downloads: 'Guide / PDF actions',
+      unattributedViews: 'Unattributed views', name: 'Name', source: 'Source', query: 'Search query', withFilters: 'With filters',
+      opened: 'Menu opened', started: 'Get Started', engaged: 'Search or filter', ofOpened: 'of opened sessions',
+      website: 'Website links', qr: 'QR codes', kiosk: 'Kiosk devices', direct: 'Direct / unclassified', unknown: 'Unattributed', all: 'All sources',
+      removedAccessPoint: 'Removed access point', unassignedAccessPoint: 'No named access point', unassignedLocation: 'No location', empty: 'No recorded activity for this selection.',
+    },
     websiteLinks: {
       title: 'Website Links',
       linkedLocations: 'Linked locations',

@@ -139,7 +139,7 @@ export default function DeviceMonitoringPage() {
     const kioskTarget = (device.business_slug || '').trim() || device.business_id
     if (!kioskTarget || !device.site_id) return null
     const origin = typeof window !== 'undefined' ? window.location.origin : ''
-    const params = new URLSearchParams({ site_id: device.site_id })
+    const params = new URLSearchParams({ site_id: device.site_id, mode: 'kiosk', device: device.id })
     const path = `/kiosk/${kioskTarget}?${params.toString()}`
     return origin ? `${origin}${path}` : path
   }

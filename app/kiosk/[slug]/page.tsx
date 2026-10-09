@@ -20,6 +20,7 @@ import { translations, type LanguageCode } from '@/lib/translations'
 import AllergenTableView from '@/components/kiosk/AllergenTableView'
 import { generateAllergenTablePDF } from '@/lib/pdf/allergenTablePDF'
 import { GLUTEN_TYPES, TREE_NUT_TYPES, type GlutenType, type TreeNutType } from '@/types/allergen'
+import { sendKioskAnalyticsEvent, resetAnalyticsSession } from '@/lib/analytics/client'
 import { hasAnalyticsConsent } from '@/lib/cookie-consent'
 import { useAnalyticsConsent } from '@/lib/hooks/useAnalyticsConsent'
 
@@ -35,29 +36,6 @@ import OfflineIndicator from '@/components/kiosk/OfflineIndicator'
 import { useDeviceHeartbeat } from '@/lib/hooks/useDeviceHeartbeat'
 
 // ===== TRACKING FUNCTIONS =====
-async function sendKioskAnalyticsEvent(payload: {
-  slug: string
-  siteId?: string | null
-  eventType: 'page_view' | 'search' | 'filter' | 'time_on_page' | 'download' | 'qr_scan'
-  searchQuery?: string
-  selectedAllergens?: string[]
-  downloadType?: string
-  scanSource?: string
-  timeOnPage?: number
-}) {
-  if (!hasAnalyticsConsent()) return
-
-  try {
-    await fetch('/api/analytics/kiosk-event', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-  } catch {
-    // Analytics should never block kiosk interactions
-  }
-}
-
 async function trackPageView(slug: string, siteId?: string | null) {
   await sendKioskAnalyticsEvent({ slug, siteId, eventType: 'page_view' })
 }
@@ -77,8 +55,8 @@ async function trackFilterUsage(slug: string, selectedAllergens: string[], selec
   await sendKioskAnalyticsEvent({ slug, siteId, eventType: 'filter', selectedAllergens, searchQuery })
 }
 
-async function trackSearch(slug: string, searchQuery: string, siteId?: string | null) {
-  await sendKioskAnalyticsEvent({ slug, siteId, eventType: 'search', searchQuery })
+async function trackSearch(slug: string, searchQuery: string, resultCount: number, filtersActive: boolean, siteId?: string | null) {
+  await sendKioskAnalyticsEvent({ slug, siteId, eventType: 'search', searchQuery, resultCount, filtersActive })
 }
 
 async function trackTimeOnPage(slug: string, timeOnPage: number, siteId?: string | null) {
@@ -661,7 +639,7 @@ export default function KioskPage() {
 
   // ===== HANDLE INACTIVITY RESET =====
   const handleInactivityReset = () => {
-    console.log('⏱️ [Kiosk] Inactivity timeout - Returning to home screen')
+    resetAnalyticsSession(slug, siteIdParam)
     setKioskStarted(false)
     setActiveView('menu')
     setShowFilterResults(false)
@@ -673,9 +651,7 @@ export default function KioskPage() {
     window.dispatchEvent(new CustomEvent('languageChange', { detail: defaultLanguage }))
     
     // Clear any selections
-    setSelectedAllergens([])
-    setSelectedDietary([])
-    setSearchQuery('')
+    clearFilters()
 
     // Reset accessibility settings to defaults
     window.dispatchEvent(new CustomEvent('kiosk:reset'))
@@ -690,10 +666,10 @@ export default function KioskPage() {
 
   // Track page view on load
   useEffect(() => {
-    if (slug && analyticsAllowed) {
+    if (slug && analyticsAllowed && !loading && business) {
       trackPageView(slug, siteIdParam)
     }
-  }, [analyticsAllowed, slug, siteIdParam])
+  }, [analyticsAllowed, slug, siteIdParam, loading, business?.id])
 
   useEffect(() => {
     if (!analyticsAllowed || !qrDeploymentCode) return
@@ -710,21 +686,21 @@ export default function KioskPage() {
 
   // Track search queries
   useEffect(() => {
-    if (analyticsAllowed && searchQuery) {
+    if (analyticsAllowed && searchQuery.trim() && !loading && business && kioskStarted) {
       const timeoutId = setTimeout(() => {
-        trackSearch(slug, searchQuery, siteIdParam)
+        trackSearch(slug, searchQuery.trim(), filterMenuItems().length, totalActiveFilters > 0, siteIdParam)
       }, 500)
       
       return () => clearTimeout(timeoutId)
     }
-  }, [analyticsAllowed, searchQuery, slug, siteIdParam])
+  }, [analyticsAllowed, searchQuery, slug, siteIdParam, loading, business?.id, kioskStarted, menuItems, selectedAllergens, selectedDietary, selectedGlutenTypes, selectedTreeNutTypes])
 
   // Track filter usage
   useEffect(() => {
-    if (analyticsAllowed && (selectedAllergens.length > 0 || selectedDietary.length > 0)) {
-      trackFilterUsage(slug, selectedAllergens, selectedDietary, siteIdParam)
+    if (analyticsAllowed && kioskStarted && totalActiveFilters > 0) {
+      trackFilterUsage(slug, [...selectedAllergens, ...(selectedGlutenTypes.length ? ['contains_cereals_gluten'] : []), ...(selectedTreeNutTypes.length ? ['contains_nuts'] : [])], selectedDietary, siteIdParam)
     }
-  }, [analyticsAllowed, selectedAllergens, selectedDietary, slug, siteIdParam])
+  }, [analyticsAllowed, kioskStarted, selectedAllergens, selectedDietary, selectedGlutenTypes, selectedTreeNutTypes, slug, siteIdParam])
 
   useEffect(() => {
     if (analyticsAllowed && showQRCode) {
@@ -1108,14 +1084,9 @@ export default function KioskPage() {
   const handleStartKiosk = () => {
     setKioskStarted(true)
     setActiveView('landing')
-    trackKioskInteraction(slug, 'home_screen_start')
+    void sendKioskAnalyticsEvent({ slug, siteId: siteIdParam, eventType: 'start' })
     enterFullscreen()
     requestWakeLock()
-  }
-
-  // Helper function for tracking
-  async function trackKioskInteraction(slug: string, action: string) {
-    console.log('📊 [Dev] Kiosk interaction:', action, 'for:', slug)
   }
 
   if (loading && !business && menuItems.length === 0) {
@@ -1478,7 +1449,7 @@ export default function KioskPage() {
                     variant="outline"
                     size="sm"
                     className="text-white border-white/40 hover:text-white hover:border-white/60"
-                    onClick={() => { const defaultLanguage = business?.default_language || 'en'; setKioskStarted(false); setActiveView('landing'); clearFilters(); setShowInactivityWarning(false); setCurrentLanguage(defaultLanguage); localStorage.setItem('defaultLanguage', defaultLanguage); window.dispatchEvent(new CustomEvent('languageChange', { detail: defaultLanguage })); window.dispatchEvent(new CustomEvent('kiosk:reset')) }}
+                    onClick={() => { handleInactivityReset(); setActiveView('landing') }}
                     title={t.kioskSleeping}
                   >
                     {t.admin.kiosks}
