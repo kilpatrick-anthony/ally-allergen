@@ -1,6 +1,8 @@
 // app/admin/menu-builder/page.tsx - List View Only
 'use client'
 
+import QuickAddEntry from '@/components/admin/QuickAddEntry'
+
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useNotification } from '@/lib/hooks/useNotification'
@@ -276,6 +278,8 @@ export default function MenuBuilderPage() {
           </div>
         </div>
       </div>
+
+      <div className="mb-6"><QuickAddEntry initialKind="packaged_product" siteId={scopeFilter !== 'all' && scopeFilter !== 'global' ? scopeFilter : null} /></div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

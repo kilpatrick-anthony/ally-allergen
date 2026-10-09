@@ -1,6 +1,8 @@
 // app/admin/page.tsx - Production-ready dashboard with onboarding
 'use client'
 
+import QuickAddEntry from '@/components/admin/QuickAddEntry'
+
 import React from 'react'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
@@ -226,6 +228,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+        <div className="mb-6"><QuickAddEntry /></div>
         {languagePrompt}
 
         {/* At-a-glance stats */}
@@ -338,6 +341,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      <div className="mb-6"><QuickAddEntry /></div>
       {languagePrompt}
 
       {/* Quick Start Guide */}

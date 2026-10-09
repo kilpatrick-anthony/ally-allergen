@@ -1,5 +1,28 @@
 export const adminAccessTranslations = {
   en: {
+    quickAdd: {
+      title: 'Quick Add', drafts: 'Saved drafts', intro: 'Capture a delivery item now and finish its details later.',
+      ingredient: 'Ingredient', packaged_product: 'Bought-in product', kind: 'What arrived?',
+      name: 'Product name', location: 'Delivery location', noLocation: 'Not specified',
+      supplier: 'Supplier', noSupplier: 'Not specified', newSupplier: 'Enter a supplier name', supplierName: 'Supplier name',
+      supplierNote: 'New supplier names stay on the draft until review.', notes: 'Delivery notes',
+      safetyNote: 'Allergen details: not reviewed. This draft will not appear on customer menus or in recipes.',
+      save: 'Save draft', saving: 'Saving…', saved: 'Draft saved — not published', another: 'Add another', view: 'View draft',
+      close: 'Close', cancel: 'Cancel', loading: 'Loading…', retry: 'Try again', draft: 'Draft',
+      editTitle: 'Draft details', updated: 'Last updated', empty: 'No saved drafts yet.',
+      listNote: 'Staff see their own drafts. Owners and managers see drafts across the business.',
+      discard: 'Discard your unsaved changes?', more: 'Load more', back: 'Back to drafts',
+      details: 'Open draft', unknown: 'Not reviewed', nameRequired: 'Enter a product name.',
+      unavailable: 'Quick Add is temporarily unavailable. Your entries have been kept. Please try again.',
+      unauthorized: 'Please sign in again before saving. Your entries have been kept.',
+      forbidden: 'Your account does not have access to these drafts.', notFound: 'This draft could not be found or is not available to your account.',
+      invalid: 'Check the required fields and their lengths, then try again.',
+      locationUnavailable: 'This location is no longer available. Choose another location or Not specified.',
+      supplierUnavailable: 'This supplier is no longer available. Choose another supplier or enter its name.',
+      saveConflict: 'A draft was already saved for this entry. Open the saved draft to check it before making further changes.',
+      editConflict: 'This draft changed elsewhere. Your entries are still here. Reload the saved version before editing again.',
+      reload: 'Reload saved version', optionsFailed: 'Locations and suppliers could not be loaded. Try again before saving.',
+    },
     engagementInsights: {
       title: 'Customer engagement',
       unavailable: 'Detailed engagement is temporarily unavailable. Try again or select a shorter date range. Existing reports remain available.',

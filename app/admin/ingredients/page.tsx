@@ -1,6 +1,8 @@
 // app/admin/ingredients/page.tsx - Enhanced with Design System
 'use client'
 
+import QuickAddEntry from '@/components/admin/QuickAddEntry'
+
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import React from 'react'
@@ -420,6 +422,8 @@ export default function IngredientsPage() {
           </div>
         </div>
       </div>
+
+      <div className="mb-6"><QuickAddEntry /></div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
