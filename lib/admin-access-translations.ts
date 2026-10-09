@@ -2,6 +2,8 @@ export const adminAccessTranslations = {
   en: {
     websiteLinks: {
       title: 'Website Links',
+      linkedLocations: 'Linked locations',
+      emptyTitle: 'No website links yet',
       createLink: 'Create Website Link',
       deleteConfirm: 'Delete “{name}” from your saved website links? URLs already shared will still open the menu.',
       deleteLabel: 'Delete website link: {name}',
