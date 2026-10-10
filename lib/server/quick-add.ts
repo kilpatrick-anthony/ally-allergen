@@ -19,7 +19,7 @@ export const draftFields = z.object({
 
 export const createDraftInput = draftFields.extend({ id: z.string().uuid() })
 export const updateDraftInput = draftFields.extend({ version: z.number().int().min(1).max(2147483646) })
-export const draftColumns = 'id,kind,name,site_id,supplier_id,supplier_name,notes,status,version,created_by,created_at,updated_at'
+export const draftColumns = 'id,kind,name,site_id,supplier_id,supplier_name,notes,status,version,created_by,created_at,updated_at,review,submitted_at,submitted_by,approved_at,approved_by,return_note,ingredient_id,menu_item_id'
 
 export function requireDraftId(id: string) {
   if (!z.string().uuid().safeParse(id).success) throw new QuickAddError('invalid', 400)

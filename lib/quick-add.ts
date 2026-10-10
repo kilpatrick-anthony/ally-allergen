@@ -11,7 +11,17 @@ export type QuickAddFields = {
 
 export type QuickAddDraft = QuickAddFields & {
   id: string
-  status: 'draft'
+  status: 'draft' | 'ready_for_review' | 'approved'
+  review?: import('@/lib/quick-add-review').QuickAddReview
+  submitted_at?: string | null
+  submitted_by?: string | null
+  approved_at?: string | null
+  approved_by?: string | null
+  return_note?: string
+  ingredient_id?: string | null
+  menu_item_id?: string | null
+  author_name?: string
+  site_name?: string
   version: number
   created_by: string | null
   created_at: string

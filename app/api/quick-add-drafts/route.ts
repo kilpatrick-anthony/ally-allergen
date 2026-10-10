@@ -6,10 +6,22 @@ export async function GET(request: NextRequest) {
     const context = await quickAddContext()
     const offset = Number(request.nextUrl.searchParams.get('offset') || 0)
     if (!Number.isSafeInteger(offset) || offset < 0 || offset > 1000000) throw new QuickAddError('invalid', 400)
-    const { data, error } = await visibleDrafts(context).order('created_at', { ascending: false })
+    const status = request.nextUrl.searchParams.get('status') || ''
+    if (status && !['draft', 'ready_for_review', 'approved'].includes(status)) throw new QuickAddError('invalid', 400)
+    let query = visibleDrafts(context)
+    if (status) query = query.eq('status', status)
+    const { data, error } = await query.order('created_at', { ascending: false })
       .order('id', { ascending: false }).range(offset, offset + 50)
     if (error) throw error
-    return NextResponse.json({ drafts: (data || []).slice(0, 50), nextOffset: (data || []).length > 50 ? offset + 50 : null })
+    const [authors, sites] = await Promise.all([
+      context.supabase.from('user_businesses').select('user_id,display_name').eq('business_id', context.businessId),
+      context.supabase.from('sites').select('id,name').eq('business_id', context.businessId),
+    ])
+    if (authors.error) throw authors.error
+    if (sites.error) throw sites.error
+    const names = new Map((authors.data || []).map(row => [row.user_id, row.display_name]))
+    const locations = new Map((sites.data || []).map(row => [row.id, row.name]))
+    return NextResponse.json({ drafts: (data || []).slice(0, 50).map(draft => ({ ...draft, author_name: names.get(draft.created_by) || '', site_name: locations.get(draft.site_id) || '' })), nextOffset: (data || []).length > 50 ? offset + 50 : null })
   } catch (error) { return quickAddFailure(error) }
 }
 

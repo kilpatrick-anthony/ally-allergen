@@ -8,7 +8,11 @@ export async function GET(_request: NextRequest, route: RouteContext) {
     const context = await quickAddContext()
     const { id } = await route.params
     requireDraftId(id)
-    return NextResponse.json({ draft: await getDraft(context, id) })
+    const draft = await getDraft(context, id)
+    const { data: history, error } = await context.supabase.from('quick_add_history')
+      .select('id,action,actor_name,note,created_at').eq('business_id', context.businessId).eq('draft_id', id).order('created_at')
+    if (error) throw error
+    return NextResponse.json({ draft, history: history || [], permissions: { canReview: context.role !== 'staff', isCreator: draft.created_by === context.userId } })
   } catch (error) { return quickAddFailure(error) }
 }
 
@@ -24,7 +28,7 @@ export async function PATCH(request: NextRequest, route: RouteContext) {
     if (existing.status !== 'draft' || existing.version !== version) throw new QuickAddError('editConflict', 409)
     const fields = await validateDraftReferences(context, input)
     let query = context.supabase.from('quick_add_drafts').update({
-      ...fields, version: version + 1, updated_by: context.userId, updated_at: new Date().toISOString(),
+      ...fields, review: {}, version: version + 1, updated_by: context.userId, updated_at: new Date().toISOString(),
     }).eq('id', id).eq('business_id', context.businessId).eq('status', 'draft').eq('version', version)
     if (context.role === 'staff') query = query.eq('created_by', context.userId)
     const { data, error } = await query.select(draftColumns).maybeSingle()

@@ -121,7 +121,7 @@ implicitly; this approval gate applies to Quick Add only.
 review dates for ingredients; packaged products also check ingredient declaration
 and label verification. They are indicators, not a sufficient approval validator.
 
-Proposed approval requirements:
+Approval requirements (confirmed by the owner on 10 October 2026):
 
 - A trimmed product name and the correct record type.
 - Supplier resolved to the business's supplier records.
@@ -191,8 +191,8 @@ Suggested next slice:
 
 - Physical-phone walkthrough of current forms, camera picker, keyboards and upload
   behaviour; no device/browser walkthrough was performed during this code review.
-- Owner feedback on field defaults, staff seeing only their own captures and the
-  proposed approval requirements.
+- Owner feedback on field defaults and staff seeing only their own captures.
+  The approval requirements were confirmed on 10 October 2026.
 - Decide whether per-staff location restrictions are needed; they are not included
   in this first-version estimate.
 - Confirm deployed schema, storage configuration and audit constraints before
@@ -279,3 +279,172 @@ Verification completed for Session 2 on 9 October 2026:
 | Database schema and access | Passed in isolation | Migration executed in PGlite; defaults, constraints, foreign keys, RLS and role grants checked. |
 | Production compilation | Passed | `npm run build`, including TypeScript checking. |
 | Live persistence and physical phones | Pending | Migration is applied and access controls checked; deployment, live application persistence and real-device trial are still required. |
+
+
+## Session 3a — private label photos (10 October 2026)
+
+Implemented locally. The text draft is saved first; photo controls appear immediately
+on the saved screen and whenever a draft is reopened. Photos save individually as
+selected. Add another clears the photo panel, retains the previous supplier/location,
+and warns if any locally selected photos remain unuploaded. Failed photo operations
+do not roll back or duplicate the text draft. Up to 12 pending/ready photos are allowed.
+
+The new private `quick-add-photos` bucket has a 4 MiB per-object limit and accepts
+only normalized JPEGs. Browser preparation scales images to at most 3200 pixels on
+the longest side. Source files above 30 MiB are rejected; server request bodies are
+streamed with a hard 4 MiB limit. The server decodes images with a 50-megapixel limit,
+applies orientation, strips metadata and encodes JPEG. JPEG/PNG/WebP are supported;
+HEIC/HEIF depends on native browser decoding and is not universally supported.
+No extraction or allergen assessment is performed. Users must check label readability.
+
+The `quick_add_photos` table reserves each client-generated upload ID with an input
+hash, draft/business association, byte size and pending/ready/removed state. Retrying
+the same input reuses the reservation/object. A trigger locks the parent draft,
+validates business and editable state, limits attachments and prevents resurrection
+of removed IDs. Photos do not increment the text draft version. Future submission
+and promotion must lock the same parent row and explicitly validate ready evidence.
+
+All list/upload/read/remove requests use live session membership and the existing
+staff-own / manager-owner-business rules. Locations remain delivery context, not
+an additional permission system. Images stream through the authenticated API with
+`private, no-store`; no public URL or persistent signed URL is returned. A restrictive
+storage policy excludes this bucket from anon/authenticated access even if another
+permissive storage policy is later broadened. The service key stays server-side.
+
+### Deployment and recovery
+
+1. Keep the original draft migration applied.
+2. Apply `20261010182555_add_quick_add_photos.sql` before deploying the new app.
+   It creates a new bucket/table/function/policy and does not change inventory.
+   This migration is prepared and tested in isolation, **not applied live**.
+3. Deploy and verify create → attach → close → reopen with live storage and the
+   intended roles. Check unauthenticated image requests are rejected.
+4. Trial actual iPhone/Android capture, EXIF orientation and label readability.
+
+Rollback the application while retaining the table, bucket and evidence. Do not
+make this bucket public or drop it as a rollback step. Missing photo infrastructure
+shows an explicit photo error; text-only saves remain available.
+
+If an upload is interrupted, retry while the selected file is still available.
+After closing/reloading, pending entries explain that the photo must be removed and
+selected again. If the object upload succeeded but database finalization failed,
+retry accepts the existing immutable object and finishes the metadata write.
+Removal first tombstones the metadata, then removes bytes through Storage; a cleanup
+failure leaves the photo inaccessible and the current panel offers retry. If the
+panel has already closed, removed rows retain the object association for operational
+cleanup. An operator can identify pending/removed rows by state and age, and remove
+obsolete objects through the Storage API using
+`business_id/draft_id/id.jpg`; never delete `storage.objects` rows directly. Automatic
+age-based cleanup is not implemented. Business/draft cascade deletion also requires
+Storage API cleanup; database cascades alone do not delete objects.
+
+### Verification
+
+- API suite: 31 tests passed overall, including eight photo cases covering
+  session and live-role checks, cross-business/staff access, manager
+  access, idempotency, concurrent retries/removal, interrupted upload/finalization,
+  removed-object cleanup retry, invalid formats, size limits and orientation.
+- PostgreSQL/PGlite: bucket privacy, denied table access, restrictive storage policy
+  against a deliberately broad permissive policy, business association, photo cap,
+  tombstones and parent-state guard.
+- Production build and TypeScript compilation passed.
+- Browser UI/API checks passed at 1280×900 and 390×844, using actual route
+  handlers with fixture database/storage. No page errors or horizontal overflow;
+  live persistence and physical-phone testing remain pending.
+
+Additional isolated schema check:
+
+```sh
+PGLITE_MODULE=/tmp/ally-quick-add-check/node_modules/@electric-sql/pglite node scripts/verify-quick-add-photos-schema.cjs
+```
+
+The existing browser verification script now also exercises photo selection, retry,
+removal, unsaved-photo warnings, Add another isolation and reopening saved evidence.
+New photo copy uses the same English translation fallback as Session 2; supported
+translations and the final Help guide remain release checklist items.
+
+
+## Session 3b — submission, review and approval (10 October 2026)
+
+The owner confirmed the proposed approval requirements in this session. Implemented
+Draft → Ready for review → Approved for use, with author withdrawal and manager
+return-with-note paths. Staff can submit and withdraw their own captures; managers
+and owners can save review details, return and approve captures in their business,
+including their own. Server permissions use live membership; the transaction also
+locks/rechecks membership and the capture. Ready captures have read-only basic
+fields and photos; return/withdraw before changing those. Review details are saved
+separately with version checks. Text edits clear prior review details; a return or
+resubmission clears the evidence/label confirmations.
+
+The review form reuses the application's allergen IDs, risk levels and subtype
+configuration. Missing values remain unknown. Approval requires explicit values for
+all 14 allergens; non-none gluten/nut groups require all supported subtypes and a
+group value consistent with the highest subtype level. Supplier selection must
+resolve to a record in the same business. At least one ready photo and the reviewer's
+readability/assessment confirmation are required; pending uploads prevent submission
+and approval. Products additionally require the ingredient declaration, label-check
+confirmation and explicit global/location availability. No dietary claims are added
+by Quick Add approval; the full editor can manage supported claims subsequently.
+
+`transition_quick_add` is a service-role-only SECURITY INVOKER function with an empty
+search path. Its transaction creates the resulting ingredient (including assessed
+supplier profile/variant) or inactive packaged product, private datasheet links,
+normal creation audit entry, approval metadata and append-only transition history.
+A unique action ID and request snapshot make retries idempotent. Stale versions
+cannot approve a changed assessment. Partial failures roll back the transaction.
+No name matching or merging into existing ingredients occurs.
+
+`/api/quick-add-evidence/[photoId]` streams approved evidence to current business
+members, including staff who did not capture it. Unapproved evidence still follows
+capture ownership. Both paths require an application session and use private,
+no-store responses; approved datasheet links do not make storage public. Deleting a
+resulting record nulls its capture reference, stopping that evidence route. The
+photo migration also permits uploader-FK cleanup without altering frozen evidence.
+
+Migration order: original drafts → `20261010182555_add_quick_add_photos.sql` →
+`20261010182600_add_quick_add_review.sql` → application deployment. The two new
+migrations were applied to the connected Ally project on 10 October 2026. Retain approved destination records, history and private
+objects when rolling back application code; do not attempt to unapprove published
+or recipe-used records by dropping tables. The approved review and evidence remain
+an audit snapshot; subsequent full-editor changes use existing workflows.
+
+Additional PostgreSQL verification (PGlite fixture mirrors the live destination
+column types and the `global`/`site-specific` visibility constraint):
+
+```sh
+PGLITE_MODULE=/tmp/ally-quick-add-check/node_modules/@electric-sql/pglite node scripts/verify-quick-add-review-schema.cjs
+```
+
+The browser check requires both the documented Playwright and PGlite dependencies.
+Set `BASE_URL` to override the default `http://localhost:3107`.
+
+The browser check now runs review/approval through the actual PostgreSQL function
+while capture reads/writes and object storage use test adapters. It does not modify
+the connected project or prove live storage persistence.
+
+
+Session 3b verification completed:
+
+- 35 automated API tests passed, including role/ownership boundaries, transition
+  validation, review queue filtering and private approved-evidence access.
+- Isolated PostgreSQL checks passed for the photo schema and review transaction:
+  required assessments, supplier/site ownership, pending evidence, permitted state
+  transitions, idempotent approval, stale versions, rollback after a late failure,
+  inactive product creation, audit format and uploader deletion with frozen evidence.
+- Production build and TypeScript checks passed.
+- Browser checks passed on desktop (1280×900) and phone-sized Chromium (390×844):
+  capture, photo upload/retry/removal, resuming drafts, staff submission, manager
+  assessment/save/approval and resulting evidence associations. Review/approval
+  executed the real PostgreSQL function; capture/storage used fixture adapters.
+  No page errors or horizontal overflow. Explicit accessible names were added to
+  the new review dropdowns during this verification.
+- Live migration/application deployment, live Storage, real iPhone/Android trials,
+  supported translations and the final Help guide remain pending.
+
+## Release continuation — 10 October 2026
+
+The photo/review migrations are now applied and access controls verified. A Quick
+Add Help topic is implemented in all six supported languages with full-content
+search. Earlier pending status notes describe the pre-release checkpoints.
+Application deployment and live verification are in progress; physical-device
+trials and full workflow translations remain open.

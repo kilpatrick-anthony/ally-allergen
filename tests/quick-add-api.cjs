@@ -107,3 +107,38 @@ test('invalid IDs and database errors produce controlled responses', async () =>
   assert.equal((await setup().item.GET({}, params('bad'))).status, 400)
   assert.equal((await setup({ dbFailure: true }).collection.GET(listRequest())).status, 503)
 })
+
+test('review transition API rejects staff approval, forged actor fields and cross-business access before RPC', async () => {
+  const payload = { request_id: uuid(50), action: 'submit', version: 1 }
+  for (const action of ['approve', 'review', 'return']) {
+    const s = setup(); s.seed(uuid(10))
+    const review = require('./helpers/quick-add-review-db.cjs').completeReview()
+    const response = await s.transition.POST(request({ ...payload, action, ...(action === 'review' ? { review } : {}), ...(action === 'return' ? { note: 'Fix this' } : {}) }), params(uuid(10)))
+    assert.equal(response.status,403)
+  }
+  const s = setup({ role: 'manager' }); s.seed(uuid(10)); s.seed(uuid(11), { business_id: otherBusiness })
+  let calls = 0; s.db.rpc = async () => { calls++; return {} }
+  assert.equal((await s.transition.POST(request({ ...payload, actor_id: colleague }),params(uuid(10)))).status,400)
+  assert.equal((await s.transition.POST(request(payload),params(uuid(11)))).status,404)
+  assert.equal(calls,0)
+})
+
+test('review RPC uses the verified actor, returns controlled validation errors and exposes live permissions', async () => {
+  const s = setup({ role:'manager' }); s.seed(uuid(10))
+  const response = await s.item.GET({},params(uuid(10)))
+  assert.equal(response.body.permissions.canReview,true)
+  assert.equal(response.body.permissions.isCreator,true)
+  s.db.rpc = async (name,args) => {
+    assert.equal(name,'transition_quick_add');assert.equal(args.p_actor,actor);assert.equal(args.p_business,business)
+    return { error:{message:'missingAllergens'} }
+  }
+  const result = await s.transition.POST(request({request_id:uuid(50),action:'approve',version:1}),params(uuid(10)))
+  assert.equal(result.status,400);assert.equal(result.body.error,'missingAllergens')
+})
+
+test('review queue filters states and includes only accessible captures', async () => {
+  const s=setup();s.seed(uuid(10));s.seed(uuid(11),{status:'ready_for_review'});s.seed(uuid(12),{status:'ready_for_review',created_by:colleague})
+  const result=await s.collection.GET({nextUrl:new URL('https://test/api/quick-add-drafts?status=ready_for_review')})
+  assert.equal(result.body.drafts.length,1);assert.equal(result.body.drafts[0].id,uuid(11))
+  assert.equal((await s.collection.GET({nextUrl:new URL('https://test/api/quick-add-drafts?status=invalid')})).status,400)
+})

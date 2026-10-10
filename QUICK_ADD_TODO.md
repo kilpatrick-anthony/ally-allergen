@@ -16,7 +16,7 @@ a promise that each phase will take one day. Re-estimate after the initial revie
 - [x] Agree approval roles: staff capture and submit; owners/managers approve, including their own entries, with an audit record.
 - [x] Use the proposed defaults for this implementation: staff see/edit their own drafts; owners/managers see/edit drafts in their business.
 - [x] Implement minimum draft fields: name and record type required; location, supplier and notes optional. Photos are in Session 3.
-- [x] Draft approval requirements using existing review checks; owner confirmation remains pending.
+- [x] Confirm approval requirements: selected supplier, readable label evidence, explicit allergen assessment, and label/declaration checks for bought-in products (confirmed 10 October).
 - [x] Sketch the phone and desktop flows and refine the implementation estimate.
 
 Deliverable: an agreed flow, permissions matrix and draft-storage design.
@@ -41,15 +41,15 @@ Deliverable: a usable text-based capture flow backed by persisted drafts.
 
 ## Session 3 — Add label photos and the review workflow
 
-- [ ] Support taking a photo or selecting existing images on supported phones.
-- [ ] Allow multiple readable label photos, with preview, removal and upload retry.
+- [x] Add camera and image-picker controls to saved drafts; physical-phone support still needs the Session 4 trial.
+- [x] Allow multiple label photos, with preview, removal and upload retry; reviewers must check readability.
 - [ ] Check image size, supported formats, orientation and mobile upload behaviour.
-- [ ] Enforce business/location access for photos as well as draft records.
-- [ ] Add Draft, Ready for review and Approved for use states with permitted transitions.
-- [ ] Add an Items needing review list with name, type, location, author and missing details.
-- [ ] Let a reviewer open photos and complete the record in the appropriate editor.
-- [ ] Record who created, submitted and approved an entry, with timestamps.
-- [ ] Keep approval separate from publishing a customer-facing menu item.
+- [x] Enforce the same live business/ownership access for photos as draft records. Location remains delivery context, as agreed in the design.
+- [x] Add Draft, Ready for review and Approved for use states with permitted transitions.
+- [x] Add an Items needing review list with name, type, location, author and missing details.
+- [x] Let a reviewer open photos and complete the record in the appropriate editor.
+- [x] Record who created, submitted and approved an entry, with timestamps.
+- [x] Keep approval separate from publishing a customer-facing menu item.
 
 Deliverable: staff can capture a delivery item and a manager can complete its review.
 
@@ -70,8 +70,8 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
 
 ## Release
 
-- [ ] Prepare database migrations and document deployment order and recovery steps.
-- [ ] Review the completed change and arrange approval to release it.
+- [x] Prepare database migrations and document deployment order and recovery steps.
+- [x] Review the completed change and arrange approval to release it (user requested continuation on 10 October).
 - [x] Apply the Session 2 draft-storage migration and verify table/access controls.
 - [ ] Apply any later migrations and deploy the approved version.
 - [ ] Verify capture, photo upload, review and publication separation in the deployed app.
@@ -109,10 +109,64 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
   Verification: 23 API tests, production build, isolated schema checks and desktop/phone-sized
   browser flows passed. Physical-phone and live-database trials remain pending.
 
+- 10 October 2026: implemented the photo portion of Session 3 locally. Save a text
+  draft first, then take/select up to 12 photos. Added private storage, authenticated
+  image reads, previews, removal, retry, orientation correction and metadata stripping.
+  Browser conversion supports JPEG/PNG/WebP and HEIC only when the browser can decode
+  it; otherwise the user receives a format message. Real-phone checks remain pending.
+  Prepared `20261010182555_add_quick_add_photos.sql`; it has **not** been applied to
+  the connected project. Deployment remains pending. Submission, review and atomic
+  promotion were the next implementation slice (now implemented in Session 3b below).
+  Owner confirmation of the proposed requirements was received during Session 3b. Verification passed: 31 API tests,
+  production build, isolated PostgreSQL checks and desktop/phone-sized browser flows.
+  See the design document for verification
+  results, deployment order and interrupted-upload recovery.
+
 ## Final task — update the Help section
 
-- [ ] Add a Quick Add guide to AllyJen's admin Help section, matching the completed first-version workflow.
-- [ ] Explain where to find Quick Add on computers, tablets and phones; adding ingredients or bought-in products; attaching label photos; saving drafts; and using Add another.
-- [ ] Explain how staff submit drafts, how owners/managers review and approve them, and how approval differs from publishing a menu item.
-- [ ] Cover finding and resuming drafts, missing information and retrying failed photo uploads.
+- [x] Add a Quick Add guide to AllyJen's admin Help section, matching the completed first-version workflow.
+- [x] Explain where to find Quick Add on computers, tablets and phones; adding ingredients or bought-in products; attaching label photos; saving drafts; and using Add another.
+- [x] Explain how staff submit drafts, how owners/managers review and approve them, and how approval differs from publishing a menu item.
+- [x] Cover finding and resuming drafts, missing information and retrying failed photo uploads.
 - [ ] Check the guide against the released screens and add it to Help navigation/search and supported translations.
+
+
+## Session 3b progress — 10 October 2026
+
+- Owner confirmed the proposed mandatory approval checks.
+- Added submission, author withdrawal, manager return with a note, versioned review
+  saves and atomic approval. The queue includes status filters, author/location and
+  missing review checks. Capture details/photos are locked while submitted.
+- Approved ingredients get an assessed supplier variant and evidence associations;
+  bought-in products are created inactive with an explicit global/location scope.
+  Approval does not add dietary claims or publish a product.
+- Added private business-authorized access to approved evidence and audit history.
+- Prepared `20261010182600_add_quick_add_review.sql`, to follow the photo migration.
+  Both new migrations and deployment remain pending. Real-device/live-storage
+  testing, translations, final Help guide and release verification are still open.
+
+- Session 3b verification passed: 35 API tests, production build/TypeScript,
+  isolated PostgreSQL transaction/schema checks and desktop/phone-sized browser
+  capture → submission → manager approval flows. The browser approval path uses
+  the real PostgreSQL function with fixture object storage. Live and physical-device
+  checks remain pending.
+
+## Release progress — 10 October 2026
+
+- Applied photos migration `20261010182555` and review migration `20261010182600`
+  to the connected Ally project. Verified private bucket, 4 MiB storage limit, RLS
+  and service-role-only approval execution. Earlier pending notes above are historical.
+- Added the Help guide in English, Irish, Portuguese, French, Spanish and German,
+  including navigation and full-content search. Workflow button labels retain their
+  English fallback; translating the rest of Quick Add remains follow-up work.
+- Production build/TypeScript and all 35 automated tests passed again.
+- Application deployment and live verification are in progress. Real-device delivery
+  trials remain necessary after release.
+
+- Live PostgreSQL verification passed using service-role execution in a rolled-back
+  transaction: both destination types, missing-assessment rejection, idempotency,
+  evidence/audit links and inactive products. No test records persisted.
+- Fixed the shared language hook to restore saved preferences after hydration,
+  avoiding mismatched server/browser text when opening translated Help pages.
+- Authenticated live Storage verification needs a test-account session; local
+  service credentials are unavailable. Keep this as part of the delivery trial.

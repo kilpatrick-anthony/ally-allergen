@@ -3,6 +3,7 @@
 
 import { useState } from 'react'
 import React from 'react'
+import { quickAddHelp } from '@/lib/quick-add-help'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { 
   HelpCircle, Book, FileText, MessageCircle, 
@@ -16,7 +17,7 @@ import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 
-const HELP_TOPIC_JOURNEY = [1, 2, 9, 16, 5, 3, 4, 7, 8, 6, 17, 10, 15, 11, 12, 13, 14]
+const HELP_TOPIC_JOURNEY = [1, 2, 18, 9, 16, 5, 3, 4, 7, 8, 6, 17, 10, 15, 11, 12, 13, 14]
 
 export default function HelpPage() {
   const { t, language } = useTranslation()
@@ -99,6 +100,7 @@ export default function HelpPage() {
   }
 
   const helpTopics = [
+    { id: 18, category: 'getting-started', title: quickAddHelp.en.title, description: quickAddHelp.en.description, icon: Zap, color: 'teal' },
     {
       id: 1,
       category: 'getting-started',
@@ -658,6 +660,7 @@ export default function HelpPage() {
   const topicDetails: Record<number, string[]> = {
     ...topicDetailsByLang['en'],
     ...localizedTopicDetails,
+    18: (quickAddHelp[language] || quickAddHelp.en).steps,
   }
 
   const localizedCategories = categories.map((category) => ({
@@ -667,6 +670,7 @@ export default function HelpPage() {
 
   const localizedTopics = HELP_TOPIC_JOURNEY.map((topicId) => {
     const topic = helpTopics.find((candidate) => candidate.id === topicId)!
+    if (topicId === 18) return { ...topic, ...(quickAddHelp[language] || quickAddHelp.en) }
     const localized = revisedTopicCards[language]?.[topic.id] || topicTranslations[language]?.[topic.id]
     return {
       ...topic,
@@ -678,7 +682,8 @@ export default function HelpPage() {
   const filteredTopics = localizedTopics.filter(topic => {
     const matchesCategory = activeCategory === 'all' || topic.category === activeCategory
     const matchesSearch = topic.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         topic.description.toLowerCase().includes(searchTerm.toLowerCase())
+                         topic.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (topicDetails[topic.id] || []).some(step => step.toLowerCase().includes(searchTerm.toLowerCase()))
     return matchesCategory && matchesSearch
   })
 

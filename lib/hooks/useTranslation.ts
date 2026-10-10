@@ -10,11 +10,12 @@ function readSavedLanguage(): LanguageCode {
 }
 
 export function useTranslation() {
-  // Get initial language from localStorage, default to 'en'
-  const [language, setLanguage] = useState<LanguageCode>(readSavedLanguage)
+  // Match the server render, then restore the browser's saved preference.
+  const [language, setLanguage] = useState<LanguageCode>('en')
 
   // Listen for language change events
   useEffect(() => {
+    setLanguage(readSavedLanguage())
     const handleLanguageChange = (event: CustomEvent<LanguageCode>) => {
       if (SUPPORTED_LANGUAGES.includes(event.detail)) setLanguage(event.detail)
     }
