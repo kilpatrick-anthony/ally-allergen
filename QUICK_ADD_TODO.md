@@ -22,8 +22,8 @@ a promise that each phase will take one day. Re-estimate after the initial revie
 Deliverable: an agreed flow, permissions matrix and draft-storage design.
 
 Review and proposed design: [QUICK_ADD_DESIGN.md](QUICK_ADD_DESIGN.md). The code
-review is complete; physical-phone validation and the remaining product decisions
-are still open. Session 2 is implemented locally, and its database migration has been applied to the connected project. Deployment remains pending.
+review and implementation are complete. See the latest release notes below for
+deployment status; physical-phone validation remains open.
 
 ## Session 2 — Build the basic Quick Add flow
 
@@ -55,11 +55,11 @@ Deliverable: staff can capture a delivery item and a manager can complete its re
 
 ## Session 4 — Verify behaviour and trial a real delivery
 
-- [ ] Confirm missing allergen details appear as unknown, never as no allergens.
-- [ ] Confirm drafts cannot accidentally enter published menus or be used as approved inputs to allergen calculations.
+- [x] Confirm missing allergen details appear as unknown, never as no allergens. Automated checks passed; real-device trial remains below.
+- [x] Confirm drafts cannot accidentally enter published menus or be used as approved inputs to allergen calculations. Automated checks passed; real-device trial remains below.
 - [ ] Check draft handling in searches, recipe selectors, totals, reports and exports.
-- [ ] Test staff and owner permissions, including direct API requests across businesses and locations.
-- [ ] Test required-field validation, duplicate taps, interrupted photo uploads and failed saves.
+- [x] Test staff and owner permissions, including direct API requests across businesses and locations. Automated checks passed; real-device trial remains below.
+- [x] Test required-field validation, duplicate taps, interrupted photo uploads and failed saves. Automated checks passed; real-device trial remains below.
 - [ ] Test on a real iPhone, an Android phone if available, and desktop.
 - [ ] Check labels, keyboard navigation, focus, touch targets and translations.
 - [x] Run relevant automated tests, TypeScript checks and the production build for Session 2; repeat for later implementation phases.
@@ -73,9 +73,9 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
 - [x] Prepare database migrations and document deployment order and recovery steps.
 - [x] Review the completed change and arrange approval to release it (user requested continuation on 10 October).
 - [x] Apply the Session 2 draft-storage migration and verify table/access controls.
-- [ ] Apply any later migrations and deploy the approved version.
+- [x] Apply any later migrations and deploy the approved version.
 - [ ] Verify capture, photo upload, review and publication separation in the deployed app.
-- [ ] Update this checklist with the result and any follow-up work.
+- [x] Update this checklist with the result and any follow-up work.
 
 ## Later enhancements — outside the first version
 
@@ -128,7 +128,7 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
 - [x] Explain where to find Quick Add on computers, tablets and phones; adding ingredients or bought-in products; attaching label photos; saving drafts; and using Add another.
 - [x] Explain how staff submit drafts, how owners/managers review and approve them, and how approval differs from publishing a menu item.
 - [x] Cover finding and resuming drafts, missing information and retrying failed photo uploads.
-- [ ] Check the guide against the released screens and add it to Help navigation/search and supported translations.
+- [x] Check the guide against the released screens and add it to Help navigation/search and supported translations.
 
 
 ## Session 3b progress — 10 October 2026
@@ -160,8 +160,9 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
   including navigation and full-content search. Workflow button labels retain their
   English fallback; translating the rest of Quick Add remains follow-up work.
 - Production build/TypeScript and all 35 automated tests passed again.
-- Application deployment and live verification are in progress. Real-device delivery
-  trials remain necessary after release.
+- Deployed application commit `aedf382e313af49b09c77b949987ec16129ce6b5` to
+  https://allyjen.ie; Vercel deployment `dpl_HknGZPTndigPajL4rmjTcj3VdmDP` is READY.
+  The live version endpoint matches. Real-device delivery trials remain open.
 
 - Live PostgreSQL verification passed using service-role execution in a rolled-back
   transaction: both destination types, missing-assessment rejection, idempotency,
@@ -170,3 +171,27 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
   avoiding mismatched server/browser text when opening translated Help pages.
 - Authenticated live Storage verification needs a test-account session; local
   service credentials are unavailable. Keep this as part of the delivery trial.
+
+- Help checks passed in all six languages: eight guide steps, keyboard expansion,
+  content search and phone-width layout, with no page errors. Desktop/phone-sized
+  capture-to-approval checks passed again after the language fix (one prior mobile
+  navigation timeout did not reproduce on the complete rerun).
+
+### Remaining release trial
+
+1. Sign in on a real phone as staff, save an ingredient, take two label photos and
+   confirm they reopen after leaving Saved drafts. Repeat with a bought-in product.
+2. Retry an interrupted upload, use Add another and submit both entries.
+3. As owner/manager, complete the confirmed checks and approve; confirm the product
+   stays inactive in Menu Builder and the ingredient has its assessed supplier.
+4. Check iPhone/Android orientation, HEIC behaviour and readability, then record
+   awkward steps. Full Quick Add interface translations remain a separate follow-up.
+
+Recovery: revert application code to the preceding deployment
+`dpl_DNRwBrLzobrxxEtSxmLZW9xtAKM7` if needed; retain capture tables, approved records,
+private photos and audit history. Do not drop the migrations to roll back the UI.
+
+- Deployed Help UI checks passed in all six languages using fixture session/data
+  responses; keyboard expansion, content search and phone-width layout passed.
+  Live unauthenticated draft/photo/evidence requests returned 401 as expected.
+  The authenticated end-to-end live-storage trial above remains unchecked.

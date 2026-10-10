@@ -446,5 +446,9 @@ Session 3b verification completed:
 The photo/review migrations are now applied and access controls verified. A Quick
 Add Help topic is implemented in all six supported languages with full-content
 search. Earlier pending status notes describe the pre-release checkpoints.
-Application deployment and live verification are in progress; physical-device
-trials and full workflow translations remain open.
+Application commit `aedf382e313af49b09c77b949987ec16129ce6b5` is deployed at
+https://allyjen.ie (deployment `dpl_HknGZPTndigPajL4rmjTcj3VdmDP`). The live
+version matches and unauthenticated capture/evidence access is rejected. Live
+service-role approval was verified for both destinations in a rolled-back
+transaction. Authenticated live photo persistence, physical-device trials and
+full workflow translations remain open.
