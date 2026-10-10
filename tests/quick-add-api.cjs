@@ -26,10 +26,10 @@ test('requires a valid session and live business role despite a cached owner cla
   }
 })
 
-test('validates inputs and rejects client attempts to set ownership, state or allergens', async () => {
+test('validates inputs and rejects client attempts to set ownership, approval state or invalid assessments', async () => {
   const s = setup()
   const valid = { ...fields, id: uuid(10) }
-  for (const input of [null, {}, { ...valid, name: ' ' }, { ...valid, name: 'x'.repeat(201) }, { ...valid, notes: 'x'.repeat(2001) }, { ...valid, id: 'bad' }, { ...valid, business_id: otherBusiness }, { ...valid, created_by: colleague }, { ...valid, status: 'approved' }, { ...valid, allergen_warnings: {} }]) {
+  for (const input of [null, {}, { ...valid, name: ' ' }, { ...valid, name: 'x'.repeat(201) }, { ...valid, notes: 'x'.repeat(2001) }, { ...valid, id: 'bad' }, { ...valid, business_id: otherBusiness }, { ...valid, created_by: colleague }, { ...valid, status: 'approved' }, { ...valid, allergen_warnings: { milk: 'unsafe-value' } }, { ...valid, allergen_warnings: { invented: 'none' } }, { ...valid, dietary_tags: ['Invented'] }, { ...valid, dietary_checked: true }]) {
     assert.equal((await s.collection.POST(request(input))).status, 400)
   }
   assert.equal(s.rows.length, 0)
@@ -141,4 +141,20 @@ test('review queue filters states and includes only accessible captures', async 
   const result=await s.collection.GET({nextUrl:new URL('https://test/api/quick-add-drafts?status=ready_for_review')})
   assert.equal(result.body.drafts.length,1);assert.equal(result.body.drafts[0].id,uuid(11))
   assert.equal((await s.collection.GET({nextUrl:new URL('https://test/api/quick-add-drafts?status=invalid')})).status,400)
+})
+
+
+test('captures optional allergens and tags, replays JSON values and preserves them for older edit clients', async () => {
+  const s=setup()
+  const capture={...fields,id:uuid(10),allergen_warnings:{milk:'contains',nuts:'may_contain',nuts_levels:{almonds:'may_contain'}},dietary_tags:['Vegetarian','Organic']}
+  const created=await s.collection.POST(request(capture));assert.equal(created.status,201)
+  assert.equal(created.body.draft.allergen_warnings.milk,'contains');assert.equal(created.body.draft.allergen_warnings.eggs,undefined)
+  assert.deepEqual(Array.from(created.body.draft.dietary_tags),['Organic','Vegetarian'])
+  assert.equal((await s.collection.POST(request({...capture,allergen_warnings:{nuts_levels:{almonds:'may_contain'},nuts:'may_contain',milk:'contains'},dietary_tags:['Organic','Vegetarian']}))).status,200)
+  assert.equal((await s.collection.POST(request({...capture,dietary_tags:[]}))).status,409)
+  const edited=await s.item.PATCH(request({...fields,version:1,name:'Updated'}),params(uuid(10)))
+  assert.equal(edited.status,200);assert.equal(edited.body.draft.allergen_warnings.milk,'contains');assert.equal(edited.body.draft.dietary_tags.length,2)
+  const cleared=await s.item.PATCH(request({...fields,version:2,allergen_warnings:{},dietary_tags:[]}),params(uuid(10)))
+  assert.equal(cleared.status,200);assert.equal(Object.keys(cleared.body.draft.allergen_warnings).length,0);assert.equal(cleared.body.draft.dietary_tags.length,0)
+  assert.equal(s.writes.every(table=>table==='quick_add_drafts'),true)
 })

@@ -14,8 +14,8 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
     try {
       for(const row of backend.rows) {
         const existing=await db.query('select id from quick_add_drafts where id=$1',[row.id]);
-        if(!existing.rows.length) await db.query('insert into quick_add_drafts(id,business_id,kind,name,site_id,supplier_id,supplier_name,notes,created_by,version) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',
-          [row.id,row.business_id,row.kind,row.name,row.site_id,row.supplier_id,row.supplier_name,row.notes,row.created_by,row.version]);
+        if(!existing.rows.length) await db.query('insert into quick_add_drafts(id,business_id,kind,name,site_id,supplier_id,supplier_name,notes,created_by,version,allergen_warnings,dietary_tags) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)',
+          [row.id,row.business_id,row.kind,row.name,row.site_id,row.supplier_id,row.supplier_name,row.notes,row.created_by,row.version,row.allergen_warnings || {},row.dietary_tags || []]);
       }
       for(const photo of backend.photos) {
         const existing=await db.query('select state from quick_add_photos where id=$1',[photo.id]);
@@ -73,6 +73,10 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
   await page.getByRole('button',{name:'Quick Add',exact:true}).click();
   const dialog=page.getByRole('dialog');
   await dialog.getByLabel('Product name').fill('Delivery bread');
+  await dialog.getByText('Allergens and dietary tags (optional)',{exact:true}).click();
+  await dialog.getByLabel('Milk',{exact:true}).selectOption('contains');
+  await dialog.getByLabel('Vegetarian',{exact:true}).check();
+  await dialog.getByText('Allergens and dietary tags (optional)',{exact:true}).click();
   await page.keyboard.press('Tab');
   assert.equal(await page.evaluate(()=>!!document.activeElement?.closest('[role=dialog]')),true);
   await dialog.getByLabel('Delivery location').selectOption(uuid(5));
@@ -113,6 +117,8 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
   assert.equal(await dialog.getByRole('img').count(),0);
   assert.equal(await dialog.getByLabel('Supplier name',{exact:true}).inputValue(),'New supplier');
   assert.equal(await dialog.getByLabel('Delivery notes').inputValue(),'');
+  assert.equal(await dialog.getByLabel('Milk',{exact:true}).inputValue(),'');
+  assert.equal(await dialog.getByLabel('Vegetarian',{exact:true}).isChecked(),false);
   assert.equal(await dialog.getByLabel('Delivery location').inputValue(),uuid(5));
   await dialog.getByLabel('Product name').fill('Second product');
   page.once('dialog',prompt=>prompt.dismiss());
@@ -121,6 +127,11 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
   page.once('dialog',prompt=>prompt.accept());
   await dialog.getByRole('button',{name:'Cancel',exact:true}).click();
   await dialog.waitFor({state:'hidden'});
+  for(const theme of ['light','dark']) {
+    await page.evaluate(theme=>document.documentElement.classList.toggle('dark',theme==='dark'),theme);
+    await page.screenshot({path:`/tmp/ally-quick-add-${device}-cards-${theme}.png`});
+  }
+  await page.evaluate(()=>document.documentElement.classList.remove('dark'));
   await page.getByRole('link',{name:/open draft.*delivery bread/i}).click();
   await dialog.getByLabel('Product name').waitFor();
   assert.equal(await dialog.getByLabel('Product name').inputValue(),'Delivery bread');
@@ -150,9 +161,12 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
     console.log('Review failure URL:',page.url(),'Backend:',backend.rows.map(r=>({id:r.id,status:r.status})), 'Errors:',failures);
     console.log((await page.locator('body').innerText()).slice(-5000));throw error;
   });
+  assert.equal(await dialog.getByLabel('Milk',{exact:true}).inputValue(),'contains');
+  assert.equal(await dialog.getByLabel('Vegetarian',{exact:true}).isChecked(),true);
   for(const label of ['Gluten','Crustaceans','Eggs','Fish','Peanuts','Soybeans','Milk','Tree Nuts','Celery','Mustard','Sesame seeds','Sulphur dioxide and sulphites','Lupin','Molluscs']) {
     await dialog.getByLabel(label,{exact:true}).selectOption('none');
   }
+  await dialog.getByLabel('I verified every selected dietary tag against the current label or supporting evidence.',{exact:true}).check();
   await dialog.getByLabel('I opened the photos, checked that the labels are readable, and verified this assessment against them.',{exact:true}).check();
   assert.equal(await dialog.getByRole('button',{name:'Approve for use',exact:true}).isDisabled(),true);
   await dialog.getByRole('button',{name:'Save review details',exact:true}).click();

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
+import QuickAddAssessment from '@/components/admin/QuickAddAssessment'
 import QuickAddPhotos from '@/components/admin/QuickAddPhotos'
 import QuickAddReview from '@/components/admin/QuickAddReview'
 import { Button } from '@/components/ui/Button'
@@ -20,11 +21,12 @@ type Props = {
 }
 
 const blank = (kind: QuickAddKind, siteId?: string | null): QuickAddFields => ({
-  kind, name: '', site_id: siteId || null, supplier_id: null, supplier_name: '', notes: '',
+  kind, name: '', site_id: siteId || null, supplier_id: null, supplier_name: '', notes: '', allergen_warnings: {}, dietary_tags: [],
 })
 const fieldsOf = (draft: QuickAddDraft): QuickAddFields => ({
   kind: draft.kind, name: draft.name, site_id: draft.site_id, supplier_id: draft.supplier_id,
   supplier_name: draft.supplier_name, notes: draft.notes,
+  allergen_warnings: draft.allergen_warnings || {}, dietary_tags: draft.dietary_tags || [],
 })
 
 export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingredient', siteId, onSaved }: Props) {
@@ -189,6 +191,13 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
                 <span className="mt-1 block text-xs text-gray-500 dark:text-gray-300">{text('supplierNote')}</span></label>}
               <label className="block text-sm font-medium">{text('notes')}
                 <textarea rows={3} maxLength={2000} value={fields.notes} onChange={event => setFields({ ...fields, notes: event.target.value })} className={control} /></label>
+              {(!record || record.status === 'draft') && <details className="rounded-lg border border-gray-300 p-3 dark:border-gray-600">
+                <summary className="min-h-11 cursor-pointer py-2 font-semibold">{text('captureAssessment')}</summary>
+                <p className="mb-4 text-sm text-gray-700 dark:text-gray-200">{text('captureAssessmentHelp')}</p>
+                <QuickAddAssessment warnings={fields.allergen_warnings} tags={fields.dietary_tags}
+                  onWarnings={allergen_warnings => setFields(current => ({ ...current, allergen_warnings }))}
+                  onTags={dietary_tags => setFields(current => ({ ...current, dietary_tags }))} />
+              </details>}
             </fieldset>
             <p className="rounded-lg bg-teal-50 p-3 text-sm text-teal-900 dark:bg-teal-950 dark:text-teal-100">{text(record?.status === 'approved' ? 'approvedSafetyNote' : 'safetyNote')}</p>
             {error && <div role="alert" className="text-sm text-red-700 dark:text-red-300"><p>{text(error)}</p>

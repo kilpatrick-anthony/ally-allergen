@@ -29,7 +29,7 @@ export async function POST(request: NextRequest, route: { params: Promise<{ id: 
     if (error) {
       const code = error.message
       const statuses: Record<string, number> = { forbidden: 403, notFound: 404, invalid: 400, editConflict: 409, pendingPhotos: 409,
-        returnNoteRequired: 400, missingSupplier: 400, missingEvidence: 400, missingAllergens: 400, missingLabel: 400, missingScope: 400, locationUnavailable: 400 }
+        returnNoteRequired: 400, missingSupplier: 400, missingEvidence: 400, missingAllergens: 400, missingLabel: 400, missingDietaryCheck: 400, missingScope: 400, locationUnavailable: 400 }
       if (statuses[code]) throw new QuickAddError(code, statuses[code])
       throw error
     }

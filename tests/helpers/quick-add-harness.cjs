@@ -78,7 +78,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
   const mocks = {
     'next/headers': { cookies: async () => ({ get: () => token ? { value: token } : undefined }) },
     'next/server': { NextResponse: TestResponse },
-    sharp: { default: require('sharp') }, 'node:crypto': require('node:crypto'),
+    sharp: { default: require('sharp') }, 'node:crypto': require('node:crypto'), 'node:util': require('node:util'),
     '@/lib/auth': { verifySessionToken: async () => { if (token !== 'valid') throw new Error('Invalid token'); return { userId: actor, role: 'owner' } } },
     '@/lib/supabase/server': { createServiceClient: () => db }, zod: { z },
   }
@@ -99,7 +99,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
     photoHelpers: mocks['@/lib/server/quick-add-photos'], photos, objects, failures, hooks,
     collection: load('app/api/quick-add-drafts/route.ts'), item: load('app/api/quick-add-drafts/[id]/route.ts'), rows, writes,
     race: () => { concurrentEdit = true },
-    seed(id, overrides = {}) { rows.push({ ...fields, id, business_id: business, created_by: actor, status: 'draft', version: 1, created_at: '2026-10-09T10:00:00Z', updated_at: '2026-10-09T10:00:00Z', ...overrides }) },
+    seed(id, overrides = {}) { rows.push({ ...fields, allergen_warnings: {}, dietary_tags: [], id, business_id: business, created_by: actor, status: 'draft', version: 1, created_at: '2026-10-09T10:00:00Z', updated_at: '2026-10-09T10:00:00Z', ...overrides }) },
   }
 }
 const listRequest = offset => ({ nextUrl: new URL(`https://test/api/quick-add-drafts?offset=${offset || 0}`) })

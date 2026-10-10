@@ -1,3 +1,4 @@
+import { allergenFields, dietaryTagFields } from '@/lib/quick-add-review'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
@@ -14,12 +15,14 @@ export const draftFields = z.object({
   site_id: z.string().uuid().nullable(),
   supplier_id: z.string().uuid().nullable(),
   supplier_name: z.string().trim().max(200),
+  allergen_warnings: allergenFields.optional(),
+  dietary_tags: dietaryTagFields.optional(),
   notes: z.string().trim().max(2000),
 }).strict()
 
 export const createDraftInput = draftFields.extend({ id: z.string().uuid() })
 export const updateDraftInput = draftFields.extend({ version: z.number().int().min(1).max(2147483646) })
-export const draftColumns = 'id,kind,name,site_id,supplier_id,supplier_name,notes,status,version,created_by,created_at,updated_at,review,submitted_at,submitted_by,approved_at,approved_by,return_note,ingredient_id,menu_item_id'
+export const draftColumns = 'id,kind,name,allergen_warnings,dietary_tags,site_id,supplier_id,supplier_name,notes,status,version,created_by,created_at,updated_at,review,submitted_at,submitted_by,approved_at,approved_by,return_note,ingredient_id,menu_item_id'
 
 export function requireDraftId(id: string) {
   if (!z.string().uuid().safeParse(id).success) throw new QuickAddError('invalid', 400)

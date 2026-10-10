@@ -1,6 +1,11 @@
 export const adminAccessTranslations = {
   en: {
     quickAdd: {
+      captureAssessment: 'Allergens and dietary tags (optional)',
+      captureAssessmentHelp: 'Enter what you know from the label now. You can leave details unanswered, save the draft and add photos next. A reviewer will confirm these entries before approval.',
+      dietaryTags: 'Dietary tags', dietaryChecked: 'I verified every selected dietary tag against the current label or supporting evidence.',
+      missingDietaryCheck: 'Verify the selected dietary tags against the label evidence.',
+
       reviewTitle: 'Review and approval', ready_for_review: 'Ready for review', approved: 'Approved for use',
       filterStatus: 'Show', allCaptures: 'All captures', author: 'Captured by', teamMember: 'Team member',
       submit: 'Send for review', submitHelp: 'Save any changes and finish or remove pending uploads before sending. A manager can complete missing details.',
@@ -11,7 +16,6 @@ export const adminAccessTranslations = {
       productScope: 'Product availability', chooseScope: 'Choose availability', globalScope: 'All locations', siteScope: 'One location', productSite: 'Product location',
       labelChecked: 'I checked the ingredient declaration against the current label.',
       evidenceChecked: 'I opened the photos, checked that the labels are readable, and verified this assessment against them.',
-      noDietaryClaims: 'Approval adds no dietary claims. Supported claims can be added in the full editor afterwards.',
       saveReview: 'Save review details', approve: 'Approve for use',
       ingredientApprovalHelp: 'Approval creates a new ingredient available for recipes.',
       productApprovalHelp: 'Approval creates an inactive bought-in product. Publishing it is a separate action.',

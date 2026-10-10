@@ -6,6 +6,8 @@ export type QuickAddFields = {
   site_id: string | null
   supplier_id: string | null
   supplier_name: string
+  allergen_warnings: import('@/lib/quick-add-review').QuickAddReview['allergen_warnings']
+  dietary_tags: string[]
   notes: string
 }
 

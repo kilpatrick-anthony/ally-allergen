@@ -54,12 +54,12 @@ function Drafts() {
     {error && <div role="alert" className="mb-5"><p>{text(error)}</p><Button className="mt-2" onClick={() => setRevision(value => value + 1)}>{text('retry')}</Button></div>}
     {!loading && !error && !drafts.length && <Card>{text('empty')}</Card>}
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {drafts.map(draft => <Card key={draft.id}>
+      {drafts.map(draft => <Card key={draft.id} className="text-gray-900 dark:text-gray-100">
         <p className="text-xs font-semibold text-teal-700 dark:text-teal-300">{text(draft.kind)} · {text(draft.status)}</p>
-        <h2 className="mt-2 break-words text-lg font-semibold">{draft.name}</h2>
-        <p className="mt-1 text-sm">{text('author')}: {draft.author_name || text('teamMember')} · {draft.site_name || text('noLocation')}</p>
+        <h2 className="mt-2 break-words text-lg font-semibold text-gray-900 dark:text-white">{draft.name}</h2>
+        <p className="mt-1 text-sm text-gray-700 dark:text-gray-200">{text('author')}: {draft.author_name || text('teamMember')} · {draft.site_name || text('noLocation')}</p>
         {draft.status !== 'approved' && <p className="mt-2 text-sm text-amber-800 dark:text-amber-200">{missingReviewDetails(draft.review || {}, draft.kind).map(key => text(key)).join(' · ')}</p>}
-        {draft.supplier_name && <p className="mt-1 break-words text-sm">{draft.supplier_name}</p>}
+        {draft.supplier_name && <p className="mt-1 break-words text-sm text-gray-700 dark:text-gray-200">{draft.supplier_name}</p>}
         <p className="mt-2 text-xs text-gray-500 dark:text-gray-300">{text('updated')}: {new Date(draft.updated_at).toLocaleDateString(language)}</p>
         <Link href={`/admin/quick-add?draft=${draft.id}`} className="mt-3 inline-flex min-h-11 items-center font-medium text-teal-700 underline dark:text-teal-300">{text('details')}<span className="sr-only">: {draft.name}</span></Link>
       </Card>)}

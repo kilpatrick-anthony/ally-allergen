@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { useTranslation } from '@/lib/hooks/useTranslation'
-import { ALLERGEN_LIST, GLUTEN_TYPES, TREE_NUT_TYPES } from '@/types/allergen'
-import { blankReview, missingReviewDetails, reviewLevels, type QuickAddReview as Review } from '@/lib/quick-add-review'
+import QuickAddAssessment from '@/components/admin/QuickAddAssessment'
+import { blankReview, missingReviewDetails, type QuickAddReview as Review } from '@/lib/quick-add-review'
 import type { QuickAddDraft } from '@/lib/quick-add'
 
 type Option = { id: string; name: string }
@@ -59,7 +59,7 @@ export default function QuickAddReview({ draft, suppliers, sites, disabled, onCh
       if (!response.ok) throw new Error(data.error)
       request.current = null; setNote(''); onChanged(data.draft)
     } catch (reason) {
-      const known = ['forbidden', 'notFound', 'unauthorized', 'invalid', 'editConflict', 'pendingPhotos', 'returnNoteRequired', 'missingSupplier', 'missingEvidence', 'missingAllergens', 'missingLabel', 'missingScope', 'locationUnavailable']
+      const known = ['forbidden', 'notFound', 'unauthorized', 'invalid', 'editConflict', 'pendingPhotos', 'returnNoteRequired', 'missingSupplier', 'missingEvidence', 'missingAllergens', 'missingLabel', 'missingDietaryCheck', 'missingScope', 'locationUnavailable']
       setError(reason instanceof Error && known.includes(reason.message) ? reason.message : 'reviewUnavailable')
     } finally { lock.current = false; setWorking(false) }
   }
@@ -67,36 +67,6 @@ export default function QuickAddReview({ draft, suppliers, sites, disabled, onCh
   const missing = missingReviewDetails(review, draft.kind)
   const blocked = disabled || working || loading || loadFailed
   const control = 'mt-1 w-full rounded-lg border border-gray-300 bg-white p-3 text-base text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white'
-  function levelSelect(label: string, value: string, change: (value: string) => void) {
-    return <label className="block text-sm font-medium">{label}
-      <select aria-label={label} className={control} value={value} onChange={event => change(event.target.value)}>
-        <option value="">{text('unknown')}</option>
-        {reviewLevels.map(level => <option key={level} value={level}>{text(`level_${level}`)}</option>)}
-      </select>
-    </label>
-  }
-  function setAllergen(key: string, value: string) {
-    setReview(current => {
-      const warnings = { ...current.allergen_warnings }
-      if (value) warnings[key] = value as typeof reviewLevels[number]
-      else delete warnings[key]
-      if (key === 'cereals_gluten' || key === 'nuts') delete warnings[`${key}_levels`]
-      return { ...current, allergen_warnings: warnings, evidence_checked: false }
-    })
-  }
-  function setSubtype(group: string, subtype: string, value: string) {
-    setReview(current => {
-      const key = `${group}_levels`
-      const previous = current.allergen_warnings[key]
-      const levels = { ...(typeof previous === 'object' ? previous : {}) }
-      if (value) levels[subtype] = value as typeof reviewLevels[number]
-      else delete levels[subtype]
-      const worst = Object.values(levels).reduce((a, b) => reviewLevels.indexOf(a) > reviewLevels.indexOf(b) ? a : b, 'none')
-      return { ...current, evidence_checked: false, allergen_warnings: { ...current.allergen_warnings, [key]: levels,
-        // Keep a non-none group until all subtypes have been explicitly assessed.
-        [group]: worst === 'none' ? current.allergen_warnings[group] : worst } }
-    })
-  }
 
   return <section className="mt-5 space-y-4 border-t pt-4 dark:border-gray-700" aria-label={text('reviewTitle')}>
     <h3 className="font-semibold">{text('reviewTitle')} · {text(draft.status)}</h3>
@@ -110,25 +80,15 @@ export default function QuickAddReview({ draft, suppliers, sites, disabled, onCh
       <fieldset disabled={blocked} className="space-y-4">
         <legend className="sr-only">{text('reviewTitle')}</legend>
         <label className="block text-sm font-medium">{text('reviewSupplier')}
-          <select aria-label={text('reviewSupplier')} className={control} value={review.supplier_id || ''} onChange={event => setReview({ ...review, supplier_id: event.target.value || null, evidence_checked: false })}>
+          <select aria-label={text('reviewSupplier')} className={control} value={review.supplier_id || ''} onChange={event => setReview({ ...review, supplier_id: event.target.value || null, dietary_checked: false, evidence_checked: false })}>
             <option value="">{text('noSupplier')}</option>{suppliers.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
           </select></label>
         <label className="block text-sm font-medium">{text('description')}<textarea className={control} value={review.description} maxLength={2000} onChange={event => setReview({ ...review, description: event.target.value })} /></label>
         <label className="block text-sm font-medium">{text('category')}<input className={control} value={review.category} maxLength={200} onChange={event => setReview({ ...review, category: event.target.value })} /></label>
-        <div className="space-y-3">
-          <h4 className="font-semibold">{text('allergenReview')}</h4>
-          {ALLERGEN_LIST.map(allergen => {
-            const level = review.allergen_warnings[allergen.id]
-            const group = allergen.id === 'cereals_gluten' ? GLUTEN_TYPES : allergen.id === 'nuts' ? TREE_NUT_TYPES : null
-            const values = review.allergen_warnings[`${allergen.id}_levels`]
-            return <div key={allergen.id}>
-              {levelSelect(allergen.name, typeof level === 'string' ? level : '', value => setAllergen(allergen.id, value))}
-              {group && level && level !== 'none' && <div className="ml-3 mt-2 space-y-2 border-l pl-3">
-                {group.map(subtype => <div key={subtype.key}>{levelSelect(subtype.name, typeof values === 'object' ? values[subtype.key] || '' : '', value => setSubtype(allergen.id, subtype.key, value))}</div>)}
-              </div>}
-            </div>
-          })}
-        </div>
+        <QuickAddAssessment warnings={review.allergen_warnings} tags={review.dietary_tags}
+          onWarnings={allergen_warnings => setReview(current => ({ ...current, allergen_warnings, dietary_checked: false, evidence_checked: false }))}
+          onTags={dietary_tags => setReview(current => ({ ...current, dietary_tags: dietary_tags as Review['dietary_tags'], dietary_checked: false, evidence_checked: false }))} />
+        {!!review.dietary_tags.length && <label className="flex min-h-11 items-start gap-3 text-sm"><input className="mt-1" type="checkbox" checked={review.dietary_checked} onChange={event => setReview({ ...review, dietary_checked: event.target.checked })} />{text('dietaryChecked')}</label>}
         <label className="block text-sm font-medium">{text('reviewMonths')}<input type="number" min={1} max={36} className={control} value={review.preferred_review_months} onChange={event => setReview({ ...review, preferred_review_months: Number(event.target.value) })} /></label>
         {draft.kind === 'packaged_product' && <>
           <label className="block text-sm font-medium">{text('ingredientDeclaration')}<textarea className={control} maxLength={10000} value={review.ingredient_declaration} onChange={event => setReview({ ...review, ingredient_declaration: event.target.value, label_checked: false })} /></label>
@@ -142,7 +102,7 @@ export default function QuickAddReview({ draft, suppliers, sites, disabled, onCh
         </>}
         <label className="flex min-h-11 items-start gap-3 text-sm"><input className="mt-1" type="checkbox" checked={review.evidence_checked} onChange={event => setReview({ ...review, evidence_checked: event.target.checked })} />{text('evidenceChecked')}</label>
       </fieldset>
-      <p className="text-sm">{text('noDietaryClaims')}</p>
+
       {!!missing.length && <ul className="list-disc space-y-1 pl-5 text-sm">{missing.map(key => <li key={key}>{text(key)}</li>)}</ul>}
       <div className="flex flex-wrap gap-3">
         <Button type="button" disabled={blocked || !!note} onClick={() => void transition('review')}>{text('saveReview')}</Button>

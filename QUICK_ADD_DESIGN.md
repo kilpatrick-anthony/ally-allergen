@@ -452,3 +452,27 @@ version matches and unauthenticated capture/evidence access is rejected. Live
 service-role approval was verified for both destinations in a rolled-back
 transaction. Authenticated live photo persistence, physical-device trials and
 full workflow translations remain open.
+
+## Delivery-trial feedback — 10 October 2026
+
+The owner tested Oakberry and requested optional allergen/dietary entry before the
+first save, plus readable draft-card names, authors and suppliers. Added a shared
+assessment editor to the initial capture and manager review. Capture fields remain
+optional and unanswered allergens remain unknown. Save first, then attach photos.
+Add another clears both the assessment and tags for the next product.
+
+A new additive migration stores captured allergens and dietary tags separately
+from review. Submission copies initial suggestions into a new review; managers
+must confirm selected tags against label evidence. Approval copies only reviewed
+tags to ingredient certifications/supplier assessments or an inactive product's
+dietary labels. Existing drafts and old text-only clients remain supported.
+This replaces the initial no-dietary-claims limitation; earlier notes are historical.
+
+Draft cards now use explicit dark text on light backgrounds and light text in dark
+mode for the name, captured-by/location and supplier. Help describes optional early
+entry and reviewed tags. Migration `20261010184710_add_quick_add_capture_assessment.sql`
+was applied and verified on the connected project. Relevant API/photo tests (23),
+PostgreSQL schema/approval checks, production build/TypeScript and desktop/mobile
+browser flows passed. Light/dark draft-card screenshots were inspected. Live
+service-role promotion verified dietary-tag enforcement and propagation in a
+rolled-back test transaction. Application deployment is in progress.

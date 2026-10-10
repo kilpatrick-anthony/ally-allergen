@@ -76,6 +76,31 @@ const { createReviewDb, completeReview, uuid } = require('../tests/helpers/quick
  // Returned assessments require a fresh evidence confirmation on resubmission.
  d=await run(12,4,'return',d.version,null,'Need evidence');assert.equal(d.review.evidence_checked,false)
  d=await run(12,3,'submit',d.version);assert.equal(d.review.evidence_checked,false)
+ // Capture suggestions seed review; selected tags require independent verification.
+ for (const [id,kind] of [[20,'ingredient'],[21,'packaged_product']]) {
+  await seed(id,kind)
+  await db.query('update quick_add_drafts set allergen_warnings=$1,dietary_tags=$2 where id=$3',[{milk:'none'},['Vegan'],uuid(id)])
+  let capture=await run(id,3,'submit',1)
+  assert.equal(capture.review.allergen_warnings.milk,'none');assert.equal(capture.review.allergen_warnings.eggs,undefined)
+  assert.deepEqual(capture.review.dietary_tags,['Vegan']);assert.equal(capture.review.dietary_checked,false)
+  capture=await run(id,4,'review',capture.version,{...completeReview(),dietary_tags:['Vegan'],dietary_checked:false})
+  await assert.rejects(run(id,4,'approve',capture.version),/missingDietaryCheck/)
+  capture=await run(id,4,'review',capture.version,{...completeReview(),dietary_tags:['Invalid'],dietary_checked:true})
+  await assert.rejects(run(id,4,'approve',capture.version),/invalid/)
+  capture=await run(id,4,'review',capture.version,{...completeReview(),dietary_tags:['Vegan'],dietary_checked:true})
+  capture=await run(id,4,'return',capture.version,null,'Check tags again');assert.equal(capture.review.dietary_checked,false)
+  capture=await run(id,3,'submit',capture.version);assert.equal(capture.review.dietary_checked,false)
+  capture=await run(id,4,'review',capture.version,{...completeReview(),dietary_tags:['Vegan'],dietary_checked:true})
+  capture=await run(id,4,'approve',capture.version)
+  if(kind==='ingredient') {
+   const result=(await db.query('select certifications,supplier_profiles from ingredients where id=$1',[capture.ingredient_id])).rows[0]
+   assert.deepEqual(result.certifications,['Vegan']);assert.deepEqual(result.supplier_profiles.Supplier.certifications,['Vegan'])
+   assert.deepEqual((await db.query('select certifications from ingredient_supplier_variants where ingredient_id=$1',[capture.ingredient_id])).rows[0].certifications,['Vegan'])
+  } else {
+   const result=(await db.query('select dietary,is_active from menu_items where id=$1',[capture.menu_item_id])).rows[0]
+   assert.deepEqual(result.dietary,['Vegan']);assert.equal(result.is_active,false)
+  }
+ }
  // Removing an uploader must preserve approved evidence and its historical snapshot.
  await db.exec('reset role')
  await db.query('delete from auth.users where id=$1',[uuid(3)]).catch(async error=>{
@@ -90,7 +115,7 @@ const { createReviewDb, completeReview, uuid } = require('../tests/helpers/quick
   await assert.rejects(db.query('select * from quick_add_history'),/permission denied/)
   await db.exec('reset role')
  }
- assert.equal((await db.query("select count(*)::int as n from quick_add_history where action='approve'")).rows[0].n,2)
+ assert.equal((await db.query("select count(*)::int as n from quick_add_history where action='approve'")).rows[0].n,4)
  console.log('PASS: PostgreSQL submission/return/withdraw, live roles, idempotency, validation, rollback, evidence links, review history and inactive product promotion.')
  await db.close()
 })().catch(error=>{console.error(error);process.exitCode=1})

@@ -27,7 +27,7 @@ async function createReviewDb() {
     insert into user_businesses values ('${uuid(3)}','${uuid(1)}','staff','Staff'),('${uuid(4)}','${uuid(1)}','manager','Manager'),('${uuid(7)}','${uuid(2)}','owner','Other owner');
     insert into sites values ('${uuid(5)}','${uuid(1)}','Kitchen'),('${uuid(8)}','${uuid(2)}','Other kitchen');
     insert into suppliers values ('${uuid(6)}','${uuid(1)}','Supplier'),('${uuid(9)}','${uuid(2)}','Other supplier');`)
-  for (const file of ['20261009214320_add_quick_add_drafts.sql','20261010182555_add_quick_add_photos.sql','20261010182600_add_quick_add_review.sql']) await db.exec(fs.readFileSync(`supabase/migrations/${file}`,'utf8'))
+  for (const file of ['20261009214320_add_quick_add_drafts.sql','20261010182555_add_quick_add_photos.sql','20261010182600_add_quick_add_review.sql','20261010184710_add_quick_add_capture_assessment.sql']) await db.exec(fs.readFileSync(`supabase/migrations/${file}`,'utf8'))
   await db.exec('grant select,insert,update on all tables in schema public to service_role; revoke update on quick_add_history from service_role;')
   return db
 }

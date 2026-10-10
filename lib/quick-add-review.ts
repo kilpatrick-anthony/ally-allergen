@@ -2,8 +2,15 @@ import { z } from 'zod'
 import { ALLERGEN_LIST, GLUTEN_TYPES, TREE_NUT_TYPES } from '@/types/allergen'
 
 export const reviewLevels = ['none', 'cross_contamination', 'traces', 'may_contain', 'not_suitable', 'contains'] as const
+export const dietaryTags = ['Vegan', 'Vegetarian', 'Gluten-Free', 'Halal', 'Kosher', 'Organic', 'Fair Trade', 'Lactose-Free', 'Coeliac-Friendly'] as const
+export const dietaryTagFields = z.array(z.enum(dietaryTags)).max(dietaryTags.length).transform(tags => [...new Set(tags)].sort())
+export const allergenFields = z.object(Object.fromEntries(ALLERGEN_LIST.map(item => [item.id, z.enum(reviewLevels).optional()]))).extend({
+  cereals_gluten_levels: z.object(Object.fromEntries(GLUTEN_TYPES.map(item => [item.key, z.enum(reviewLevels).optional()]))).strict().optional(),
+  nuts_levels: z.object(Object.fromEntries(TREE_NUT_TYPES.map(item => [item.key, z.enum(reviewLevels).optional()]))).strict().optional(),
+}).strict()
 export const reviewFields = z.object({
   supplier_id: z.string().uuid().nullable(),
+  dietary_tags: dietaryTagFields.default([]), dietary_checked: z.boolean().default(false),
   description: z.string().trim().max(2000),
   category: z.string().trim().max(200),
   allergen_warnings: z.record(z.string(), z.union([z.enum(reviewLevels), z.record(z.string(), z.enum(reviewLevels))])),
@@ -16,11 +23,12 @@ export const reviewFields = z.object({
 }).strict()
 export type QuickAddReview = z.infer<typeof reviewFields>
 export const blankReview = (supplierId: string | null = null, siteId: string | null = null): QuickAddReview => ({
-  supplier_id: supplierId, description: '', category: '', allergen_warnings: {}, preferred_review_months: 12,
+  supplier_id: supplierId, dietary_tags: [], dietary_checked: false, description: '', category: '', allergen_warnings: {}, preferred_review_months: 12,
   ingredient_declaration: '', scope: '', site_id: siteId, label_checked: false, evidence_checked: false,
 })
 export function missingReviewDetails(review: Partial<QuickAddReview>, kind: string) {
   const missing: string[] = []
+  if (review.dietary_tags?.length && !review.dietary_checked) missing.push('missingDietaryCheck')
   if (!review.supplier_id) missing.push('missingSupplier')
   if (!review.evidence_checked) missing.push('missingEvidence')
   const warnings = review.allergen_warnings || {}
