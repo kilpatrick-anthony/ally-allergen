@@ -11,6 +11,7 @@ import QuickAddReview from '@/components/admin/QuickAddReview'
 import { Button } from '@/components/ui/Button'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import type { QuickAddDraft, QuickAddFields, QuickAddKind } from '@/lib/quick-add'
+import { DEFAULT_INGREDIENT_CATEGORIES, DEFAULT_MENU_CATEGORIES, mergeCategories } from '@/lib/item-categories'
 
 type Option = { id: string; name: string }
 type Props = {
@@ -23,10 +24,10 @@ type Props = {
 }
 
 const blank = (kind: QuickAddKind, siteId?: string | null): QuickAddFields => ({
-  kind, name: '', site_id: siteId || null, supplier_id: null, supplier_name: '', notes: '', allergen_warnings: {}, dietary_tags: [],
+  kind, name: '', category: '', site_id: siteId || null, supplier_id: null, supplier_name: '', notes: '', allergen_warnings: {}, dietary_tags: [],
 })
 const fieldsOf = (draft: QuickAddDraft): QuickAddFields => ({
-  kind: draft.kind, name: draft.name, site_id: draft.site_id, supplier_id: draft.supplier_id,
+  kind: draft.kind, name: draft.name, category: draft.category || '', site_id: draft.site_id, supplier_id: draft.supplier_id,
   supplier_name: draft.supplier_name, notes: draft.notes,
   allergen_warnings: draft.allergen_warnings || {}, dietary_tags: draft.dietary_tags || [],
 })
@@ -41,6 +42,8 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
   const [record, setRecord] = useState<QuickAddDraft | null>(null)
   const [sites, setSites] = useState<Option[]>([])
   const [suppliers, setSuppliers] = useState<Option[]>([])
+  const [ingredientCategories, setIngredientCategories] = useState<string[]>([...DEFAULT_INGREDIENT_CATEGORIES])
+  const [productCategories, setProductCategories] = useState<string[]>([...DEFAULT_MENU_CATEGORIES])
   const [manualSupplier, setManualSupplier] = useState(false)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
@@ -85,12 +88,14 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
     setLoading(true)
     setLoadError('')
     void Promise.all([
-      read('/api/sites'), read('/api/suppliers'),
+      read('/api/sites'), read('/api/suppliers'), read('/api/ingredients/categories'), read('/api/menu-items/categories'),
       draftId ? read(`/api/quick-add-drafts/${draftId}`) : Promise.resolve(null),
-    ]).then(([siteData, supplierData, draftData]) => {
+    ]).then(([siteData, supplierData, ingredientCategoryData, productCategoryData, draftData]) => {
       if (controller.signal.aborted) return
       setSites(siteData.sites || [])
       setSuppliers(supplierData.suppliers || [])
+      setIngredientCategories(mergeCategories(DEFAULT_INGREDIENT_CATEGORIES, ingredientCategoryData.categories))
+      setProductCategories(mergeCategories(DEFAULT_MENU_CATEGORIES, productCategoryData.categories))
       if (draftData) {
         const draft: QuickAddDraft = draftData.draft
         const values = fieldsOf(draft)
@@ -154,6 +159,7 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
   }
 
   const control = 'mt-1 w-full rounded-lg border border-gray-300 bg-white p-3 text-base text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white'
+  const categories = fields.kind === 'ingredient' ? ingredientCategories : productCategories
   return <Dialog.Root open onOpenChange={open => { if (!open) close() }}>
     <Dialog.Portal>
       <Dialog.Overlay className="fixed inset-0 z-[90] bg-black/50" />
@@ -191,6 +197,11 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
                 </select></label>
               <label className="block text-sm font-medium">{text('name')} *
                 <input ref={nameInput} required maxLength={200} aria-invalid={error === 'nameRequired' || undefined} aria-describedby={error === 'nameRequired' ? `${formId}-error` : undefined} value={fields.name} onChange={event => { setFields({ ...fields, name: event.target.value }); if (error === 'nameRequired') setError('') }} className={control} autoComplete="off" /></label>
+              <label className="block text-sm font-medium">{text('category')}
+                <input aria-label={text('category')} aria-describedby={`${formId}-category-note`} list={`${formId}-categories`} maxLength={200} value={fields.category} onChange={event => setFields({ ...fields, category: event.target.value })} className={control} />
+                <datalist id={`${formId}-categories`}>{categories.map(category => <option key={category} value={category} />)}</datalist>
+                <span id={`${formId}-category-note`} className="mt-1 block text-xs text-gray-500 dark:text-gray-300">{text('categoryHelp')}</span>
+              </label>
               <label className="block text-sm font-medium">{text('location')}
                 <select aria-label={text('location')} value={fields.site_id || ''} onChange={event => setFields({ ...fields, site_id: event.target.value || null })} className={control}>
                   <option value="">{text('noLocation')}</option>{sites.map(site => <option key={site.id} value={site.id}>{site.name}</option>)}
@@ -227,6 +238,7 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
             ? <QuickAddPhotos key={record.id} draftId={record.id} disabled={saving || reviewBusy || record.status !== 'draft'} onActivity={photoActivity} />
             : <p className="mt-4 text-sm text-gray-600 dark:text-gray-300">{text('saveForPhotos')}</p>)}
           {!loading && !loadError && record && <QuickAddReview key={`review-${record.id}`} draft={record} suppliers={suppliers} sites={sites}
+            categories={record.kind === 'ingredient' ? ingredientCategories : productCategories}
             disabled={saving || photoBusy || textDirty || unsavedPhotos} onActivity={reviewActivity}
             onChanged={draft => { setRecord(draft); setSuccess(false); onSaved?.() }} />}
         </div>

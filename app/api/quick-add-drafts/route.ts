@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     const parsed = createDraftInput.safeParse(await request.json().catch(() => null))
     if (!parsed.success) throw new QuickAddError('invalid', 400)
     const { id, ...input } = parsed.data
-    const fields = { allergen_warnings: {}, dietary_tags: [], ...await validateDraftReferences(context, input) }
+    const fields = { category: '', allergen_warnings: {}, dietary_tags: [], ...await validateDraftReferences(context, input) }
     const findReplay = async () => {
       const { data, error } = await visibleDrafts(context).eq('id', id).eq('created_by', context.userId).maybeSingle()
       if (error) throw error

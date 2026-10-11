@@ -20,8 +20,8 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
     try {
       for(const row of backend.rows) {
         const existing=await db.query('select id from quick_add_drafts where id=$1',[row.id]);
-        if(!existing.rows.length) await db.query('insert into quick_add_drafts(id,business_id,kind,name,site_id,supplier_id,supplier_name,notes,created_by,version,allergen_warnings,dietary_tags) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)',
-          [row.id,row.business_id,row.kind,row.name,row.site_id,row.supplier_id,row.supplier_name,row.notes,row.created_by,row.version,row.allergen_warnings || {},row.dietary_tags || []]);
+        if(!existing.rows.length) await db.query('insert into quick_add_drafts(id,business_id,kind,name,category,site_id,supplier_id,supplier_name,notes,created_by,version,allergen_warnings,dietary_tags) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)',
+          [row.id,row.business_id,row.kind,row.name,row.category || '',row.site_id,row.supplier_id,row.supplier_name,row.notes,row.created_by,row.version,row.allergen_warnings || {},row.dietary_tags || []]);
       }
       for(const photo of backend.photos) {
         const existing=await db.query('select state from quick_add_photos where id=$1',[photo.id]);
@@ -66,6 +66,8 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
    else if(url.pathname.startsWith('/api/business/')) response.body={settings:{defaultLanguage:language}};
    else if(url.pathname==='/api/sites') response.body={sites:[{id:uuid(5),name:q.location}]};
    else if(url.pathname==='/api/suppliers') response.body={suppliers:[{id:uuid(6),name:'Existing supplier'}]};
+   else if(url.pathname==='/api/ingredients/categories') response.body={categories:['Bakery','House ingredient']};
+   else if(url.pathname==='/api/menu-items/categories') response.body={categories:['Retail','House product']};
    else if(url.pathname==='/api/quick-add-drafts') {
     if(failSave && method==='POST') {failSave=false; return route.fulfill({status:503,json:{error:'unavailable'}})}
     response=method==='POST'?await backend.collection.POST(body()):await backend.collection.GET({nextUrl:url});
@@ -125,6 +127,10 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
   assert.equal(await dialog.getByLabel(q.name).getAttribute('aria-invalid'),'true');
   assert.equal(await dialog.getByLabel(q.name).evaluate(el=>el===document.activeElement && !!document.getElementById(el.getAttribute('aria-describedby'))),true,'Invalid name receives focus and an associated error');
   await dialog.getByLabel(q.name).fill('Delivery bread');
+  const category = dialog.getByLabel(q.category,{exact:true});
+  assert.equal(await category.getAttribute('list') !== null,true,'Category uses the existing category list');
+  assert.equal(await dialog.locator(`datalist#${await category.getAttribute('list')} option[value="Bakery"]`).count(),1,'Ingredient categories include business categories');
+  await category.fill('Bakery');
   await dialog.getByText(q.captureAssessment,{exact:true}).click();
   await dialog.getByLabel(labels.allergenNames.milk,{exact:true}).selectOption('contains');
   await dialog.getByLabel(labels.allergenNames.cereals_gluten,{exact:true}).selectOption('contains');
@@ -146,6 +152,7 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
   await dialog.getByText(q.saved,{exact:true}).waitFor();
   assert.equal(await dialog.getByText(q.saved,{exact:true}).evaluate(el=>el===document.activeElement),true,'Saving moves focus to the confirmation');
   assert.equal(backend.rows.length,1);
+  assert.equal(backend.rows[0].category,'Bakery','Capture saves the selected category');
   assert.equal(backend.rows[0].allergen_warnings.milk,'contains','Translated selection keeps the canonical allergen level');
   assert.deepEqual(Array.from(backend.rows[0].dietary_tags),['Vegetarian'],'Translated tag keeps its canonical stored value');
   const bytes=await require('sharp')({create:{width:160,height:80,channels:3,background:'#ddeeff'}}).png().toBuffer();
@@ -224,6 +231,10 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
     console.log('Review failure URL:',page.url(),'Backend:',backend.rows.map(r=>({id:r.id,status:r.status})), 'Errors:',failures);
     console.log((await page.locator('body').innerText()).slice(-5000));throw error;
   });
+  const reviewSection = dialog.getByRole('region',{name:q.reviewTitle,exact:true});
+  const reviewCategory = reviewSection.getByLabel(q.category,{exact:true});
+  assert.equal(await reviewCategory.inputValue(),'Bakery','Review inherits the capture category');
+  assert.equal(await dialog.locator(`datalist#${await reviewCategory.getAttribute('list')} option[value="House ingredient"]`).count(),1,'Review offers existing categories');
   await audit('review');
   assert.equal(await dialog.getByLabel(labels.allergenNames.milk,{exact:true}).inputValue(),'contains');
   assert.equal(await dialog.getByLabel(q.tag_Vegetarian,{exact:true}).isChecked(),true);

@@ -9,6 +9,7 @@ test('captures a minimal ingredient or product without creating inventory or sup
     const result = await s.collection.POST(request({ ...fields, id: uuid(10), kind, name: '  Bread  ', site_id: null, supplier_name: '', notes: '' }))
     assert.equal(result.status, 201)
     assert.equal(result.body.draft.name, 'Bread')
+    assert.equal(result.body.draft.category, 'Bakery')
     assert.equal(result.body.draft.status, 'draft')
     assert.equal(s.rows[0].business_id, business)
     assert.equal(s.rows[0].created_by, actor)
@@ -29,7 +30,7 @@ test('requires a valid session and live business role despite a cached owner cla
 test('validates inputs and rejects client attempts to set ownership, approval state or invalid assessments', async () => {
   const s = setup()
   const valid = { ...fields, id: uuid(10) }
-  for (const input of [null, {}, { ...valid, name: ' ' }, { ...valid, name: 'x'.repeat(201) }, { ...valid, notes: 'x'.repeat(2001) }, { ...valid, id: 'bad' }, { ...valid, business_id: otherBusiness }, { ...valid, created_by: colleague }, { ...valid, status: 'approved' }, { ...valid, allergen_warnings: { milk: 'unsafe-value' } }, { ...valid, allergen_warnings: { invented: 'none' } }, { ...valid, dietary_tags: ['Invented'] }, { ...valid, dietary_checked: true }]) {
+  for (const input of [null, {}, { ...valid, name: ' ' }, { ...valid, name: 'x'.repeat(201) }, { ...valid, category: 'x'.repeat(201) }, { ...valid, notes: 'x'.repeat(2001) }, { ...valid, id: 'bad' }, { ...valid, business_id: otherBusiness }, { ...valid, created_by: colleague }, { ...valid, status: 'approved' }, { ...valid, allergen_warnings: { milk: 'unsafe-value' } }, { ...valid, allergen_warnings: { invented: 'none' } }, { ...valid, dietary_tags: ['Invented'] }, { ...valid, dietary_checked: true }]) {
     assert.equal((await s.collection.POST(request(input))).status, 400)
   }
   assert.equal(s.rows.length, 0)
@@ -157,6 +158,17 @@ test('captures optional allergens and tags, replays JSON values and preserves th
   const cleared=await s.item.PATCH(request({...fields,version:2,allergen_warnings:{},dietary_tags:[]}),params(uuid(10)))
   assert.equal(cleared.status,200);assert.equal(Object.keys(cleared.body.draft.allergen_warnings).length,0);assert.equal(cleared.body.draft.dietary_tags.length,0)
   assert.equal(s.writes.every(table=>table==='quick_add_drafts'),true)
+})
+
+test('captures category and preserves it when an older edit client omits the field', async () => {
+  const s = setup()
+  const created = await s.collection.POST(request({ ...fields, id: uuid(10), category: 'Bakery' }))
+  assert.equal(created.status, 201)
+  assert.equal(created.body.draft.category, 'Bakery')
+  const { category: _category, ...olderFields } = fields
+  const edited = await s.item.PATCH(request({ ...olderFields, name: 'Updated bread', version: 1 }), params(uuid(10)))
+  assert.equal(edited.status, 200)
+  assert.equal(edited.body.draft.category, 'Bakery')
 })
 
 test('dashboard counts include all pending captures and preserve live ownership boundaries', async () => {

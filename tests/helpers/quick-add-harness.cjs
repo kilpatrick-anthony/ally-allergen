@@ -3,7 +3,7 @@ const fs = require('node:fs'), vm = require('node:vm'), ts = require('typescript
 const { z } = require('zod')
 const uuid = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
 const business = uuid(1), otherBusiness = uuid(2), actor = uuid(3), colleague = uuid(4), site = uuid(5), supplier = uuid(6)
-const fields = { kind: 'ingredient', name: 'Bread', site_id: site, supplier_id: null, supplier_name: 'New supplier', notes: 'Delivery' }
+const fields = { kind: 'ingredient', name: 'Bread', category: 'Bakery', site_id: site, supplier_id: null, supplier_name: 'New supplier', notes: 'Delivery' }
 const request = body => ({ json: async () => body })
 const params = id => ({ params: Promise.resolve({ id }) })
 

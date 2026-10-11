@@ -12,6 +12,7 @@ export class QuickAddError extends Error {
 export const draftFields = z.object({
   kind: z.enum(['ingredient', 'packaged_product']),
   name: z.string().trim().min(1).max(200),
+  category: z.string().trim().max(200).optional(),
   site_id: z.string().uuid().nullable(),
   supplier_id: z.string().uuid().nullable(),
   supplier_name: z.string().trim().max(200),
@@ -22,7 +23,7 @@ export const draftFields = z.object({
 
 export const createDraftInput = draftFields.extend({ id: z.string().uuid() })
 export const updateDraftInput = draftFields.extend({ version: z.number().int().min(1).max(2147483646) })
-export const draftColumns = 'id,kind,name,allergen_warnings,dietary_tags,site_id,supplier_id,supplier_name,notes,status,version,created_by,created_at,updated_at,review,submitted_at,submitted_by,approved_at,approved_by,return_note,ingredient_id,menu_item_id'
+export const draftColumns = 'id,kind,name,category,allergen_warnings,dietary_tags,site_id,supplier_id,supplier_name,notes,status,version,created_by,created_at,updated_at,review,submitted_at,submitted_by,approved_at,approved_by,return_note,ingredient_id,menu_item_id'
 
 export function requireDraftId(id: string) {
   if (!z.string().uuid().safeParse(id).success) throw new QuickAddError('invalid', 400)

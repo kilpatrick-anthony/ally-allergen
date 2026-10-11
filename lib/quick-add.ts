@@ -3,6 +3,7 @@ export type QuickAddKind = 'ingredient' | 'packaged_product'
 export type QuickAddFields = {
   kind: QuickAddKind
   name: string
+  category: string
   site_id: string | null
   supplier_id: string | null
   supplier_name: string

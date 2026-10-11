@@ -26,7 +26,7 @@ export async function PATCH(request: NextRequest, route: RouteContext) {
     const existing = await getDraft(context, id)
     const { version, ...input } = parsed.data
     if (existing.status !== 'draft' || existing.version !== version) throw new QuickAddError('editConflict', 409)
-    const fields = await validateDraftReferences(context, input)
+    const fields = await validateDraftReferences(context, { ...input, category: input.category ?? existing.category ?? '' })
     let query = context.supabase.from('quick_add_drafts').update({
       ...fields, review: {}, version: version + 1, updated_by: context.userId, updated_at: new Date().toISOString(),
     }).eq('id', id).eq('business_id', context.businessId).eq('status', 'draft').eq('version', version)

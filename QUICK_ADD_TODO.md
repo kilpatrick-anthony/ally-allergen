@@ -335,3 +335,21 @@ rolled-back test transaction. Application deployment is in progress.
   and `git diff --check` passed.
 - Changes remain local, unpushed and undeployed. Real-phone/assistive-technology
   checks and authenticated live-storage delivery verification remain open.
+
+### Category capture — 11 October 2026
+
+- Added an optional category to delivery capture for ingredients and bought-in
+  products. The picker combines AllyJen defaults with categories already used by
+  the business and still accepts a new category typed during delivery.
+- Submission copies the captured category into a new manager review without
+  overwriting review work. Older clients may omit the field when editing without
+  clearing an existing category.
+- Added the database migration, API validation and compatibility coverage, all-six-
+  language help text, and accessible help associations for capture and review.
+- Verification passed: 25 API/photo tests, isolated PostgreSQL migration and
+  approval checks, production build/TypeScript, and complete desktop/phone-width
+  browser capture-to-approval flows using the real route handlers and PostgreSQL
+  transition function.
+- Changes remain local, unpushed and undeployed. The migration must be applied
+  before deploying this application version. The authenticated live-storage and
+  physical-phone delivery trials remain open.

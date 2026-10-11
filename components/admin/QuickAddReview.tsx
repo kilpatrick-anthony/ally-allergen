@@ -10,13 +10,14 @@ import type { QuickAddDraft } from '@/lib/quick-add'
 
 type Option = { id: string; name: string }
 type History = { id: string; action: string; actor_name: string; note: string; created_at: string }
-type Props = { draft: QuickAddDraft; suppliers: Option[]; sites: Option[]; disabled: boolean;
+type Props = { draft: QuickAddDraft; suppliers: Option[]; sites: Option[]; categories: string[]; disabled: boolean;
   onChanged: (draft: QuickAddDraft) => void; onActivity: (busy: boolean, dirty: boolean) => void }
 
-export default function QuickAddReview({ draft, suppliers, sites, disabled, onChanged, onActivity }: Props) {
+export default function QuickAddReview({ draft, suppliers, sites, categories, disabled, onChanged, onActivity }: Props) {
   const { t, language } = useTranslation()
   const text = (key: string) => t(`quickAdd.${key}`)
-  const [review, setReview] = useState<Review>(() => ({ ...blankReview(draft.supplier_id, draft.site_id), ...draft.review }))
+  const initialReview = () => ({ ...blankReview(draft.supplier_id, draft.site_id), category: draft.category || '', ...draft.review })
+  const [review, setReview] = useState<Review>(initialReview)
   const [baseline, setBaseline] = useState(JSON.stringify(review))
   const [permissions, setPermissions] = useState({ canReview: false, isCreator: false })
   const [history, setHistory] = useState<History[]>([])
@@ -47,7 +48,7 @@ export default function QuickAddReview({ draft, suppliers, sites, disabled, onCh
       if (!response.ok) throw new Error(data.error)
       if (controller.signal.aborted) return
       setPermissions(data.permissions); setHistory(data.history)
-      const values = { ...blankReview(data.draft.supplier_id, data.draft.site_id), ...data.draft.review }
+      const values = { ...blankReview(data.draft.supplier_id, data.draft.site_id), category: data.draft.category || '', ...data.draft.review }
       setReview(values); setBaseline(JSON.stringify(values)); setError('')
     }).catch(() => { if (!controller.signal.aborted) { setError('reviewUnavailable'); setLoadFailed(true) } })
       .finally(() => { if (!controller.signal.aborted) setLoading(false) })
@@ -92,7 +93,10 @@ export default function QuickAddReview({ draft, suppliers, sites, disabled, onCh
             <option value="">{text('noSupplier')}</option>{suppliers.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
           </select></label>
         <label className="block text-sm font-medium">{text('description')}<textarea className={control} value={review.description} maxLength={2000} onChange={event => setReview({ ...review, description: event.target.value })} /></label>
-        <label className="block text-sm font-medium">{text('category')}<input className={control} value={review.category} maxLength={200} onChange={event => setReview({ ...review, category: event.target.value })} /></label>
+        <label className="block text-sm font-medium">{text('category')}<input aria-label={text('category')} aria-describedby={`review-${draft.id}-category-note`} list={`review-${draft.id}-categories`} className={control} value={review.category} maxLength={200} onChange={event => setReview({ ...review, category: event.target.value })} />
+          <datalist id={`review-${draft.id}-categories`}>{categories.map(category => <option key={category} value={category} />)}</datalist>
+          <span id={`review-${draft.id}-category-note`} className="mt-1 block text-xs text-gray-500 dark:text-gray-300">{text('categoryHelp')}</span>
+        </label>
         <QuickAddAssessment warnings={review.allergen_warnings} tags={review.dietary_tags}
           onWarnings={allergen_warnings => setReview(current => ({ ...current, allergen_warnings, dietary_checked: false, evidence_checked: false }))}
           onTags={dietary_tags => setReview(current => ({ ...current, dietary_tags: dietary_tags as Review['dietary_tags'], dietary_checked: false, evidence_checked: false }))} />
