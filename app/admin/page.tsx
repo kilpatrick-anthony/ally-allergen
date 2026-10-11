@@ -10,7 +10,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   Package, ChefHat, Building, Shield,
-  ArrowRight, Star, Monitor, FileText, Languages
+  ArrowRight, Star, Monitor, FileText, Languages, ChevronDown
 } from 'lucide-react'
 
 import { Container } from '@/components/layout/Container'
@@ -276,7 +276,17 @@ export default function AdminDashboard() {
         </div>
         {/* Business Responsibility Disclaimer */}
         <div className="mb-8 p-4 bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 rounded-lg">
-          <div className="flex items-start gap-4">
+          <details className="group lg:hidden">
+            <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 rounded font-semibold text-amber-900 dark:text-amber-100 [&::-webkit-details-marker]:hidden">
+              <Shield className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+              <span className="flex-1">{t('businessDisclaimerTitle')}</span>
+              <ChevronDown className="h-5 w-5 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
+            </summary>
+            <p className="mt-3 text-sm text-amber-800 dark:text-amber-200 leading-relaxed">
+              {t('businessDisclaimerText')}
+            </p>
+          </details>
+          <div className="hidden lg:flex items-start gap-4">
             <div className="flex-shrink-0 pt-0.5">
               <Shield className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>

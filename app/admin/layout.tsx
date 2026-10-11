@@ -7,6 +7,7 @@ import { Building2, User, LogOut, Menu, X, ShieldAlert, Undo2 } from 'lucide-rea
 import { Navigation } from '@/components/layout/Navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter, usePathname } from 'next/navigation'
+import Link from 'next/link'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import SpeechController from '@/components/SpeechController'
 import { trackAdminPageVisit } from '@/lib/hooks/useFrequentPages'
@@ -195,13 +196,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <Menu className="h-6 w-6" />
             </button>
           )}
-          <img
-            src="/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg"
-            alt="AllyJen"
-            width={150}
-            height={45}
-            className="pointer-events-none absolute left-1/2 h-[45px] w-[150px] -translate-x-1/2 object-contain"
-          />
+          <Link
+            href="/admin"
+            aria-label={`AllyJen — ${t('admin.dashboard')}`}
+            className="absolute left-1/2 flex h-[45px] w-[150px] -translate-x-1/2 items-center justify-center rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+          >
+            <img
+              src="/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg"
+              alt="AllyJen"
+              width={150}
+              height={45}
+              className="h-[45px] w-[150px] object-contain"
+            />
+          </Link>
         </div>
 
         {/* Mobile overlay */}
