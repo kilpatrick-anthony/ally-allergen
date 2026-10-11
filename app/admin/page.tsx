@@ -2,6 +2,7 @@
 'use client'
 
 import QuickAddEntry from '@/components/admin/QuickAddEntry'
+import DashboardDraftSummary from '@/components/admin/DashboardDraftSummary'
 
 import React from 'react'
 import { useState, useEffect } from 'react'
@@ -36,7 +37,7 @@ const EMPTY_STATS: DashboardStats = {
 }
 
 export default function AdminDashboard() {
-  const { t } = useTranslation()
+  const { t, language } = useTranslation()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [hasData, setHasData] = useState(false)
@@ -134,22 +135,10 @@ export default function AdminDashboard() {
   }
 
   const languagePrompt = (
-    <Link href="/admin/settings#language-settings" className="group mb-8 block">
-      <Card className="border-[#42b8ac]/30 bg-gradient-to-r from-[#42b8ac]/10 to-white transition-all group-hover:border-[#42b8ac]/60 group-hover:shadow-md dark:to-gray-800">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#003842] text-white">
-            <Languages className="h-6 w-6" aria-hidden="true" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h2 className="font-semibold text-[#003842] dark:text-white">{t('liveDashboard.languageTitle')}</h2>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{t('liveDashboard.languageDescription')}</p>
-          </div>
-          <span className="inline-flex shrink-0 items-center font-semibold text-[#007c73] group-hover:text-[#003842]">
-            {t('liveDashboard.changeLanguage')}
-            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
-          </span>
-        </div>
-      </Card>
+    <Link href="/admin/settings#language-settings" aria-label={t('liveDashboard.changeLanguage')}
+      className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-3 text-sm font-medium text-[#003842] hover:bg-teal-50 dark:text-teal-200 dark:hover:bg-gray-800">
+      <Languages className="h-4 w-4" aria-hidden="true" />
+      <span lang={language}>{{ en: 'English', ga: 'Gaeilge', pt: 'Português', fr: 'Français', es: 'Español', de: 'Deutsch' }[language]}</span>
     </Link>
   )
 
@@ -209,42 +198,29 @@ export default function AdminDashboard() {
 
     return (
       <Container>
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-gradient-to-br from-teal-400 to-teal-600 dark:from-teal-500 dark:to-gray-700 rounded-lg">
-                  <Building className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('admin.dashboardTitle')}</h1>
-                  <p className="text-gray-600 dark:text-gray-300">
-                    {t('admin.dashboardSubtitle')}
-                  </p>
-                </div>
-              </div>
-            </div>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white lg:text-3xl">{t('admin.dashboardTitle')}</h1>
+          <div className="flex items-center gap-2">
+            {languagePrompt}
+            <div className="hidden lg:block"><QuickAddEntry showDrafts={false} onSaved={() => window.dispatchEvent(new Event('quick-add-saved'))} /></div>
           </div>
         </div>
-
-        <div className="mb-6"><QuickAddEntry /></div>
-        {languagePrompt}
-
+        <div className="flex flex-col">
+        <div className="order-1 mb-5 lg:order-2"><DashboardDraftSummary /></div>
         {/* At-a-glance stats */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 mb-8">
+        <div className="order-4 grid grid-cols-2 gap-3 lg:grid-cols-4 mb-6 lg:order-1">
           {statCards.map((stat) => {
             const Icon = stat.icon
             return (
               <Link key={stat.label} href={stat.href} className="group">
-                <Card className="h-full transition-all group-hover:-translate-y-0.5 group-hover:border-[#42b8ac]/40 group-hover:shadow-lg">
-                  <div className="flex items-start justify-between gap-4">
+                <Card padding="sm" className="h-full transition-all group-hover:-translate-y-0.5 group-hover:border-[#42b8ac]/40 group-hover:shadow-lg">
+                  <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{stat.label}</p>
-                      <p className="mt-2 text-3xl font-bold text-[#003842] dark:text-white">{stat.value}</p>
-                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{stat.detail}</p>
+                      <p className="text-xs font-medium text-gray-500 dark:text-gray-400">{stat.label}</p>
+                      <p className="mt-1 text-2xl font-bold text-[#003842] dark:text-white">{stat.value}</p>
+                      <p className="mt-1 hidden text-xs lg:block text-gray-500 dark:text-gray-400">{stat.detail}</p>
                     </div>
-                    <div className={`rounded-xl p-3 ${stat.iconClass}`}>
+                    <div className={`hidden rounded-lg p-2 sm:block ${stat.iconClass}`}>
                       <Icon className="h-6 w-6" aria-hidden="true" />
                     </div>
                   </div>
@@ -255,29 +231,29 @@ export default function AdminDashboard() {
         </div>
 
         {/* Frequently Used */}
-        <div className="mb-8">
-          <div className="flex items-center gap-2 mb-4">
+        <div className="order-3 mb-6">
+          <div className="flex items-center gap-2 mb-3">
             <Star className="h-4 w-4 text-[#42b8ac]" />
             <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
               {t('admin.frequentlyUsed')}
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {frequentPages.map((page) => {
               const Icon = page.icon
               const copy = frequentPageCopy[page.href] ?? page
               return (
                 <Link key={page.href} href={page.href}>
-                  <Card className="hover:shadow-lg transition-all cursor-pointer group h-full">
+                  <Card padding="sm" className="hover:shadow-lg transition-all cursor-pointer group h-full">
                     <div className="flex items-center gap-3">
-                      <div className={`p-3 rounded-lg flex-shrink-0 ${page.colorClass}`}>
+                      <div className={`hidden sm:block p-2 rounded-lg flex-shrink-0 ${page.colorClass}`}>
                         {typeof Icon === 'function' && React.createElement(Icon as React.ComponentType<{className: string}>, { className: `h-6 w-6 ${page.iconClass}` })}
                       </div>
                       <div className="min-w-0">
-                        <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-[#42b8ac] transition-colors truncate">
+                        <h3 className="font-semibold text-gray-900 dark:text-white group-hover:text-[#42b8ac] transition-colors break-words">
                           {copy.label}
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                        <p className="hidden lg:block text-sm text-gray-500 dark:text-gray-400 truncate">
                           {copy.description}
                         </p>
                       </div>
@@ -293,10 +269,11 @@ export default function AdminDashboard() {
         </div>
 
         {/* Notifications Panel */}
-        <div className="mb-8">
-          <NotificationsPanel settings={settings} />
+        <div className="order-2 mb-5 lg:order-4">
+          <NotificationsPanel settings={settings} compactMobile />
         </div>
 
+        </div>
         {/* Business Responsibility Disclaimer */}
         <div className="mb-8 p-4 bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-500 rounded-lg">
           <div className="flex items-start gap-4">
@@ -341,8 +318,8 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="mb-6"><QuickAddEntry /></div>
-      {languagePrompt}
+      <div className="mb-6 flex flex-wrap items-center justify-end gap-2">{languagePrompt}<div className="hidden lg:block"><QuickAddEntry showDrafts={false} onSaved={() => window.dispatchEvent(new Event('quick-add-saved'))} /></div></div>
+      <div className="mb-6"><DashboardDraftSummary /></div>
 
       {/* Quick Start Guide */}
       <Card className="mb-8 bg-gradient-to-br from-[#42b8ac]/5 to-[#003842]/5">

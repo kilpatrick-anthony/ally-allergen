@@ -251,3 +251,19 @@ rolled-back test transaction. Application deployment is in progress.
   capture, photos, retries, submission and approval with fixture data/storage.
   Mobile screenshot inspected. These changes have not been deployed or tested
   on a physical phone.
+
+### Dashboard simplification — 11 October 2026
+
+- Removed the duplicate mobile dashboard Quick Add row; desktop Quick Add now sits
+  beside the title. Language settings use a compact language-name control.
+- Added Saved drafts to permanent navigation and a drafts/reviews summary with
+  permission-scoped exact counts and links to filtered queues. The summary hides
+  on mobile when no captures are pending and refreshes after Quick Add saves.
+- Prioritised drafts, compact compliance status and shortcuts on mobile, with a
+  two-column totals grid below. Desktop retains four overview columns and the
+  detailed compliance panel. Added new labels in all six supported languages.
+- Verification: production build/TypeScript, 24 API/photo tests (including count
+  pagination/ownership boundaries), and 390px/1280px browser checks passed.
+  Browser checks covered Quick Add opening, filtered navigation, counts and
+  empty/error/retry states with fixture API responses; screenshots inspected.
+  These changes are local and have not been pushed or deployed.

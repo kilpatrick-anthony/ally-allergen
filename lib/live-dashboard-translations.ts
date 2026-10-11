@@ -1,6 +1,12 @@
 type LocaleIndex = 1 | 2 | 3 | 4 | 5 | 6
 
 const rows = [
+  ['savedDrafts','Saved drafts','Dréachtaí sábháilte','Rascunhos guardados','Brouillons enregistrés','Borradores guardados','Gespeicherte Entwürfe'],
+  ['draftsReviews','Drafts & reviews','Dréachtaí agus athbhreithnithe','Rascunhos e revisões','Brouillons et révisions','Borradores y revisiones','Entwürfe und Prüfungen'],
+  ['draftsLabel','Drafts','Dréachtaí','Rascunhos','Brouillons','Borradores','Entwürfe'],
+  ['reviewLabel','Ready for review','Réidh le hathbhreithniú','Prontos para revisão','Prêts à vérifier','Listos para revisión','Bereit zur Prüfung'],
+  ['noPendingDrafts','No drafts or reviews pending.','Níl dréachtaí ná athbhreithnithe ar feitheamh.','Sem rascunhos ou revisões pendentes.','Aucun brouillon ni révision en attente.','No hay borradores ni revisiones pendientes.','Keine ausstehenden Entwürfe oder Prüfungen.'],
+  ['draftsUnavailable','Draft counts are unavailable.','Níl líon na ndréachtaí ar fáil.','A contagem de rascunhos não está disponível.','Le nombre de brouillons est indisponible.','El recuento de borradores no está disponible.','Die Anzahl der Entwürfe ist nicht verfügbar.'],
   ['menuItems','Menu items','Míreanna biachláir','Itens do menu','Articles du menu','Elementos del menú','Menüelemente'],
   ['acrossMenus','Across your menus','Ar fud do bhiachláir','Em todos os seus menus','Dans tous vos menus','En todos tus menús','In Ihren Menüs'],
   ['ingredients','Ingredients','Comhábhair','Ingredientes','Ingrédients','Ingredientes','Zutaten'],

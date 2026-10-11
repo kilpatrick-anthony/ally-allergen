@@ -158,3 +158,19 @@ test('captures optional allergens and tags, replays JSON values and preserves th
   assert.equal(cleared.status,200);assert.equal(Object.keys(cleared.body.draft.allergen_warnings).length,0);assert.equal(cleared.body.draft.dietary_tags.length,0)
   assert.equal(s.writes.every(table=>table==='quick_add_drafts'),true)
 })
+
+test('dashboard counts include all pending captures and preserve live ownership boundaries', async () => {
+  const s = setup()
+  for (let i = 0; i < 65; i++) s.rows.push({ id: uuid(100+i), business_id: business, created_by: actor, status: 'draft' })
+  s.rows.push({ id: uuid(200), business_id: business, created_by: colleague, status: 'ready_for_review' },
+    { id: uuid(201), business_id: otherBusiness, created_by: actor, status: 'draft' },
+    { id: uuid(202), business_id: business, created_by: actor, status: 'approved' })
+  const query = { nextUrl: new URL('https://example.invalid/api/quick-add-drafts?summary=true') }
+  assert.deepEqual(JSON.parse(JSON.stringify((await s.collection.GET(query)).body)), { drafts: 65, reviews: 0 })
+  s.setRole('manager')
+  assert.deepEqual(JSON.parse(JSON.stringify((await s.collection.GET(query)).body)), { drafts: 65, reviews: 1 })
+  s.setRole('removed')
+  assert.equal((await s.collection.GET(query)).status, 403)
+  assert.equal((await setup({ token: null }).collection.GET(query)).status, 401)
+  assert.equal((await setup({ dbFailure: true }).collection.GET(query)).status, 503)
+})

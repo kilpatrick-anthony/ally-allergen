@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Home,
+  ClipboardList,
   Building,
   BarChart,
   Settings,
@@ -50,6 +51,7 @@ export function Navigation() {
 
   const navItems: NavItem[] = [
     { name: t('admin.dashboard'),   href: '/admin',              icon: Home },
+    { name: t('liveDashboard.savedDrafts'), href: '/admin/quick-add', icon: ClipboardList },
     { name: t('admin.ingredients'), href: '/admin/ingredients',  icon: Package },
     { name: t('admin.menuBuilder'), href: '/admin/menu-builder', icon: ChefHat },
     { name: t('admin.sites'),       href: '/admin/sites',        icon: Building },

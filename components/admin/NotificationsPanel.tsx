@@ -25,12 +25,13 @@ interface ComplianceSummary {
 }
 
 interface NotificationsPanelProps {
+  compactMobile?: boolean
   settings: {
     notificationsEnabled: boolean
   }
 }
 
-export function NotificationsPanel({ settings }: NotificationsPanelProps) {
+export function NotificationsPanel({ settings, compactMobile = false }: NotificationsPanelProps) {
   const { t } = useTranslation()
   const [summary, setSummary] = useState<ComplianceSummary | null>(null)
   const [loading, setLoading] = useState(true)
@@ -119,6 +120,12 @@ export function NotificationsPanel({ settings }: NotificationsPanelProps) {
     .slice(0, 5)
 
   return (
+    <>
+    {compactMobile && <Link href="/admin/compliance" className="flex min-h-11 items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-800 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 lg:hidden">
+      {summary.totalNonCompliant > 0 ? <AlertCircle className="h-5 w-5 shrink-0 text-amber-600" aria-hidden="true" /> : <CheckCircle className="h-5 w-5 shrink-0 text-green-600" aria-hidden="true" />}
+      <span>{summary.totalNonCompliant > 0 ? t('admin.itemsNeedAttention', { count: summary.totalNonCompliant }) : t('admin.allComplianceChecksPassed')}</span>
+    </Link>}
+    <div className={compactMobile ? 'hidden lg:block' : undefined}>
     <Card className="p-6">
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <Bell className="h-5 w-5 text-blue-600" />
@@ -188,5 +195,7 @@ export function NotificationsPanel({ settings }: NotificationsPanelProps) {
         </Link>
       </div>
     </Card>
+    </div>
+    </>
   )
 }

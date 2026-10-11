@@ -5,6 +5,15 @@ import { createDraftInput, draftColumns, quickAddContext, quickAddFailure, Quick
 export async function GET(request: NextRequest) {
   try {
     const context = await quickAddContext()
+    if (request.nextUrl.searchParams.get('summary') === 'true') {
+      const [drafts, reviews] = await Promise.all([
+        visibleDrafts(context, true).eq('status', 'draft'),
+        visibleDrafts(context, true).eq('status', 'ready_for_review'),
+      ])
+      if (drafts.error) throw drafts.error
+      if (reviews.error) throw reviews.error
+      return NextResponse.json({ drafts: drafts.count ?? 0, reviews: reviews.count ?? 0 })
+    }
     const offset = Number(request.nextUrl.searchParams.get('offset') || 0)
     if (!Number.isSafeInteger(offset) || offset < 0 || offset > 1000000) throw new QuickAddError('invalid', 400)
     const status = request.nextUrl.searchParams.get('status') || ''

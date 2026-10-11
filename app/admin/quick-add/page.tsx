@@ -19,7 +19,7 @@ function Drafts() {
   const params = useSearchParams()
   const draftId = params.get('draft') || undefined
   const [drafts, setDrafts] = useState<QuickAddDraft[]>([])
-  const [status, setStatus] = useState('')
+  const [status, setStatus] = useState(() => ['draft', 'ready_for_review', 'approved'].includes(params.get('status') || '') ? params.get('status')! : '')
   const [offset, setOffset] = useState(0)
   const [nextOffset, setNextOffset] = useState<number | null>(null)
   const [revision, setRevision] = useState(0)

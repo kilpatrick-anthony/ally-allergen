@@ -45,8 +45,8 @@ export async function quickAddContext() {
 
 export type QuickAddContext = Awaited<ReturnType<typeof quickAddContext>>
 
-export function visibleDrafts(context: QuickAddContext) {
-  let query = context.supabase.from('quick_add_drafts').select(draftColumns).eq('business_id', context.businessId)
+export function visibleDrafts(context: QuickAddContext, countOnly = false) {
+  let query = context.supabase.from('quick_add_drafts').select(draftColumns, countOnly ? { count: 'exact', head: true } : {}).eq('business_id', context.businessId)
   if (context.role === 'staff') query = query.eq('created_by', context.userId)
   return query
 }

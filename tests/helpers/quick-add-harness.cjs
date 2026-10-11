@@ -14,9 +14,9 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
   let concurrentEdit = false
   const db = { from(table) {
     const filters = [], excludes = [], orders = []
-    let mutation, values, range
+    let mutation, values, range, countOnly
     const query = {
-      select: () => query,
+      select: (_, options) => { countOnly = options?.head; return query },
       eq(key, value) { filters.push([key, value]); return query },
       neq(key, value) { excludes.push([key, value]); return query },
       order(key, options = { ascending: true }) { orders.push([key, options]); return query },
@@ -51,6 +51,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
       if (table === 'quick_add_photos' && mutation === 'update' && values.state === 'ready' && failures.finalize) return { error: { message: 'Finalize failed' } }
       if (mutation === 'update') { writes.push(table); matches.forEach(row => Object.assign(row, values)) }
       for (const [key, options] of [...orders].reverse()) matches.sort((a, b) => String(a[key]).localeCompare(String(b[key])) * (options.ascending ? 1 : -1))
+      if (countOnly) return { data: null, count: matches.length }
       if (range) matches = matches.slice(range[0], range[1] + 1)
       return { data: single ? matches[0] ? { ...matches[0] } : null : matches.map(row => ({ ...row })) }
     }
