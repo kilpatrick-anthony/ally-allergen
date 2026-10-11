@@ -6,7 +6,7 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
  for (const [device,width,height] of [['desktop',1280,900],['mobile',390,844]]) {
-  const context=await browser.newContext({viewport:{width,height}});
+  const context=await browser.newContext({viewport:{width,height},hasTouch:device==='mobile'});
   const backend=setup();
   const db=await require('../tests/helpers/quick-add-review-db.cjs').createReviewDb();
   let currentRole='staff';
@@ -70,7 +70,26 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
   await page.goto(`${process.env.BASE_URL || 'http://localhost:3107'}/admin/quick-add`);
   await page.getByRole('heading',{name:'Saved drafts',exact:true}).waitFor();
   await page.getByRole('button',{name:'Reject non-essential',exact:true}).click();
-  await page.getByRole('button',{name:'Quick Add',exact:true}).click();
+  const floatingAdd=page.locator('button[aria-haspopup="dialog"]').filter({has:page.locator('svg')});
+  const logo=page.getByRole('img',{name:'AllyJen',exact:true});
+  if(device==='mobile') {
+    await logo.waitFor();
+    assert.equal(await logo.evaluate(img=>img.complete && img.naturalWidth>0),true);
+    const bounds=await logo.boundingBox();
+    assert.ok(Math.abs(bounds.x+bounds.width/2-width/2)<1,'Mobile logo is centred');
+    const addBounds=await floatingAdd.boundingBox();
+    assert.ok(addBounds.width>=44 && addBounds.height>=44 && addBounds.x>width/2 && addBounds.x+addBounds.width<=width && addBounds.y+addBounds.height<=height,'Floating Add stays inside the lower-right viewport with a touch target');
+    assert.equal(await page.getByRole('button',{name:'Contact us',exact:true}).isVisible(),false);
+    await page.screenshot({path:'/tmp/ally-mobile-header.png'});
+    await floatingAdd.tap();
+  } else {
+    assert.equal(await floatingAdd.isVisible(),false);
+    const contact=page.getByRole('button',{name:'Contact us',exact:true});
+    await contact.click();
+    await page.getByText('Contact the AllyJen team',{exact:true}).waitFor();
+    await page.getByRole('button',{name:/Close (Ally|Jen) message/}).first().click();
+    await page.getByRole('button',{name:'Quick Add',exact:true}).click();
+  }
   const dialog=page.getByRole('dialog');
   await dialog.getByLabel('Product name').fill('Delivery bread');
   await dialog.getByText('Allergens and dietary tags (optional)',{exact:true}).click();
@@ -127,6 +146,7 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
   page.once('dialog',prompt=>prompt.accept());
   await dialog.getByRole('button',{name:'Cancel',exact:true}).click();
   await dialog.waitFor({state:'hidden'});
+  if(device==='mobile') await page.waitForFunction(()=>document.activeElement?.matches('button[aria-haspopup="dialog"]'));
   for(const theme of ['light','dark']) {
     await page.evaluate(theme=>document.documentElement.classList.toggle('dark',theme==='dark'),theme);
     await page.screenshot({path:`/tmp/ally-quick-add-${device}-cards-${theme}.png`});

@@ -43,7 +43,7 @@ export function JenCoach() {
   const avatar = character === 'ally' ? '/Ally_9.svg' : '/Jen_2.svg'
 
   return (
-    <div className="fixed bottom-6 right-4 z-40 flex flex-col items-end gap-2 sm:bottom-12 sm:right-6 lg:bottom-[56px]">
+    <div className="fixed bottom-6 right-4 z-40 hidden flex-col items-end gap-2 sm:bottom-12 sm:right-6 lg:bottom-[56px] lg:flex">
       {open && (
         <div className="flex w-[350px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl" style={{ maxHeight: 'min(620px, calc(100vh - 160px))' }}>
           <div className="flex items-center gap-3 px-4 py-3 text-white" style={{ backgroundColor: character === 'ally' ? '#0e7066' : '#003842' }}>

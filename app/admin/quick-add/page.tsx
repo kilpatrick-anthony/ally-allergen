@@ -27,6 +27,12 @@ function Drafts() {
   const [error, setError] = useState('')
 
   useEffect(() => {
+    const refresh = () => { setOffset(0); setRevision(value => value + 1) }
+    window.addEventListener('quick-add-saved', refresh)
+    return () => window.removeEventListener('quick-add-saved', refresh)
+  }, [])
+
+  useEffect(() => {
     const controller = new AbortController()
     setLoading(true); setError('')
     void fetch(`/api/quick-add-drafts?offset=${offset}&status=${status}`, { signal: controller.signal, cache: 'no-store' })

@@ -13,6 +13,7 @@ import { trackAdminPageVisit } from '@/lib/hooks/useFrequentPages'
 import { FsaiNewsTicker } from '@/components/admin/FsaiNewsTicker'
 import { JenCoach } from '@/components/admin/JenCoach'
 import PortalLocalizationBridge from '@/components/shared/PortalLocalizationBridge'
+import QuickAddEntry from '@/components/admin/QuickAddEntry'
 
 interface AdminLayoutProps {
   children: ReactNode
@@ -180,7 +181,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               type="button"
               onClick={() => setIsSidebarOpen(false)}
               aria-label={t('corePortal.closeNavigationMenu')}
-              className="text-white p-1.5 rounded-md hover:bg-white/10 transition-colors"
+              className="text-white p-2.5 rounded-md hover:bg-white/10 transition-colors"
             >
               <X className="h-6 w-6" />
             </button>
@@ -189,11 +190,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               type="button"
               onClick={() => setIsSidebarOpen(true)}
               aria-label={t('corePortal.openNavigationMenu')}
-              className="text-white p-1.5 rounded-md hover:bg-white/10 transition-colors"
+              className="text-white p-2.5 rounded-md hover:bg-white/10 transition-colors"
             >
               <Menu className="h-6 w-6" />
             </button>
           )}
+          <img
+            src="/Nav%20bar%20AllyJen%20Logo%20(500%20x%20150%20px).svg"
+            alt="AllyJen"
+            width={150}
+            height={45}
+            className="pointer-events-none absolute left-1/2 h-[45px] w-[150px] -translate-x-1/2 object-contain"
+          />
         </div>
 
         {/* Mobile overlay */}
@@ -249,7 +257,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* Main Content */}
         <div className="lg:pl-[224px] pt-14 lg:pt-0 flex flex-col min-h-screen">
-          <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 admin-dot-grid dark:admin-dot-grid-dark pb-[52px]">
+          <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 admin-dot-grid dark:admin-dot-grid-dark pb-[calc(6rem+env(safe-area-inset-bottom))] lg:pb-[52px]">
             {isImpersonating && (
               <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm dark:border-amber-900/30 dark:bg-amber-900/20 dark:text-amber-100">
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -287,6 +295,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
           {/* Jen — compliance coach floating widget */}
           <JenCoach />
+          <QuickAddEntry floating />
         </div>
           </div>
         </ProtectedRoute>

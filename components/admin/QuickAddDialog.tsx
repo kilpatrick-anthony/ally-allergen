@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import type { RefObject } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
@@ -18,6 +19,7 @@ type Props = {
   initialKind?: QuickAddKind
   siteId?: string | null
   onSaved?: () => void
+  returnFocusRef?: RefObject<HTMLButtonElement | null>
 }
 
 const blank = (kind: QuickAddKind, siteId?: string | null): QuickAddFields => ({
@@ -29,7 +31,7 @@ const fieldsOf = (draft: QuickAddDraft): QuickAddFields => ({
   allergen_warnings: draft.allergen_warnings || {}, dietary_tags: draft.dietary_tags || [],
 })
 
-export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingredient', siteId, onSaved }: Props) {
+export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingredient', siteId, onSaved, returnFocusRef }: Props) {
   const { t } = useTranslation()
   const text = (key: string) => t(`quickAdd.${key}`)
   const router = useRouter()
@@ -145,7 +147,12 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
   return <Dialog.Root open onOpenChange={open => { if (!open) close() }}>
     <Dialog.Portal>
       <Dialog.Overlay className="fixed inset-0 z-[90] bg-black/50" />
-      <Dialog.Content className="fixed inset-0 z-[91] flex flex-col bg-white text-gray-900 shadow-xl dark:bg-gray-800 dark:text-white sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90dvh] sm:w-[min(92vw,38rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl">
+      <Dialog.Content onCloseAutoFocus={event => {
+        if (returnFocusRef?.current) {
+          event.preventDefault()
+          returnFocusRef.current.focus()
+        }
+      }} className="fixed inset-0 z-[91] flex flex-col bg-white text-gray-900 shadow-xl dark:bg-gray-800 dark:text-white sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90dvh] sm:w-[min(92vw,38rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl">
         <div className="flex shrink-0 items-start justify-between gap-4 border-b p-5 dark:border-gray-700">
           <div><Dialog.Title className="text-xl font-semibold">{text(draftId || record ? 'editTitle' : 'title')}</Dialog.Title>
             <Dialog.Description className="mt-1 text-sm text-gray-600 dark:text-gray-300">{text('intro')}</Dialog.Description></div>

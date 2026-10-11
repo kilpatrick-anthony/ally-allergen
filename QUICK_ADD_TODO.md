@@ -57,7 +57,7 @@ Deliverable: staff can capture a delivery item and a manager can complete its re
 
 - [x] Confirm missing allergen details appear as unknown, never as no allergens. Automated checks passed; real-device trial remains below.
 - [x] Confirm drafts cannot accidentally enter published menus or be used as approved inputs to allergen calculations. Automated checks passed; real-device trial remains below.
-- [ ] Check draft handling in searches, recipe selectors, totals, reports and exports.
+- [x] Check draft handling in searches, recipe selectors, totals, reports and exports. Repository data-flow review passed on 11 October; authenticated delivery trial remains separate.
 - [x] Test staff and owner permissions, including direct API requests across businesses and locations. Automated checks passed; real-device trial remains below.
 - [x] Test required-field validation, duplicate taps, interrupted photo uploads and failed saves. Automated checks passed; real-device trial remains below.
 - [ ] Test on a real iPhone, an Android phone if available, and desktop.
@@ -219,3 +219,35 @@ PostgreSQL schema/approval checks, production build/TypeScript and desktop/mobil
 browser flows passed. Light/dark draft-card screenshots were inspected. Live
 service-role promotion verified dietary-tag enforcement and propagation in a
 rolled-back test transaction. Application deployment is in progress.
+
+## Continuation — 11 October 2026
+
+- Re-ran the current Quick Add API and photo suites: all 23 tests passed.
+- Reviewed draft isolation in ingredient/menu searches, recipe ingredient selectors,
+  dashboard counts, compliance and analytics queries, and Downloads PDF inputs.
+  These consumers read inventory tables through the existing APIs, not captures.
+  Downloads uses `/api/business/data`, which reads ingredients and active menu
+  items. Quick Add draft-table reads remain confined to the capture/evidence paths.
+  The latest transition function inserts inventory only in its approval branch;
+  bought-in products are inserted inactive. This is source review plus the existing
+  capture regression tests, not a new authenticated production trial.
+- The live `/api/version` endpoint returned `dpl_HuHf4JFpfD5TXz2NgbMKSfbUpUcB`.
+  This differs from the earlier recorded release. Its source commit has not yet
+  been verified, so the latest capture-assessment deployment remains unconfirmed.
+- Remaining work: accessibility/interface translations, authenticated live-storage
+  capture-to-approval verification, and physical-phone delivery feedback (including
+  orientation, HEIC support and interrupted uploads).
+
+### Mobile portal feedback — 11 October 2026
+
+- Restored the centred AllyJen logo in the mobile green header.
+- Replaced the Ally/Jen contact widget below the desktop breakpoint with a
+  floating Quick Add plus button. Desktop contact remains available.
+- Reused the existing capture dialog, added safe-area spacing, refreshed the
+  Saved drafts list after floating-button saves, and restored focus on close.
+- Production build/TypeScript and 23 API/photo tests passed. Desktop and
+  touch-enabled mobile browser checks passed against the local production build,
+  including logo loading/centring, button position, desktop contact opening,
+  capture, photos, retries, submission and approval with fixture data/storage.
+  Mobile screenshot inspected. These changes have not been deployed or tested
+  on a physical phone.
