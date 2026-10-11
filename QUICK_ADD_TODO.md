@@ -103,8 +103,8 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
 - Verification passed: 27 API/photo tests, PostgreSQL migration/transaction
   checks, production build and the complete browser journey at desktop and
   phone widths in English, Irish, Portuguese, French, Spanish and German.
-- The migration and application changes are complete locally; deployment and
-  authenticated physical-device testing remain separate release steps.
+- The migration and application changes were released to production on
+  11 October 2026; authenticated physical-device testing remains open.
 
 ### Photo-assisted label extraction — 11 October 2026
 
@@ -123,6 +123,18 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
   extraction/capture/review browser journey at desktop and phone widths. The
   interaction copy is included in all six supported language catalogs. Browser
   tests use a deterministic AI response; a real label/provider trial remains.
+
+### Prepared recipes and label extraction release — 11 October 2026
+
+- Applied production migration `20261011204103_add_quick_add_prepared_items` and
+  verified the column, restricted function grant and unchanged advisor results.
+- Released commit `d7f9884c20bdc8e3dcfc02ee07afcc20b8192261` as production
+  deployment `dpl_5U6EFh9J8SVZfgYKy1JzRWUXBd5g`. The live version matched,
+  unauthenticated draft/extraction requests returned 401 and the initial Vercel
+  runtime-error scan was clean.
+- `GEMINI_API_KEY` is not yet configured in Vercel. The deployed extraction UI
+  therefore falls back safely to manual entry until a production provider key
+  is added; prepared recipes and the rest of Quick Add are available.
 - [ ] Assess whether an iPhone/iPad app adds enough value beyond the mobile portal.
 
 ## First-version acceptance criteria
