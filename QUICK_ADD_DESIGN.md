@@ -258,13 +258,24 @@ node /tmp/ally-quick-add-check/node_modules/playwright/cli.js install chromium
 npm run start -- --port 3107
 # In another terminal:
 PLAYWRIGHT_MODULE=/tmp/ally-quick-add-check/node_modules/playwright node scripts/verify-quick-add-browser.cjs
+# Exercise the same desktop/phone-width flow in every supported language:
+QUICK_ADD_LANGUAGES=en,ga,pt,fr,es,de PLAYWRIGHT_MODULE=/tmp/ally-quick-add-check/node_modules/playwright node scripts/verify-quick-add-browser.cjs
+# Optional automated dialog accessibility scans in both themes:
+npm install --prefix /tmp/ally-quick-add-check --no-audit --no-fund axe-core
+QUICK_ADD_A11Y=1 QUICK_ADD_LANGUAGES=en,de PLAYWRIGHT_MODULE=/tmp/ally-quick-add-check/node_modules/playwright node scripts/verify-quick-add-browser.cjs
 ```
 
 Browser verification uses the actual Quick Add route handlers with a fixture
 repository adapter and simulated authentication/options responses. It checks the
 UI/API contract but does not prove live Supabase persistence. Production database
-integration and physical iPhone/Android trials remain release checks. New copy uses
-the existing English translation fallback; other languages remain on the checklist.
+integration and physical iPhone/Android trials remain release checks. Quick Add
+now has complete interface catalogs for English, Irish, Portuguese, French,
+Spanish and German, with shared translated allergen/subtype names. Assessment
+values and dietary tags retain their canonical storage values in every language.
+Accessibility scans cover capture, photos, review and approval dialogs in light
+and dark themes. Reports, including items requiring manual review, are written
+to `/tmp/ally-a11y-*.json`. These scans supplement the keyboard checks; they do not
+replace physical-device and assistive-technology testing.
 
 The Help guide is deliberately scheduled after the final workflow is implemented.
 

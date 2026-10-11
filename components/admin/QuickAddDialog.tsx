@@ -19,7 +19,7 @@ type Props = {
   initialKind?: QuickAddKind
   siteId?: string | null
   onSaved?: () => void
-  returnFocusRef?: RefObject<HTMLButtonElement | null>
+  returnFocusRef?: RefObject<HTMLElement | null>
 }
 
 const blank = (kind: QuickAddKind, siteId?: string | null): QuickAddFields => ({
@@ -61,8 +61,18 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
   const busy = useRef(false)
   const requestId = useRef<string | null>(null)
   const nameInput = useRef<HTMLInputElement>(null)
+  const savedMessage = useRef<HTMLParagraphElement>(null)
+  const focusName = useRef(false)
   const textDirty = JSON.stringify(fields) !== baseline
   const dirty = textDirty || unsavedPhotos || reviewDirty
+
+  useEffect(() => {
+    if (success) savedMessage.current?.focus()
+    else if (focusName.current) {
+      nameInput.current?.focus()
+      focusName.current = false
+    }
+  }, [success])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -159,17 +169,18 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
           <button type="button" onClick={close} disabled={saving || photoBusy || reviewBusy} aria-label={text('close')} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"><X aria-hidden="true" /></button>
         </div>
         <div className="min-h-0 overflow-y-auto p-5">
-          {loading ? <p role="status">{text('loading')}</p> : loadError ? <div role="alert"><p>{text(loadError)}</p><Button className="mt-4" onClick={() => setAttempt(value => value + 1)}>{text('retry')}</Button></div> : success ? <div>
-            <p role="status" className="text-lg font-semibold">{text('saved')}</p><p className="mt-2 break-words">{record?.name}</p>
+          {loading ? <p role="status">{text('loading')}</p> : loadError ? <div role="alert"><p>{text(loadError)}</p><Button variant="teal" className="mt-4" onClick={() => setAttempt(value => value + 1)}>{text('retry')}</Button></div> : success ? <div>
+            <p ref={savedMessage} tabIndex={-1} role="status" className="text-lg font-semibold">{text('saved')}</p><p className="mt-2 break-words">{record?.name}</p>
             <div className="mt-5 flex flex-wrap gap-3">
-              {!draftId && <Button disabled={photoBusy || reviewBusy} onClick={() => {
+              {!draftId && <Button variant="teal" disabled={photoBusy || reviewBusy} onClick={() => {
                 if ((unsavedPhotos || reviewDirty) && !window.confirm(text('discard'))) return
                 setUnsavedPhotos(false); setReviewDirty(false)
+                focusName.current = true
                 const values = { ...blank(fields.kind, fields.site_id), supplier_id: fields.supplier_id, supplier_name: fields.supplier_name }
                 setFields(values); setBaseline(JSON.stringify(values)); setRecord(null); setSuccess(false); setError('')
                 requestId.current = null
               }}>{text('another')}</Button>}
-              <Button variant="outline" onClick={() => { if (record) { setSuccess(false) } }}>{text('view')}</Button>
+              <Button variant="tealOutline" onClick={() => { if (record) { focusName.current = true; setSuccess(false) } }}>{text('view')}</Button>
             </div>
           </div> : <form id={formId} onSubmit={save} className="space-y-4">
             <fieldset disabled={saving || photoBusy || reviewBusy || (!!record && record.status !== 'draft')} className="space-y-4">
@@ -179,7 +190,7 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
                   <option value="ingredient">{text('ingredient')}</option><option value="packaged_product">{text('packaged_product')}</option>
                 </select></label>
               <label className="block text-sm font-medium">{text('name')} *
-                <input ref={nameInput} required maxLength={200} value={fields.name} onChange={event => setFields({ ...fields, name: event.target.value })} className={control} autoComplete="off" /></label>
+                <input ref={nameInput} required maxLength={200} aria-invalid={error === 'nameRequired' || undefined} aria-describedby={error === 'nameRequired' ? `${formId}-error` : undefined} value={fields.name} onChange={event => { setFields({ ...fields, name: event.target.value }); if (error === 'nameRequired') setError('') }} className={control} autoComplete="off" /></label>
               <label className="block text-sm font-medium">{text('location')}
                 <select aria-label={text('location')} value={fields.site_id || ''} onChange={event => setFields({ ...fields, site_id: event.target.value || null })} className={control}>
                   <option value="">{text('noLocation')}</option>{sites.map(site => <option key={site.id} value={site.id}>{site.name}</option>)}
@@ -194,8 +205,8 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
                   {suppliers.map(supplier => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}
                 </select></label>
               {manualSupplier && <label className="block text-sm font-medium">{text('supplierName')}
-                <input aria-label={text('supplierName')} maxLength={200} value={fields.supplier_name} onChange={event => setFields({ ...fields, supplier_name: event.target.value })} className={control} />
-                <span className="mt-1 block text-xs text-gray-500 dark:text-gray-300">{text('supplierNote')}</span></label>}
+                <input aria-label={text('supplierName')} aria-describedby={`${formId}-supplier-note`} maxLength={200} value={fields.supplier_name} onChange={event => setFields({ ...fields, supplier_name: event.target.value })} className={control} />
+                <span id={`${formId}-supplier-note`} className="mt-1 block text-xs text-gray-500 dark:text-gray-300">{text('supplierNote')}</span></label>}
               <label className="block text-sm font-medium">{text('notes')}
                 <textarea rows={3} maxLength={2000} value={fields.notes} onChange={event => setFields({ ...fields, notes: event.target.value })} className={control} /></label>
               {(!record || record.status === 'draft') && <details className="rounded-lg border border-gray-300 p-3 dark:border-gray-600">
@@ -207,9 +218,9 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
               </details>}
             </fieldset>
             <p className="rounded-lg bg-teal-50 p-3 text-sm text-teal-900 dark:bg-teal-950 dark:text-teal-100">{text(record?.status === 'approved' ? 'approvedSafetyNote' : 'safetyNote')}</p>
-            {error && <div role="alert" className="text-sm text-red-700 dark:text-red-300"><p>{text(error)}</p>
-              {error === 'saveConflict' && requestId.current && <Button type="button" variant="outline" className="mt-2" onClick={() => { if (window.confirm(text('discard'))) view(requestId.current!) }}>{text('view')}</Button>}
-              {error === 'editConflict' && <Button type="button" variant="outline" className="mt-2" onClick={() => { if (window.confirm(text('discard'))) { if (draftId) setAttempt(value => value + 1); else if (record) view(record.id) } }}>{text('reload')}</Button>}
+            {error && <div id={`${formId}-error`} role="alert" className="text-sm text-red-700 dark:text-red-300"><p>{text(error)}</p>
+              {error === 'saveConflict' && requestId.current && <Button type="button" variant="tealOutline" className="mt-2" onClick={() => { if (window.confirm(text('discard'))) view(requestId.current!) }}>{text('view')}</Button>}
+              {error === 'editConflict' && <Button type="button" variant="tealOutline" className="mt-2" onClick={() => { if (window.confirm(text('discard'))) { if (draftId) setAttempt(value => value + 1); else if (record) view(record.id) } }}>{text('reload')}</Button>}
             </div>}
           </form>}
           {!loading && !loadError && (record
@@ -220,7 +231,7 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
             onChanged={draft => { setRecord(draft); setSuccess(false); onSaved?.() }} />}
         </div>
         {!loading && !loadError && !success && (!record || record.status === 'draft') && <div className="flex shrink-0 flex-wrap gap-3 border-t px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-gray-700">
-          <Button type="submit" form={formId} loading={saving} disabled={photoBusy || reviewBusy || reviewDirty}>{text(saving ? 'saving' : 'save')}</Button>
+          <Button variant="teal" type="submit" form={formId} loading={saving} disabled={photoBusy || reviewBusy || reviewDirty}>{text(saving ? 'saving' : 'save')}</Button>
           <Button type="button" variant="ghost" disabled={saving || photoBusy || reviewBusy} onClick={close}>{text('cancel')}</Button>
         </div>}
       </Dialog.Content>

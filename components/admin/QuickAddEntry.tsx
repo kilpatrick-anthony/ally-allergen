@@ -32,8 +32,8 @@ export default function QuickAddEntry({ initialKind = 'ingredient', siteId, onSa
     }} />}
   </>
   return <div className="flex flex-wrap items-center gap-3">
-    <Button icon={Plus} onClick={() => setOpen(true)}>{t('quickAdd.title')}</Button>
+    <Button variant="teal" icon={Plus} aria-haspopup="dialog" onClick={event => { trigger.current = event.currentTarget; setOpen(true) }}>{t('quickAdd.title')}</Button>
     {showDrafts && <Link className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-[#003842] underline dark:text-[#42b8ac]" href="/admin/quick-add">{t('quickAdd.drafts')}</Link>}
-    {open && <QuickAddDialog onClose={() => setOpen(false)} initialKind={initialKind} siteId={siteId} onSaved={onSaved} />}
+    {open && <QuickAddDialog onClose={() => setOpen(false)} returnFocusRef={trigger} initialKind={initialKind} siteId={siteId} onSaved={onSaved} />}
   </div>
 }

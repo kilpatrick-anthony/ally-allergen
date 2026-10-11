@@ -11,7 +11,7 @@ interface Ripple {
 }
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost' | 'success'
+  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'ghost' | 'success' | 'teal' | 'tealOutline'
   size?: 'sm' | 'md' | 'lg'
   icon?: any
   iconPosition?: 'left' | 'right'
@@ -59,11 +59,13 @@ export function Button({
   
   // Variants
   const variantClasses = {
+    teal: 'bg-teal-700 text-white hover:bg-teal-800 focus:ring-teal-700 dark:bg-teal-300 dark:text-gray-950 dark:hover:bg-teal-200 dark:focus:ring-teal-300 dark:focus:ring-offset-gray-800',
+    tealOutline: 'border border-teal-700 text-teal-800 hover:bg-teal-50 focus:ring-teal-700 dark:border-teal-300 dark:text-teal-200 dark:hover:bg-teal-950 dark:focus:ring-teal-300 dark:focus:ring-offset-gray-800',
     primary: 'bg-[#42b8ac] text-white hover:bg-[#36948a] hover:shadow-lg hover:shadow-[#42b8ac]/25 focus:ring-[#42b8ac]',
     secondary: 'bg-[#003842] text-white hover:bg-[#001f26] hover:shadow-lg hover:shadow-[#003842]/25 focus:ring-[#003842]',
     outline: 'border border-[#42b8ac] text-[#42b8ac] hover:bg-[#f0f9f8] hover:border-[#36948a] hover:shadow-md focus:ring-[#42b8ac]',
     danger: 'bg-red-600 text-white hover:bg-red-700 hover:shadow-lg hover:shadow-red-500/25 focus:ring-red-500',
-    ghost: 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 hover:shadow-md focus:ring-gray-300',
+    ghost: 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white hover:shadow-md focus:ring-gray-300',
     success: 'bg-green-600 text-white hover:bg-green-700 hover:shadow-lg hover:shadow-green-500/25 focus:ring-green-500',
   }
   

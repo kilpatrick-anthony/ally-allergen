@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 
@@ -36,6 +36,7 @@ const errorCode = (reason: unknown) => reason instanceof Error && knownErrors.in
 export default function QuickAddPhotos({ draftId, disabled, onActivity }: Props) {
   const { t } = useTranslation()
   const text = (key: string) => t(`quickAdd.${key}`)
+  const helpId = useId()
   const [photos, setPhotos] = useState<Photo[]>([])
   const [loading, setLoading] = useState(true)
   const [loadFailed, setLoadFailed] = useState(false)
@@ -43,6 +44,8 @@ export default function QuickAddPhotos({ draftId, disabled, onActivity }: Props)
   const [attempt, setAttempt] = useState(0)
   const [working, setWorking] = useState(false)
   const lock = useRef(false)
+  const chooser = useRef<HTMLInputElement>(null)
+  const restoreChooserFocus = useRef(false)
   const previews = useRef(new Set<string>())
   const base = `/api/quick-add-drafts/${draftId}/photos`
 
@@ -51,6 +54,12 @@ export default function QuickAddPhotos({ draftId, disabled, onActivity }: Props)
     return () => { urls.forEach(url => URL.revokeObjectURL(url)); urls.clear() }
   }, [])
   useEffect(() => { onActivity(working, photos.some(photo => !!photo.file && photo.state !== 'ready')) }, [working, photos, onActivity])
+  useEffect(() => {
+    if (restoreChooserFocus.current && !working && !disabled) {
+      chooser.current?.focus()
+      restoreChooserFocus.current = false
+    }
+  }, [working, disabled])
   useEffect(() => {
     const controller = new AbortController()
     setLoading(true); setLoadFailed(false)
@@ -95,6 +104,8 @@ export default function QuickAddPhotos({ draftId, disabled, onActivity }: Props)
 
   async function act(photo: Photo, remove: boolean) {
     if (lock.current || disabled) return
+    // Retry/remove controls may disappear when the operation succeeds.
+    restoreChooserFocus.current = true
     lock.current = true; setWorking(true)
     try {
       if (!remove) { await upload(photo); return }
@@ -110,23 +121,23 @@ export default function QuickAddPhotos({ draftId, disabled, onActivity }: Props)
   const blocked = disabled || working || loading || loadFailed
   return <section aria-label={text('photos')} className="mt-5 space-y-3 border-t pt-4 dark:border-gray-700">
     <h3 className="font-semibold">{text('photos')}</h3>
-    <p className="text-sm text-gray-600 dark:text-gray-300">{text('photoHelp')}</p>
+    <p id={helpId} className="text-sm text-gray-600 dark:text-gray-300">{text('photoHelp')}</p>
     {loading ? <p role="status">{text('loading')}</p> : <>
       <div className="flex flex-wrap gap-3">
         <label className="relative rounded-lg border p-3 focus-within:ring-2 focus-within:ring-teal-600">
           {text('takePhoto')}
-          <input aria-label={text('takePhoto')} type="file" accept="image/*" capture="environment" disabled={blocked}
+          <input aria-label={text('takePhoto')} aria-describedby={helpId} type="file" accept="image/*" capture="environment" disabled={blocked}
             className="absolute inset-0 w-full opacity-0" onChange={event => { const files = Array.from(event.target.files || []); event.target.value = ''; void choose(files) }} />
         </label>
         <label className="relative rounded-lg border p-3 focus-within:ring-2 focus-within:ring-teal-600">
           {text('choosePhotos')}
-          <input aria-label={text('choosePhotos')} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple disabled={blocked}
+          <input ref={chooser} aria-label={text('choosePhotos')} aria-describedby={helpId} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple disabled={blocked}
             className="absolute inset-0 w-full opacity-0" onChange={event => { const files = Array.from(event.target.files || []); event.target.value = ''; void choose(files) }} />
         </label>
       </div>
       {working && <p role="status">{text('photoWorking')}</p>}
       {error && <div role="alert"><p className="text-sm text-red-700 dark:text-red-300">{text(error)}</p>
-        {loadFailed && <Button type="button" variant="outline" disabled={working} onClick={() => setAttempt(value => value + 1)}>{text('retry')}</Button>}
+        {loadFailed && <Button type="button" variant="tealOutline" disabled={working} onClick={() => setAttempt(value => value + 1)}>{text('retry')}</Button>}
       </div>}
       <ul className="grid grid-cols-2 gap-3">
         {photos.map((photo, index) => <li key={photo.id} className="min-w-0 rounded-lg border p-2">
@@ -138,7 +149,7 @@ export default function QuickAddPhotos({ draftId, disabled, onActivity }: Props)
           <p className="mt-2 text-sm">{text(photo.state === 'ready' ? 'photoSaved' : 'photoPending')}</p>
           {photo.error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{text(photo.error)}</p>}
           <div className="mt-2 flex flex-wrap gap-2">
-            {photo.file && photo.state !== 'ready' && <Button type="button" variant="outline" disabled={blocked} onClick={() => void act(photo, false)}>{text('retry')}</Button>}
+            {photo.file && photo.state !== 'ready' && <Button type="button" variant="tealOutline" disabled={blocked} aria-label={`${text('retry')}: ${text('labelPhoto')} ${index + 1}`} onClick={() => void act(photo, false)}>{text('retry')}</Button>}
             <Button type="button" variant="ghost" disabled={blocked} aria-label={`${text('removePhoto')} ${index + 1}`} onClick={() => void act(photo, true)}>{text('removePhoto')}</Button>
           </div>
         </li>)}

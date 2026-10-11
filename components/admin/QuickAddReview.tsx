@@ -27,9 +27,17 @@ export default function QuickAddReview({ draft, suppliers, sites, disabled, onCh
   const [error, setError] = useState('')
   const [working, setWorking] = useState(false)
   const lock = useRef(false)
+  const heading = useRef<HTMLHeadingElement>(null)
+  const previousStatus = useRef(draft.status)
   const request = useRef<{ signature: string; id: string } | null>(null)
   const dirty = JSON.stringify(review) !== baseline || !!note
   const base = `/api/quick-add-drafts/${draft.id}`
+  useEffect(() => {
+    if (previousStatus.current !== draft.status) {
+      heading.current?.focus()
+      previousStatus.current = draft.status
+    }
+  }, [draft.status])
   useEffect(() => { onActivity(working, dirty) }, [working, dirty, onActivity])
   useEffect(() => {
     const controller = new AbortController()
@@ -69,12 +77,12 @@ export default function QuickAddReview({ draft, suppliers, sites, disabled, onCh
   const control = 'mt-1 w-full rounded-lg border border-gray-300 bg-white p-3 text-base text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white'
 
   return <section className="mt-5 space-y-4 border-t pt-4 dark:border-gray-700" aria-label={text('reviewTitle')}>
-    <h3 className="font-semibold">{text('reviewTitle')} · {text(draft.status)}</h3>
+    <h3 ref={heading} tabIndex={-1} className="font-semibold">{text('reviewTitle')} · {text(draft.status)}</h3>
     {draft.return_note && <p className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">{text('returnedNote')}: {draft.return_note}</p>}
     {loading && <p role="status">{text('loading')}</p>}
     {draft.status === 'draft' && <><p className="text-sm">{text('submitHelp')}</p>
-      <Button type="button" disabled={blocked} onClick={() => void transition('submit')}>{text('submit')}</Button></>}
-    {draft.status === 'ready_for_review' && permissions.isCreator && <Button type="button" variant="outline" disabled={blocked || dirty} onClick={() => void transition('withdraw')}>{text('withdraw')}</Button>}
+      <Button variant="teal" type="button" disabled={blocked} onClick={() => void transition('submit')}>{text('submit')}</Button></>}
+    {draft.status === 'ready_for_review' && permissions.isCreator && <Button type="button" variant="tealOutline" disabled={blocked || dirty} onClick={() => void transition('withdraw')}>{text('withdraw')}</Button>}
     {draft.status === 'ready_for_review' && permissions.canReview && <>
       <p className="text-sm">{text('reviewHelp')}</p>
       <fieldset disabled={blocked} className="space-y-4">
@@ -105,19 +113,19 @@ export default function QuickAddReview({ draft, suppliers, sites, disabled, onCh
 
       {!!missing.length && <ul className="list-disc space-y-1 pl-5 text-sm">{missing.map(key => <li key={key}>{text(key)}</li>)}</ul>}
       <div className="flex flex-wrap gap-3">
-        <Button type="button" disabled={blocked || !!note} onClick={() => void transition('review')}>{text('saveReview')}</Button>
-        <Button type="button" disabled={blocked || dirty || !!missing.length} onClick={() => void transition('approve')}>{text('approve')}</Button>
+        <Button variant="teal" type="button" disabled={blocked || !!note} onClick={() => void transition('review')}>{text('saveReview')}</Button>
+        <Button variant="teal" type="button" disabled={blocked || dirty || !!missing.length} onClick={() => void transition('approve')}>{text('approve')}</Button>
       </div>
       <p className="text-sm">{text(draft.kind === 'ingredient' ? 'ingredientApprovalHelp' : 'productApprovalHelp')}</p>
       <label className="block text-sm font-medium">{text('returnNote')}<textarea className={control} disabled={blocked} maxLength={2000} value={note} onChange={event => setNote(event.target.value)} /></label>
-      <Button type="button" variant="outline" disabled={blocked || !note.trim() || JSON.stringify(review) !== baseline} onClick={() => void transition('return')}>{text('returnDraft')}</Button>
+      <Button type="button" variant="tealOutline" disabled={blocked || !note.trim() || JSON.stringify(review) !== baseline} onClick={() => void transition('return')}>{text('returnDraft')}</Button>
     </>}
     {draft.status === 'approved' && <>
       <p className="text-sm">{text(draft.kind === 'ingredient' ? 'ingredientApproved' : 'productApproved')}</p>
-      {(draft.ingredient_id || draft.menu_item_id) && <Link className="inline-flex min-h-11 items-center text-teal-700 underline" href={draft.ingredient_id ? `/admin/ingredients/${draft.ingredient_id}` : `/admin/menu-builder/${draft.menu_item_id}/edit`}>{text('openApproved')}</Link>}
+      {(draft.ingredient_id || draft.menu_item_id) && <Link className="inline-flex min-h-11 items-center text-teal-700 underline dark:text-teal-300" href={draft.ingredient_id ? `/admin/ingredients/${draft.ingredient_id}` : `/admin/menu-builder/${draft.menu_item_id}/edit`}>{text('openApproved')}</Link>}
     </>}
     {error && <div role="alert" className="text-sm text-red-700 dark:text-red-300"><p>{text(error)}</p>
-      {loadFailed && <Button type="button" variant="outline" disabled={working} onClick={() => setAttempt(value => value + 1)}>{text('retry')}</Button>}
+      {loadFailed && <Button type="button" variant="tealOutline" disabled={working} onClick={() => setAttempt(value => value + 1)}>{text('retry')}</Button>}
       {error === 'editConflict' && <p>{text('reopenReview')}</p>}
     </div>}
     {!!history.length && <details><summary className="min-h-11 cursor-pointer py-3">{text('history')}</summary><ol className="space-y-2 text-sm">

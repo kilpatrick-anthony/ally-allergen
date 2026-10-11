@@ -1,71 +1,8 @@
+import { quickAddTranslations } from '@/lib/quick-add-translations'
+
 export const adminAccessTranslations = {
   en: {
-    quickAdd: {
-      captureAssessment: 'Allergens and dietary tags (optional)',
-      captureAssessmentHelp: 'Enter what you know from the label now. You can leave details unanswered, save the draft and add photos next. A reviewer will confirm these entries before approval.',
-      dietaryTags: 'Dietary tags', dietaryChecked: 'I verified every selected dietary tag against the current label or supporting evidence.',
-      missingDietaryCheck: 'Verify the selected dietary tags against the label evidence.',
-
-      reviewTitle: 'Review and approval', ready_for_review: 'Ready for review', approved: 'Approved for use',
-      filterStatus: 'Show', allCaptures: 'All captures', author: 'Captured by', teamMember: 'Team member',
-      submit: 'Send for review', submitHelp: 'Save any changes and finish or remove pending uploads before sending. A manager can complete missing details.',
-      withdraw: 'Withdraw to draft', returnedNote: 'Changes requested', returnNote: 'Reason for returning', returnDraft: 'Return for changes',
-      reviewHelp: 'Complete the assessment against the label photos above, then save the review before approving.',
-      reviewSupplier: 'Confirmed supplier', description: 'Description', category: 'Category', allergenReview: 'Allergen assessment',
-      reviewMonths: 'Review again in (months)', ingredientDeclaration: 'Ingredient declaration',
-      productScope: 'Product availability', chooseScope: 'Choose availability', globalScope: 'All locations', siteScope: 'One location', productSite: 'Product location',
-      labelChecked: 'I checked the ingredient declaration against the current label.',
-      evidenceChecked: 'I opened the photos, checked that the labels are readable, and verified this assessment against them.',
-      saveReview: 'Save review details', approve: 'Approve for use',
-      ingredientApprovalHelp: 'Approval creates a new ingredient available for recipes.',
-      productApprovalHelp: 'Approval creates an inactive bought-in product. Publishing it is a separate action.',
-      ingredientApproved: 'This capture was approved and created an ingredient for use in recipes.',
-      productApproved: 'This capture was approved and created an inactive bought-in product. Use Menu Builder to manage publication.',
-      openApproved: 'Open resulting record', approvedSafetyNote: 'Approval is recorded below. Manage future changes in the resulting record.',
-      missingSupplier: 'Choose a supplier from this business.', missingEvidence: 'Check readable label photos before approval.',
-      missingAllergens: 'Assess every allergen and relevant subtype; group levels must match their subtype assessments.',
-      missingLabel: 'Enter the ingredient declaration and confirm the label check.', missingScope: 'Choose all locations or a specific product location.',
-      pendingPhotos: 'Finish or remove interrupted photo uploads before continuing.', returnNoteRequired: 'Enter a reason for returning this draft.',
-      reviewUnavailable: 'The review action could not be completed. Your entries are kept; please try again.',
-      reopenReview: 'Close and reopen this capture to load its latest saved state.',
-      history: 'Review history', action_submit: 'Submitted', action_withdraw: 'Withdrawn', action_return: 'Returned for changes', action_review: 'Review details saved', action_approve: 'Approved',
-      level_none: 'Not present — assessed', level_contains: 'Contains', level_may_contain: 'May contain', level_traces: 'May contain traces', level_not_suitable: 'Not suitable for this allergy', level_cross_contamination: 'Produced in a facility that handles this allergen',
-      photos: 'Label photos', takePhoto: 'Take photo', choosePhotos: 'Choose photos',
-      saveForPhotos: 'Save your draft to attach label photos.',
-      photoHelp: 'Up to 12 photos. Check that the label is readable. Photos save as you add them. JPEG, PNG and WebP are supported; HEIC works only where your browser can open it.',
-      photoWorking: 'Saving photo changes…', photoSaved: 'Photo saved', photoPending: 'Not uploaded',
-      labelPhoto: 'Label photo', openPhoto: 'Open label photo', removePhoto: 'Remove photo',
-      photoInterrupted: 'This upload did not finish. Remove it and select the photo again.',
-      photoFailed: 'Photo changes could not be completed. Your text draft is safe. Please try again.',
-      photoFormat: 'This image format cannot be opened. Try a JPEG, PNG or WebP photo, or take a new photo.',
-      photoInvalid: 'This image could not be read. Try another photo.',
-      photoTooLarge: 'This photo is too large to upload. Try a closer crop or a smaller image.',
-      photoSourceTooLarge: 'Choose a photo smaller than 30 MB.',
-      photoLimit: 'A draft can hold up to 12 photos. Remove a photo before adding more.',
-      photoConflict: 'This photo changed or was removed. Reopen the draft to check its saved photos.',
-      discardPhotos: 'Leave without uploading the remaining photos? Your saved draft and uploaded photos will be kept.',
-      title: 'Quick Add', drafts: 'Saved drafts', intro: 'Capture a delivery item now and finish its details later.',
-      ingredient: 'Ingredient', packaged_product: 'Bought-in product', kind: 'What arrived?',
-      name: 'Product name', location: 'Delivery location', noLocation: 'Not specified',
-      supplier: 'Supplier', noSupplier: 'Not specified', newSupplier: 'Enter a supplier name', supplierName: 'Supplier name',
-      supplierNote: 'New supplier names stay on the draft until review.', notes: 'Delivery notes',
-      safetyNote: 'Allergen details: not reviewed. This draft will not appear on customer menus or in recipes.',
-      save: 'Save draft', saving: 'Saving…', saved: 'Draft saved — not published', another: 'Add another', view: 'View draft',
-      close: 'Close', cancel: 'Cancel', loading: 'Loading…', retry: 'Try again', draft: 'Draft',
-      editTitle: 'Draft details', updated: 'Last updated', empty: 'No saved drafts yet.',
-      listNote: 'Staff see their own drafts. Owners and managers see drafts across the business.',
-      discard: 'Discard your unsaved changes?', more: 'Load more', back: 'Back to drafts',
-      details: 'Open draft', unknown: 'Not reviewed', nameRequired: 'Enter a product name.',
-      unavailable: 'Quick Add is temporarily unavailable. Your entries have been kept. Please try again.',
-      unauthorized: 'Please sign in again before saving. Your entries have been kept.',
-      forbidden: 'Your account does not have access to these drafts.', notFound: 'This draft could not be found or is not available to your account.',
-      invalid: 'Check the required fields and their lengths, then try again.',
-      locationUnavailable: 'This location is no longer available. Choose another location or Not specified.',
-      supplierUnavailable: 'This supplier is no longer available. Choose another supplier or enter its name.',
-      saveConflict: 'A draft was already saved for this entry. Open the saved draft to check it before making further changes.',
-      editConflict: 'This draft changed elsewhere. Your entries are still here. Reload the saved version before editing again.',
-      reload: 'Reload saved version', optionsFailed: 'Locations and suppliers could not be loaded. Try again before saving.',
-    },
+    quickAdd: quickAddTranslations.en,
     engagementInsights: {
       title: 'Customer engagement',
       unavailable: 'Detailed engagement is temporarily unavailable. Try again or select a shorter date range. Existing reports remain available.',
@@ -115,6 +52,7 @@ export const adminAccessTranslations = {
     },
   },
   ga: {
+    quickAdd: quickAddTranslations.ga,
     messaging: {
       sendError: 'Níorbh fhéidir do theachtaireacht a sheoladh.', messageSent: 'Teachtaireacht seolta', thanks: 'Go raibh maith agat as teagmháil a dhéanamh linn. Freagróidh ár bhfoireann a luaithe is féidir.', sendAnother: 'Seol teachtaireacht eile', intro: 'Dia duit, is mise {name}. Fág teachtaireacht thíos agus freagróidh ball d’fhoireann AllyJen a luaithe is féidir.', urgentAllergen: 'Má tá ceist phráinneach agat faoi ailléirginí, labhair go díreach le ball foirne sula n-ordaíonn tú.', yourName: 'D’ainm', replyEmail: 'Ríomhphost dár bhfreagra', howCanWeHelp: 'Conas is féidir linn cabhrú?', website: 'Suíomh gréasáin', sending: 'Á sheoladh…', sendMessage: 'Seol teachtaireacht',
     },
@@ -126,6 +64,7 @@ export const adminAccessTranslations = {
     },
   },
   pt: {
+    quickAdd: quickAddTranslations.pt,
     messaging: {
       sendError: 'Não foi possível enviar a sua mensagem.', messageSent: 'Mensagem enviada', thanks: 'Obrigado por entrar em contacto. A nossa equipa responderá assim que possível.', sendAnother: 'Enviar outra mensagem', intro: 'Olá, sou {name}. Deixe uma mensagem abaixo e um membro da equipa AllyJen responderá assim que possível.', urgentAllergen: 'Para questões urgentes sobre alergénios, fale diretamente com um membro da equipa antes de encomendar.', yourName: 'O seu nome', replyEmail: 'Email para a nossa resposta', howCanWeHelp: 'Como podemos ajudar?', website: 'Site', sending: 'A enviar…', sendMessage: 'Enviar mensagem',
     },
@@ -137,6 +76,7 @@ export const adminAccessTranslations = {
     },
   },
   fr: {
+    quickAdd: quickAddTranslations.fr,
     messaging: {
       sendError: 'Impossible d’envoyer votre message.', messageSent: 'Message envoyé', thanks: 'Merci de nous avoir contactés. Notre équipe vous répondra dès que possible.', sendAnother: 'Envoyer un autre message', intro: 'Bonjour, je suis {name}. Laissez un message ci-dessous et un membre de l’équipe AllyJen vous répondra dès que possible.', urgentAllergen: 'Pour toute question urgente concernant les allergènes, veuillez vous adresser directement à un membre du personnel avant de commander.', yourName: 'Votre nom', replyEmail: 'E-mail pour notre réponse', howCanWeHelp: 'Comment pouvons-nous vous aider ?', website: 'Site web', sending: 'Envoi…', sendMessage: 'Envoyer le message',
     },
@@ -148,6 +88,7 @@ export const adminAccessTranslations = {
     },
   },
   es: {
+    quickAdd: quickAddTranslations.es,
     messaging: {
       sendError: 'No se pudo enviar tu mensaje.', messageSent: 'Mensaje enviado', thanks: 'Gracias por ponerte en contacto. Nuestro equipo responderá lo antes posible.', sendAnother: 'Enviar otro mensaje', intro: 'Hola, soy {name}. Deja un mensaje a continuación y un miembro del equipo de AllyJen responderá lo antes posible.', urgentAllergen: 'Para preguntas urgentes sobre alérgenos, habla directamente con un miembro del personal antes de pedir.', yourName: 'Tu nombre', replyEmail: 'Correo para nuestra respuesta', howCanWeHelp: '¿Cómo podemos ayudarte?', website: 'Sitio web', sending: 'Enviando…', sendMessage: 'Enviar mensaje',
     },
@@ -159,6 +100,7 @@ export const adminAccessTranslations = {
     },
   },
   de: {
+    quickAdd: quickAddTranslations.de,
     messaging: {
       sendError: 'Ihre Nachricht konnte nicht gesendet werden.', messageSent: 'Nachricht gesendet', thanks: 'Vielen Dank für Ihre Nachricht. Unser Team antwortet so schnell wie möglich.', sendAnother: 'Weitere Nachricht senden', intro: 'Hallo, ich bin {name}. Hinterlassen Sie unten eine Nachricht; ein Mitglied des AllyJen-Teams antwortet so schnell wie möglich.', urgentAllergen: 'Bei dringenden Fragen zu Allergenen wenden Sie sich bitte vor der Bestellung direkt an einen Mitarbeiter.', yourName: 'Ihr Name', replyEmail: 'E-Mail-Adresse für unsere Antwort', howCanWeHelp: 'Wie können wir helfen?', website: 'Website', sending: 'Wird gesendet…', sendMessage: 'Nachricht senden',
     },

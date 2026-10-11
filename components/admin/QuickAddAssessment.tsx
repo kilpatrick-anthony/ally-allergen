@@ -38,7 +38,7 @@ export default function QuickAddAssessment({ warnings, tags, onWarnings, onTags 
     <fieldset>
       <legend className="mb-2 font-semibold">{text('dietaryTags')}</legend>
       <div className="flex flex-wrap gap-2">{dietaryTags.map(tag => <label key={tag} className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-gray-300 px-3 text-sm text-gray-900 dark:border-gray-500 dark:text-white">
-        <input type="checkbox" checked={tags.includes(tag)} onChange={event => onTags(event.target.checked ? [...tags, tag] : tags.filter(value => value !== tag))} />{tag}
+        <input type="checkbox" checked={tags.includes(tag)} onChange={event => onTags(event.target.checked ? [...tags, tag] : tags.filter(value => value !== tag))} />{text(`tag_${tag}`)}
       </label>)}</div>
     </fieldset>
     <div className="space-y-3">
@@ -48,9 +48,9 @@ export default function QuickAddAssessment({ warnings, tags, onWarnings, onTags 
         const group = allergen.id === 'cereals_gluten' ? GLUTEN_TYPES : allergen.id === 'nuts' ? TREE_NUT_TYPES : null
         const values = warnings[`${allergen.id}_levels`]
         return <div key={allergen.id}>
-          {levelSelect(allergen.name, typeof level === 'string' ? level : '', value => setAllergen(allergen.id, value))}
+          {levelSelect(t(`allergenNames.${allergen.id}`), typeof level === 'string' ? level : '', value => setAllergen(allergen.id, value))}
           {group && level && level !== 'none' && <div className="ml-3 mt-2 space-y-2 border-l pl-3">
-            {group.map(subtype => <div key={subtype.key}>{levelSelect(subtype.name, typeof values === 'object' ? values[subtype.key] || '' : '', value => setSubtype(allergen.id, subtype.key, value))}</div>)}
+            {group.map(subtype => <div key={subtype.key}>{levelSelect(t(`allergenSubtypes.${subtype.key}`), typeof values === 'object' ? values[subtype.key] || '' : '', value => setSubtype(allergen.id, subtype.key, value))}</div>)}
           </div>}
         </div>
       })}

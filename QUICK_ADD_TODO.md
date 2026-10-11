@@ -62,6 +62,10 @@ Deliverable: staff can capture a delivery item and a manager can complete its re
 - [x] Test required-field validation, duplicate taps, interrupted photo uploads and failed saves. Automated checks passed; real-device trial remains below.
 - [ ] Test on a real iPhone, an Android phone if available, and desktop.
 - [ ] Check labels, keyboard navigation, focus, touch targets and translations.
+  - [x] Fix and verify focus after save/Add another, associate name errors and supplier/photo instructions, and distinguish photo retry controls (11 October).
+  - [x] Translate the full Quick Add interface and verify the capture/review flow in all six languages at desktop and phone widths (11 October).
+  - [x] Review local button contrast, dashboard touch targets and keyboard focus; run light/dark dialog accessibility scans (11 October).
+  - [ ] Complete physical-device and assistive-technology checks, including manual review of content clipped during automated scans.
 - [x] Run relevant automated tests, TypeScript checks and the production build for Session 2; repeat for later implementation phases.
 - [ ] Trial several products from a delivery and record any awkward steps.
 - [ ] Adjust the flow based on that feedback.
@@ -267,3 +271,67 @@ rolled-back test transaction. Application deployment is in progress.
   Browser checks covered Quick Add opening, filtered navigation, counts and
   empty/error/retry states with fixture API responses; screenshots inspected.
   These changes are local and have not been pushed or deployed.
+
+### Keyboard and screen-reader improvements — 11 October 2026
+
+- Saving moves keyboard focus to the saved confirmation. Add another and View
+  draft move focus to the product-name field instead of leaving it on a removed
+  control. Whitespace-only names receive focus and an associated error message.
+- Supplier and photo instructions are associated with their inputs. Failed-photo
+  retry buttons include the photo number in their accessible names.
+- Extended the existing browser flow to verify forward/backward focus wrapping,
+  invalid-name focus/error association, saved confirmation focus and Add another
+  focus. Desktop (1280px) and touch-enabled phone-width (390px) runs passed,
+  including capture, failed-save/upload retries, submission and manager approval
+  using fixture data/storage and the PostgreSQL review function.
+- Production build/TypeScript and all 24 Quick Add API/photo tests passed.
+  React component review completed. This is a focused accessibility improvement,
+  not a completed accessibility audit or physical-device/screen-reader trial.
+  Full interface translations, remaining accessibility review, authenticated live
+  storage verification and real-phone delivery feedback remain open.
+- These changes are local and have not been pushed or deployed.
+
+### Quick Add interface translations — 11 October 2026
+
+- Added all 137 Quick Add messages and labels in English, Irish, Portuguese,
+  French, Spanish and German, including capture, photos, error/retry states,
+  review, approval, history and dietary tags. Locale catalogs are checked against
+  the English keys by TypeScript. Earlier translation-pending notes are historical.
+- The assessment editor now uses the shared translated allergen and subtype
+  names. Display translations do not change stored allergen levels, subtype keys
+  or dietary tag values.
+- Extended the existing browser script to accept `QUICK_ADD_LANGUAGES` and use
+  the real translation catalog for selectors. All six languages passed at 1280px
+  and 390px, covering name validation, focus, failed saves, photos and upload
+  retries, Add another, reopening, staff submission and manager ingredient
+  approval. Checks assert that translated selections store canonical values.
+- Production build/TypeScript passed. The browser runs reported no page errors
+  or horizontal overflow; Irish capture and German photo screenshots were
+  inspected. These checks use fixture data/storage and the PostgreSQL review
+  function, not authenticated production storage or physical phones.
+- Updated the design document with the multilingual verification command.
+  Changes remain local, unpushed and undeployed. Remaining work includes the
+  broader accessibility review, authenticated live-storage verification and
+  physical-phone delivery feedback.
+
+### Contrast, touch targets and keyboard continuation — 11 October 2026
+
+- Added higher-contrast teal button variants for Quick Add in both themes;
+  corrected the resulting-record link in dark mode and the shared ghost button’s
+  dark hover text. Existing primary/outline variants elsewhere remain unchanged.
+- Desktop Quick Add now identifies itself as a dialog opener and restores focus
+  on close. Saved drafts return focus to the opening card link; direct draft URLs
+  return focus to the page heading. Closing a draft preserves its status filter.
+- Submission/approval status changes focus the review heading. Photo retry/removal
+  returns focus to Choose photos when the original action control may disappear.
+- Enlarged the dashboard drafts link and retry control to at least 44 × 44px.
+- Production build/TypeScript passed. English and German capture-to-ingredient-
+  approval browser flows passed at 1280px and 390px, including the new focus checks,
+  direct-link Escape closing and retained filters. Fixture data/storage were used.
+- All 32 axe scans across capture, photos, review and approval in light/dark themes
+  completed with no detected violations. Some clipped offscreen text requires
+  manual contrast review; this is not a complete accessibility certification.
+  Inspected the updated phone-width capture screenshot. React component review
+  and `git diff --check` passed.
+- Changes remain local, unpushed and undeployed. Real-phone/assistive-technology
+  checks and authenticated live-storage delivery verification remain open.

@@ -2,9 +2,15 @@
 // Start the built app on port 3107. See QUICK_ADD_DESIGN.md for optional dependencies.
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const assert = require('node:assert/strict');
+const translations = require('../tests/helpers/translation-catalog.cjs');
 const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
+ for (const language of (process.env.QUICK_ADD_LANGUAGES || 'en').split(',')) {
+ const labels=translations[language];
+ assert.ok(labels, `Unsupported language: ${language}`);
+ const q=labels.quickAdd;
+ assert.deepEqual(Object.keys(q).sort(),Object.keys(translations.en.quickAdd).sort());
  for (const [device,width,height] of [['desktop',1280,900],['mobile',390,844]]) {
   const context=await browser.newContext({viewport:{width,height},hasTouch:device==='mobile'});
   const backend=setup();
@@ -32,17 +38,33 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
     } catch(error) {return {error:{message:error.message}}}
   };
   const failures=[];
-  await context.addInitScript(()=>{localStorage.setItem('jencoach_dismissed','true');localStorage.setItem('defaultLanguage','en')});
+  await context.addInitScript(language=>{localStorage.setItem('jencoach_dismissed','true');localStorage.setItem('defaultLanguage',language)},language);
   const page=await context.newPage();
   page.on('pageerror',e=>failures.push(e.message));
+  async function audit(stage) {
+    if (process.env.QUICK_ADD_A11Y !== '1') return;
+    if (!await page.evaluate(()=>!!window.axe)) await page.addScriptTag({path:process.env.AXE_SCRIPT || '/tmp/ally-quick-add-check/node_modules/axe-core/axe.min.js'});
+    for (const theme of ['light','dark']) {
+      await page.evaluate(theme=>document.documentElement.classList.toggle('dark',theme==='dark'),theme);
+      // Let finite CSS theme transitions finish before measuring contrast.
+      await page.evaluate(async()=>{
+        await new Promise(requestAnimationFrame);
+        await Promise.all(document.getAnimations().filter(animation=>animation.effect?.getTiming().iterations!==Infinity).map(animation=>animation.finished.catch(()=>{})));
+      });
+      const result=await page.evaluate(async()=>window.axe.run('[role=dialog]', {runOnly:{type:'tag',values:['wcag2a','wcag2aa','wcag21a','wcag21aa','wcag22aa']}}));
+      require('node:fs').writeFileSync(`/tmp/ally-a11y-${language}-${device}-${stage}-${theme}.json`,JSON.stringify(result,null,2));
+      assert.deepEqual(result.violations.map(v=>({id:v.id,nodes:v.nodes.map(n=>({target:n.target,summary:n.failureSummary}))})),[],`${stage} ${theme} accessibility`);
+    }
+    await page.evaluate(()=>document.documentElement.classList.remove('dark'));
+  }
   let failSave=false;
   await page.route('**/api/**',async route=>{
    const req=route.request(),url=new URL(req.url()),method=req.method();
    let response={status:200,body:{}};
    const body=()=>({json:async()=>req.postDataJSON()});
    if(url.pathname==='/api/auth/session') response.body={authenticated:true,user:{id:uuid(3),name:'Test staff',email:'test@example.invalid',role:currentRole,businessId:uuid(1)}};
-   else if(url.pathname.startsWith('/api/business/')) response.body={settings:{defaultLanguage:'en'}};
-   else if(url.pathname==='/api/sites') response.body={sites:[{id:uuid(5),name:'Delivery location'}]};
+   else if(url.pathname.startsWith('/api/business/')) response.body={settings:{defaultLanguage:language}};
+   else if(url.pathname==='/api/sites') response.body={sites:[{id:uuid(5),name:q.location}]};
    else if(url.pathname==='/api/suppliers') response.body={suppliers:[{id:uuid(6),name:'Existing supplier'}]};
    else if(url.pathname==='/api/quick-add-drafts') {
     if(failSave && method==='POST') {failSave=false; return route.fulfill({status:503,json:{error:'unavailable'}})}
@@ -68,9 +90,9 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
   });
   await page.route('**/*.supabase.co/**',route=>route.abort());
   await page.goto(`${process.env.BASE_URL || 'http://localhost:3107'}/admin/quick-add`);
-  await page.getByRole('heading',{name:'Saved drafts',exact:true}).waitFor();
-  await page.getByRole('button',{name:'Reject non-essential',exact:true}).click();
-  const floatingAdd=page.locator('button[aria-haspopup="dialog"]').filter({has:page.locator('svg')});
+  await page.getByRole('heading',{name:q.drafts,exact:true}).waitFor();
+  await page.getByRole('button',{name:labels.cookieConsent.rejectNonEssential,exact:true}).click();
+  const floatingAdd=page.locator('button[aria-haspopup="dialog"][title]');
   const logo=page.getByRole('img',{name:'AllyJen',exact:true});
   if(device==='mobile') {
     await logo.waitFor();
@@ -79,129 +101,159 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
     assert.ok(Math.abs(bounds.x+bounds.width/2-width/2)<1,'Mobile logo is centred');
     const addBounds=await floatingAdd.boundingBox();
     assert.ok(addBounds.width>=44 && addBounds.height>=44 && addBounds.x>width/2 && addBounds.x+addBounds.width<=width && addBounds.y+addBounds.height<=height,'Floating Add stays inside the lower-right viewport with a touch target');
-    assert.equal(await page.getByRole('button',{name:'Contact us',exact:true}).isVisible(),false);
+    assert.equal(await page.getByRole('button',{name:labels.liveDashboard.contactUs,exact:true}).isVisible(),false);
     await page.screenshot({path:'/tmp/ally-mobile-header.png'});
     await floatingAdd.tap();
   } else {
     assert.equal(await floatingAdd.isVisible(),false);
-    const contact=page.getByRole('button',{name:'Contact us',exact:true});
+    const contact=page.getByRole('button',{name:labels.liveDashboard.contactUs,exact:true});
     await contact.click();
-    await page.getByText('Contact the AllyJen team',{exact:true}).waitFor();
-    await page.getByRole('button',{name:/Close (Ally|Jen) message/}).first().click();
-    await page.getByRole('button',{name:'Quick Add',exact:true}).click();
+    await page.getByText(labels.liveDashboard.contactTeam,{exact:true}).waitFor();
+    await page.getByRole('button',{name:new RegExp(labels.liveDashboard.closeMessage.replace('{name}','(Ally|Jen)'))}).first().click();
+    await page.getByRole('button',{name:q.title,exact:true}).click();
   }
   const dialog=page.getByRole('dialog');
-  await dialog.getByLabel('Product name').fill('Delivery bread');
-  await dialog.getByText('Allergens and dietary tags (optional)',{exact:true}).click();
-  await dialog.getByLabel('Milk',{exact:true}).selectOption('contains');
-  await dialog.getByLabel('Vegetarian',{exact:true}).check();
-  await dialog.getByText('Allergens and dietary tags (optional)',{exact:true}).click();
+  await dialog.getByLabel(q.name).waitFor();
+  await dialog.getByRole('button',{name:q.close,exact:true}).focus();
+  await page.keyboard.press('Shift+Tab');
+  assert.equal(await dialog.getByRole('button',{name:q.cancel,exact:true}).evaluate(el=>el===document.activeElement),true,'Shift+Tab wraps inside the dialog');
+  await page.keyboard.press('Tab');
+  assert.equal(await dialog.getByRole('button',{name:q.close,exact:true}).evaluate(el=>el===document.activeElement),true,'Tab wraps inside the dialog');
+  await audit('capture');
+  await dialog.getByLabel(q.name).fill('   ');
+  await dialog.getByRole('button',{name:q.save,exact:true}).click();
+  assert.equal(await dialog.getByLabel(q.name).getAttribute('aria-invalid'),'true');
+  assert.equal(await dialog.getByLabel(q.name).evaluate(el=>el===document.activeElement && !!document.getElementById(el.getAttribute('aria-describedby'))),true,'Invalid name receives focus and an associated error');
+  await dialog.getByLabel(q.name).fill('Delivery bread');
+  await dialog.getByText(q.captureAssessment,{exact:true}).click();
+  await dialog.getByLabel(labels.allergenNames.milk,{exact:true}).selectOption('contains');
+  await dialog.getByLabel(labels.allergenNames.cereals_gluten,{exact:true}).selectOption('contains');
+  await dialog.getByLabel(labels.allergenSubtypes.wheat,{exact:true}).selectOption('contains');
+  await dialog.getByLabel(q.tag_Vegetarian,{exact:true}).check();
+  await dialog.getByText(q.captureAssessment,{exact:true}).click();
   await page.keyboard.press('Tab');
   assert.equal(await page.evaluate(()=>!!document.activeElement?.closest('[role=dialog]')),true);
-  await dialog.getByLabel('Delivery location').selectOption(uuid(5));
-  await dialog.getByLabel('Supplier',{exact:true}).selectOption('new');
-  await dialog.getByLabel('Supplier name',{exact:true}).fill('New supplier');
-  await dialog.getByLabel('Delivery notes').fill('Replacement product');
+  await dialog.getByLabel(q.location).selectOption(uuid(5));
+  await dialog.getByLabel(q.supplier,{exact:true}).selectOption('new');
+  await dialog.getByLabel(q.supplierName,{exact:true}).fill('New supplier');
+  await dialog.getByLabel(q.notes).fill('Replacement product');
   // Failed request retains all entered values.
   failSave=true;
-  await dialog.getByRole('button',{name:'Save draft',exact:true}).click();
+  await dialog.getByRole('button',{name:q.save,exact:true}).click();
   await dialog.getByRole('alert').waitFor();
-  assert.equal(await dialog.getByLabel('Product name').inputValue(),'Delivery bread');
-  await dialog.getByRole('button',{name:'Save draft',exact:true}).click();
-  await dialog.getByText('Draft saved — not published',{exact:true}).waitFor();
+  assert.equal(await dialog.getByLabel(q.name).inputValue(),'Delivery bread');
+  await dialog.getByRole('button',{name:q.save,exact:true}).click();
+  await dialog.getByText(q.saved,{exact:true}).waitFor();
+  assert.equal(await dialog.getByText(q.saved,{exact:true}).evaluate(el=>el===document.activeElement),true,'Saving moves focus to the confirmation');
   assert.equal(backend.rows.length,1);
+  assert.equal(backend.rows[0].allergen_warnings.milk,'contains','Translated selection keeps the canonical allergen level');
+  assert.deepEqual(Array.from(backend.rows[0].dietary_tags),['Vegetarian'],'Translated tag keeps its canonical stored value');
   const bytes=await require('sharp')({create:{width:160,height:80,channels:3,background:'#ddeeff'}}).png().toBuffer();
-  await dialog.getByLabel('Choose photos',{exact:true}).waitFor();
-  await dialog.getByLabel('Choose photos',{exact:true}).setInputFiles([{name:'label.png',mimeType:'image/png',buffer:bytes},{name:'ingredients.png',mimeType:'image/png',buffer:bytes}]);
-  await page.waitForFunction(()=>document.querySelectorAll('img[alt^="Label photo"]').length===2);
-  await dialog.getByText('Photo saved',{exact:true}).nth(1).waitFor();
+  await dialog.getByLabel(q.choosePhotos,{exact:true}).waitFor();
+  await dialog.getByLabel(q.choosePhotos,{exact:true}).setInputFiles([{name:'label.png',mimeType:'image/png',buffer:bytes},{name:'ingredients.png',mimeType:'image/png',buffer:bytes}]);
+  await dialog.getByRole('img',{name:`${q.labelPhoto} 2`,exact:true}).waitFor();
+  await dialog.getByText(q.photoSaved,{exact:true}).nth(1).waitFor();
   assert.equal(backend.photos.filter(p=>p.state==='ready').length,2);
-  await dialog.getByRole('button',{name:'Remove photo 2',exact:true}).click();
-  await page.waitForFunction(()=>document.querySelectorAll('img[alt^="Label photo"]').length===1);
+  await dialog.getByRole('button',{name:`${q.removePhoto} 2`,exact:true}).click();
+  await dialog.getByRole('img',{name:`${q.labelPhoto} 2`,exact:true}).waitFor({state:'hidden'});
+  await page.waitForFunction(label=>document.activeElement?.getAttribute('aria-label')===label,q.choosePhotos);
   backend.failures.upload=true;
-  await dialog.getByLabel('Choose photos',{exact:true}).setInputFiles({name:'retry.png',mimeType:'image/png',buffer:bytes});
-  await dialog.getByText('Photo changes could not be completed.',{exact:false}).waitFor();
+  await dialog.getByLabel(q.choosePhotos,{exact:true}).setInputFiles({name:'retry.png',mimeType:'image/png',buffer:bytes});
+  await dialog.getByText(q.photoFailed,{exact:false}).waitFor();
   assert.equal(backend.rows.length,1);
   page.once('dialog',prompt=>prompt.dismiss());
-  await dialog.getByRole('button',{name:'Add another',exact:true}).click();
-  assert.equal(await dialog.getByText('Draft saved — not published',{exact:true}).isVisible(),true);
+  await dialog.getByRole('button',{name:q.another,exact:true}).click();
+  assert.equal(await dialog.getByText(q.saved,{exact:true}).isVisible(),true);
   backend.failures.upload=false;
-  await dialog.getByRole('button',{name:'Try again',exact:true}).click();
-  await dialog.getByText('Photo saved',{exact:true}).nth(1).waitFor();
+  await dialog.getByRole('button',{name:`${q.retry}: ${q.labelPhoto} 2`,exact:true}).click();
+  await dialog.getByText(q.photoSaved,{exact:true}).nth(1).waitFor();
   assert.equal(backend.photos.filter(p=>p.state==='ready').length,2);
-  await page.screenshot({path:`/tmp/ally-quick-add-${device}-photos.png`});
-  await page.screenshot({path:`/tmp/ally-quick-add-${device}-saved.png`});
-  await dialog.getByRole('button',{name:'Add another',exact:true}).click();
-  assert.equal(await dialog.getByLabel('Product name').inputValue(),'');
+  await audit('photos');
+  await page.screenshot({path:`/tmp/ally-quick-add-${language}-${device}-photos.png`});
+  await page.screenshot({path:`/tmp/ally-quick-add-${language}-${device}-saved.png`});
+  await dialog.getByRole('button',{name:q.another,exact:true}).click();
+  assert.equal(await dialog.getByLabel(q.name).evaluate(el=>el===document.activeElement),true,'Add another focuses the new product name');
+  assert.equal(await dialog.getByLabel(q.name).inputValue(),'');
   assert.equal(await dialog.getByRole('img').count(),0);
-  assert.equal(await dialog.getByLabel('Supplier name',{exact:true}).inputValue(),'New supplier');
-  assert.equal(await dialog.getByLabel('Delivery notes').inputValue(),'');
-  assert.equal(await dialog.getByLabel('Milk',{exact:true}).inputValue(),'');
-  assert.equal(await dialog.getByLabel('Vegetarian',{exact:true}).isChecked(),false);
-  assert.equal(await dialog.getByLabel('Delivery location').inputValue(),uuid(5));
-  await dialog.getByLabel('Product name').fill('Second product');
+  assert.equal(await dialog.getByLabel(q.supplierName,{exact:true}).inputValue(),'New supplier');
+  assert.equal(await dialog.getByLabel(q.notes).inputValue(),'');
+  assert.equal(await dialog.getByLabel(labels.allergenNames.milk,{exact:true}).inputValue(),'');
+  assert.equal(await dialog.getByLabel(q.tag_Vegetarian,{exact:true}).isChecked(),false);
+  assert.equal(await dialog.getByLabel(q.location).inputValue(),uuid(5));
+  await dialog.getByLabel(q.name).fill('Second product');
   page.once('dialog',prompt=>prompt.dismiss());
-  await dialog.getByRole('button',{name:'Cancel',exact:true}).click();
+  await dialog.getByRole('button',{name:q.cancel,exact:true}).click();
   assert.equal(await dialog.isVisible(),true);
   page.once('dialog',prompt=>prompt.accept());
-  await dialog.getByRole('button',{name:'Cancel',exact:true}).click();
+  await dialog.getByRole('button',{name:q.cancel,exact:true}).click();
   await dialog.waitFor({state:'hidden'});
-  if(device==='mobile') await page.waitForFunction(()=>document.activeElement?.matches('button[aria-haspopup="dialog"]'));
+  await page.waitForFunction(()=>document.activeElement?.matches('button[aria-haspopup="dialog"]'));
   for(const theme of ['light','dark']) {
     await page.evaluate(theme=>document.documentElement.classList.toggle('dark',theme==='dark'),theme);
-    await page.screenshot({path:`/tmp/ally-quick-add-${device}-cards-${theme}.png`});
+    await page.screenshot({path:`/tmp/ally-quick-add-${language}-${device}-cards-${theme}.png`});
   }
   await page.evaluate(()=>document.documentElement.classList.remove('dark'));
-  await page.getByRole('link',{name:/open draft.*delivery bread/i}).click();
-  await dialog.getByLabel('Product name').waitFor();
-  assert.equal(await dialog.getByLabel('Product name').inputValue(),'Delivery bread');
-  await dialog.getByText('Photo saved',{exact:true}).nth(1).waitFor();
+  await page.getByRole('link').filter({hasText:q.details}).filter({hasText:'Delivery bread'}).click();
+  await dialog.getByLabel(q.name).waitFor();
+  assert.equal(await dialog.getByLabel(q.name).inputValue(),'Delivery bread');
+  await dialog.getByText(q.photoSaved,{exact:true}).nth(1).waitFor();
   assert.equal(await dialog.getByRole('img').count(),2);
-  await dialog.getByLabel('Delivery notes').fill('Checked on desktop or phone');
-  await page.screenshot({path:`/tmp/ally-quick-add-${device}-form.png`});
+  await dialog.getByLabel(q.notes).fill('Checked on desktop or phone');
+  await page.screenshot({path:`/tmp/ally-quick-add-${language}-${device}-form.png`});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false);
-  const saveBounds=await dialog.getByRole('button',{name:'Save draft',exact:true}).boundingBox();
+  const saveBounds=await dialog.getByRole('button',{name:q.save,exact:true}).boundingBox();
   assert.ok(saveBounds.y>=0 && saveBounds.y+saveBounds.height<=height, 'Save remains visible without scrolling');
-  await dialog.getByRole('button',{name:'Save draft',exact:true}).click();
-  await dialog.getByText('Draft saved — not published',{exact:true}).waitFor();
+  await dialog.getByRole('button',{name:q.save,exact:true}).click();
+  await dialog.getByText(q.saved,{exact:true}).waitFor();
   assert.equal(backend.rows[0].version,2);
   assert.equal(backend.rows[0].notes,'Checked on desktop or phone');
-  await dialog.getByRole('button',{name:'Send for review',exact:true}).click();
-  await dialog.getByRole('button',{name:'Withdraw to draft',exact:true}).waitFor();
+  await dialog.getByRole('button',{name:q.submit,exact:true}).click();
+  await dialog.getByRole('button',{name:q.withdraw,exact:true}).waitFor();
   assert.equal(backend.rows[0].status,'ready_for_review');
-  assert.equal(await dialog.getByLabel('Product name').isDisabled(),true);
-  assert.equal(await dialog.getByRole('button',{name:'Approve for use',exact:true}).count(),0);
-  await dialog.getByRole('button',{name:'Close',exact:true}).click();
+  assert.equal(await dialog.getByRole('heading',{name:`${q.reviewTitle} · ${q.ready_for_review}`,exact:true}).evaluate(el=>el===document.activeElement),true,'Submission moves focus to the new review status');
+  assert.equal(await dialog.getByLabel(q.name).isDisabled(),true);
+  assert.equal(await dialog.getByRole('button',{name:q.approve,exact:true}).count(),0);
+  await dialog.getByRole('button',{name:q.close,exact:true}).click();
   await page.waitForURL(url=>!url.searchParams.has('draft'));
+  await page.waitForFunction(()=>document.activeElement?.matches('a[href*="draft="]'));
   currentRole='manager';backend.setRole('manager');
   await page.reload();
-  await page.getByRole('link',{name:/open draft.*delivery bread/i}).click();
-  await dialog.getByLabel('Confirmed supplier',{exact:true}).selectOption(uuid(6)).catch(async error=>{
+  await page.getByRole('link').filter({hasText:q.details}).filter({hasText:'Delivery bread'}).click();
+  await dialog.getByLabel(q.reviewSupplier,{exact:true}).selectOption(uuid(6)).catch(async error=>{
     await page.screenshot({path:'/tmp/ally-review-failure.png'});
     console.log('Review failure URL:',page.url(),'Backend:',backend.rows.map(r=>({id:r.id,status:r.status})), 'Errors:',failures);
     console.log((await page.locator('body').innerText()).slice(-5000));throw error;
   });
-  assert.equal(await dialog.getByLabel('Milk',{exact:true}).inputValue(),'contains');
-  assert.equal(await dialog.getByLabel('Vegetarian',{exact:true}).isChecked(),true);
-  for(const label of ['Gluten','Crustaceans','Eggs','Fish','Peanuts','Soybeans','Milk','Tree Nuts','Celery','Mustard','Sesame seeds','Sulphur dioxide and sulphites','Lupin','Molluscs']) {
+  await audit('review');
+  assert.equal(await dialog.getByLabel(labels.allergenNames.milk,{exact:true}).inputValue(),'contains');
+  assert.equal(await dialog.getByLabel(q.tag_Vegetarian,{exact:true}).isChecked(),true);
+  for(const label of Object.values(labels.allergenNames)) {
     await dialog.getByLabel(label,{exact:true}).selectOption('none');
   }
-  await dialog.getByLabel('I verified every selected dietary tag against the current label or supporting evidence.',{exact:true}).check();
-  await dialog.getByLabel('I opened the photos, checked that the labels are readable, and verified this assessment against them.',{exact:true}).check();
-  assert.equal(await dialog.getByRole('button',{name:'Approve for use',exact:true}).isDisabled(),true);
-  await dialog.getByRole('button',{name:'Save review details',exact:true}).click();
-  await page.waitForFunction(()=>Array.from(document.querySelectorAll('button')).some(button=>button.textContent==='Approve for use'&&!button.disabled));
-  await dialog.getByRole('button',{name:'Approve for use',exact:true}).click();
-  await dialog.getByRole('link',{name:'Open resulting record',exact:true}).waitFor();
+  await dialog.getByLabel(q.dietaryChecked,{exact:true}).check();
+  await dialog.getByLabel(q.evidenceChecked,{exact:true}).check();
+  assert.equal(await dialog.getByRole('button',{name:q.approve,exact:true}).isDisabled(),true);
+  await dialog.getByRole('button',{name:q.saveReview,exact:true}).click();
+  await page.waitForFunction(label=>Array.from(document.querySelectorAll('button')).some(button=>button.textContent===label&&!button.disabled),q.approve);
+  await dialog.getByRole('button',{name:q.approve,exact:true}).click();
+  await dialog.getByRole('link',{name:q.openApproved,exact:true}).waitFor();
   assert.equal(backend.rows[0].status,'approved');
+  await audit('approved');
   assert.equal((await db.query('select count(*)::int as n from ingredients')).rows[0].n,1);
   assert.equal((await db.query('select count(*)::int as n from datasheets')).rows[0].n,2);
-  await page.screenshot({path:`/tmp/ally-quick-add-${device}-approved.png`});
+  await page.screenshot({path:`/tmp/ally-quick-add-${language}-${device}-approved.png`});
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>window.innerWidth),false);
+  // Direct links have no opener; closing returns to the page heading and keeps the filter.
+  await page.goto(`${process.env.BASE_URL || 'http://localhost:3107'}/admin/quick-add?status=approved&draft=${backend.rows[0].id}`);
+  await dialog.getByRole('link',{name:q.openApproved,exact:true}).waitFor();
+  await page.keyboard.press('Escape');
+  await page.waitForURL(url=>!url.searchParams.has('draft') && url.searchParams.get('status')==='approved');
+  await page.waitForFunction(()=>document.activeElement?.tagName==='H1');
   assert.deepEqual(failures,[]);
   await db.close();
-  console.log(`PASS ${device}: create, failed-save retry, multi-photo upload, failed-upload retry, removal, Add another, discard confirmation, list, reopen photos, edit, staff submission, manager review and approval; no page errors or horizontal overflow. Actual route handlers with fixture storage and PostgreSQL review/approval transaction.`);
+  console.log(`PASS ${language}-${device}: create, failed-save retry, multi-photo upload, failed-upload retry, removal, Add another, discard confirmation, list, reopen photos, edit, staff submission, manager review and approval; no page errors or horizontal overflow${process.env.QUICK_ADD_A11Y === '1' ? '; light/dark axe checks passed' : ''}. Actual route handlers with fixture storage and PostgreSQL review/approval transaction.`);
   await context.close();
+ }
  }
  await browser.close();
 })().catch(e=>{console.error(e);process.exit(1)});

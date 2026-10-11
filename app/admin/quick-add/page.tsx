@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Container } from '@/components/layout/Container'
@@ -18,6 +18,8 @@ function Drafts() {
   const router = useRouter()
   const params = useSearchParams()
   const draftId = params.get('draft') || undefined
+  const heading = useRef<HTMLHeadingElement>(null)
+  const draftTrigger = useRef<HTMLElement | null>(null)
   const [drafts, setDrafts] = useState<QuickAddDraft[]>([])
   const [status, setStatus] = useState(() => ['draft', 'ready_for_review', 'approved'].includes(params.get('status') || '') ? params.get('status')! : '')
   const [offset, setOffset] = useState(0)
@@ -25,6 +27,16 @@ function Drafts() {
   const [revision, setRevision] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!draftTrigger.current?.isConnected) draftTrigger.current = heading.current
+  }, [draftId])
+
+  function closeDraft() {
+    const query = new URLSearchParams(params.toString())
+    query.delete('draft')
+    router.replace(`/admin/quick-add${query.size ? `?${query}` : ''}`, { scroll: false })
+  }
 
   useEffect(() => {
     const refresh = () => { setOffset(0); setRevision(value => value + 1) }
@@ -50,14 +62,14 @@ function Drafts() {
 
   return <Container>
     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-      <div><h1 className="text-3xl font-bold text-gray-900 dark:text-white">{text('drafts')}</h1><p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{text('listNote')}</p></div>
+      <div><h1 ref={heading} tabIndex={-1} className="text-3xl font-bold text-gray-900 dark:text-white">{text('drafts')}</h1><p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{text('listNote')}</p></div>
       <QuickAddEntry onSaved={() => { setOffset(0); setRevision(value => value + 1) }} />
     </div>
     <label className="mb-5 block text-sm font-medium">{text('filterStatus')}
       <select value={status} onChange={event => { setStatus(event.target.value); setOffset(0) }} className="ml-3 rounded-lg border bg-white p-3 text-gray-900 dark:bg-gray-800 dark:text-white">
         <option value="">{text('allCaptures')}</option><option value="draft">{text('draft')}</option><option value="ready_for_review">{text('ready_for_review')}</option><option value="approved">{text('approved')}</option>
       </select></label>
-    {error && <div role="alert" className="mb-5"><p>{text(error)}</p><Button className="mt-2" onClick={() => setRevision(value => value + 1)}>{text('retry')}</Button></div>}
+    {error && <div role="alert" className="mb-5"><p>{text(error)}</p><Button variant="teal" className="mt-2" onClick={() => setRevision(value => value + 1)}>{text('retry')}</Button></div>}
     {!loading && !error && !drafts.length && <Card>{text('empty')}</Card>}
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {drafts.map(draft => <Card key={draft.id} className="text-gray-900 dark:text-gray-100">
@@ -67,12 +79,12 @@ function Drafts() {
         {draft.status !== 'approved' && <p className="mt-2 text-sm text-amber-800 dark:text-amber-200">{missingReviewDetails(draft.review || {}, draft.kind).map(key => text(key)).join(' · ')}</p>}
         {draft.supplier_name && <p className="mt-1 break-words text-sm text-gray-700 dark:text-gray-200">{draft.supplier_name}</p>}
         <p className="mt-2 text-xs text-gray-500 dark:text-gray-300">{text('updated')}: {new Date(draft.updated_at).toLocaleDateString(language)}</p>
-        <Link href={`/admin/quick-add?draft=${draft.id}`} className="mt-3 inline-flex min-h-11 items-center font-medium text-teal-700 underline dark:text-teal-300">{text('details')}<span className="sr-only">: {draft.name}</span></Link>
+        <Link href={`/admin/quick-add?${new URLSearchParams({ ...(status ? { status } : {}), draft: draft.id })}`} onClick={event => { draftTrigger.current = event.currentTarget }} className="mt-3 inline-flex min-h-11 items-center font-medium text-teal-700 underline dark:text-teal-300">{text('details')}<span className="sr-only">: {draft.name}</span></Link>
       </Card>)}
     </div>
     {loading && <p role="status" className="my-5">{text('loading')}</p>}
-    {!loading && !error && nextOffset !== null && <Button className="my-5" onClick={() => setOffset(nextOffset)}>{text('more')}</Button>}
-    {draftId && <QuickAddDialog key={draftId} draftId={draftId} onClose={() => router.replace('/admin/quick-add')} onSaved={() => { setOffset(0); setRevision(value => value + 1) }} />}
+    {!loading && !error && nextOffset !== null && <Button variant="teal" className="my-5" onClick={() => setOffset(nextOffset)}>{text('more')}</Button>}
+    {draftId && <QuickAddDialog key={draftId} draftId={draftId} returnFocusRef={draftTrigger} onClose={closeDraft} onSaved={() => { setOffset(0); setRevision(value => value + 1) }} />}
   </Container>
 }
 

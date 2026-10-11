@@ -34,9 +34,9 @@ export default function DashboardDraftSummary() {
   return <section aria-label={t('liveDashboard.draftsReviews')} className={`${empty && !failed ? 'hidden lg:block ' : ''}rounded-xl border border-teal-200 bg-white p-4 dark:border-teal-900 dark:bg-gray-900`}>
     <div className="flex flex-wrap items-center justify-between gap-2">
       <h2 className="flex items-center gap-2 font-semibold text-[#003842] dark:text-teal-200"><ClipboardList className="h-5 w-5" aria-hidden="true" />{t('liveDashboard.draftsReviews')}</h2>
-      <Link href="/admin/quick-add" className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-teal-700 dark:text-teal-300"><span className="sr-only lg:not-sr-only">{t('liveDashboard.savedDrafts')}</span><ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+      <Link href="/admin/quick-add" className="inline-flex min-h-11 min-w-11 items-center justify-center gap-2 text-sm font-medium text-teal-700 dark:text-teal-300"><span className="sr-only lg:not-sr-only">{t('liveDashboard.savedDrafts')}</span><ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
     </div>
-    {failed ? <p role="status" className="text-sm text-gray-600 dark:text-gray-300">{t('liveDashboard.draftsUnavailable')} <button type="button" onClick={() => setRevision(value => value + 1)} className="px-2 underline">{t('quickAdd.retry')}</button></p>
+    {failed ? <p role="status" className="text-sm text-gray-600 dark:text-gray-300">{t('liveDashboard.draftsUnavailable')} <button type="button" onClick={() => setRevision(value => value + 1)} className="inline-flex min-h-11 min-w-11 items-center justify-center px-2 underline">{t('quickAdd.retry')}</button></p>
       : !counts ? <p role="status" className="text-sm text-gray-500">{t('admin.loadingDashboard')}</p>
       : empty ? <p className="text-sm text-gray-600 dark:text-gray-300">{t('liveDashboard.noPendingDrafts')}</p>
       : <div className="mt-1 grid grid-cols-2 gap-3">
