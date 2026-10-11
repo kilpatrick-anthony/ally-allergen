@@ -350,6 +350,10 @@ rolled-back test transaction. Application deployment is in progress.
   approval checks, production build/TypeScript, and complete desktop/phone-width
   browser capture-to-approval flows using the real route handlers and PostgreSQL
   transition function.
-- Changes remain local, unpushed and undeployed. The migration must be applied
-  before deploying this application version. The authenticated live-storage and
-  physical-phone delivery trials remain open.
+- Applied migration `20261011195851_add_quick_add_category.sql` to the connected
+  Ally project and verified the column, trigger, restricted function grants and
+  post-migration advisors. Deployed commit `0877021b7c6fdd78b6346c67b02aff319078d34c`
+  to production as Vercel deployment `dpl_6ToKPDBuYLnYWct15sMGk82n3xJ1`.
+  The live version endpoint matched, unauthenticated Quick Add/category requests
+  returned 401 and the initial production error-log scan was clean.
+- Authenticated live-storage and physical-phone delivery trials remain open.
