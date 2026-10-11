@@ -1,9 +1,10 @@
-export type QuickAddKind = 'ingredient' | 'packaged_product'
+export type QuickAddKind = 'ingredient' | 'packaged_product' | 'prepared_item'
 
 export type QuickAddFields = {
   kind: QuickAddKind
   name: string
   category: string
+  ingredient_ids: string[]
   site_id: string | null
   supplier_id: string | null
   supplier_name: string

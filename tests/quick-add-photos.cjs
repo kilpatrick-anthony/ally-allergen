@@ -124,3 +124,20 @@ test('approved evidence is business-accessible while unapproved and cross-busine
   s.photos[0].business_id=otherBusiness
   assert.equal((await s.evidence.GET({},evidenceRoute)).status,404)
 })
+
+test('photo extraction requires draft access and returns review-only sanitised suggestions', async () => {
+  const s = setup(); s.seed(uuid(10))
+  await s.photoItem.PUT(upload(await fixture()), route())
+  const result = await s.photoExtract.POST({}, route())
+  assert.equal(result.status, 200)
+  assert.equal(result.body.suggestions.name, 'AI Bread')
+  assert.equal(JSON.stringify(result.body.suggestions.allergen_warnings), JSON.stringify({ cereals_gluten: 'contains' }))
+  assert.equal(JSON.stringify(result.body.suggestions.dietary_tags), JSON.stringify(['Vegan']))
+  assert.equal(s.rows[0].name, 'Bread')
+  assert.equal(result.headers['Cache-Control'], 'private, no-store')
+
+  const foreign = setup(); foreign.seed(uuid(10), { business_id: otherBusiness })
+  assert.equal((await foreign.photoExtract.POST({}, route())).status, 404)
+  s.rows[0].status = 'ready_for_review'
+  assert.equal((await s.photoExtract.POST({}, route())).status, 409)
+})

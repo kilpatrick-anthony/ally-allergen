@@ -3,9 +3,11 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { useTranslation } from '@/lib/hooks/useTranslation'
+import type { QuickAddFields } from '@/lib/quick-add'
 
 type Photo = { id: string; state: 'pending' | 'ready'; file?: Blob; preview?: string; error?: string }
-type Props = { draftId: string; disabled?: boolean; onActivity: (busy: boolean, unsaved: boolean) => void }
+export type LabelSuggestions = { name: string; supplier_name: string; description: string; allergen_warnings: QuickAddFields['allergen_warnings']; dietary_tags: string[]; notes: string[] }
+type Props = { draftId: string; disabled?: boolean; onActivity: (busy: boolean, unsaved: boolean) => void; onApplySuggestions: (suggestions: LabelSuggestions) => void }
 
 async function prepare(file: File): Promise<Blob> {
   if (file.size > 30 * 1024 * 1024) throw new Error('photoSourceTooLarge')
@@ -30,10 +32,10 @@ async function prepare(file: File): Promise<Blob> {
   } finally { URL.revokeObjectURL(url) }
 }
 
-const knownErrors = ['photoFormat', 'photoInvalid', 'photoTooLarge', 'photoSourceTooLarge', 'photoLimit', 'photoConflict', 'unauthorized', 'forbidden', 'notFound', 'editConflict']
+const knownErrors = ['photoFormat', 'photoInvalid', 'photoTooLarge', 'photoSourceTooLarge', 'photoLimit', 'photoConflict', 'extractionUnavailable', 'extractionFailed', 'unauthorized', 'forbidden', 'notFound', 'editConflict']
 const errorCode = (reason: unknown) => reason instanceof Error && knownErrors.includes(reason.message) ? reason.message : 'photoFailed'
 
-export default function QuickAddPhotos({ draftId, disabled, onActivity }: Props) {
+export default function QuickAddPhotos({ draftId, disabled, onActivity, onApplySuggestions }: Props) {
   const { t } = useTranslation()
   const text = (key: string) => t(`quickAdd.${key}`)
   const helpId = useId()
@@ -43,6 +45,8 @@ export default function QuickAddPhotos({ draftId, disabled, onActivity }: Props)
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [working, setWorking] = useState(false)
+  const [extracting, setExtracting] = useState<string | null>(null)
+  const [suggestions, setSuggestions] = useState<{ photoId: string; values: LabelSuggestions } | null>(null)
   const lock = useRef(false)
   const chooser = useRef<HTMLInputElement>(null)
   const restoreChooserFocus = useRef(false)
@@ -53,7 +57,7 @@ export default function QuickAddPhotos({ draftId, disabled, onActivity }: Props)
     const urls = previews.current
     return () => { urls.forEach(url => URL.revokeObjectURL(url)); urls.clear() }
   }, [])
-  useEffect(() => { onActivity(working, photos.some(photo => !!photo.file && photo.state !== 'ready')) }, [working, photos, onActivity])
+  useEffect(() => { onActivity(working || !!extracting, photos.some(photo => !!photo.file && photo.state !== 'ready')) }, [working, extracting, photos, onActivity])
   useEffect(() => {
     if (restoreChooserFocus.current && !working && !disabled) {
       chooser.current?.focus()
@@ -118,6 +122,18 @@ export default function QuickAddPhotos({ draftId, disabled, onActivity }: Props)
     } finally { lock.current = false; setWorking(false) }
   }
 
+  async function extract(photo: Photo) {
+    if (blocked || extracting) return
+    setExtracting(photo.id); setError(''); setSuggestions(null)
+    try {
+      const response = await fetch(`${base}/${photo.id}/extract`, { method: 'POST', signal: AbortSignal.timeout(35000) })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error)
+      setSuggestions({ photoId: photo.id, values: data.suggestions })
+    } catch (reason) { setError(errorCode(reason)) }
+    finally { setExtracting(null) }
+  }
+
   const blocked = disabled || working || loading || loadFailed
   return <section aria-label={text('photos')} className="mt-5 space-y-3 border-t pt-4 dark:border-gray-700">
     <h3 className="font-semibold">{text('photos')}</h3>
@@ -150,8 +166,18 @@ export default function QuickAddPhotos({ draftId, disabled, onActivity }: Props)
           {photo.error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{text(photo.error)}</p>}
           <div className="mt-2 flex flex-wrap gap-2">
             {photo.file && photo.state !== 'ready' && <Button type="button" variant="tealOutline" disabled={blocked} aria-label={`${text('retry')}: ${text('labelPhoto')} ${index + 1}`} onClick={() => void act(photo, false)}>{text('retry')}</Button>}
-            <Button type="button" variant="ghost" disabled={blocked} aria-label={`${text('removePhoto')} ${index + 1}`} onClick={() => void act(photo, true)}>{text('removePhoto')}</Button>
+            {photo.state === 'ready' && <Button type="button" variant="tealOutline" disabled={blocked || !!extracting} aria-label={`${text('analysePhoto')} ${index + 1}`} onClick={() => void extract(photo)}>{extracting === photo.id ? text('analysingPhoto') : text('analysePhoto')}</Button>}
+            <Button type="button" variant="ghost" disabled={blocked || !!extracting} aria-label={`${text('removePhoto')} ${index + 1}`} onClick={() => void act(photo, true)}>{text('removePhoto')}</Button>
           </div>
+          {suggestions?.photoId === photo.id && <div className="mt-3 rounded-lg bg-teal-50 p-3 text-sm text-teal-950 dark:bg-teal-950 dark:text-teal-50">
+            <p role="status" className="font-semibold">{text('suggestionsReady')}</p>
+            <p className="mt-1">{text('suggestionsReview')}</p>
+            {suggestions.values.name && <p className="mt-2 break-words"><span className="font-medium">{text('suggestedName')}:</span> {suggestions.values.name}</p>}
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button type="button" variant="teal" onClick={() => { onApplySuggestions(suggestions.values); setSuggestions(null) }}>{text('applySuggestions')}</Button>
+              <Button type="button" variant="ghost" onClick={() => setSuggestions(null)}>{text('dismissSuggestions')}</Button>
+            </div>
+          </div>}
         </li>)}
       </ul>
     </>}

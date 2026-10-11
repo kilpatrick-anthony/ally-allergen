@@ -5,18 +5,19 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import QuickAddAssessment from '@/components/admin/QuickAddAssessment'
+import QuickAddIngredients, { type QuickAddIngredientOption } from '@/components/admin/QuickAddIngredients'
 import { blankReview, missingReviewDetails, type QuickAddReview as Review } from '@/lib/quick-add-review'
 import type { QuickAddDraft } from '@/lib/quick-add'
 
 type Option = { id: string; name: string }
 type History = { id: string; action: string; actor_name: string; note: string; created_at: string }
-type Props = { draft: QuickAddDraft; suppliers: Option[]; sites: Option[]; categories: string[]; disabled: boolean;
+type Props = { draft: QuickAddDraft; suppliers: Option[]; sites: Option[]; ingredients: QuickAddIngredientOption[]; categories: string[]; disabled: boolean;
   onChanged: (draft: QuickAddDraft) => void; onActivity: (busy: boolean, dirty: boolean) => void }
 
-export default function QuickAddReview({ draft, suppliers, sites, categories, disabled, onChanged, onActivity }: Props) {
+export default function QuickAddReview({ draft, suppliers, sites, ingredients, categories, disabled, onChanged, onActivity }: Props) {
   const { t, language } = useTranslation()
   const text = (key: string) => t(`quickAdd.${key}`)
-  const initialReview = () => ({ ...blankReview(draft.supplier_id, draft.site_id), category: draft.category || '', ...draft.review })
+  const initialReview = () => ({ ...blankReview(draft.supplier_id, draft.site_id), category: draft.category || '', ingredient_ids: draft.ingredient_ids || [], ...draft.review })
   const [review, setReview] = useState<Review>(initialReview)
   const [baseline, setBaseline] = useState(JSON.stringify(review))
   const [permissions, setPermissions] = useState({ canReview: false, isCreator: false })
@@ -48,7 +49,7 @@ export default function QuickAddReview({ draft, suppliers, sites, categories, di
       if (!response.ok) throw new Error(data.error)
       if (controller.signal.aborted) return
       setPermissions(data.permissions); setHistory(data.history)
-      const values = { ...blankReview(data.draft.supplier_id, data.draft.site_id), category: data.draft.category || '', ...data.draft.review }
+      const values = { ...blankReview(data.draft.supplier_id, data.draft.site_id), category: data.draft.category || '', ingredient_ids: data.draft.ingredient_ids || [], ...data.draft.review }
       setReview(values); setBaseline(JSON.stringify(values)); setError('')
     }).catch(() => { if (!controller.signal.aborted) { setError('reviewUnavailable'); setLoadFailed(true) } })
       .finally(() => { if (!controller.signal.aborted) setLoading(false) })
@@ -68,7 +69,7 @@ export default function QuickAddReview({ draft, suppliers, sites, categories, di
       if (!response.ok) throw new Error(data.error)
       request.current = null; setNote(''); onChanged(data.draft)
     } catch (reason) {
-      const known = ['forbidden', 'notFound', 'unauthorized', 'invalid', 'editConflict', 'pendingPhotos', 'returnNoteRequired', 'missingSupplier', 'missingEvidence', 'missingAllergens', 'missingLabel', 'missingDietaryCheck', 'missingScope', 'locationUnavailable']
+      const known = ['forbidden', 'notFound', 'unauthorized', 'invalid', 'editConflict', 'pendingPhotos', 'returnNoteRequired', 'missingSupplier', 'missingEvidence', 'missingAllergens', 'missingLabel', 'missingDietaryCheck', 'missingIngredients', 'missingDescription', 'missingScope', 'locationUnavailable']
       setError(reason instanceof Error && known.includes(reason.message) ? reason.message : 'reviewUnavailable')
     } finally { lock.current = false; setWorking(false) }
   }
@@ -85,34 +86,37 @@ export default function QuickAddReview({ draft, suppliers, sites, categories, di
       <Button variant="teal" type="button" disabled={blocked} onClick={() => void transition('submit')}>{text('submit')}</Button></>}
     {draft.status === 'ready_for_review' && permissions.isCreator && <Button type="button" variant="tealOutline" disabled={blocked || dirty} onClick={() => void transition('withdraw')}>{text('withdraw')}</Button>}
     {draft.status === 'ready_for_review' && permissions.canReview && <>
-      <p className="text-sm">{text('reviewHelp')}</p>
+      <p className="text-sm">{text(draft.kind === 'prepared_item' ? 'preparedReviewHelp' : 'reviewHelp')}</p>
       <fieldset disabled={blocked} className="space-y-4">
         <legend className="sr-only">{text('reviewTitle')}</legend>
-        <label className="block text-sm font-medium">{text('reviewSupplier')}
+        {draft.kind !== 'prepared_item' && <label className="block text-sm font-medium">{text('reviewSupplier')}
           <select aria-label={text('reviewSupplier')} className={control} value={review.supplier_id || ''} onChange={event => setReview({ ...review, supplier_id: event.target.value || null, dietary_checked: false, evidence_checked: false })}>
             <option value="">{text('noSupplier')}</option>{suppliers.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
-          </select></label>
+          </select></label>}
         <label className="block text-sm font-medium">{text('description')}<textarea className={control} value={review.description} maxLength={2000} onChange={event => setReview({ ...review, description: event.target.value })} /></label>
         <label className="block text-sm font-medium">{text('category')}<input aria-label={text('category')} aria-describedby={`review-${draft.id}-category-note`} list={`review-${draft.id}-categories`} className={control} value={review.category} maxLength={200} onChange={event => setReview({ ...review, category: event.target.value })} />
           <datalist id={`review-${draft.id}-categories`}>{categories.map(category => <option key={category} value={category} />)}</datalist>
           <span id={`review-${draft.id}-category-note`} className="mt-1 block text-xs text-gray-500 dark:text-gray-300">{text('categoryHelp')}</span>
         </label>
-        <QuickAddAssessment warnings={review.allergen_warnings} tags={review.dietary_tags}
+        {draft.kind === 'prepared_item' ? <>
+          <QuickAddIngredients ingredients={ingredients} selected={review.ingredient_ids} onChange={ingredient_ids => setReview({ ...review, ingredient_ids, ingredients_checked: false })} />
+          <label className="flex min-h-11 items-start gap-3 text-sm"><input className="mt-1" type="checkbox" checked={review.ingredients_checked} onChange={event => setReview({ ...review, ingredients_checked: event.target.checked })} />{text('ingredientsChecked')}</label>
+        </> : <QuickAddAssessment warnings={review.allergen_warnings} tags={review.dietary_tags}
           onWarnings={allergen_warnings => setReview(current => ({ ...current, allergen_warnings, dietary_checked: false, evidence_checked: false }))}
-          onTags={dietary_tags => setReview(current => ({ ...current, dietary_tags: dietary_tags as Review['dietary_tags'], dietary_checked: false, evidence_checked: false }))} />
-        {!!review.dietary_tags.length && <label className="flex min-h-11 items-start gap-3 text-sm"><input className="mt-1" type="checkbox" checked={review.dietary_checked} onChange={event => setReview({ ...review, dietary_checked: event.target.checked })} />{text('dietaryChecked')}</label>}
+          onTags={dietary_tags => setReview(current => ({ ...current, dietary_tags: dietary_tags as Review['dietary_tags'], dietary_checked: false, evidence_checked: false }))} />}
+        {draft.kind !== 'prepared_item' && !!review.dietary_tags.length && <label className="flex min-h-11 items-start gap-3 text-sm"><input className="mt-1" type="checkbox" checked={review.dietary_checked} onChange={event => setReview({ ...review, dietary_checked: event.target.checked })} />{text('dietaryChecked')}</label>}
         <label className="block text-sm font-medium">{text('reviewMonths')}<input type="number" min={1} max={36} className={control} value={review.preferred_review_months} onChange={event => setReview({ ...review, preferred_review_months: Number(event.target.value) })} /></label>
-        {draft.kind === 'packaged_product' && <>
-          <label className="block text-sm font-medium">{text('ingredientDeclaration')}<textarea className={control} maxLength={10000} value={review.ingredient_declaration} onChange={event => setReview({ ...review, ingredient_declaration: event.target.value, label_checked: false })} /></label>
+        {(draft.kind === 'packaged_product' || draft.kind === 'prepared_item') && <>
+          {draft.kind === 'packaged_product' && <label className="block text-sm font-medium">{text('ingredientDeclaration')}<textarea className={control} maxLength={10000} value={review.ingredient_declaration} onChange={event => setReview({ ...review, ingredient_declaration: event.target.value, label_checked: false })} /></label>}
           <label className="block text-sm font-medium">{text('productScope')}<select aria-label={text('productScope')} className={control} value={review.scope} onChange={event => setReview({ ...review, scope: event.target.value as Review['scope'] })}>
             <option value="">{text('chooseScope')}</option><option value="global">{text('globalScope')}</option><option value="site">{text('siteScope')}</option>
           </select></label>
           {review.scope === 'site' && <label className="block text-sm font-medium">{text('productSite')}<select aria-label={text('productSite')} className={control} value={review.site_id || ''} onChange={event => setReview({ ...review, site_id: event.target.value || null })}>
             <option value="">{text('noLocation')}</option>{sites.map(site => <option key={site.id} value={site.id}>{site.name}</option>)}
           </select></label>}
-          <label className="flex min-h-11 items-start gap-3 text-sm"><input className="mt-1" type="checkbox" checked={review.label_checked} onChange={event => setReview({ ...review, label_checked: event.target.checked })} />{text('labelChecked')}</label>
+          {draft.kind === 'packaged_product' && <label className="flex min-h-11 items-start gap-3 text-sm"><input className="mt-1" type="checkbox" checked={review.label_checked} onChange={event => setReview({ ...review, label_checked: event.target.checked })} />{text('labelChecked')}</label>}
         </>}
-        <label className="flex min-h-11 items-start gap-3 text-sm"><input className="mt-1" type="checkbox" checked={review.evidence_checked} onChange={event => setReview({ ...review, evidence_checked: event.target.checked })} />{text('evidenceChecked')}</label>
+        {draft.kind !== 'prepared_item' && <label className="flex min-h-11 items-start gap-3 text-sm"><input className="mt-1" type="checkbox" checked={review.evidence_checked} onChange={event => setReview({ ...review, evidence_checked: event.target.checked })} />{text('evidenceChecked')}</label>}
       </fieldset>
 
       {!!missing.length && <ul className="list-disc space-y-1 pl-5 text-sm">{missing.map(key => <li key={key}>{text(key)}</li>)}</ul>}
@@ -120,12 +124,12 @@ export default function QuickAddReview({ draft, suppliers, sites, categories, di
         <Button variant="teal" type="button" disabled={blocked || !!note} onClick={() => void transition('review')}>{text('saveReview')}</Button>
         <Button variant="teal" type="button" disabled={blocked || dirty || !!missing.length} onClick={() => void transition('approve')}>{text('approve')}</Button>
       </div>
-      <p className="text-sm">{text(draft.kind === 'ingredient' ? 'ingredientApprovalHelp' : 'productApprovalHelp')}</p>
+      <p className="text-sm">{text(draft.kind === 'ingredient' ? 'ingredientApprovalHelp' : draft.kind === 'prepared_item' ? 'preparedApprovalHelp' : 'productApprovalHelp')}</p>
       <label className="block text-sm font-medium">{text('returnNote')}<textarea className={control} disabled={blocked} maxLength={2000} value={note} onChange={event => setNote(event.target.value)} /></label>
       <Button type="button" variant="tealOutline" disabled={blocked || !note.trim() || JSON.stringify(review) !== baseline} onClick={() => void transition('return')}>{text('returnDraft')}</Button>
     </>}
     {draft.status === 'approved' && <>
-      <p className="text-sm">{text(draft.kind === 'ingredient' ? 'ingredientApproved' : 'productApproved')}</p>
+      <p className="text-sm">{text(draft.kind === 'ingredient' ? 'ingredientApproved' : draft.kind === 'prepared_item' ? 'preparedApproved' : 'productApproved')}</p>
       {(draft.ingredient_id || draft.menu_item_id) && <Link className="inline-flex min-h-11 items-center text-teal-700 underline dark:text-teal-300" href={draft.ingredient_id ? `/admin/ingredients/${draft.ingredient_id}` : `/admin/menu-builder/${draft.menu_item_id}/edit`}>{text('openApproved')}</Link>}
     </>}
     {error && <div role="alert" className="text-sm text-red-700 dark:text-red-300"><p>{text(error)}</p>

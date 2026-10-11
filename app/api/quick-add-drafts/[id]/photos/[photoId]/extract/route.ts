@@ -1,0 +1,54 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { sanitiseWarnings } from '@/lib/allergen-ai'
+import { getDraft, quickAddContext, quickAddFailure, QuickAddError, requireDraftId } from '@/lib/server/quick-add'
+import { PHOTO_BUCKET, photoPath, photoQuery, type DraftPhoto } from '@/lib/server/quick-add-photos'
+
+export const runtime = 'nodejs'
+type Route = { params: Promise<{ id: string; photoId: string }> }
+
+const DIETARY_TAGS = new Set(['Vegan', 'Vegetarian', 'Gluten-Free', 'Halal', 'Kosher', 'Organic', 'Fair Trade', 'Lactose-Free', 'Coeliac-Friendly'])
+const PROMPT = `Analyse this food label for a human reviewer. Return JSON only:
+{"name":"","supplier_name":"","description":"","allergen_warnings":{},"dietary_tags":[],"notes":[]}
+
+Use EU Regulation 1169/2011 allergen keys: cereals_gluten, crustaceans, eggs, fish, peanuts, soybeans, milk, nuts, celery, mustard, sesame, sulphites, lupin, molluscs.
+Allowed allergen values: contains, may_contain, traces, cross_contamination.
+Only include an allergen when the visible label explicitly supports it; omit uncertain and unmentioned allergens. Only suggest dietary tags explicitly claimed by the label. Never infer absence or suitability. Put uncertainty or unreadable/cropped information in notes.`
+
+export async function POST(_request: NextRequest, route: Route) {
+  try {
+    const context = await quickAddContext()
+    const { id, photoId } = await route.params
+    requireDraftId(id); requireDraftId(photoId)
+    const draft = await getDraft(context, id)
+    if (draft.status !== 'draft') throw new QuickAddError('editConflict', 409)
+    if (draft.kind === 'prepared_item') throw new QuickAddError('invalid', 400)
+    const { data: photo, error } = await photoQuery(context, id).eq('id', photoId).eq('state', 'ready').maybeSingle()
+    if (error) throw error
+    if (!photo) throw new QuickAddError('notFound', 404)
+
+    const apiKey = process.env.GEMINI_API_KEY
+    if (!apiKey) throw new QuickAddError('extractionUnavailable', 503)
+    const downloaded = await context.supabase.storage.from(PHOTO_BUCKET).download(photoPath(photo as DraftPhoto))
+    if (downloaded.error) throw downloaded.error
+    const image = Buffer.from(await downloaded.data.arrayBuffer()).toString('base64')
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(30000),
+      body: JSON.stringify({ contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: 'image/jpeg', data: image } }] }],
+        generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 1000 } }),
+    })
+    if (!response.ok) throw new QuickAddError('extractionFailed', 502)
+    const payload = await response.json()
+    const content = payload.candidates?.[0]?.content?.parts?.[0]?.text
+    if (typeof content !== 'string') throw new QuickAddError('extractionFailed', 502)
+    let parsed: Record<string, unknown>
+    try { parsed = JSON.parse(content) } catch { throw new QuickAddError('extractionFailed', 502) }
+    const warnings = sanitiseWarnings((parsed.allergen_warnings || {}) as Record<string, string>)
+    const allergen_warnings = Object.fromEntries(Object.entries(warnings).filter(([, level]) => level !== 'none'))
+    const clean = (value: unknown, limit: number) => typeof value === 'string' ? value.trim().slice(0, limit) : ''
+    return NextResponse.json({ suggestions: {
+      name: clean(parsed.name, 200), supplier_name: clean(parsed.supplier_name, 200), description: clean(parsed.description, 500),
+      allergen_warnings, dietary_tags: Array.isArray(parsed.dietary_tags) ? [...new Set(parsed.dietary_tags.map(String).filter(tag => DIETARY_TAGS.has(tag)))] : [],
+      notes: Array.isArray(parsed.notes) ? parsed.notes.map(note => clean(note, 300)).filter(Boolean).slice(0, 5) : [],
+    } }, { headers: { 'Cache-Control': 'private, no-store' } })
+  } catch (error) { return quickAddFailure(error) }
+}

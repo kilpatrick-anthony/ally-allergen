@@ -83,11 +83,46 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
 
 ## Later enhancements — outside the first version
 
-- [ ] Quick Add for prepared menu items and simple recipes.
-- [ ] Photo-assisted extraction of label information, with mandatory human review.
+- [x] Quick Add for prepared menu items and simple recipes.
+- [x] Photo-assisted extraction of label information, with mandatory human review.
 - [ ] Barcode lookup, including how to handle missing or outdated product information.
 - [ ] Offline capture and reliable later synchronisation.
 - [ ] Optional notifications when drafts need review.
+
+### Prepared menu items and recipes — 11 October 2026
+
+- Added a Prepared menu item / recipe capture type. Staff select one or more
+  existing assessed ingredients; supplier and label-photo fields are omitted
+  because recipe safety is derived from those ingredient records.
+- Managers confirm the ingredient list, description and availability scope.
+  Approval atomically creates an inactive prepared Menu Builder item, links its
+  ingredients, derives the strongest allergen levels and retains only dietary
+  tags shared by every ingredient. Nothing is published automatically.
+- Added the new capture and review copy in all six supported languages and a
+  lightweight searchable ingredient picker for phone and desktop.
+- Verification passed: 27 API/photo tests, PostgreSQL migration/transaction
+  checks, production build and the complete browser journey at desktop and
+  phone widths in English, Irish, Portuguese, French, Spanish and German.
+- The migration and application changes are complete locally; deployment and
+  authenticated physical-device testing remain separate release steps.
+
+### Photo-assisted label extraction — 11 October 2026
+
+- Added an Analyse action to each saved Quick Add label photo for ingredients
+  and bought-in products. It suggests the product name, supplier, description,
+  explicitly stated allergens and dietary claims, plus any reading caveats.
+- Analysis runs only through the private draft-photo endpoint after the same
+  live session, membership, business and draft-access checks as the photo itself.
+  It does not update the database directly.
+- The user must review a clear AI warning and explicitly apply the suggestions.
+  The populated fields remain editable and unsaved, and the existing manager
+  evidence, allergen, dietary and label confirmations are still required.
+- Unmentioned or uncertain allergens remain unanswered rather than being marked
+  absent. Returned values and dietary tags are allow-listed and length-limited.
+- Verification passed: 28 API/photo tests, production build, and the complete
+  extraction/capture/review browser journey at desktop and phone widths. The
+  interaction copy is included in all six supported language catalogs. Browser
+  tests use a deterministic AI response; a real label/provider trial remains.
 - [ ] Assess whether an iPhone/iPad app adds enough value beyond the mobile portal.
 
 ## First-version acceptance criteria

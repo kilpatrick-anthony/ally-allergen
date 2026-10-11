@@ -13,6 +13,8 @@ export const reviewFields = z.object({
   dietary_tags: dietaryTagFields.default([]), dietary_checked: z.boolean().default(false),
   description: z.string().trim().max(2000),
   category: z.string().trim().max(200),
+  ingredient_ids: z.array(z.string().uuid()).max(100).transform(ids => [...new Set(ids)]).default([]),
+  ingredients_checked: z.boolean().default(false),
   allergen_warnings: z.record(z.string(), z.union([z.enum(reviewLevels), z.record(z.string(), z.enum(reviewLevels))])),
   preferred_review_months: z.number().int().min(1).max(36),
   ingredient_declaration: z.string().trim().max(10000),
@@ -23,11 +25,17 @@ export const reviewFields = z.object({
 }).strict()
 export type QuickAddReview = z.infer<typeof reviewFields>
 export const blankReview = (supplierId: string | null = null, siteId: string | null = null): QuickAddReview => ({
-  supplier_id: supplierId, dietary_tags: [], dietary_checked: false, description: '', category: '', allergen_warnings: {}, preferred_review_months: 12,
+  supplier_id: supplierId, dietary_tags: [], dietary_checked: false, description: '', category: '', ingredient_ids: [], ingredients_checked: false, allergen_warnings: {}, preferred_review_months: 12,
   ingredient_declaration: '', scope: '', site_id: siteId, label_checked: false, evidence_checked: false,
 })
 export function missingReviewDetails(review: Partial<QuickAddReview>, kind: string) {
   const missing: string[] = []
+  if (kind === 'prepared_item') {
+    if (!review.ingredient_ids?.length || !review.ingredients_checked) missing.push('missingIngredients')
+    if (!review.description?.trim()) missing.push('missingDescription')
+    if (!review.scope || (review.scope === 'site' && !review.site_id)) missing.push('missingScope')
+    return missing
+  }
   if (review.dietary_tags?.length && !review.dietary_checked) missing.push('missingDietaryCheck')
   if (!review.supplier_id) missing.push('missingSupplier')
   if (!review.evidence_checked) missing.push('missingEvidence')

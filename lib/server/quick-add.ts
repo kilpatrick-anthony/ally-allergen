@@ -10,9 +10,10 @@ export class QuickAddError extends Error {
 }
 
 export const draftFields = z.object({
-  kind: z.enum(['ingredient', 'packaged_product']),
+  kind: z.enum(['ingredient', 'packaged_product', 'prepared_item']),
   name: z.string().trim().min(1).max(200),
   category: z.string().trim().max(200).optional(),
+  ingredient_ids: z.array(z.string().uuid()).max(100).transform(ids => [...new Set(ids)]).optional(),
   site_id: z.string().uuid().nullable(),
   supplier_id: z.string().uuid().nullable(),
   supplier_name: z.string().trim().max(200),
@@ -23,7 +24,7 @@ export const draftFields = z.object({
 
 export const createDraftInput = draftFields.extend({ id: z.string().uuid() })
 export const updateDraftInput = draftFields.extend({ version: z.number().int().min(1).max(2147483646) })
-export const draftColumns = 'id,kind,name,category,allergen_warnings,dietary_tags,site_id,supplier_id,supplier_name,notes,status,version,created_by,created_at,updated_at,review,submitted_at,submitted_by,approved_at,approved_by,return_note,ingredient_id,menu_item_id'
+export const draftColumns = 'id,kind,name,category,ingredient_ids,allergen_warnings,dietary_tags,site_id,supplier_id,supplier_name,notes,status,version,created_by,created_at,updated_at,review,submitted_at,submitted_by,approved_at,approved_by,return_note,ingredient_id,menu_item_id'
 
 export function requireDraftId(id: string) {
   if (!z.string().uuid().safeParse(id).success) throw new QuickAddError('invalid', 400)
@@ -61,6 +62,14 @@ export async function getDraft(context: QuickAddContext, id: string) {
 
 export async function validateDraftReferences(context: QuickAddContext, input: z.infer<typeof draftFields>) {
   const fields = { ...input }
+  fields.ingredient_ids ||= []
+  if (fields.kind !== 'prepared_item') fields.ingredient_ids = []
+  if (fields.ingredient_ids.length) {
+    const { data, error } = await context.supabase.from('ingredients').select('id')
+      .eq('business_id', context.businessId).in('id', fields.ingredient_ids)
+    if (error) throw error
+    if ((data || []).length !== fields.ingredient_ids.length) throw new QuickAddError('ingredientUnavailable', 400)
+  }
   if (fields.site_id) {
     const { data, error } = await context.supabase.from('sites').select('id')
       .eq('business_id', context.businessId).eq('id', fields.site_id).maybeSingle()

@@ -171,6 +171,27 @@ test('captures category and preserves it when an older edit client omits the fie
   assert.equal(edited.body.draft.category, 'Bakery')
 })
 
+test('captures a prepared recipe only with ingredients owned by the business', async () => {
+  const s = setup()
+  const prepared = { ...fields, id: uuid(10), kind: 'prepared_item', supplier_id: null, supplier_name: '', ingredient_ids: [uuid(20), uuid(21)] }
+  const created = await s.collection.POST(request(prepared))
+  assert.equal(created.status, 201)
+  assert.deepEqual(Array.from(created.body.draft.ingredient_ids), [uuid(20), uuid(21)])
+  assert.equal((await s.collection.POST(request({ ...prepared, id: uuid(11), ingredient_ids: [uuid(22)] }))).status, 400)
+  assert.equal((await s.collection.POST(request({ ...prepared, id: uuid(12), ingredient_ids: Array(101).fill(uuid(20)) }))).status, 400)
+})
+
+test('prepared approval uses the dedicated atomic promotion function', async () => {
+  const s = setup({ role: 'manager' })
+  s.seed(uuid(10), { kind: 'prepared_item', status: 'ready_for_review', ingredient_ids: [uuid(20)] })
+  s.db.rpc = async (name, args) => {
+    assert.equal(name, 'approve_quick_add_prepared')
+    assert.equal(args.p_actor, actor)
+    return {}
+  }
+  assert.equal((await s.transition.POST(request({ request_id: uuid(50), action: 'approve', version: 1 }), params(uuid(10)))).status, 200)
+})
+
 test('dashboard counts include all pending captures and preserve live ownership boundaries', async () => {
   const s = setup()
   for (let i = 0; i < 65; i++) s.rows.push({ id: uuid(100+i), business_id: business, created_by: actor, status: 'draft' })

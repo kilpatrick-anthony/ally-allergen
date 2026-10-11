@@ -16,6 +16,8 @@ async function createReviewDb() {
     create table menu_items(id uuid primary key default gen_random_uuid(),business_id uuid,name text,description text,category text not null,allergen_warnings jsonb,dietary text[],site_id uuid,
       is_global boolean,visibility text check(visibility in ('global','site-specific')),is_active boolean default true,item_type text,supplier_id uuid,
       ingredient_declaration text,label_verified_at timestamptz,label_verified_by uuid,last_reviewed_at timestamptz,preferred_review_months integer);
+    create table menu_item_ingredients(id uuid primary key default gen_random_uuid(),menu_item_id uuid references menu_items(id) on delete cascade,
+      ingredient_id uuid references ingredients(id) on delete cascade,quantity text,is_optional boolean default false);
     create table datasheets(id uuid default gen_random_uuid(),business_id uuid,ingredient_id uuid references ingredients(id),menu_item_id uuid references menu_items(id),
       file_name text,file_path text,file_size bigint,file_type text,supplier_name text,next_review_date date,status text,created_by uuid);
     create table audit_log(id uuid default gen_random_uuid(),business_id uuid,entity_type text,entity_id uuid,entity_name text,action text,changes jsonb,changed_by uuid);
@@ -27,7 +29,7 @@ async function createReviewDb() {
     insert into user_businesses values ('${uuid(3)}','${uuid(1)}','staff','Staff'),('${uuid(4)}','${uuid(1)}','manager','Manager'),('${uuid(7)}','${uuid(2)}','owner','Other owner');
     insert into sites values ('${uuid(5)}','${uuid(1)}','Kitchen'),('${uuid(8)}','${uuid(2)}','Other kitchen');
     insert into suppliers values ('${uuid(6)}','${uuid(1)}','Supplier'),('${uuid(9)}','${uuid(2)}','Other supplier');`)
-  for (const file of ['20261009214320_add_quick_add_drafts.sql','20261010182555_add_quick_add_photos.sql','20261010182600_add_quick_add_review.sql','20261010184710_add_quick_add_capture_assessment.sql','20261011195851_add_quick_add_category.sql']) await db.exec(fs.readFileSync(`supabase/migrations/${file}`,'utf8'))
+  for (const file of ['20261009214320_add_quick_add_drafts.sql','20261010182555_add_quick_add_photos.sql','20261010182600_add_quick_add_review.sql','20261010184710_add_quick_add_capture_assessment.sql','20261011195851_add_quick_add_category.sql','20261011201415_add_quick_add_prepared_items.sql']) await db.exec(fs.readFileSync(`supabase/migrations/${file}`,'utf8'))
   await db.exec('grant select,insert,update on all tables in schema public to service_role; revoke update on quick_add_history from service_role;')
   return db
 }

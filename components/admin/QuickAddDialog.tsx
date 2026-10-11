@@ -6,8 +6,9 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
 import QuickAddAssessment from '@/components/admin/QuickAddAssessment'
-import QuickAddPhotos from '@/components/admin/QuickAddPhotos'
+import QuickAddPhotos, { type LabelSuggestions } from '@/components/admin/QuickAddPhotos'
 import QuickAddReview from '@/components/admin/QuickAddReview'
+import QuickAddIngredients, { type QuickAddIngredientOption } from '@/components/admin/QuickAddIngredients'
 import { Button } from '@/components/ui/Button'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import type { QuickAddDraft, QuickAddFields, QuickAddKind } from '@/lib/quick-add'
@@ -24,10 +25,10 @@ type Props = {
 }
 
 const blank = (kind: QuickAddKind, siteId?: string | null): QuickAddFields => ({
-  kind, name: '', category: '', site_id: siteId || null, supplier_id: null, supplier_name: '', notes: '', allergen_warnings: {}, dietary_tags: [],
+  kind, name: '', category: '', ingredient_ids: [], site_id: siteId || null, supplier_id: null, supplier_name: '', notes: '', allergen_warnings: {}, dietary_tags: [],
 })
 const fieldsOf = (draft: QuickAddDraft): QuickAddFields => ({
-  kind: draft.kind, name: draft.name, category: draft.category || '', site_id: draft.site_id, supplier_id: draft.supplier_id,
+  kind: draft.kind, name: draft.name, category: draft.category || '', ingredient_ids: draft.ingredient_ids || [], site_id: draft.site_id, supplier_id: draft.supplier_id,
   supplier_name: draft.supplier_name, notes: draft.notes,
   allergen_warnings: draft.allergen_warnings || {}, dietary_tags: draft.dietary_tags || [],
 })
@@ -42,6 +43,7 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
   const [record, setRecord] = useState<QuickAddDraft | null>(null)
   const [sites, setSites] = useState<Option[]>([])
   const [suppliers, setSuppliers] = useState<Option[]>([])
+  const [ingredients, setIngredients] = useState<QuickAddIngredientOption[]>([])
   const [ingredientCategories, setIngredientCategories] = useState<string[]>([...DEFAULT_INGREDIENT_CATEGORIES])
   const [productCategories, setProductCategories] = useState<string[]>([...DEFAULT_MENU_CATEGORIES])
   const [manualSupplier, setManualSupplier] = useState(false)
@@ -55,6 +57,19 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
   const [unsavedPhotos, setUnsavedPhotos] = useState(false)
   const photoActivity = useCallback((working: boolean, unsaved: boolean) => {
     setPhotoBusy(working); setUnsavedPhotos(unsaved)
+  }, [])
+  const applySuggestions = useCallback((suggestions: LabelSuggestions) => {
+    setFields(current => {
+      const additions = [suggestions.description, ...suggestions.notes].filter(Boolean).join('\n')
+      return { ...current, name: suggestions.name || current.name,
+        supplier_id: suggestions.supplier_name ? null : current.supplier_id,
+        supplier_name: suggestions.supplier_name || current.supplier_name,
+        notes: additions ? [current.notes, additions].filter(Boolean).join('\n').slice(0, 2000) : current.notes,
+        allergen_warnings: { ...current.allergen_warnings, ...suggestions.allergen_warnings },
+        dietary_tags: [...new Set([...current.dietary_tags, ...suggestions.dietary_tags])],
+      }
+    })
+    if (suggestions.supplier_name) setManualSupplier(true)
   }, [])
   const [reviewBusy, setReviewBusy] = useState(false)
   const [reviewDirty, setReviewDirty] = useState(false)
@@ -88,12 +103,13 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
     setLoading(true)
     setLoadError('')
     void Promise.all([
-      read('/api/sites'), read('/api/suppliers'), read('/api/ingredients/categories'), read('/api/menu-items/categories'),
+      read('/api/sites'), read('/api/suppliers'), read('/api/ingredients/categories'), read('/api/menu-items/categories'), read('/api/ingredients?options_only=true'),
       draftId ? read(`/api/quick-add-drafts/${draftId}`) : Promise.resolve(null),
-    ]).then(([siteData, supplierData, ingredientCategoryData, productCategoryData, draftData]) => {
+    ]).then(([siteData, supplierData, ingredientCategoryData, productCategoryData, ingredientData, draftData]) => {
       if (controller.signal.aborted) return
       setSites(siteData.sites || [])
       setSuppliers(supplierData.suppliers || [])
+      setIngredients((ingredientData.ingredients || []).map((item: QuickAddIngredientOption) => ({ id: item.id, name: item.name, category: item.category })))
       setIngredientCategories(mergeCategories(DEFAULT_INGREDIENT_CATEGORIES, ingredientCategoryData.categories))
       setProductCategories(mergeCategories(DEFAULT_MENU_CATEGORIES, productCategoryData.categories))
       if (draftData) {
@@ -192,8 +208,8 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
             <fieldset disabled={saving || photoBusy || reviewBusy || (!!record && record.status !== 'draft')} className="space-y-4">
               <legend className="sr-only">{text('title')}</legend>
               <label className="block text-sm font-medium">{text('kind')}
-                <select aria-label={text('kind')} value={fields.kind} onChange={event => setFields({ ...fields, kind: event.target.value as QuickAddKind })} className={control}>
-                  <option value="ingredient">{text('ingredient')}</option><option value="packaged_product">{text('packaged_product')}</option>
+                <select aria-label={text('kind')} value={fields.kind} onChange={event => setFields({ ...fields, kind: event.target.value as QuickAddKind, ingredient_ids: [], category: '' })} className={control}>
+                  <option value="ingredient">{text('ingredient')}</option><option value="packaged_product">{text('packaged_product')}</option><option value="prepared_item">{text('prepared_item')}</option>
                 </select></label>
               <label className="block text-sm font-medium">{text('name')} *
                 <input ref={nameInput} required maxLength={200} aria-invalid={error === 'nameRequired' || undefined} aria-describedby={error === 'nameRequired' ? `${formId}-error` : undefined} value={fields.name} onChange={event => { setFields({ ...fields, name: event.target.value }); if (error === 'nameRequired') setError('') }} className={control} autoComplete="off" /></label>
@@ -206,7 +222,9 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
                 <select aria-label={text('location')} value={fields.site_id || ''} onChange={event => setFields({ ...fields, site_id: event.target.value || null })} className={control}>
                   <option value="">{text('noLocation')}</option>{sites.map(site => <option key={site.id} value={site.id}>{site.name}</option>)}
                 </select></label>
-              <label className="block text-sm font-medium">{text('supplier')}
+              {fields.kind === 'prepared_item' && <QuickAddIngredients ingredients={ingredients} selected={fields.ingredient_ids}
+                onChange={ingredient_ids => setFields({ ...fields, ingredient_ids })} />}
+              {fields.kind !== 'prepared_item' && <><label className="block text-sm font-medium">{text('supplier')}
                 <select aria-label={text('supplier')} value={manualSupplier ? 'new' : fields.supplier_id || ''} onChange={event => {
                   const supplier = suppliers.find(item => item.id === event.target.value)
                   setManualSupplier(event.target.value === 'new')
@@ -217,10 +235,10 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
                 </select></label>
               {manualSupplier && <label className="block text-sm font-medium">{text('supplierName')}
                 <input aria-label={text('supplierName')} aria-describedby={`${formId}-supplier-note`} maxLength={200} value={fields.supplier_name} onChange={event => setFields({ ...fields, supplier_name: event.target.value })} className={control} />
-                <span id={`${formId}-supplier-note`} className="mt-1 block text-xs text-gray-500 dark:text-gray-300">{text('supplierNote')}</span></label>}
+                <span id={`${formId}-supplier-note`} className="mt-1 block text-xs text-gray-500 dark:text-gray-300">{text('supplierNote')}</span></label>}</>}
               <label className="block text-sm font-medium">{text('notes')}
                 <textarea rows={3} maxLength={2000} value={fields.notes} onChange={event => setFields({ ...fields, notes: event.target.value })} className={control} /></label>
-              {(!record || record.status === 'draft') && <details className="rounded-lg border border-gray-300 p-3 dark:border-gray-600">
+              {fields.kind !== 'prepared_item' && (!record || record.status === 'draft') && <details className="rounded-lg border border-gray-300 p-3 dark:border-gray-600">
                 <summary className="min-h-11 cursor-pointer py-2 font-semibold">{text('captureAssessment')}</summary>
                 <p className="mb-4 text-sm text-gray-700 dark:text-gray-200">{text('captureAssessmentHelp')}</p>
                 <QuickAddAssessment warnings={fields.allergen_warnings} tags={fields.dietary_tags}
@@ -234,10 +252,10 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
               {error === 'editConflict' && <Button type="button" variant="tealOutline" className="mt-2" onClick={() => { if (window.confirm(text('discard'))) { if (draftId) setAttempt(value => value + 1); else if (record) view(record.id) } }}>{text('reload')}</Button>}
             </div>}
           </form>}
-          {!loading && !loadError && (record
-            ? <QuickAddPhotos key={record.id} draftId={record.id} disabled={saving || reviewBusy || record.status !== 'draft'} onActivity={photoActivity} />
+          {fields.kind !== 'prepared_item' && !loading && !loadError && (record
+            ? <QuickAddPhotos key={record.id} draftId={record.id} disabled={saving || reviewBusy || record.status !== 'draft'} onActivity={photoActivity} onApplySuggestions={applySuggestions} />
             : <p className="mt-4 text-sm text-gray-600 dark:text-gray-300">{text('saveForPhotos')}</p>)}
-          {!loading && !loadError && record && <QuickAddReview key={`review-${record.id}`} draft={record} suppliers={suppliers} sites={sites}
+          {!loading && !loadError && record && <QuickAddReview key={`review-${record.id}`} draft={record} suppliers={suppliers} sites={sites} ingredients={ingredients}
             categories={record.kind === 'ingredient' ? ingredientCategories : productCategories}
             disabled={saving || photoBusy || textDirty || unsavedPhotos} onActivity={reviewActivity}
             onChanged={draft => { setRecord(draft); setSuccess(false); onSaved?.() }} />}

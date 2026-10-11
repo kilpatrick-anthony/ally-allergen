@@ -3,22 +3,23 @@ const fs = require('node:fs'), vm = require('node:vm'), ts = require('typescript
 const { z } = require('zod')
 const uuid = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
 const business = uuid(1), otherBusiness = uuid(2), actor = uuid(3), colleague = uuid(4), site = uuid(5), supplier = uuid(6)
-const fields = { kind: 'ingredient', name: 'Bread', category: 'Bakery', site_id: site, supplier_id: null, supplier_name: 'New supplier', notes: 'Delivery' }
+const fields = { kind: 'ingredient', name: 'Bread', category: 'Bakery', ingredient_ids: [], site_id: site, supplier_id: null, supplier_name: 'New supplier', notes: 'Delivery' }
 const request = body => ({ json: async () => body })
 const params = id => ({ params: Promise.resolve({ id }) })
 
 function setup({ role = 'staff', token = 'valid', membership = true, dbFailure = false } = {}) {
   const rows = [], photos = [], history = [], writes = [], objects = new Map()
-  const failures = { upload: false, remove: false, finalize: false }
+  const failures = { upload: false, remove: false, finalize: false, extraction: false }
   const hooks = { beforeUpload: null }
   let concurrentEdit = false
   const db = { from(table) {
-    const filters = [], excludes = [], orders = []
+    const filters = [], excludes = [], includes = [], orders = []
     let mutation, values, range, countOnly
     const query = {
       select: (_, options) => { countOnly = options?.head; return query },
       eq(key, value) { filters.push([key, value]); return query },
       neq(key, value) { excludes.push([key, value]); return query },
+      in(key, value) { includes.push([key, value]); return query },
       order(key, options = { ascending: true }) { orders.push([key, options]); return query },
       range(start, end) { range = [start, end]; return query },
       insert(value) { mutation = 'insert'; values = value; return query },
@@ -32,6 +33,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
       if (table === 'user_businesses') candidates = membership ? [{ user_id: actor, business_id: business, role }] : []
       else if (table === 'sites') candidates = [{ id: site, business_id: business }]
       else if (table === 'suppliers') candidates = [{ id: supplier, business_id: business, name: 'Existing supplier' }]
+      else if (table === 'ingredients') candidates = [{ id: uuid(20), business_id: business, name: 'Bread' }, { id: uuid(21), business_id: business, name: 'Butter' }]
       else if (table === 'quick_add_history') candidates = history
       else if (table === 'quick_add_photos') candidates = photos
       else { assert.equal(table, 'quick_add_drafts'); candidates = rows }
@@ -47,7 +49,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
         rows.find(row => row.id === id).version++
         concurrentEdit = false
       }
-      let matches = candidates.filter(row => filters.every(([key, value]) => row[key] === value) && excludes.every(([key, value]) => row[key] !== value))
+      let matches = candidates.filter(row => filters.every(([key, value]) => row[key] === value) && excludes.every(([key, value]) => row[key] !== value) && includes.every(([key, values]) => values.includes(row[key])))
       if (table === 'quick_add_photos' && mutation === 'update' && values.state === 'ready' && failures.finalize) return { error: { message: 'Finalize failed' } }
       if (mutation === 'update') { writes.push(table); matches.forEach(row => Object.assign(row, values)) }
       for (const [key, options] of [...orders].reverse()) matches.sort((a, b) => String(a[key]).localeCompare(String(b[key])) * (options.ascending ? 1 : -1))
@@ -84,12 +86,15 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
     '@/lib/supabase/server': { createServiceClient: () => db }, zod: { z },
   }
   function load(path) {
-    const context = { exports: {}, Buffer, Request, Response, Blob, require: name => { assert.ok(mocks[name], name); return mocks[name] }, console: { error() {} } }
+    const context = { exports: {}, Buffer, Request, Response, Blob, AbortSignal, process: { env: { GEMINI_API_KEY: 'test-key' } },
+      fetch: async () => failures.extraction ? { ok: false } : { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify({ name: 'AI Bread', supplier_name: 'AI Bakery', description: 'Sliced bread', allergen_warnings: { cereals_gluten: 'contains', milk: 'none', fish: 'invented' }, dietary_tags: ['Vegan', 'Invented'], notes: ['Check the small print'] }) }] } }] }) },
+      require: name => { assert.ok(mocks[name], name); return mocks[name] }, console: { error() {} } }
     vm.createContext(context)
     vm.runInContext(ts.transpileModule(fs.readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText, context)
     return context.exports
   }
   mocks['@/types/allergen'] = load('types/allergen.ts')
+  mocks['@/lib/allergen-ai'] = load('lib/allergen-ai.ts')
   mocks['@/lib/quick-add-review'] = load('lib/quick-add-review.ts')
   mocks['@/lib/server/quick-add'] = load('lib/server/quick-add.ts')
   mocks['@/lib/server/quick-add-photos'] = load('lib/server/quick-add-photos.ts')
@@ -97,6 +102,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
     db, history, setRole: value => { role = value }, transition: load('app/api/quick-add-drafts/[id]/transition/route.ts'), evidence: load('app/api/quick-add-evidence/[photoId]/route.ts'),
     photoCollection: load('app/api/quick-add-drafts/[id]/photos/route.ts'),
     photoItem: load('app/api/quick-add-drafts/[id]/photos/[photoId]/route.ts'),
+    photoExtract: load('app/api/quick-add-drafts/[id]/photos/[photoId]/extract/route.ts'),
     photoHelpers: mocks['@/lib/server/quick-add-photos'], photos, objects, failures, hooks,
     collection: load('app/api/quick-add-drafts/route.ts'), item: load('app/api/quick-add-drafts/[id]/route.ts'), rows, writes,
     race: () => { concurrentEdit = true },

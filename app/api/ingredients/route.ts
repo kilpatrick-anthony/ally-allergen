@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const limit = searchParams.get('limit')
     const countOnly = searchParams.get('count_only') === 'true'
+    const optionsOnly = searchParams.get('options_only') === 'true'
     // Get user from auth token
     const cookieStore = await cookies()
     const authToken = cookieStore.get('auth-token')?.value
@@ -62,6 +63,21 @@ export async function GET(request: NextRequest) {
       }
 
       return NextResponse.json({ count: count || 0 })
+    }
+
+    if (optionsOnly) {
+      const { data: ingredients, error } = await supabase
+        .from('ingredients')
+        .select('id,name,category')
+        .eq('business_id', userBusiness.business_id)
+        .order('name')
+
+      if (error) {
+        console.error('Error fetching ingredient options:', error)
+        return NextResponse.json({ error: 'Failed to fetch ingredients' }, { status: 500 })
+      }
+
+      return NextResponse.json({ ingredients: ingredients || [] })
     }
 
     // Fetch ingredients for the business

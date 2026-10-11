@@ -20,8 +20,8 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
     try {
       for(const row of backend.rows) {
         const existing=await db.query('select id from quick_add_drafts where id=$1',[row.id]);
-        if(!existing.rows.length) await db.query('insert into quick_add_drafts(id,business_id,kind,name,category,site_id,supplier_id,supplier_name,notes,created_by,version,allergen_warnings,dietary_tags) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)',
-          [row.id,row.business_id,row.kind,row.name,row.category || '',row.site_id,row.supplier_id,row.supplier_name,row.notes,row.created_by,row.version,row.allergen_warnings || {},row.dietary_tags || []]);
+        if(!existing.rows.length) await db.query('insert into quick_add_drafts(id,business_id,kind,name,category,ingredient_ids,site_id,supplier_id,supplier_name,notes,created_by,version,allergen_warnings,dietary_tags) values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)',
+          [row.id,row.business_id,row.kind,row.name,row.category || '',row.ingredient_ids || [],row.site_id,row.supplier_id,row.supplier_name,row.notes,row.created_by,row.version,row.allergen_warnings || {},row.dietary_tags || []]);
       }
       for(const photo of backend.photos) {
         const existing=await db.query('select state from quick_add_photos where id=$1',[photo.id]);
@@ -30,7 +30,8 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
         if(existing.rows[0]?.state!==photo.state) await db.query('update quick_add_photos set state=$1 where id=$2',[photo.state,photo.id]);
       }
       await db.query('update user_businesses set role=$1 where user_id=$2',[currentRole,uuid(3)]);
-      const result=await db.query('select * from transition_quick_add($1,$2,$3,$4,$5,$6,$7,$8)',
+      const fn=name==='approve_quick_add_prepared'?'approve_quick_add_prepared':'transition_quick_add';
+      const result=await db.query(`select * from ${fn}($1,$2,$3,$4,$5,$6,$7,$8)`,
         [args.p_draft,args.p_business,args.p_actor,args.p_request,args.p_action,args.p_version,args.p_review,args.p_note]);
       Object.assign(backend.rows.find(row=>row.id===args.p_draft),result.rows[0]);
       backend.history.splice(0,backend.history.length,...(await db.query('select * from quick_add_history')).rows);
@@ -67,6 +68,7 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
    else if(url.pathname==='/api/sites') response.body={sites:[{id:uuid(5),name:q.location}]};
    else if(url.pathname==='/api/suppliers') response.body={suppliers:[{id:uuid(6),name:'Existing supplier'}]};
    else if(url.pathname==='/api/ingredients/categories') response.body={categories:['Bakery','House ingredient']};
+   else if(url.pathname==='/api/ingredients') response.body={ingredients:[{id:uuid(20),name:'Bread',category:'Bakery'},{id:uuid(21),name:'Butter',category:'Dairy'}]};
    else if(url.pathname==='/api/menu-items/categories') response.body={categories:['Retail','House product']};
    else if(url.pathname==='/api/quick-add-drafts') {
     if(failSave && method==='POST') {failSave=false; return route.fulfill({status:503,json:{error:'unavailable'}})}
@@ -79,7 +81,8 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
    } else if (/\/photos(?:\/|$)/.test(url.pathname)) {
     const parts=url.pathname.split('/');
     const params={params:Promise.resolve({id:parts[3],photoId:parts[5]})};
-    if(parts[5]) {
+    if(parts[6]==='extract') response=await backend.photoExtract.POST({},params);
+    else if(parts[5]) {
       const request=new Request(url,{method,...(method==='PUT'?{body:req.postDataBuffer()}: {})});
       response=await backend.photoItem[method](request,params);
       if(response instanceof Response) return route.fulfill({status:response.status,headers:Object.fromEntries(response.headers),body:Buffer.from(await response.arrayBuffer())});
@@ -161,6 +164,14 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
   await dialog.getByRole('img',{name:`${q.labelPhoto} 2`,exact:true}).waitFor();
   await dialog.getByText(q.photoSaved,{exact:true}).nth(1).waitFor();
   assert.equal(backend.photos.filter(p=>p.state==='ready').length,2);
+  await dialog.getByRole('button',{name:`${q.analysePhoto} 1`,exact:true}).click();
+  await dialog.getByText(q.suggestionsReady,{exact:true}).waitFor();
+  await dialog.getByRole('button',{name:q.applySuggestions,exact:true}).click();
+  await dialog.getByRole('button',{name:q.view,exact:true}).click();
+  assert.equal(await dialog.getByLabel(q.name).inputValue(),'AI Bread');
+  assert.match(await dialog.getByLabel(q.notes).inputValue(),/Sliced bread/);
+  await dialog.getByRole('button',{name:q.save,exact:true}).click();
+  await dialog.getByText(q.saved,{exact:true}).waitFor();
   await dialog.getByRole('button',{name:`${q.removePhoto} 2`,exact:true}).click();
   await dialog.getByRole('img',{name:`${q.labelPhoto} 2`,exact:true}).waitFor({state:'hidden'});
   await page.waitForFunction(label=>document.activeElement?.getAttribute('aria-label')===label,q.choosePhotos);
@@ -182,7 +193,7 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
   assert.equal(await dialog.getByLabel(q.name).evaluate(el=>el===document.activeElement),true,'Add another focuses the new product name');
   assert.equal(await dialog.getByLabel(q.name).inputValue(),'');
   assert.equal(await dialog.getByRole('img').count(),0);
-  assert.equal(await dialog.getByLabel(q.supplierName,{exact:true}).inputValue(),'New supplier');
+  assert.equal(await dialog.getByLabel(q.supplierName,{exact:true}).inputValue(),'AI Bakery');
   assert.equal(await dialog.getByLabel(q.notes).inputValue(),'');
   assert.equal(await dialog.getByLabel(labels.allergenNames.milk,{exact:true}).inputValue(),'');
   assert.equal(await dialog.getByLabel(q.tag_Vegetarian,{exact:true}).isChecked(),false);
@@ -200,9 +211,9 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
     await page.screenshot({path:`/tmp/ally-quick-add-${language}-${device}-cards-${theme}.png`});
   }
   await page.evaluate(()=>document.documentElement.classList.remove('dark'));
-  await page.getByRole('link').filter({hasText:q.details}).filter({hasText:'Delivery bread'}).click();
+  await page.getByRole('link').filter({hasText:q.details}).filter({hasText:'AI Bread'}).click();
   await dialog.getByLabel(q.name).waitFor();
-  assert.equal(await dialog.getByLabel(q.name).inputValue(),'Delivery bread');
+  assert.equal(await dialog.getByLabel(q.name).inputValue(),'AI Bread');
   await dialog.getByText(q.photoSaved,{exact:true}).nth(1).waitFor();
   assert.equal(await dialog.getByRole('img').count(),2);
   await dialog.getByLabel(q.notes).fill('Checked on desktop or phone');
@@ -212,7 +223,7 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
   assert.ok(saveBounds.y>=0 && saveBounds.y+saveBounds.height<=height, 'Save remains visible without scrolling');
   await dialog.getByRole('button',{name:q.save,exact:true}).click();
   await dialog.getByText(q.saved,{exact:true}).waitFor();
-  assert.equal(backend.rows[0].version,2);
+  assert.equal(backend.rows[0].version,3);
   assert.equal(backend.rows[0].notes,'Checked on desktop or phone');
   await dialog.getByRole('button',{name:q.submit,exact:true}).click();
   await dialog.getByRole('button',{name:q.withdraw,exact:true}).waitFor();
@@ -225,7 +236,7 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
   await page.waitForFunction(()=>document.activeElement?.matches('a[href*="draft="]'));
   currentRole='manager';backend.setRole('manager');
   await page.reload();
-  await page.getByRole('link').filter({hasText:q.details}).filter({hasText:'Delivery bread'}).click();
+  await page.getByRole('link').filter({hasText:q.details}).filter({hasText:'AI Bread'}).click();
   await dialog.getByLabel(q.reviewSupplier,{exact:true}).selectOption(uuid(6)).catch(async error=>{
     await page.screenshot({path:'/tmp/ally-review-failure.png'});
     console.log('Review failure URL:',page.url(),'Backend:',backend.rows.map(r=>({id:r.id,status:r.status})), 'Errors:',failures);
@@ -260,9 +271,42 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
   await page.keyboard.press('Escape');
   await page.waitForURL(url=>!url.searchParams.has('draft') && url.searchParams.get('status')==='approved');
   await page.waitForFunction(()=>document.activeElement?.tagName==='H1');
+  // Prepared recipes need no label evidence; approval derives safety from assessed ingredients.
+  const baseWarnings=require('../tests/helpers/quick-add-review-db.cjs').completeReview().allergen_warnings;
+  await db.exec('reset role');
+  await db.query(`insert into ingredients(id,business_id,name,allergen_warnings,certifications) values
+    ($1,$2,'Bread',$3,$4),($5,$2,'Butter',$6,$7)`,[uuid(20),uuid(1),{...baseWarnings,cereals_gluten:'contains',cereals_gluten_levels:{wheat:'contains'}},['Vegetarian'],uuid(21),{...baseWarnings,milk:'contains'},['Vegetarian']]);
+  await db.exec('set role service_role');
+  if(device==='mobile') await floatingAdd.tap();
+  else await page.getByRole('button',{name:q.title,exact:true}).click();
+  await dialog.getByLabel(q.kind,{exact:true}).selectOption('prepared_item');
+  await dialog.getByLabel(q.name).fill('House toast');
+  await dialog.getByLabel(q.category,{exact:true}).fill('Lunch');
+  await dialog.getByLabel('Bread',{exact:true}).check();
+  await dialog.getByLabel('Butter',{exact:true}).check();
+  assert.equal(await dialog.getByText(`${q.selectedIngredients}: 2`,{exact:true}).count(),1);
+  assert.equal(await dialog.getByLabel(q.supplier,{exact:true}).count(),0,'Prepared capture omits supplier');
+  assert.equal(await dialog.getByLabel(q.choosePhotos,{exact:true}).count(),0,'Prepared capture omits label photos');
+  await dialog.getByRole('button',{name:q.save,exact:true}).click();
+  await dialog.getByText(q.saved,{exact:true}).waitFor();
+  assert.deepEqual(Array.from(backend.rows[1].ingredient_ids),[uuid(20),uuid(21)]);
+  await dialog.getByRole('button',{name:q.view,exact:true}).click();
+  await dialog.getByRole('button',{name:q.submit,exact:true}).click();
+  await dialog.getByLabel(q.description,{exact:true}).fill('Toast made with bread and butter');
+  await dialog.getByLabel(q.productScope,{exact:true}).selectOption('global');
+  await dialog.getByLabel(q.ingredientsChecked,{exact:true}).check();
+  await dialog.getByRole('button',{name:q.saveReview,exact:true}).click();
+  await page.waitForFunction(label=>Array.from(document.querySelectorAll('button')).some(button=>button.textContent===label&&!button.disabled),q.approve);
+  await dialog.getByRole('button',{name:q.approve,exact:true}).click();
+  await dialog.getByRole('link',{name:q.openApproved,exact:true}).waitFor();
+  assert.equal(backend.rows[1].status,'approved');
+  const prepared=(await db.query("select * from menu_items where name='House toast'")).rows[0];
+  assert.equal(prepared.item_type,'prepared');assert.equal(prepared.is_active,false);
+  assert.equal(prepared.allergen_warnings.milk,'contains');assert.deepEqual(prepared.dietary,['Vegetarian']);
+  assert.equal((await db.query('select count(*)::int as n from menu_item_ingredients where menu_item_id=$1',[prepared.id])).rows[0].n,2);
   assert.deepEqual(failures,[]);
   await db.close();
-  console.log(`PASS ${language}-${device}: create, failed-save retry, multi-photo upload, failed-upload retry, removal, Add another, discard confirmation, list, reopen photos, edit, staff submission, manager review and approval; no page errors or horizontal overflow${process.env.QUICK_ADD_A11Y === '1' ? '; light/dark axe checks passed' : ''}. Actual route handlers with fixture storage and PostgreSQL review/approval transaction.`);
+  console.log(`PASS ${language}-${device}: ingredient and prepared-recipe capture, photo extraction and explicit suggestion apply, retries, submission, derived safety, manager review and inactive approval; no page errors or horizontal overflow${process.env.QUICK_ADD_A11Y === '1' ? '; light/dark axe checks passed' : ''}. Actual route handlers with fixture storage and PostgreSQL review/approval transaction.`);
   await context.close();
  }
  }

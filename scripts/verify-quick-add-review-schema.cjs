@@ -101,6 +101,28 @@ const { createReviewDb, completeReview, uuid } = require('../tests/helpers/quick
    assert.deepEqual(result.dietary,['Vegan']);assert.equal(result.is_active,false)
   }
  }
+ // Prepared items derive safety and shared dietary tags from business-owned ingredients.
+ await db.exec('reset role')
+ const baseWarnings=completeReview().allergen_warnings
+ await db.query(`insert into ingredients(id,business_id,name,allergen_warnings,certifications) values
+   ($1,$2,'Flour',$3,$4),($5,$2,'Milk',$6,$7)`,[uuid(30),uuid(1),{...baseWarnings,cereals_gluten:'contains',cereals_gluten_levels:{wheat:'contains'}},['Vegan','Organic'],uuid(31),{...baseWarnings,milk:'contains'},['Organic']])
+ await seed(32,'prepared_item',false)
+ await db.query('update quick_add_drafts set ingredient_ids=$1,category=$2 where id=$3',[[uuid(30),uuid(31)],'Lunch',uuid(32)])
+ await db.exec('set role service_role')
+ d=await run(32,3,'submit',1)
+ assert.deepEqual(d.review.ingredient_ids,[uuid(30),uuid(31)]);assert.equal(d.review.category,'Lunch')
+ const recipeReview={...completeReview(),description:'Toast with milk',scope:'global',site_id:null,ingredient_ids:[uuid(30),uuid(31)],ingredients_checked:true}
+ d=await run(32,4,'review',d.version,recipeReview)
+ const approvePrepared=async(version,request=uuid(sequence++))=>(await db.query(
+   'select * from approve_quick_add_prepared($1,$2,$3,$4,$5,$6,$7,$8)',[uuid(32),uuid(1),uuid(4),request,'approve',version,null,''])).rows[0]
+ const preparedApprovalId=uuid(sequence++),preparedVersion=d.version
+ d=await approvePrepared(preparedVersion,preparedApprovalId)
+ assert.equal(d.status,'approved');assert.ok(d.menu_item_id)
+ assert.equal((await approvePrepared(preparedVersion,preparedApprovalId)).menu_item_id,d.menu_item_id)
+ const prepared=(await db.query('select * from menu_items where id=$1',[d.menu_item_id])).rows[0]
+ assert.equal(prepared.item_type,'prepared');assert.equal(prepared.is_active,false);assert.equal(prepared.allergen_warnings.milk,'contains')
+ assert.equal(prepared.allergen_warnings.cereals_gluten,'contains');assert.deepEqual(prepared.dietary,['Organic'])
+ assert.equal((await db.query('select count(*)::int as n from menu_item_ingredients where menu_item_id=$1',[d.menu_item_id])).rows[0].n,2)
  // Removing an uploader must preserve approved evidence and its historical snapshot.
  await db.exec('reset role')
  await db.query('delete from auth.users where id=$1',[uuid(3)]).catch(async error=>{
@@ -115,7 +137,7 @@ const { createReviewDb, completeReview, uuid } = require('../tests/helpers/quick
   await assert.rejects(db.query('select * from quick_add_history'),/permission denied/)
   await db.exec('reset role')
  }
- assert.equal((await db.query("select count(*)::int as n from quick_add_history where action='approve'")).rows[0].n,4)
- console.log('PASS: PostgreSQL submission/return/withdraw, live roles, idempotency, validation, rollback, evidence links, review history and inactive product promotion.')
+ assert.equal((await db.query("select count(*)::int as n from quick_add_history where action='approve'")).rows[0].n,5)
+ console.log('PASS: PostgreSQL submission/return/withdraw, live roles, idempotency, validation, rollback, evidence links, review history and inactive packaged/prepared promotion.')
  await db.close()
 })().catch(error=>{console.error(error);process.exitCode=1})
