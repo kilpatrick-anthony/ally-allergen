@@ -87,6 +87,11 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
 - [x] Photo-assisted extraction of label information, with mandatory human review.
 - [x] Barcode lookup, including clear handling for missing or outdated product information.
 - [ ] Offline capture and reliable later synchronisation.
+  - [x] Preserve an unfinished text entry per signed-in user/business and queue a
+    new text draft if connectivity drops while saving. Retry automatically on
+    reconnect with the original idempotency ID and show a visible pending count.
+  - [ ] Cache the Quick Add shell/options for opening a new capture from a fully
+    offline start, and retain label-photo blobs locally until upload is possible.
 - [x] Optional notifications when drafts need review.
 
 ### Draft-review notifications — 12 October 2026

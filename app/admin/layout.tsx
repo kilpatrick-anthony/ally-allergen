@@ -14,6 +14,7 @@ import { trackAdminPageVisit } from '@/lib/hooks/useFrequentPages'
 import { FsaiNewsTicker } from '@/components/admin/FsaiNewsTicker'
 import PortalLocalizationBridge from '@/components/shared/PortalLocalizationBridge'
 import QuickAddEntry from '@/components/admin/QuickAddEntry'
+import QuickAddOfflineSync from '@/components/admin/QuickAddOfflineSync'
 
 interface AdminLayoutProps {
   children: ReactNode
@@ -50,6 +51,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
     // Clear per-session UI state so it resets on next login
     sessionStorage.removeItem('jencoach_dismissed')
+    sessionStorage.removeItem('ally_user')
+    sessionStorage.removeItem('ally_biz')
 
     // Immediate redirect to sign-in
     try {
@@ -101,6 +104,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           setBusinessId(biz)
           if (biz && typeof window !== 'undefined') {
             sessionStorage.setItem('ally_biz', biz)
+            sessionStorage.setItem('ally_user', data.user.id)
+            window.dispatchEvent(new Event('quick-add-session-ready'))
             const businessResponse = await fetch(`/api/business/${biz}`)
             if (businessResponse.ok) {
               const business = await businessResponse.json()
@@ -300,6 +305,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <FsaiNewsTicker />
           </div>
           <QuickAddEntry floating />
+          <QuickAddOfflineSync />
         </div>
           </div>
         </ProtectedRoute>

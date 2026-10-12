@@ -103,6 +103,7 @@ const en = {
   saveConflict: 'A draft was already saved for this entry. Open the saved draft to check it before making further changes.',
   editConflict: 'This draft changed elsewhere. Your entries are still here. Reload the saved version before editing again.',
   reload: 'Reload saved version', optionsFailed: 'Locations and suppliers could not be loaded. Try again before saving.',
+  queuedOffline: 'Draft queued safely on this device', queuedOfflineHelp: 'AllyJen will save it to your account automatically when this device is online and you are still signed in. Add label photos after it synchronises.', restoredOffline: 'Your unfinished Quick Add entry was restored from this device.', offlinePending: '{count} offline Quick Add draft(s) waiting to synchronise.',
 }
 
 type QuickAddStrings = Record<keyof typeof en, string>
@@ -173,6 +174,7 @@ const ga = {
   "editConflict": "Athraíodh an dréacht seo in áit eile. Tá d’iontrálacha fós anseo. Athluchtaigh an leagan sábháilte sula gcuireann tú in eagar arís é.",
   "reload": "Athluchtaigh an leagan sábháilte",
   "optionsFailed": "Níorbh fhéidir suíomhanna ná soláthraithe a luchtú. Bain triail eile as sula sábhálann tú.",
+  "queuedOffline": "Cuireadh an dréacht sa scuaine go sábháilte ar an ngléas seo", "queuedOfflineHelp": "Sábhálfaidh AllyJen i do chuntas é go huathoibríoch nuair a bheidh an gléas seo ar líne agus tú fós sínithe isteach. Cuir grianghraif lipéid leis tar éis sioncronaithe.", "restoredOffline": "Athchóiríodh d’iontráil Quick Add neamhchríochnaithe ón ngléas seo.", "offlinePending": "Tá {count} dréacht Quick Add as líne ag fanacht le sioncronú.",
   "photos": "Grianghraif lipéid",
   "takePhoto": "Glac grianghraf",
   "choosePhotos": "Roghnaigh grianghraif",
@@ -350,6 +352,7 @@ const pt = {
   "editConflict": "Este rascunho foi alterado noutro local. Os seus dados continuam aqui. Recarregue a versão guardada antes de voltar a editar.",
   "reload": "Recarregar versão guardada",
   "optionsFailed": "Não foi possível carregar os locais e fornecedores. Tente novamente antes de guardar.",
+  "queuedOffline": "Rascunho colocado em fila com segurança neste dispositivo", "queuedOfflineHelp": "O AllyJen irá guardá-lo automaticamente na sua conta quando este dispositivo estiver online e ainda tiver sessão iniciada. Adicione fotografias do rótulo após a sincronização.", "restoredOffline": "A sua entrada Quick Add inacabada foi restaurada deste dispositivo.", "offlinePending": "{count} rascunho(s) Quick Add offline a aguardar sincronização.",
   "photos": "Fotografias do rótulo",
   "takePhoto": "Tirar fotografia",
   "choosePhotos": "Escolher fotografias",
@@ -527,6 +530,7 @@ const fr = {
   "editConflict": "Ce brouillon a été modifié ailleurs. Vos données sont toujours présentes. Rechargez la version enregistrée avant de le modifier à nouveau.",
   "reload": "Recharger la version enregistrée",
   "optionsFailed": "Impossible de charger les lieux et fournisseurs. Réessayez avant d’enregistrer.",
+  "queuedOffline": "Brouillon mis en attente en toute sécurité sur cet appareil", "queuedOfflineHelp": "AllyJen l’enregistrera automatiquement dans votre compte lorsque cet appareil sera en ligne et que vous serez toujours connecté. Ajoutez les photos de l’étiquette après la synchronisation.", "restoredOffline": "Votre saisie Quick Add inachevée a été restaurée depuis cet appareil.", "offlinePending": "{count} brouillon(s) Quick Add hors ligne en attente de synchronisation.",
   "photos": "Photos de l’étiquette",
   "takePhoto": "Prendre une photo",
   "choosePhotos": "Choisir des photos",
@@ -704,6 +708,7 @@ const es = {
   "editConflict": "Este borrador se ha modificado en otro lugar. Sus datos siguen aquí. Recargue la versión guardada antes de volver a editar.",
   "reload": "Recargar versión guardada",
   "optionsFailed": "No se han podido cargar las ubicaciones y los proveedores. Reinténtelo antes de guardar.",
+  "queuedOffline": "Borrador puesto en cola de forma segura en este dispositivo", "queuedOfflineHelp": "AllyJen lo guardará automáticamente en su cuenta cuando este dispositivo vuelva a estar conectado y usted siga con la sesión iniciada. Añada las fotos de la etiqueta después de la sincronización.", "restoredOffline": "Su entrada de Quick Add sin terminar se ha restaurado desde este dispositivo.", "offlinePending": "{count} borrador(es) de Quick Add sin conexión pendientes de sincronizar.",
   "photos": "Fotos de la etiqueta",
   "takePhoto": "Hacer foto",
   "choosePhotos": "Elegir fotos",
@@ -881,6 +886,7 @@ const de = {
   "editConflict": "Dieser Entwurf wurde andernorts geändert. Ihre Eingaben sind noch vorhanden. Laden Sie vor weiteren Änderungen die gespeicherte Version neu.",
   "reload": "Gespeicherte Version neu laden",
   "optionsFailed": "Standorte und Lieferanten konnten nicht geladen werden. Versuchen Sie es vor dem Speichern erneut.",
+  "queuedOffline": "Entwurf sicher auf diesem Gerät vorgemerkt", "queuedOfflineHelp": "AllyJen speichert ihn automatisch in Ihrem Konto, sobald dieses Gerät wieder online und Sie noch angemeldet sind. Fügen Sie Etikettfotos nach der Synchronisierung hinzu.", "restoredOffline": "Ihr unvollständiger Quick-Add-Eintrag wurde von diesem Gerät wiederhergestellt.", "offlinePending": "{count} Offline-Quick-Add-Entwurf/Entwürfe wartet/warten auf Synchronisierung.",
   "photos": "Etikettfotos",
   "takePhoto": "Foto aufnehmen",
   "choosePhotos": "Fotos auswählen",

@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/Button'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import type { QuickAddDraft, QuickAddFields, QuickAddKind } from '@/lib/quick-add'
 import { DEFAULT_INGREDIENT_CATEGORIES, DEFAULT_MENU_CATEGORIES, mergeCategories } from '@/lib/item-categories'
+import { clearQuickAddRecovery, loadQuickAddRecovery, queueQuickAddDraft, saveQuickAddRecovery } from '@/lib/quick-add-offline'
 
 type Option = { id: string; name: string }
 type Props = {
@@ -54,6 +55,8 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
   const [error, setError] = useState('')
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [queuedOffline, setQueuedOffline] = useState(false)
+  const [restoredOffline, setRestoredOffline] = useState(false)
   const [photoBusy, setPhotoBusy] = useState(false)
   const [unsavedPhotos, setUnsavedPhotos] = useState(false)
   const photoActivity = useCallback((working: boolean, unsaved: boolean) => {
@@ -85,11 +88,14 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
   }, [])
   const busy = useRef(false)
   const requestId = useRef<string | null>(null)
+  const onSavedRef = useRef(onSaved)
   const nameInput = useRef<HTMLInputElement>(null)
   const savedMessage = useRef<HTMLParagraphElement>(null)
   const focusName = useRef(false)
   const textDirty = JSON.stringify(fields) !== baseline
   const dirty = textDirty || unsavedPhotos || reviewDirty
+
+  useEffect(() => { onSavedRef.current = onSaved }, [onSaved])
 
   useEffect(() => {
     if (success) savedMessage.current?.focus()
@@ -98,6 +104,26 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
       focusName.current = false
     }
   }, [success])
+
+  useEffect(() => {
+    if (draftId || record || !textDirty) return
+    requestId.current ||= crypto.randomUUID()
+    const timeout = window.setTimeout(() => { saveQuickAddRecovery(requestId.current!, fields) }, 300)
+    return () => window.clearTimeout(timeout)
+  }, [draftId, fields, record, textDirty])
+
+  useEffect(() => {
+    const synced = (event: Event) => {
+      const detail = (event as CustomEvent<{ id: string; draft: QuickAddDraft }>).detail
+      if (!detail || detail.id !== requestId.current) return
+      const values = fieldsOf(detail.draft)
+      setFields(values); setBaseline(JSON.stringify(values)); setRecord(detail.draft)
+      setQueuedOffline(false); setSuccess(true); setRestoredOffline(false)
+      onSavedRef.current?.()
+    }
+    window.addEventListener('quick-add-synced', synced)
+    return () => window.removeEventListener('quick-add-synced', synced)
+  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -125,9 +151,11 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
         setFields(values); setBaseline(JSON.stringify(values)); setRecord(draft)
         setManualSupplier(!draft.supplier_id && !!draft.supplier_name)
       } else {
+        const recovered = loadQuickAddRecovery()
         const selectedSite = siteData.sites?.some((site: Option) => site.id === siteId) ? siteId : null
-        const values = blank(initialKind, selectedSite)
-        setFields(values); setBaseline(JSON.stringify(values))
+        const values = recovered?.fields || blank(initialKind, selectedSite)
+        setFields(values); setBaseline(JSON.stringify(blank(initialKind, selectedSite)))
+        if (recovered) { requestId.current = recovered.id; setManualSupplier(!values.supplier_id && !!values.supplier_name); setRestoredOffline(true) }
       }
       setError('')
     }).catch((reason: Error) => {
@@ -146,6 +174,7 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
   function close() {
     if (busy.current || photoBusy || reviewBusy) return
     if (dirty && !window.confirm(text('discard'))) return
+    if (dirty && requestId.current) clearQuickAddRecovery(requestId.current)
     onClose()
   }
 
@@ -157,6 +186,12 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
     setSaving(true); setError('')
     try {
       requestId.current ||= crypto.randomUUID()
+      if (!record && !navigator.onLine) {
+        if (!queueQuickAddDraft(requestId.current, fields)) throw new Error('unavailable')
+        setQueuedOffline(true); setSuccess(true); setBaseline(JSON.stringify(fields)); setRestoredOffline(false)
+        window.dispatchEvent(new Event('quick-add-queued'))
+        return
+      }
       const response = await fetch(record ? `/api/quick-add-drafts/${record.id}` : '/api/quick-add-drafts', {
         method: record ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...fields, ...(record ? { version: record.version } : { id: requestId.current }) }),
@@ -169,9 +204,16 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
       }
       const values = fieldsOf(result.draft)
       setFields(values); setBaseline(JSON.stringify(values)); setRecord(result.draft)
+      clearQuickAddRecovery(requestId.current)
+      setQueuedOffline(false); setRestoredOffline(false)
       setSuccess(true); onSaved?.()
     } catch (reason) {
       const code = reason instanceof Error ? reason.message : ''
+      if (!record && requestId.current && !navigator.onLine && queueQuickAddDraft(requestId.current, fields)) {
+        setQueuedOffline(true); setSuccess(true); setBaseline(JSON.stringify(fields)); setRestoredOffline(false)
+        window.dispatchEvent(new Event('quick-add-queued'))
+        return
+      }
       setError(['unauthorized', 'forbidden', 'notFound', 'invalid', 'locationUnavailable', 'supplierUnavailable', 'saveConflict', 'editConflict'].includes(code) ? code : 'unavailable')
     } finally { busy.current = false; setSaving(false) }
   }
@@ -199,7 +241,8 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
         </div>
         <div className="min-h-0 overflow-y-auto p-5">
           {loading ? <p role="status">{text('loading')}</p> : loadError ? <div role="alert"><p>{text(loadError)}</p><Button variant="teal" className="mt-4" onClick={() => setAttempt(value => value + 1)}>{text('retry')}</Button></div> : success ? <div>
-            <p ref={savedMessage} tabIndex={-1} role="status" className="text-lg font-semibold">{text('saved')}</p><p className="mt-2 break-words">{record?.name}</p>
+            <p ref={savedMessage} tabIndex={-1} role="status" className="text-lg font-semibold">{text(queuedOffline ? 'queuedOffline' : 'saved')}</p><p className="mt-2 break-words">{record?.name || fields.name}</p>
+            {queuedOffline && <p className="mt-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">{text('queuedOfflineHelp')}</p>}
             <div className="mt-5 flex flex-wrap gap-3">
               {!draftId && <Button variant="teal" disabled={photoBusy || reviewBusy} onClick={() => {
                 if ((unsavedPhotos || reviewDirty) && !window.confirm(text('discard'))) return
@@ -207,11 +250,13 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
                 focusName.current = true
                 const values = { ...blank(fields.kind, fields.site_id), supplier_id: fields.supplier_id, supplier_name: fields.supplier_name }
                 setFields(values); setBaseline(JSON.stringify(values)); setRecord(null); setSuccess(false); setError('')
+                setQueuedOffline(false); setRestoredOffline(false)
                 requestId.current = null
               }}>{text('another')}</Button>}
-              <Button variant="tealOutline" onClick={() => { if (record) { focusName.current = true; setSuccess(false) } }}>{text('view')}</Button>
+              {record && <Button variant="tealOutline" onClick={() => { focusName.current = true; setSuccess(false) }}>{text('view')}</Button>}
             </div>
           </div> : <form id={formId} onSubmit={save} className="space-y-4">
+            {restoredOffline && <p role="status" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">{text('restoredOffline')}</p>}
             <fieldset disabled={saving || photoBusy || reviewBusy || (!!record && record.status !== 'draft')} className="space-y-4">
               <legend className="sr-only">{text('title')}</legend>
               <label className="block text-sm font-medium">{text('kind')}
