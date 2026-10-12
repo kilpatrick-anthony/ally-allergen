@@ -727,6 +727,11 @@ html.contrast-inverted .glass-card,
 button,
 [role="button"] {
   transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+/* Preserve explicit positioning for floating controls and other positioned buttons. */
+button:not(.fixed):not(.absolute):not(.sticky),
+[role="button"]:not(.fixed):not(.absolute):not(.sticky) {
   position: relative;
 }
 
