@@ -66,6 +66,20 @@ test('staff cannot list, read or update another staff member or business draft',
   }
 })
 
+test('deleting a draft respects ownership and status and removes stored label photos', async () => {
+  const s = setup()
+  s.seed(uuid(10))
+  s.seed(uuid(11), { created_by: colleague })
+  s.seed(uuid(12), { status: 'ready_for_review' })
+  s.photos.push({ id: uuid(30), draft_id: uuid(10), business_id: business, state: 'ready' })
+  s.objects.set(`${business}/${uuid(10)}/${uuid(30)}.jpg`, Buffer.from('label'))
+  assert.equal((await s.item.DELETE({}, params(uuid(11)))).status, 404)
+  assert.equal((await s.item.DELETE({}, params(uuid(12)))).status, 409)
+  assert.equal((await s.item.DELETE({}, params(uuid(10)))).status, 200)
+  assert.equal(s.rows.some(row => row.id === uuid(10)), false)
+  assert.equal(s.objects.size, 0)
+})
+
 test('owners and managers can edit colleague drafts but never other businesses', async () => {
   for (const role of ['owner', 'manager']) {
     const s = setup({ role })

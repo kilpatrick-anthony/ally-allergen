@@ -25,6 +25,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
       range(start, end) { range = [start, end]; return query },
       insert(value) { mutation = 'insert'; values = value; return query },
       update(value) { mutation = 'update'; values = value; return query },
+      delete() { mutation = 'delete'; return query },
       maybeSingle: () => run(true), single: () => run(true),
       then(resolve, reject) { return run(false).then(resolve, reject) },
     }
@@ -53,6 +54,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
       let matches = candidates.filter(row => filters.every(([key, value]) => row[key] === value) && excludes.every(([key, value]) => row[key] !== value) && includes.every(([key, values]) => values.includes(row[key])))
       if (table === 'quick_add_photos' && mutation === 'update' && values.state === 'ready' && failures.finalize) return { error: { message: 'Finalize failed' } }
       if (mutation === 'update') { writes.push(table); matches.forEach(row => Object.assign(row, values)) }
+      if (mutation === 'delete') { writes.push(table); matches.forEach(row => candidates.splice(candidates.indexOf(row), 1)) }
       for (const [key, options] of [...orders].reverse()) matches.sort((a, b) => String(a[key]).localeCompare(String(b[key])) * (options.ascending ? 1 : -1))
       if (countOnly) return { data: null, count: matches.length }
       if (range) matches = matches.slice(range[0], range[1] + 1)

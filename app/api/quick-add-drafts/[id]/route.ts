@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { draftColumns, getDraft, quickAddContext, quickAddFailure, QuickAddError, requireDraftId, updateDraftInput, validateDraftReferences } from '@/lib/server/quick-add'
+import { PHOTO_BUCKET, photoPath, photoQuery, type DraftPhoto } from '@/lib/server/quick-add-photos'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -39,5 +40,29 @@ export async function PATCH(request: NextRequest, route: RouteContext) {
     if (error) throw error
     if (!data) throw new QuickAddError('editConflict', 409)
     return NextResponse.json({ draft: data })
+  } catch (error) { return quickAddFailure(error) }
+}
+
+export async function DELETE(_request: NextRequest, route: RouteContext) {
+  try {
+    const context = await quickAddContext()
+    const { id } = await route.params
+    requireDraftId(id)
+    const draft = await getDraft(context, id)
+    if (draft.status !== 'draft') throw new QuickAddError('editConflict', 409)
+    const { data: photos, error: photoError } = await photoQuery(context, id)
+    if (photoError) throw photoError
+    let query = context.supabase.from('quick_add_drafts').delete().eq('id', id)
+      .eq('business_id', context.businessId).eq('status', 'draft').eq('version', draft.version)
+    if (context.role === 'staff') query = query.eq('created_by', context.userId)
+    const { data: deleted, error } = await query.select('id').maybeSingle()
+    if (error) throw error
+    if (!deleted) throw new QuickAddError('editConflict', 409)
+    const paths = (photos || []).map((photo: DraftPhoto) => photoPath(photo))
+    if (paths.length) {
+      const cleanup = await context.supabase.storage.from(PHOTO_BUCKET).remove(paths)
+      if (cleanup.error) console.error('Quick Add photo cleanup failed:', cleanup.error)
+    }
+    return NextResponse.json({ deleted: true })
   } catch (error) { return quickAddFailure(error) }
 }

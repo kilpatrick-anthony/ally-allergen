@@ -6,21 +6,17 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import * as Dialog from '@radix-ui/react-dialog'
 import { ChefHat, MapPin, Package, Plus, ShoppingBasket, Truck, X } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import type { QuickAddKind } from '@/lib/quick-add'
-import QuickAddDialog from './QuickAddDialog'
 
-export default function QuickAddEntry({ initialKind = 'ingredient', siteId, onSaved, floating = false, showDrafts = true }: { initialKind?: QuickAddKind; siteId?: string | null; onSaved?: () => void; floating?: boolean; showDrafts?: boolean }) {
-  const [open, setOpen] = useState(false)
+export default function QuickAddEntry({ initialKind = 'ingredient', siteId, floating = false, showDrafts = true }: { initialKind?: QuickAddKind; siteId?: string | null; onSaved?: () => void; floating?: boolean; showDrafts?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
-  const [selectedKind, setSelectedKind] = useState<QuickAddKind>(initialKind)
   const trigger = useRef<HTMLButtonElement>(null)
   const { t } = useTranslation()
   const router = useRouter()
   useEffect(() => setMounted(true), [])
-  const openCapture = (kind: QuickAddKind) => { setSelectedKind(kind); setMenuOpen(false); setOpen(true) }
+  const openCapture = (kind: QuickAddKind) => openPage(`/admin/quick-add/new?${new URLSearchParams({ kind, ...(siteId ? { site: siteId } : {}) })}`)
   const openPage = (href: string) => { setMenuOpen(false); router.push(href) }
   if (floating) return mounted ? createPortal(<>
     <Dialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
@@ -47,15 +43,10 @@ export default function QuickAddEntry({ initialKind = 'ingredient', siteId, onSa
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
-    {open && <QuickAddDialog onClose={() => setOpen(false)} returnFocusRef={trigger} initialKind={selectedKind} siteId={siteId} onSaved={() => {
-      window.dispatchEvent(new Event('quick-add-saved'))
-      onSaved?.()
-    }} />}
   </>, document.body) : null
   return <div className="flex flex-wrap items-center gap-3">
-    <Button variant="teal" icon={Plus} aria-haspopup="dialog" onClick={event => { trigger.current = event.currentTarget; setOpen(true) }}>{t('quickAdd.title')}</Button>
+    <Link href={`/admin/quick-add/new?${new URLSearchParams({ kind: initialKind, ...(siteId ? { site: siteId } : {}) })}`} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-teal-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600"><Plus className="h-5 w-5" aria-hidden="true" />{t('quickAdd.title')}</Link>
     {showDrafts && <Link className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-[#003842] underline dark:text-[#42b8ac]" href="/admin/quick-add">{t('quickAdd.drafts')}</Link>}
-    {open && <QuickAddDialog onClose={() => setOpen(false)} returnFocusRef={trigger} initialKind={initialKind} siteId={siteId} onSaved={onSaved} />}
   </div>
 }
 

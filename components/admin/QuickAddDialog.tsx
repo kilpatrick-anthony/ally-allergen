@@ -19,6 +19,7 @@ import { clearQuickAddRecovery, loadQuickAddOptions, loadQuickAddRecovery, queue
 type Option = { id: string; name: string }
 type Props = {
   onClose: () => void
+  page?: boolean
   draftId?: string
   initialKind?: QuickAddKind
   siteId?: string | null
@@ -35,7 +36,7 @@ const fieldsOf = (draft: QuickAddDraft): QuickAddFields => ({
   allergen_warnings: draft.allergen_warnings || {}, dietary_tags: draft.dietary_tags || [],
 })
 
-export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingredient', siteId, onSaved, returnFocusRef }: Props) {
+export default function QuickAddDialog({ onClose, page = false, draftId, initialKind = 'ingredient', siteId, onSaved, returnFocusRef }: Props) {
   const { t } = useTranslation()
   const text = (key: string) => t(`quickAdd.${key}`)
   const router = useRouter()
@@ -238,18 +239,10 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
 
   const control = 'mt-1 w-full rounded-lg border border-gray-300 bg-white p-3 text-base text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white'
   const categories = fields.kind === 'ingredient' ? ingredientCategories : productCategories
-  return <Dialog.Root open onOpenChange={open => { if (!open) close() }}>
-    <Dialog.Portal>
-      <Dialog.Overlay className="fixed inset-0 z-[90] bg-black/50" />
-      <Dialog.Content onCloseAutoFocus={event => {
-        if (returnFocusRef?.current) {
-          event.preventDefault()
-          returnFocusRef.current.focus()
-        }
-      }} className="fixed inset-0 z-[91] flex flex-col bg-white text-gray-900 shadow-xl dark:bg-gray-800 dark:text-white sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90dvh] sm:w-[min(92vw,38rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl">
+  const content = <>
         <div className="flex shrink-0 items-start justify-between gap-4 border-b p-5 dark:border-gray-700">
-          <div><Dialog.Title className="text-xl font-semibold">{text(draftId || record ? 'editTitle' : 'title')}</Dialog.Title>
-            <Dialog.Description className="mt-1 text-sm text-gray-600 dark:text-gray-300">{text('intro')}</Dialog.Description></div>
+          {page ? <h1 className="text-xl font-semibold">{text(draftId || record ? 'editTitle' : fields.kind)}</h1>
+            : <><Dialog.Title className="text-xl font-semibold">{text(draftId || record ? 'editTitle' : 'title')}</Dialog.Title><Dialog.Description className="sr-only">{text('evidenceHelp')}</Dialog.Description></>}
           <button type="button" onClick={close} disabled={saving || photoBusy || reviewBusy} aria-label={text('close')} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"><X aria-hidden="true" /></button>
         </div>
         <div className="min-h-0 overflow-y-auto p-5">
@@ -339,7 +332,17 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
           <Button variant="teal" type="submit" form={formId} loading={saving} disabled={photoBusy || reviewBusy || reviewDirty}>{text(saving ? 'saving' : 'save')}</Button>
           <Button type="button" variant="ghost" disabled={saving || photoBusy || reviewBusy} onClick={close}>{text('cancel')}</Button>
         </div>}
-      </Dialog.Content>
+  </>
+  if (page) return <section className="mx-auto my-4 flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white sm:my-8">{content}</section>
+  return <Dialog.Root open onOpenChange={open => { if (!open) close() }}>
+    <Dialog.Portal>
+      <Dialog.Overlay className="fixed inset-0 z-[90] bg-black/50" />
+      <Dialog.Content onCloseAutoFocus={event => {
+        if (returnFocusRef?.current) {
+          event.preventDefault()
+          returnFocusRef.current.focus()
+        }
+      }} className="fixed inset-0 z-[91] flex flex-col bg-white text-gray-900 shadow-xl dark:bg-gray-800 dark:text-white sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[90dvh] sm:w-[min(92vw,38rem)] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl">{content}</Dialog.Content>
     </Dialog.Portal>
   </Dialog.Root>
 }

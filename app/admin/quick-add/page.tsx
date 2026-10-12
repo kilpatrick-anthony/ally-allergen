@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { Trash2 } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
@@ -27,6 +28,8 @@ function Drafts() {
   const [revision, setRevision] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [deleting, setDeleting] = useState<string | null>(null)
+  const [deleteError, setDeleteError] = useState('')
 
   useEffect(() => {
     if (!draftTrigger.current?.isConnected) draftTrigger.current = heading.current
@@ -36,6 +39,22 @@ function Drafts() {
     const query = new URLSearchParams(params.toString())
     query.delete('draft')
     router.replace(`/admin/quick-add${query.size ? `?${query}` : ''}`, { scroll: false })
+  }
+
+  async function deleteDraft(draft: QuickAddDraft) {
+    if (!window.confirm(`${text('deleteConfirm')}\n\n${draft.name}`)) return
+    setDeleting(draft.id)
+    setDeleteError('')
+    try {
+      const response = await fetch(`/api/quick-add-drafts/${draft.id}`, { method: 'DELETE' })
+      if (!response.ok) throw new Error('deleteFailed')
+      setDrafts(current => current.filter(item => item.id !== draft.id))
+      setOffset(0)
+      setRevision(value => value + 1)
+      window.dispatchEvent(new Event('quick-add-saved'))
+    } catch {
+      setDeleteError(text('deleteFailed'))
+    } finally { setDeleting(null) }
   }
 
   useEffect(() => {
@@ -70,10 +89,13 @@ function Drafts() {
         <option value="">{text('allCaptures')}</option><option value="draft">{text('draft')}</option><option value="ready_for_review">{text('ready_for_review')}</option><option value="approved">{text('approved')}</option>
       </select></label>
     {error && <div role="alert" className="mb-5"><p>{text(error)}</p><Button variant="teal" className="mt-2" onClick={() => setRevision(value => value + 1)}>{text('retry')}</Button></div>}
+    {deleteError && <p role="alert" className="mb-5 text-sm text-red-700 dark:text-red-300">{deleteError}</p>}
     {!loading && !error && !drafts.length && <Card>{text('empty')}</Card>}
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {drafts.map(draft => <Card key={draft.id} className="text-gray-900 dark:text-gray-100">
-        <p className="text-xs font-semibold text-teal-700 dark:text-teal-300">{text(draft.kind)} · {text(draft.status)}</p>
+        <div className="flex items-start justify-between gap-2"><p className="text-xs font-semibold text-teal-700 dark:text-teal-300">{text(draft.kind)} · {text(draft.status)}</p>
+          {draft.status === 'draft' && <button type="button" disabled={deleting === draft.id} onClick={() => void deleteDraft(draft)} aria-label={`${text('deleteDraft')}: ${draft.name}`} title={text('deleteDraft')} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-red-700 hover:bg-red-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 disabled:opacity-50 dark:text-red-300 dark:hover:bg-red-950"><Trash2 className="h-5 w-5" aria-hidden="true" /></button>}
+        </div>
         <h2 className="mt-2 break-words text-lg font-semibold text-gray-900 dark:text-white">{draft.name}</h2>
         <p className="mt-1 text-sm text-gray-700 dark:text-gray-200">{text('author')}: {draft.author_name || text('teamMember')} · {draft.site_name || text('noLocation')}</p>
         {draft.status !== 'approved' && <p className="mt-2 text-sm text-amber-800 dark:text-amber-200">{missingReviewDetails(draft.review || {}, draft.kind).map(key => text(key)).join(' · ')}</p>}
