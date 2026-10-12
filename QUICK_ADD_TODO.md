@@ -209,6 +209,12 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
 - Verification passed: 30 focused API/photo tests, TypeScript, an isolated
   PostgreSQL migration test, a rolled-back live database check and the production
   build. A signed-in retest of the affected draft remains open.
+- A subsequent Cushelle trial completed the full capture, approval and recipe-use
+  journey, but exposed how easy it was to overlook one allergen. Unanswered or
+  inconsistent allergen controls are now highlighted in red with a remaining
+  count. Reviewers may mark only unanswered values as not present after checking
+  the current label; existing warnings are preserved and evidence must be
+  reconfirmed before approval.
 - [ ] Assess whether an iPhone/iPad app adds enough value beyond the mobile portal.
 
 ## First-version acceptance criteria
