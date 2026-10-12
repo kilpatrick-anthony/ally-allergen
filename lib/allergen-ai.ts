@@ -2,7 +2,7 @@
 // Shared constants and helpers for AI-based allergen extraction.
 // Used by /api/scan-label.
 
-import type { AllergenWarnings } from '@/types/allergen'
+import { GLUTEN_TYPES, TREE_NUT_TYPES, type AllergenLevel, type AllergenWarnings } from '@/types/allergen'
 
 export const VALID_ALLERGEN_IDS = [
   'cereals_gluten', 'crustaceans', 'eggs', 'fish', 'peanuts', 'soybeans',
@@ -17,13 +17,26 @@ function buildDefaultWarnings(): AllergenWarnings {
   return Object.fromEntries(VALID_ALLERGEN_IDS.map(id => [id, 'none'])) as unknown as AllergenWarnings
 }
 
-export function sanitiseWarnings(raw: Record<string, string>): AllergenWarnings {
+export function sanitiseWarnings(raw: Record<string, unknown>): AllergenWarnings {
   const result = buildDefaultWarnings()
   for (const id of VALID_ALLERGEN_IDS) {
     const val = raw[id]
-    if (val && VALID_LEVELS.includes(val)) {
+    if (typeof val === 'string' && VALID_LEVELS.includes(val)) {
       (result as any)[id] = val
     }
+  }
+  for (const [field, subtypes] of [
+    ['cereals_gluten_levels', GLUTEN_TYPES],
+    ['nuts_levels', TREE_NUT_TYPES],
+  ] as const) {
+    const values = raw[field]
+    if (!values || typeof values !== 'object' || Array.isArray(values)) continue
+    const clean: Record<string, AllergenLevel> = {}
+    for (const { key } of subtypes) {
+      const level = (values as Record<string, unknown>)[key]
+      if (typeof level === 'string' && VALID_LEVELS.includes(level)) clean[key] = level as AllergenLevel
+    }
+    if (Object.keys(clean).length) (result as unknown as Record<string, unknown>)[field] = clean
   }
   return result
 }
@@ -36,6 +49,9 @@ export const ALLERGEN_JSON_SCHEMA = `Return a JSON object with EXACTLY these fie
   "description": "One-sentence description (empty string if unclear)",
   "allergen_warnings": {
     "cereals_gluten": "none|contains|may_contain|traces|cross_contamination",
+    "cereals_gluten_levels": {
+      "wheat|rye|barley|oats": "contains|may_contain|traces|cross_contamination"
+    },
     "crustaceans": "none|contains|may_contain|traces|cross_contamination",
     "eggs": "none|contains|may_contain|traces|cross_contamination",
     "fish": "none|contains|may_contain|traces|cross_contamination",
@@ -43,6 +59,9 @@ export const ALLERGEN_JSON_SCHEMA = `Return a JSON object with EXACTLY these fie
     "soybeans": "none|contains|may_contain|traces|cross_contamination",
     "milk": "none|contains|may_contain|traces|cross_contamination",
     "nuts": "none|contains|may_contain|traces|cross_contamination",
+    "nuts_levels": {
+      "almonds|hazelnuts|walnuts|cashews|pecans|brazil_nuts|pistachios|macadamia": "contains|may_contain|traces|cross_contamination"
+    },
     "celery": "none|contains|may_contain|traces|cross_contamination",
     "mustard": "none|contains|may_contain|traces|cross_contamination",
     "sesame": "none|contains|may_contain|traces|cross_contamination",
@@ -60,4 +79,5 @@ Allergen level rules:
 - "cross_contamination" → made on shared equipment/facility
 - "none"                → not mentioned anywhere
 
-All 14 keys in allergen_warnings must always be present.`
+All 14 parent keys in allergen_warnings must always be present.
+For cereals_gluten_levels and nuts_levels, include only subtypes explicitly named by the label. Never apply a parent level to every subtype. For example, visible wheat means cereals_gluten is contains and cereals_gluten_levels is {"wheat":"contains"}; rye, barley and oats remain omitted. Apply the same rule to explicitly named tree nuts.`

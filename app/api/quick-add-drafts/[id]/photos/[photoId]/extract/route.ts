@@ -9,11 +9,12 @@ type Route = { params: Promise<{ id: string; photoId: string }> }
 
 const DIETARY_TAGS = new Set(['Vegan', 'Vegetarian', 'Gluten-Free', 'Halal', 'Kosher', 'Organic', 'Fair Trade', 'Lactose-Free', 'Coeliac-Friendly'])
 const PROMPT = `Analyse this food label for a human reviewer. Return JSON only:
-{"name":"","supplier_name":"","description":"","allergen_warnings":{},"dietary_tags":[],"notes":[]}
+{"name":"","description":"","allergen_warnings":{},"dietary_tags":[],"notes":[]}
 
 Use EU Regulation 1169/2011 allergen keys: cereals_gluten, crustaceans, eggs, fish, peanuts, soybeans, milk, nuts, celery, mustard, sesame, sulphites, lupin, molluscs.
 Allowed allergen values: contains, may_contain, traces, cross_contamination.
-Only include an allergen when the visible label explicitly supports it; omit uncertain and unmentioned allergens. Only suggest dietary tags explicitly claimed by the label. Never infer absence or suitability. Put uncertainty or unreadable/cropped information in notes.`
+For cereals_gluten, also return cereals_gluten_levels using only explicitly named wheat, rye, barley or oats. For nuts, return nuts_levels using only explicitly named almonds, hazelnuts, walnuts, cashews, pecans, brazil_nuts, pistachios or macadamia. Give each named subtype its visible risk level; omit every unmentioned subtype so it remains not reviewed.
+Only include an allergen when the visible label explicitly supports it; omit uncertain and unmentioned allergens. Only suggest dietary tags explicitly claimed by the label. Never infer absence or suitability. The name must be the consumer-facing product name and should include the visible brand when useful (for example, "Brand Chocolate Biscuits"). Do not treat a brand or manufacturer as a supplier; supplier selection is left to the user. Put uncertainty or unreadable/cropped information in notes.`
 
 export async function POST(request: NextRequest, route: Route) {
   try {
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest, route: Route) {
     const allergen_warnings = Object.fromEntries(Object.entries(warnings).filter(([, level]) => level !== 'none'))
     const clean = (value: unknown, limit: number) => typeof value === 'string' ? value.trim().slice(0, limit) : ''
     return NextResponse.json({ suggestions: {
-      name: clean(parsed.name, 200), supplier_name: clean(parsed.supplier_name, 200), description: clean(parsed.description, 500),
+      name: clean(parsed.name, 200), supplier_name: '', description: clean(parsed.description, 500),
       allergen_warnings, dietary_tags: Array.isArray(parsed.dietary_tags) ? [...new Set(parsed.dietary_tags.map(String).filter(tag => DIETARY_TAGS.has(tag)))] : [],
       notes: Array.isArray(parsed.notes) ? parsed.notes.map(note => clean(note, 300)).filter(Boolean).slice(0, 5) : [],
     } }, { headers: { 'Cache-Control': 'private, no-store' } })
