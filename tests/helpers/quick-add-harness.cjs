@@ -10,6 +10,7 @@ const params = id => ({ params: Promise.resolve({ id }) })
 function setup({ role = 'staff', token = 'valid', membership = true, dbFailure = false } = {}) {
   const rows = [], photos = [], history = [], writes = [], objects = new Map()
   const failures = { upload: false, remove: false, finalize: false, extraction: false }
+  const gatewayRequests = []
   const hooks = { beforeUpload: null }
   let concurrentEdit = false
   const db = { from(table) {
@@ -86,8 +87,11 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
     '@/lib/supabase/server': { createServiceClient: () => db }, zod: { z },
   }
   function load(path) {
-    const context = { exports: {}, Buffer, Request, Response, Blob, AbortSignal, process: { env: { GEMINI_API_KEY: 'test-key' } },
-      fetch: async () => failures.extraction ? { ok: false } : { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: JSON.stringify({ name: 'AI Bread', supplier_name: 'AI Bakery', description: 'Sliced bread', allergen_warnings: { cereals_gluten: 'contains', milk: 'none', fish: 'invented' }, dietary_tags: ['Vegan', 'Invented'], notes: ['Check the small print'] }) }] } }] }) },
+    const context = { exports: {}, Buffer, Request, Response, Blob, AbortSignal, process: { env: { VERCEL_OIDC_TOKEN: 'test-token' } },
+      fetch: async (url, options) => {
+        gatewayRequests.push({ url, options })
+        return failures.extraction ? { ok: false, status: 502 } : { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: JSON.stringify({ name: 'AI Bread', supplier_name: 'AI Bakery', description: 'Sliced bread', allergen_warnings: { cereals_gluten: 'contains', milk: 'none', fish: 'invented' }, dietary_tags: ['Vegan', 'Invented'], notes: ['Check the small print'] }) } }] }) }
+      },
       require: name => { assert.ok(mocks[name], name); return mocks[name] }, console: { error() {} } }
     vm.createContext(context)
     vm.runInContext(ts.transpileModule(fs.readFileSync(path, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText, context)
@@ -98,12 +102,13 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
   mocks['@/lib/quick-add-review'] = load('lib/quick-add-review.ts')
   mocks['@/lib/server/quick-add'] = load('lib/server/quick-add.ts')
   mocks['@/lib/server/quick-add-photos'] = load('lib/server/quick-add-photos.ts')
+  mocks['@/lib/server/ai-gateway'] = load('lib/server/ai-gateway.ts')
   return {
     db, history, setRole: value => { role = value }, transition: load('app/api/quick-add-drafts/[id]/transition/route.ts'), evidence: load('app/api/quick-add-evidence/[photoId]/route.ts'),
     photoCollection: load('app/api/quick-add-drafts/[id]/photos/route.ts'),
     photoItem: load('app/api/quick-add-drafts/[id]/photos/[photoId]/route.ts'),
     photoExtract: load('app/api/quick-add-drafts/[id]/photos/[photoId]/extract/route.ts'),
-    photoHelpers: mocks['@/lib/server/quick-add-photos'], photos, objects, failures, hooks,
+    photoHelpers: mocks['@/lib/server/quick-add-photos'], photos, objects, failures, hooks, gatewayRequests,
     collection: load('app/api/quick-add-drafts/route.ts'), item: load('app/api/quick-add-drafts/[id]/route.ts'), rows, writes,
     race: () => { concurrentEdit = true },
     seed(id, overrides = {}) { rows.push({ ...fields, allergen_warnings: {}, dietary_tags: [], id, business_id: business, created_by: actor, status: 'draft', version: 1, created_at: '2026-10-09T10:00:00Z', updated_at: '2026-10-09T10:00:00Z', ...overrides }) },

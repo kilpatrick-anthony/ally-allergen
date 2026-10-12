@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { sanitiseWarnings } from '@/lib/allergen-ai'
+import { AiGatewayError, analyseWithAiGateway, hasAiGatewayCredentials } from '@/lib/server/ai-gateway'
 import { getDraft, quickAddContext, quickAddFailure, QuickAddError, requireDraftId } from '@/lib/server/quick-add'
 import { PHOTO_BUCKET, photoPath, photoQuery, type DraftPhoto } from '@/lib/server/quick-add-photos'
 
@@ -26,20 +27,17 @@ export async function POST(_request: NextRequest, route: Route) {
     if (error) throw error
     if (!photo) throw new QuickAddError('notFound', 404)
 
-    const apiKey = process.env.GEMINI_API_KEY
-    if (!apiKey) throw new QuickAddError('extractionUnavailable', 503)
+    if (!hasAiGatewayCredentials()) throw new QuickAddError('extractionUnavailable', 503)
     const downloaded = await context.supabase.storage.from(PHOTO_BUCKET).download(photoPath(photo as DraftPhoto))
     if (downloaded.error) throw downloaded.error
     const image = Buffer.from(await downloaded.data.arrayBuffer()).toString('base64')
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: AbortSignal.timeout(30000),
-      body: JSON.stringify({ contents: [{ parts: [{ text: PROMPT }, { inline_data: { mime_type: 'image/jpeg', data: image } }] }],
-        generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 1000 } }),
-    })
-    if (!response.ok) throw new QuickAddError('extractionFailed', 502)
-    const payload = await response.json()
-    const content = payload.candidates?.[0]?.content?.parts?.[0]?.text
-    if (typeof content !== 'string') throw new QuickAddError('extractionFailed', 502)
+    let content: string
+    try {
+      content = await analyseWithAiGateway({ prompt: PROMPT, image: { mimeType: 'image/jpeg', base64: image } })
+    } catch (error) {
+      if (error instanceof AiGatewayError && error.status === 503) throw new QuickAddError('extractionUnavailable', 503)
+      throw new QuickAddError('extractionFailed', error instanceof AiGatewayError && error.status === 429 ? 429 : 502)
+    }
     let parsed: Record<string, unknown>
     try { parsed = JSON.parse(content) } catch { throw new QuickAddError('extractionFailed', 502) }
     const warnings = sanitiseWarnings((parsed.allergen_warnings || {}) as Record<string, string>)

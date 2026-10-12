@@ -135,6 +135,17 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
 - `GEMINI_API_KEY` is not yet configured in Vercel. The deployed extraction UI
   therefore falls back safely to manual entry until a production provider key
   is added; prepared recipes and the rest of Quick Add are available.
+
+### Vercel AI Gateway migration — 12 October 2026
+
+- Replaced the three direct Gemini API integrations with Vercel AI Gateway using
+  `google/gemini-2.5-flash`. Production authentication uses Vercel's automatic
+  OIDC deployment token, so AllyJen no longer needs a Gemini API key.
+- Local development may use an uncommitted `AI_GATEWAY_API_KEY`; the manual-entry
+  fallback remains available if Gateway authentication, credits or providers are
+  unavailable. Human review and the existing allergen-safety checks are unchanged.
+- Local verification passed: 28 Quick Add API/photo tests, TypeScript and the
+  production build. Deployment and a real-label Gateway request remain.
 - [ ] Assess whether an iPhone/iPad app adds enough value beyond the mobile portal.
 
 ## First-version acceptance criteria

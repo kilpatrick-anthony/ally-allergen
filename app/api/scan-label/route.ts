@@ -1,14 +1,11 @@
 // app/api/scan-label/route.ts
 // Accepts a base64-encoded image OR document (PDF/Word) of a product label/datasheet
-// and uses Google Gemini to extract allergen information.
-//
-// Required env var: GEMINI_API_KEY
-// Get a free key at: https://aistudio.google.com/app/apikey
+// and uses Vercel AI Gateway to extract allergen information.
 
 import { NextResponse } from 'next/server'
 import mammoth from 'mammoth'
-import type { AllergenWarnings } from '@/types/allergen'
 import { ALLERGEN_JSON_SCHEMA, sanitiseWarnings } from '@/lib/allergen-ai'
+import { AiGatewayError, analyseWithAiGateway, hasAiGatewayCredentials } from '@/lib/server/ai-gateway'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,28 +29,19 @@ ${text.slice(0, 12000)}
 
 // ── Shared Gemini call ────────────────────────────────────────────────────────
 
-async function callGemini(apiKey: string, parts: any[]): Promise<any> {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 800 },
-      }),
-    }
-  )
-  return { res, data: res.ok ? await res.json() : null, errText: res.ok ? null : await res.text() }
+async function extractPdf(buffer: Buffer): Promise<string> {
+  // @ts-expect-error — pdf-parse exposes no types for its runtime-only subpath
+  const mod = await import('pdf-parse/lib/pdf-parse.js')
+  const pdfParse = (mod.default ?? mod) as unknown as (buf: Buffer) => Promise<{ text: string }>
+  return (await pdfParse(buffer)).text || ''
 }
 
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) {
+  if (!hasAiGatewayCredentials()) {
     return NextResponse.json(
-      { error: 'Label scanning is not configured. Please add GEMINI_API_KEY to your environment. Get a free key at https://aistudio.google.com/app/apikey' },
+      { error: 'Label scanning is not configured. Please enable Vercel AI Gateway for this deployment.' },
       { status: 503 },
     )
   }
@@ -68,7 +56,8 @@ export async function POST(req: Request) {
   const { image, document } = body
 
   try {
-    let parts: any[]
+    let prompt: string
+    let gatewayImage: { mimeType: string; base64: string } | undefined
 
     if (image && typeof image === 'string') {
       // ── Image path (existing) ───────────────────────────────────────────
@@ -79,10 +68,8 @@ export async function POST(req: Request) {
         mimeType = header.replace('data:', '').replace(';base64', '')
         base64Data = data
       }
-      parts = [
-        { text: PROMPT_VISUAL },
-        { inline_data: { mime_type: mimeType, data: base64Data } },
-      ]
+      prompt = PROMPT_VISUAL
+      gatewayImage = { mimeType, base64: base64Data }
 
     } else if (document && typeof document === 'string') {
       // ── Document path (PDF or Word) ─────────────────────────────────────
@@ -103,33 +90,21 @@ export async function POST(req: Request) {
         if (!text.trim()) {
           return NextResponse.json({ error: 'Could not extract text from the Word document.' }, { status: 422 })
         }
-        parts = [{ text: PROMPT_TEXT(text) }]
+        prompt = PROMPT_TEXT(text)
       } else {
-        // PDF — Gemini supports it natively as inline data
-        parts = [
-          { text: PROMPT_VISUAL },
-          { inline_data: { mime_type: 'application/pdf', data: base64Data } },
-        ]
+        // Extract PDF text locally so the Gateway request uses one portable API shape.
+        const text = await extractPdf(Buffer.from(base64Data, 'base64'))
+        if (!text.trim()) {
+          return NextResponse.json({ error: 'Could not extract text from the PDF document.' }, { status: 422 })
+        }
+        prompt = PROMPT_TEXT(text)
       }
 
     } else {
       return NextResponse.json({ error: 'Missing image or document field.' }, { status: 400 })
     }
 
-    const { res: geminiRes, data: geminiData, errText } = await callGemini(apiKey, parts)
-
-    if (!geminiRes.ok) {
-      console.error('[scan-label] Gemini error:', geminiRes.status, errText)
-      return NextResponse.json(
-        { error: 'Failed to analyse the file. Please try again or enter details manually.' },
-        { status: 502 },
-      )
-    }
-
-    const content = geminiData.candidates?.[0]?.content?.parts?.[0]?.text
-    if (!content) {
-      return NextResponse.json({ error: 'Empty response from AI.' }, { status: 502 })
-    }
+    const content = await analyseWithAiGateway({ prompt, image: gatewayImage, maxOutputTokens: 800 })
 
     let parsed: any
     try {
@@ -145,6 +120,13 @@ export async function POST(req: Request) {
       notes: Array.isArray(parsed.notes) ? parsed.notes.map(String) : [],
     })
   } catch (err: any) {
+    if (err instanceof AiGatewayError) {
+      console.error('[scan-label] AI Gateway error:', err.status)
+      return NextResponse.json(
+        { error: 'Failed to analyse the file. Please try again or enter details manually.' },
+        { status: err.status === 429 ? 429 : 502 },
+      )
+    }
     console.error('[scan-label] Unexpected error:', err)
     return NextResponse.json(
       { error: 'An unexpected error occurred. Please try again.' },

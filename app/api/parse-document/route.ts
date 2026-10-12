@@ -1,12 +1,10 @@
 // app/api/parse-document/route.ts
-// Accepts a base64-encoded PDF, DOCX, DOC, or plain-text file and uses Google Gemini
-// (free tier) to extract allergen information from the text content.
-//
-// Required env var: GEMINI_API_KEY
-// Get a free key at: https://aistudio.google.com/app/apikey
+// Accepts a base64-encoded PDF, DOCX, DOC, or plain-text file and uses
+// Vercel AI Gateway to extract allergen information from the text content.
 
 import { NextResponse } from 'next/server'
 import { ALLERGEN_JSON_SCHEMA, sanitiseWarnings } from '@/lib/allergen-ai'
+import { AiGatewayError, analyseWithAiGateway, hasAiGatewayCredentials } from '@/lib/server/ai-gateway'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,10 +44,9 @@ async function extractDocx(buffer: Buffer): Promise<string> {
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
-  const apiKey = process.env.GEMINI_API_KEY
-  if (!apiKey) {
+  if (!hasAiGatewayCredentials()) {
     return NextResponse.json(
-      { error: 'Document parsing is not configured. Please add GEMINI_API_KEY to your environment. Get a free key at https://aistudio.google.com/app/apikey' },
+      { error: 'Document parsing is not configured. Please enable Vercel AI Gateway for this deployment.' },
       { status: 503 },
     )
   }
@@ -112,38 +109,7 @@ export async function POST(req: Request) {
 
   // ── Send extracted text to Gemini ───────────────────────────────────────────
   try {
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: buildPrompt(text) }] }],
-          generationConfig: { responseMimeType: 'application/json', maxOutputTokens: 800 },
-        }),
-      }
-    )
-
-    if (!geminiRes.ok) {
-      const errText = await geminiRes.text()
-      console.error('[parse-document] Gemini error:', geminiRes.status, errText)
-      if (geminiRes.status === 429) {
-        return NextResponse.json(
-          { error: 'AI quota exceeded — please wait a moment and try again.' },
-          { status: 429 },
-        )
-      }
-      return NextResponse.json(
-        { error: 'Failed to analyse document. Please try again or enter details manually.' },
-        { status: 502 },
-      )
-    }
-
-    const geminiData = await geminiRes.json()
-    const content = geminiData.candidates?.[0]?.content?.parts?.[0]?.text
-    if (!content) {
-      return NextResponse.json({ error: 'Empty response from AI.' }, { status: 502 })
-    }
+    const content = await analyseWithAiGateway({ prompt: buildPrompt(text), maxOutputTokens: 800 })
 
     let parsed: any
     try {
@@ -159,6 +125,16 @@ export async function POST(req: Request) {
       notes: Array.isArray(parsed.notes) ? parsed.notes.map(String) : [],
     })
   } catch (err: any) {
+    if (err instanceof AiGatewayError) {
+      if (err.status === 429) {
+        return NextResponse.json({ error: 'AI quota exceeded — please wait a moment and try again.' }, { status: 429 })
+      }
+      console.error('[parse-document] AI Gateway error:', err.status)
+      return NextResponse.json(
+        { error: 'Failed to analyse document. Please try again or enter details manually.' },
+        { status: 502 },
+      )
+    }
     console.error('[parse-document] Unexpected error:', err)
     return NextResponse.json(
       { error: 'An unexpected error occurred. Please try again.' },

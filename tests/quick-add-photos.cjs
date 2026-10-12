@@ -135,6 +135,11 @@ test('photo extraction requires draft access and returns review-only sanitised s
   assert.equal(JSON.stringify(result.body.suggestions.dietary_tags), JSON.stringify(['Vegan']))
   assert.equal(s.rows[0].name, 'Bread')
   assert.equal(result.headers['Cache-Control'], 'private, no-store')
+  assert.equal(s.gatewayRequests[0].url, 'https://ai-gateway.vercel.sh/v1/chat/completions')
+  assert.equal(s.gatewayRequests[0].options.headers.Authorization, 'Bearer test-token')
+  const gatewayBody = JSON.parse(s.gatewayRequests[0].options.body)
+  assert.equal(gatewayBody.model, 'google/gemini-2.5-flash')
+  assert.match(gatewayBody.messages[0].content[1].image_url.url, /^data:image\/jpeg;base64,/)
 
   const foreign = setup(); foreign.seed(uuid(10), { business_id: otherBusiness })
   assert.equal((await foreign.photoExtract.POST({}, route())).status, 404)
