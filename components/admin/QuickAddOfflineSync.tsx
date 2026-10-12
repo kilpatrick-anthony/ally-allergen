@@ -3,14 +3,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getQuickAddOutbox, removeQuickAddOutboxItem, saveQuickAddRecovery } from '@/lib/quick-add-offline'
 import { useTranslation } from '@/lib/hooks/useTranslation'
+import { listOfflineQuickAddPhotoDraftIds, uploadOfflineQuickAddPhotos } from '@/lib/quick-add-offline-photos'
 
 export default function QuickAddOfflineSync() {
   const { t } = useTranslation()
   const syncing = useRef(false)
+  const rerun = useRef(false)
   const [pending, setPending] = useState(0)
   const sync = useCallback(async () => {
     setPending(getQuickAddOutbox().length)
-    if (syncing.current || !navigator.onLine) return
+    if (syncing.current) { rerun.current = true; return }
+    if (!navigator.onLine) return
     syncing.current = true
     try {
       for (const item of getQuickAddOutbox()) {
@@ -30,12 +33,19 @@ export default function QuickAddOfflineSync() {
           window.dispatchEvent(new CustomEvent('quick-add-sync-failed', { detail: { id: item.id, error: result?.error || 'unavailable' } }))
           continue
         }
+        try { await uploadOfflineQuickAddPhotos(item.id) } catch { break }
         removeQuickAddOutboxItem(item.id)
         setPending(getQuickAddOutbox().length)
         window.dispatchEvent(new CustomEvent('quick-add-synced', { detail: { id: item.id, draft: result.draft } }))
         window.dispatchEvent(new Event('quick-add-saved'))
       }
-    } finally { syncing.current = false }
+      for (const draftId of await listOfflineQuickAddPhotoDraftIds()) {
+        await uploadOfflineQuickAddPhotos(draftId).catch(() => {})
+      }
+    } finally {
+      syncing.current = false
+      if (rerun.current) { rerun.current = false; queueMicrotask(() => { void sync() }) }
+    }
   }, [])
 
   useEffect(() => {
@@ -43,10 +53,12 @@ export default function QuickAddOfflineSync() {
     window.addEventListener('online', sync)
     window.addEventListener('quick-add-queued', sync)
     window.addEventListener('quick-add-session-ready', sync)
+    window.addEventListener('quick-add-offline-photo-saved', sync)
     return () => {
       window.removeEventListener('online', sync)
       window.removeEventListener('quick-add-queued', sync)
       window.removeEventListener('quick-add-session-ready', sync)
+      window.removeEventListener('quick-add-offline-photo-saved', sync)
     }
   }, [sync])
 

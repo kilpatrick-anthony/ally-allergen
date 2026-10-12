@@ -74,6 +74,13 @@ export default function ProtectedRoute({
         setIsAuthorized(true)
       } catch (error) {
         console.error('❌ Auth check error:', error)
+        // Permit only a previously authenticated browser tab to reopen its
+        // cached admin shell offline. Every later sync still rechecks the live
+        // server session, membership and role before accepting data.
+        if (!navigator.onLine && sessionStorage.getItem('ally_user') && sessionStorage.getItem('ally_biz')) {
+          setIsAuthorized(true)
+          return
+        }
         router.replace(redirectTo)
       } finally {
         setIsLoading(false)

@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/Button'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import type { QuickAddDraft, QuickAddFields, QuickAddKind } from '@/lib/quick-add'
 import { DEFAULT_INGREDIENT_CATEGORIES, DEFAULT_MENU_CATEGORIES, mergeCategories } from '@/lib/item-categories'
-import { clearQuickAddRecovery, loadQuickAddRecovery, queueQuickAddDraft, saveQuickAddRecovery } from '@/lib/quick-add-offline'
+import { clearQuickAddRecovery, loadQuickAddOptions, loadQuickAddRecovery, queueQuickAddDraft, saveQuickAddOptions, saveQuickAddRecovery, type QuickAddOptionSnapshot } from '@/lib/quick-add-offline'
 
 type Option = { id: string; name: string }
 type Props = {
@@ -133,6 +133,26 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
       if (!response.ok) throw new Error(data.error || 'unavailable')
       return data
     }
+    function applyLoaded(options: QuickAddOptionSnapshot, draftData: { draft: QuickAddDraft } | null) {
+      setSites(options.sites)
+      setSuppliers(options.suppliers)
+      setIngredients(options.ingredients)
+      setIngredientCategories(mergeCategories(DEFAULT_INGREDIENT_CATEGORIES, options.ingredientCategories))
+      setProductCategories(mergeCategories(DEFAULT_MENU_CATEGORIES, options.productCategories))
+      if (draftData) {
+        const draft = draftData.draft
+        const values = fieldsOf(draft)
+        setFields(values); setBaseline(JSON.stringify(values)); setRecord(draft)
+        setManualSupplier(!draft.supplier_id && !!draft.supplier_name)
+      } else {
+        const recovered = loadQuickAddRecovery()
+        const selectedSite = options.sites.some(site => site.id === siteId) ? siteId : null
+        const values = recovered?.fields || blank(initialKind, selectedSite)
+        setFields(values); setBaseline(JSON.stringify(blank(initialKind, selectedSite)))
+        if (recovered) { requestId.current = recovered.id; setManualSupplier(!values.supplier_id && !!values.supplier_name); setRestoredOffline(true) }
+      }
+      setError('')
+    }
     setLoading(true)
     setLoadError('')
     void Promise.all([
@@ -140,26 +160,19 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
       draftId ? read(`/api/quick-add-drafts/${draftId}`) : Promise.resolve(null),
     ]).then(([siteData, supplierData, ingredientCategoryData, productCategoryData, ingredientData, draftData]) => {
       if (controller.signal.aborted) return
-      setSites(siteData.sites || [])
-      setSuppliers(supplierData.suppliers || [])
-      setIngredients((ingredientData.ingredients || []).map((item: QuickAddIngredientOption) => ({ id: item.id, name: item.name, category: item.category })))
-      setIngredientCategories(mergeCategories(DEFAULT_INGREDIENT_CATEGORIES, ingredientCategoryData.categories))
-      setProductCategories(mergeCategories(DEFAULT_MENU_CATEGORIES, productCategoryData.categories))
-      if (draftData) {
-        const draft: QuickAddDraft = draftData.draft
-        const values = fieldsOf(draft)
-        setFields(values); setBaseline(JSON.stringify(values)); setRecord(draft)
-        setManualSupplier(!draft.supplier_id && !!draft.supplier_name)
-      } else {
-        const recovered = loadQuickAddRecovery()
-        const selectedSite = siteData.sites?.some((site: Option) => site.id === siteId) ? siteId : null
-        const values = recovered?.fields || blank(initialKind, selectedSite)
-        setFields(values); setBaseline(JSON.stringify(blank(initialKind, selectedSite)))
-        if (recovered) { requestId.current = recovered.id; setManualSupplier(!values.supplier_id && !!values.supplier_name); setRestoredOffline(true) }
+      const options: QuickAddOptionSnapshot = {
+        sites: siteData.sites || [], suppliers: supplierData.suppliers || [],
+        ingredientCategories: ingredientCategoryData.categories || [], productCategories: productCategoryData.categories || [],
+        ingredients: (ingredientData.ingredients || []).map((item: QuickAddIngredientOption) => ({ id: item.id, name: item.name, category: item.category })),
+        saved_at: new Date().toISOString(),
       }
-      setError('')
+      saveQuickAddOptions(options)
+      applyLoaded(options, draftData)
     }).catch((reason: Error) => {
-      if (!controller.signal.aborted) setLoadError(['notFound', 'forbidden', 'unauthorized'].includes(reason.message) ? reason.message : 'optionsFailed')
+      if (controller.signal.aborted) return
+      const cached = !draftId ? loadQuickAddOptions() : null
+      if (cached) applyLoaded(cached, null)
+      else setLoadError(['notFound', 'forbidden', 'unauthorized'].includes(reason.message) ? reason.message : 'optionsFailed')
     }).finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
   }, [draftId, initialKind, siteId, attempt])
@@ -255,6 +268,9 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
               }}>{text('another')}</Button>}
               {record && <Button variant="tealOutline" onClick={() => { focusName.current = true; setSuccess(false) }}>{text('view')}</Button>}
             </div>
+            {queuedOffline && requestId.current && fields.kind !== 'prepared_item' && <div className="mt-5 rounded-xl border-2 border-teal-200 bg-teal-50/40 p-3 dark:border-teal-800 dark:bg-teal-950/20">
+              <QuickAddPhotos key={`offline-${requestId.current}`} draftId={requestId.current} offlineDraft onActivity={photoActivity} onApplySuggestions={applySuggestions} />
+            </div>}
           </div> : <form id={formId} onSubmit={save} className="space-y-4">
             {restoredOffline && <p role="status" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-100">{text('restoredOffline')}</p>}
             <fieldset disabled={saving || photoBusy || reviewBusy || (!!record && record.status !== 'draft')} className="space-y-4">

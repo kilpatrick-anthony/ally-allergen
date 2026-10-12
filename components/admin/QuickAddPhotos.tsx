@@ -6,10 +6,11 @@ import { X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import type { QuickAddFields } from '@/lib/quick-add'
+import { listOfflineQuickAddPhotos, removeOfflineQuickAddPhoto, saveOfflineQuickAddPhoto } from '@/lib/quick-add-offline-photos'
 
-type Photo = { id: string; state: 'pending' | 'ready'; file?: Blob; preview?: string; error?: string }
+type Photo = { id: string; state: 'pending' | 'ready'; file?: Blob; preview?: string; error?: string; queued?: boolean }
 export type LabelSuggestions = { name: string; supplier_name: string; description: string; allergen_warnings: QuickAddFields['allergen_warnings']; dietary_tags: string[]; notes: string[] }
-type Props = { draftId: string; disabled?: boolean; onActivity: (busy: boolean, unsaved: boolean) => void; onApplySuggestions: (suggestions: LabelSuggestions) => void }
+type Props = { draftId: string; disabled?: boolean; offlineDraft?: boolean; onActivity: (busy: boolean, unsaved: boolean) => void; onApplySuggestions: (suggestions: LabelSuggestions) => void }
 
 async function prepare(file: File): Promise<Blob> {
   if (file.size > 30 * 1024 * 1024) throw new Error('photoSourceTooLarge')
@@ -37,7 +38,7 @@ async function prepare(file: File): Promise<Blob> {
 const knownErrors = ['photoFormat', 'photoInvalid', 'photoTooLarge', 'photoSourceTooLarge', 'photoLimit', 'photoConflict', 'extractionUnavailable', 'extractionFailed', 'unauthorized', 'forbidden', 'notFound', 'editConflict']
 const errorCode = (reason: unknown) => reason instanceof Error && knownErrors.includes(reason.message) ? reason.message : 'photoFailed'
 
-export default function QuickAddPhotos({ draftId, disabled, onActivity, onApplySuggestions }: Props) {
+export default function QuickAddPhotos({ draftId, disabled, offlineDraft = false, onActivity, onApplySuggestions }: Props) {
   const { t } = useTranslation()
   const text = (key: string) => t(`quickAdd.${key}`)
   const helpId = useId()
@@ -60,7 +61,7 @@ export default function QuickAddPhotos({ draftId, disabled, onActivity, onApplyS
     const urls = previews.current
     return () => { urls.forEach(url => URL.revokeObjectURL(url)); urls.clear() }
   }, [])
-  useEffect(() => { onActivity(working || !!extracting, photos.some(photo => !!photo.file && photo.state !== 'ready')) }, [working, extracting, photos, onActivity])
+  useEffect(() => { onActivity(working || !!extracting, photos.some(photo => !!photo.file && photo.state !== 'ready' && !photo.queued)) }, [working, extracting, photos, onActivity])
   useEffect(() => {
     if (restoreChooserFocus.current && !working && !disabled) {
       chooser.current?.focus()
@@ -70,6 +71,19 @@ export default function QuickAddPhotos({ draftId, disabled, onActivity, onApplyS
   useEffect(() => {
     const controller = new AbortController()
     setLoading(true); setLoadFailed(false)
+    if (offlineDraft) {
+      void listOfflineQuickAddPhotos(draftId).then(saved => {
+        if (controller.signal.aborted) return
+        setPhotos(saved.map(photo => {
+          const preview = URL.createObjectURL(photo.blob)
+          previews.current.add(preview)
+          return { id: photo.id, state: 'pending' as const, file: photo.blob, preview, queued: true }
+        }))
+        setError('')
+      }).catch(() => { if (!controller.signal.aborted) { setLoadFailed(true); setError('photoFailed') } })
+        .finally(() => { if (!controller.signal.aborted) setLoading(false) })
+      return () => controller.abort()
+    }
     void fetch(base, { cache: 'no-store', signal: controller.signal }).then(async response => {
       const data = await response.json()
       if (!response.ok) throw new Error(data.error)
@@ -77,10 +91,17 @@ export default function QuickAddPhotos({ draftId, disabled, onActivity, onApplyS
     }).catch(reason => { if (!controller.signal.aborted) { setLoadFailed(true); setError(errorCode(reason)) } })
       .finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
-  }, [base, attempt])
+  }, [base, attempt, draftId, offlineDraft])
 
   async function upload(photo: Photo) {
     try {
+      if (offlineDraft) {
+        if (!photo.file) throw new Error('photoInvalid')
+        await saveOfflineQuickAddPhoto(draftId, photo.id, photo.file)
+        setPhotos(current => current.map(item => item.id === photo.id ? { ...item, queued: true, error: undefined } : item))
+        window.dispatchEvent(new Event('quick-add-offline-photo-saved'))
+        return
+      }
       const response = await fetch(`${base}/${photo.id}`, { method: 'PUT', headers: { 'Content-Type': 'image/jpeg' }, body: photo.file, signal: AbortSignal.timeout(60000) })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error)
@@ -116,6 +137,12 @@ export default function QuickAddPhotos({ draftId, disabled, onActivity, onApplyS
     lock.current = true; setWorking(true)
     try {
       if (!remove) { await upload(photo); return }
+      if (offlineDraft || photo.queued) {
+        await removeOfflineQuickAddPhoto(photo.id)
+        setPhotos(current => current.filter(item => item.id !== photo.id))
+        if (photo.preview) { URL.revokeObjectURL(photo.preview); previews.current.delete(photo.preview) }
+        return
+      }
       const response = await fetch(`${base}/${photo.id}`, { method: 'DELETE', signal: AbortSignal.timeout(20000) })
       if (!response.ok) throw new Error((await response.json()).error)
       setPhotos(current => current.filter(item => item.id !== photo.id))
@@ -165,11 +192,11 @@ export default function QuickAddPhotos({ draftId, disabled, onActivity, onApplyS
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={photo.preview || `${base}/${photo.id}`} alt={`${text('labelPhoto')} ${index + 1}`} className="h-32 w-full object-contain" />
           </button> : <p className="text-sm">{text('photoInterrupted')}</p>}
-          <p className="mt-2 text-sm">{text(photo.state === 'ready' ? 'photoSaved' : 'photoPending')}</p>
+          <p className="mt-2 text-sm">{text(photo.queued ? 'offlinePhotoQueued' : photo.state === 'ready' ? 'photoSaved' : 'photoPending')}</p>
           {photo.error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{text(photo.error)}</p>}
           <div className="mt-2 flex flex-wrap gap-2">
-            {photo.file && photo.state !== 'ready' && <Button type="button" variant="tealOutline" disabled={blocked} aria-label={`${text('retry')}: ${text('labelPhoto')} ${index + 1}`} onClick={() => void act(photo, false)}>{text('retry')}</Button>}
-            {photo.state === 'ready' && <Button type="button" variant="tealOutline" disabled={blocked || !!extracting} aria-label={`${text('analysePhoto')} ${index + 1}`} onClick={() => void extract(photo)}>{extracting === photo.id ? text('analysingPhoto') : text('analysePhoto')}</Button>}
+            {photo.file && photo.state !== 'ready' && !photo.queued && <Button type="button" variant="tealOutline" disabled={blocked} aria-label={`${text('retry')}: ${text('labelPhoto')} ${index + 1}`} onClick={() => void act(photo, false)}>{text('retry')}</Button>}
+            {photo.state === 'ready' && !photo.queued && <Button type="button" variant="tealOutline" disabled={blocked || !!extracting} aria-label={`${text('analysePhoto')} ${index + 1}`} onClick={() => void extract(photo)}>{extracting === photo.id ? text('analysingPhoto') : text('analysePhoto')}</Button>}
             <Button type="button" variant="ghost" disabled={blocked || !!extracting} aria-label={`${text('removePhoto')} ${index + 1}`} onClick={() => void act(photo, true)}>{text('removePhoto')}</Button>
           </div>
           {suggestions?.photoId === photo.id && <div className="mt-3 rounded-lg bg-teal-50 p-3 text-sm text-teal-950 dark:bg-teal-950 dark:text-teal-50">

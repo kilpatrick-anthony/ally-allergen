@@ -86,12 +86,31 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
 - [x] Quick Add for prepared menu items and simple recipes.
 - [x] Photo-assisted extraction of label information, with mandatory human review.
 - [x] Barcode lookup, including clear handling for missing or outdated product information.
-- [ ] Offline capture and reliable later synchronisation.
+- [x] Offline capture and reliable later synchronisation.
   - [x] Preserve an unfinished text entry per signed-in user/business and queue a
     new text draft if connectivity drops while saving. Retry automatically on
     reconnect with the original idempotency ID and show a visible pending count.
-  - [ ] Cache the Quick Add shell/options for opening a new capture from a fully
-    offline start, and retain label-photo blobs locally until upload is possible.
+  - [x] Reuse the visited offline app shell, cache Quick Add options per account,
+    and retain label-photo blobs locally until upload is possible.
+
+### Offline Quick Add — 12 October 2026
+
+- An unfinished entry is recovered for the same signed-in user/business. New
+  text drafts can be queued without a connection and retry with their original
+  idempotency ID, preventing duplicate server records.
+- Previously loaded locations, suppliers, categories and ingredient choices are
+  cached per account so the visited Quick Add shell can start without network.
+  The offline shell is allowed only for a browser tab with an existing session
+  scope; every synchronised write still passes the live server session, role,
+  membership and business checks.
+- Label photos selected for an offline draft are normalised first, stored in
+  IndexedDB, previewable/removable on the device and uploaded individually only
+  after the text draft exists on the server. Successful uploads remove the
+  local blob; interrupted retries retain the same draft and photo IDs.
+- All six language catalogs include recovery, queue and photo-upload states.
+  Automated account-isolation, option-cache, outbox and IndexedDB photo tests
+  pass. A physical-device airplane-mode/reconnect trial remains part of the
+  broader real-phone checklist.
 - [x] Optional notifications when drafts need review.
 
 ### Draft-review notifications — 12 October 2026

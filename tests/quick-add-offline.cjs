@@ -3,6 +3,7 @@ const fs = require('node:fs')
 const test = require('node:test')
 const ts = require('typescript')
 const vm = require('node:vm')
+const { indexedDB } = require('fake-indexeddb')
 
 function load() {
   const local = new Map(), session = new Map()
@@ -47,4 +48,49 @@ test('queueing the same request replaces it and successful sync removal is durab
   assert.equal(api.getQuickAddOutbox()[0].fields.name, 'Updated bread')
   api.removeQuickAddOutboxItem('draft-1')
   assert.equal(api.getQuickAddOutbox().length, 0)
+})
+
+test('cached Quick Add options stay isolated with the recovery data', () => {
+  const { api, session } = load()
+  session.set('ally_user', 'user-1'); session.set('ally_biz', 'business-1')
+  const options = { sites: [{ id: 'site-1', name: 'Kitchen' }], suppliers: [], ingredientCategories: ['Bakery'], productCategories: [], ingredients: [] }
+  assert.equal(api.saveQuickAddOptions(options), true)
+  assert.equal(api.loadQuickAddOptions().sites[0].name, 'Kitchen')
+  session.set('ally_biz', 'business-2')
+  assert.equal(api.loadQuickAddOptions(), null)
+})
+
+function resetPhotoDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.deleteDatabase('ally-quick-add-offline')
+    request.onsuccess = resolve
+    request.onerror = () => reject(request.error)
+  })
+}
+
+function loadPhotos(session, fetchImpl = async () => new Response('{}', { status: 200 })) {
+  const context = { exports: {}, indexedDB, sessionStorage: { getItem: key => session.get(key) || null }, Blob, Response,
+    AbortSignal, fetch: fetchImpl, setTimeout, clearTimeout, console }
+  vm.createContext(context)
+  vm.runInContext(ts.transpileModule(fs.readFileSync('lib/quick-add-offline-photos.ts', 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 },
+  }).outputText, context)
+  return context.exports
+}
+
+test('offline photos are account-scoped, durable and removed only after upload', async () => {
+  await resetPhotoDb()
+  const session = new Map([['ally_user', 'user-1'], ['ally_biz', 'business-1']])
+  const uploads = []
+  const api = loadPhotos(session, async (url, options) => { uploads.push({ url, options }); return new Response('{}', { status: 200 }) })
+  await api.saveOfflineQuickAddPhoto('draft-1', 'photo-1', new Blob(['jpeg'], { type: 'image/jpeg' }))
+  assert.equal((await api.listOfflineQuickAddPhotos('draft-1')).length, 1)
+  assert.deepEqual(Array.from(await api.listOfflineQuickAddPhotoDraftIds()), ['draft-1'])
+  session.set('ally_user', 'user-2')
+  assert.equal((await api.listOfflineQuickAddPhotos('draft-1')).length, 0)
+  session.set('ally_user', 'user-1')
+  await api.uploadOfflineQuickAddPhotos('draft-1')
+  assert.equal(uploads.length, 1)
+  assert.match(uploads[0].url, /draft-1\/photos\/photo-1$/)
+  assert.equal((await api.listOfflineQuickAddPhotos('draft-1')).length, 0)
 })

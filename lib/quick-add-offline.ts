@@ -10,6 +10,15 @@ export type OfflineQuickAddDraft = {
   business_id: string
 }
 
+export type QuickAddOptionSnapshot = {
+  sites: Array<{ id: string; name: string }>
+  suppliers: Array<{ id: string; name: string }>
+  ingredientCategories: string[]
+  productCategories: string[]
+  ingredients: Array<{ id: string; name: string; category?: string }>
+  saved_at: string
+}
+
 type Scope = { userId: string; businessId: string }
 
 function scope(): Scope | null {
@@ -78,4 +87,21 @@ export function removeQuickAddOutboxItem(id: string) {
   if (!current) return
   const storageKey = key('outbox', current)
   localStorage.setItem(storageKey, JSON.stringify(getQuickAddOutbox().filter(item => item.id !== id)))
+}
+
+export function saveQuickAddOptions(options: Omit<QuickAddOptionSnapshot, 'saved_at'>) {
+  const current = scope()
+  if (!current) return false
+  try {
+    localStorage.setItem(key('options', current), JSON.stringify({ ...options, saved_at: new Date().toISOString() }))
+    return true
+  } catch { return false }
+}
+
+export function loadQuickAddOptions(): QuickAddOptionSnapshot | null {
+  const current = scope()
+  if (!current) return null
+  const value = read<QuickAddOptionSnapshot | null>(key('options', current), null)
+  return value && Array.isArray(value.sites) && Array.isArray(value.suppliers) && Array.isArray(value.ingredients)
+    && Array.isArray(value.ingredientCategories) && Array.isArray(value.productCategories) ? value : null
 }
