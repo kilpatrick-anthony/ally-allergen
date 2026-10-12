@@ -13,14 +13,21 @@ type AnalyseOptions = {
   prompt: string
   image?: { mimeType: string; base64: string }
   maxOutputTokens?: number
+  request?: Request
 }
 
-export function hasAiGatewayCredentials() {
-  return Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN)
+function gatewayToken(request?: Request) {
+  return process.env.AI_GATEWAY_API_KEY
+    || request?.headers?.get('x-vercel-oidc-token')
+    || process.env.VERCEL_OIDC_TOKEN
 }
 
-export async function analyseWithAiGateway({ prompt, image, maxOutputTokens = 1000 }: AnalyseOptions) {
-  const token = process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN
+export function hasAiGatewayCredentials(request?: Request) {
+  return Boolean(gatewayToken(request))
+}
+
+export async function analyseWithAiGateway({ prompt, image, maxOutputTokens = 1000, request }: AnalyseOptions) {
+  const token = gatewayToken(request)
   if (!token) throw new AiGatewayError(503, 'AI Gateway is not configured')
 
   const content = image

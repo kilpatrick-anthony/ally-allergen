@@ -44,7 +44,7 @@ async function extractDocx(buffer: Buffer): Promise<string> {
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
-  if (!hasAiGatewayCredentials()) {
+  if (!hasAiGatewayCredentials(req)) {
     return NextResponse.json(
       { error: 'Document parsing is not configured. Please enable Vercel AI Gateway for this deployment.' },
       { status: 503 },
@@ -109,7 +109,7 @@ export async function POST(req: Request) {
 
   // ── Send extracted text to Gemini ───────────────────────────────────────────
   try {
-    const content = await analyseWithAiGateway({ prompt: buildPrompt(text), maxOutputTokens: 800 })
+    const content = await analyseWithAiGateway({ prompt: buildPrompt(text), maxOutputTokens: 800, request: req })
 
     let parsed: any
     try {

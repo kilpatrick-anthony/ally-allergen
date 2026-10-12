@@ -39,7 +39,7 @@ async function extractPdf(buffer: Buffer): Promise<string> {
 // ── Route handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: Request) {
-  if (!hasAiGatewayCredentials()) {
+  if (!hasAiGatewayCredentials(req)) {
     return NextResponse.json(
       { error: 'Label scanning is not configured. Please enable Vercel AI Gateway for this deployment.' },
       { status: 503 },
@@ -104,7 +104,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing image or document field.' }, { status: 400 })
     }
 
-    const content = await analyseWithAiGateway({ prompt, image: gatewayImage, maxOutputTokens: 800 })
+    const content = await analyseWithAiGateway({ prompt, image: gatewayImage, maxOutputTokens: 800, request: req })
 
     let parsed: any
     try {

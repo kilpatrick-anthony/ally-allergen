@@ -128,7 +128,8 @@ test('approved evidence is business-accessible while unapproved and cross-busine
 test('photo extraction requires draft access and returns review-only sanitised suggestions', async () => {
   const s = setup(); s.seed(uuid(10))
   await s.photoItem.PUT(upload(await fixture()), route())
-  const result = await s.photoExtract.POST({}, route())
+  const extractionRequest = new Request('https://test/extract', { method: 'POST', headers: { 'x-vercel-oidc-token': 'test-token' } })
+  const result = await s.photoExtract.POST(extractionRequest, route())
   assert.equal(result.status, 200)
   assert.equal(result.body.suggestions.name, 'AI Bread')
   assert.equal(JSON.stringify(result.body.suggestions.allergen_warnings), JSON.stringify({ cereals_gluten: 'contains' }))
@@ -141,8 +142,13 @@ test('photo extraction requires draft access and returns review-only sanitised s
   assert.equal(gatewayBody.model, 'google/gemini-2.5-flash')
   assert.match(gatewayBody.messages[0].content[1].image_url.url, /^data:image\/jpeg;base64,/)
 
+  const missingCredential = setup(); missingCredential.seed(uuid(10))
+  await missingCredential.photoItem.PUT(upload(await fixture()), route())
+  assert.equal((await missingCredential.photoExtract.POST(new Request('https://test/extract', { method: 'POST' }), route())).status, 503)
+  assert.equal(missingCredential.gatewayRequests.length, 0)
+
   const foreign = setup(); foreign.seed(uuid(10), { business_id: otherBusiness })
-  assert.equal((await foreign.photoExtract.POST({}, route())).status, 404)
+  assert.equal((await foreign.photoExtract.POST(extractionRequest, route())).status, 404)
   s.rows[0].status = 'ready_for_review'
-  assert.equal((await s.photoExtract.POST({}, route())).status, 409)
+  assert.equal((await s.photoExtract.POST(extractionRequest, route())).status, 409)
 })

@@ -87,7 +87,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
     '@/lib/supabase/server': { createServiceClient: () => db }, zod: { z },
   }
   function load(path) {
-    const context = { exports: {}, Buffer, Request, Response, Blob, AbortSignal, process: { env: { VERCEL_OIDC_TOKEN: 'test-token' } },
+    const context = { exports: {}, Buffer, Request, Response, Blob, AbortSignal, process: { env: {} },
       fetch: async (url, options) => {
         gatewayRequests.push({ url, options })
         return failures.extraction ? { ok: false, status: 502 } : { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: JSON.stringify({ name: 'AI Bread', supplier_name: 'AI Bakery', description: 'Sliced bread', allergen_warnings: { cereals_gluten: 'contains', milk: 'none', fish: 'invented' }, dietary_tags: ['Vegan', 'Invented'], notes: ['Check the small print'] }) } }] }) }

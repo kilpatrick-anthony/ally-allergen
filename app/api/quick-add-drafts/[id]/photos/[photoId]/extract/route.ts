@@ -15,7 +15,7 @@ Use EU Regulation 1169/2011 allergen keys: cereals_gluten, crustaceans, eggs, fi
 Allowed allergen values: contains, may_contain, traces, cross_contamination.
 Only include an allergen when the visible label explicitly supports it; omit uncertain and unmentioned allergens. Only suggest dietary tags explicitly claimed by the label. Never infer absence or suitability. Put uncertainty or unreadable/cropped information in notes.`
 
-export async function POST(_request: NextRequest, route: Route) {
+export async function POST(request: NextRequest, route: Route) {
   try {
     const context = await quickAddContext()
     const { id, photoId } = await route.params
@@ -27,13 +27,13 @@ export async function POST(_request: NextRequest, route: Route) {
     if (error) throw error
     if (!photo) throw new QuickAddError('notFound', 404)
 
-    if (!hasAiGatewayCredentials()) throw new QuickAddError('extractionUnavailable', 503)
+    if (!hasAiGatewayCredentials(request)) throw new QuickAddError('extractionUnavailable', 503)
     const downloaded = await context.supabase.storage.from(PHOTO_BUCKET).download(photoPath(photo as DraftPhoto))
     if (downloaded.error) throw downloaded.error
     const image = Buffer.from(await downloaded.data.arrayBuffer()).toString('base64')
     let content: string
     try {
-      content = await analyseWithAiGateway({ prompt: PROMPT, image: { mimeType: 'image/jpeg', base64: image } })
+      content = await analyseWithAiGateway({ prompt: PROMPT, image: { mimeType: 'image/jpeg', base64: image }, request })
     } catch (error) {
       if (error instanceof AiGatewayError && error.status === 503) throw new QuickAddError('extractionUnavailable', 503)
       throw new QuickAddError('extractionFailed', error instanceof AiGatewayError && error.status === 429 ? 429 : 502)
