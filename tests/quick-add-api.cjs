@@ -207,3 +207,35 @@ test('dashboard counts include all pending captures and preserve live ownership 
   assert.equal((await setup({ token: null }).collection.GET(query)).status, 401)
   assert.equal((await setup({ dbFailure: true }).collection.GET(query)).status, 503)
 })
+
+test('barcode lookup is authenticated, validates input and maps only positive product claims', async () => {
+  const s = setup()
+  const result = await s.productBarcode.GET({ nextUrl: new URL('https://test/api/product-barcode?barcode=3017624010701') })
+  assert.equal(result.status, 200)
+  assert.equal(result.body.suggestions.name, 'Example Brand Chocolate Biscuits')
+  assert.equal(result.body.suggestions.category, 'Biscuits')
+  assert.equal(result.body.suggestions.supplier_name, '')
+  assert.equal(result.body.suggestions.allergen_warnings.cereals_gluten, 'contains')
+  assert.equal(result.body.suggestions.allergen_warnings.cereals_gluten_levels.wheat, 'contains')
+  assert.equal(result.body.suggestions.allergen_warnings.nuts_levels.hazelnuts, 'contains')
+  assert.equal(result.body.suggestions.allergen_warnings.sesame, 'may_contain')
+  assert.equal(result.body.suggestions.allergen_warnings.eggs, undefined)
+  assert.deepEqual(Array.from(result.body.suggestions.dietary_tags), ['Vegetarian', 'Fair Trade'])
+  const request = s.gatewayRequests.at(-1)
+  assert.match(String(request.url), /api\/v3\/product\/3017624010701/)
+  assert.match(request.options.headers['User-Agent'], /^AllyJen\//)
+  assert.equal(request.options.cache, 'no-store')
+
+  assert.equal((await s.productBarcode.GET({ nextUrl: new URL('https://test/api/product-barcode?barcode=123') })).status, 400)
+  assert.equal((await setup({ token: null }).productBarcode.GET({ nextUrl: new URL('https://test/api/product-barcode?barcode=3017624010701') })).status, 401)
+})
+
+test('barcode lookup distinguishes missing products from provider failures', async () => {
+  const missing = setup(); missing.failures.barcodeMissing = true
+  const url = new URL('https://test/api/product-barcode?barcode=3017624010701')
+  const notFound = await missing.productBarcode.GET({ nextUrl: url })
+  assert.equal(notFound.status, 404); assert.equal(notFound.body.error, 'barcodeNotFound')
+  const failed = setup(); failed.failures.barcode = true
+  const unavailable = await failed.productBarcode.GET({ nextUrl: url })
+  assert.equal(unavailable.status, 503); assert.equal(unavailable.body.error, 'barcodeUnavailable')
+})

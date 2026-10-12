@@ -9,7 +9,7 @@ const params = id => ({ params: Promise.resolve({ id }) })
 
 function setup({ role = 'staff', token = 'valid', membership = true, dbFailure = false } = {}) {
   const rows = [], photos = [], history = [], writes = [], objects = new Map()
-  const failures = { upload: false, remove: false, finalize: false, extraction: false }
+  const failures = { upload: false, remove: false, finalize: false, extraction: false, barcode: false, barcodeMissing: false }
   const gatewayRequests = []
   const hooks = { beforeUpload: null }
   let concurrentEdit = false
@@ -87,9 +87,19 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
     '@/lib/supabase/server': { createServiceClient: () => db }, zod: { z },
   }
   function load(path) {
-    const context = { exports: {}, Buffer, Request, Response, Blob, AbortSignal, process: { env: {} },
+    const context = { exports: {}, Buffer, Request, Response, Blob, AbortSignal, URL, process: { env: {} },
       fetch: async (url, options) => {
         gatewayRequests.push({ url, options })
+        if (String(url).includes('openfoodfacts.org/api/v3/product/')) {
+          if (failures.barcode) return { ok: false, status: 500 }
+          if (failures.barcodeMissing) return { ok: false, status: 404 }
+          return { ok: true, status: 200, json: async () => ({ product: {
+            product_name: 'Chocolate Biscuits', brands: 'Example Brand', categories: 'Biscuits, Snacks',
+            ingredients_text: 'Wheat flour, milk, hazelnuts',
+            allergens_tags: ['en:wheat', 'en:milk', 'en:hazelnuts'], traces_tags: ['en:sesame-seeds'],
+            labels_tags: ['en:vegetarian', 'en:fair-trade'], last_modified_t: 1_700_000_000,
+          } }) }
+        }
         return failures.extraction ? { ok: false, status: 502 } : { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: JSON.stringify({ name: 'AI Bakery Bread', supplier_name: 'AI Bakery', description: 'Sliced bread', allergen_warnings: { cereals_gluten: 'contains', cereals_gluten_levels: { wheat: 'contains', rye: 'invented' }, nuts: 'may_contain', nuts_levels: { hazelnuts: 'may_contain' }, milk: 'none', fish: 'invented' }, dietary_tags: ['Vegan', 'Invented'], notes: ['Check the small print'] }) } }] }) }
       },
       require: name => { assert.ok(mocks[name], name); return mocks[name] }, console: { error() {} } }
@@ -103,11 +113,13 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
   mocks['@/lib/server/quick-add'] = load('lib/server/quick-add.ts')
   mocks['@/lib/server/quick-add-photos'] = load('lib/server/quick-add-photos.ts')
   mocks['@/lib/server/ai-gateway'] = load('lib/server/ai-gateway.ts')
+  mocks['@/lib/server/product-barcode'] = load('lib/server/product-barcode.ts')
   return {
     db, history, setRole: value => { role = value }, transition: load('app/api/quick-add-drafts/[id]/transition/route.ts'), evidence: load('app/api/quick-add-evidence/[photoId]/route.ts'),
     photoCollection: load('app/api/quick-add-drafts/[id]/photos/route.ts'),
     photoItem: load('app/api/quick-add-drafts/[id]/photos/[photoId]/route.ts'),
     photoExtract: load('app/api/quick-add-drafts/[id]/photos/[photoId]/extract/route.ts'),
+    productBarcode: load('app/api/product-barcode/route.ts'),
     photoHelpers: mocks['@/lib/server/quick-add-photos'], photos, objects, failures, hooks, gatewayRequests,
     collection: load('app/api/quick-add-drafts/route.ts'), item: load('app/api/quick-add-drafts/[id]/route.ts'), rows, writes,
     race: () => { concurrentEdit = true },

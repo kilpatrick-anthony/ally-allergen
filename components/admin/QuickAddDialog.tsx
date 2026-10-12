@@ -9,6 +9,7 @@ import QuickAddAssessment from '@/components/admin/QuickAddAssessment'
 import QuickAddPhotos, { type LabelSuggestions } from '@/components/admin/QuickAddPhotos'
 import QuickAddReview from '@/components/admin/QuickAddReview'
 import QuickAddIngredients, { type QuickAddIngredientOption } from '@/components/admin/QuickAddIngredients'
+import QuickAddBarcode from '@/components/admin/QuickAddBarcode'
 import { Button } from '@/components/ui/Button'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import type { QuickAddDraft, QuickAddFields, QuickAddKind } from '@/lib/quick-add'
@@ -71,6 +72,12 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
     })
     if (suggestions.supplier_name) setManualSupplier(true)
   }, [])
+  const applyBarcodeSuggestions = useCallback((suggestions: LabelSuggestions & { category: string; barcode: string }) => {
+    applySuggestions(suggestions)
+    setFields(current => ({ ...current, category: suggestions.category || current.category,
+      notes: [current.notes, `Barcode: ${suggestions.barcode} (Open Food Facts — verify against current label)`].filter(Boolean).join('\n').slice(0, 2000),
+    }))
+  }, [applySuggestions])
   const [reviewBusy, setReviewBusy] = useState(false)
   const [reviewDirty, setReviewDirty] = useState(false)
   const reviewActivity = useCallback((working: boolean, changed: boolean) => {
@@ -236,6 +243,7 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
               {manualSupplier && <label className="block text-sm font-medium">{text('supplierName')}
                 <input aria-label={text('supplierName')} aria-describedby={`${formId}-supplier-note`} maxLength={200} value={fields.supplier_name} onChange={event => setFields({ ...fields, supplier_name: event.target.value })} className={control} />
                 <span id={`${formId}-supplier-note`} className="mt-1 block text-xs text-gray-500 dark:text-gray-300">{text('supplierNote')}</span></label>}</>}
+              {fields.kind !== 'prepared_item' && <QuickAddBarcode disabled={saving || photoBusy || reviewBusy || (!!record && record.status !== 'draft')} onApply={applyBarcodeSuggestions} />}
               <label className="block text-sm font-medium">{text('notes')}
                 <textarea rows={3} maxLength={2000} value={fields.notes} onChange={event => setFields({ ...fields, notes: event.target.value })} className={control} /></label>
               {fields.kind !== 'prepared_item' && (!record || record.status === 'draft') && <details className="rounded-lg border border-gray-300 p-3 dark:border-gray-600">

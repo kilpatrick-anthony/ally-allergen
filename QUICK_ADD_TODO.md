@@ -68,7 +68,7 @@ Deliverable: staff can capture a delivery item and a manager can complete its re
   - [ ] Complete physical-device and assistive-technology checks, including manual review of content clipped during automated scans.
 - [x] Run relevant automated tests, TypeScript checks and the production build for Session 2; repeat for later implementation phases.
 - [ ] Trial several products from a delivery and record any awkward steps.
-- [ ] Adjust the flow based on that feedback.
+- [x] Adjust the flow based on feedback received so far; continue iterating if the remaining delivery trial finds more issues.
 
 Deliverable: a tested first version with any remaining issues explicitly recorded.
 
@@ -85,7 +85,7 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
 
 - [x] Quick Add for prepared menu items and simple recipes.
 - [x] Photo-assisted extraction of label information, with mandatory human review.
-- [ ] Barcode lookup, including how to handle missing or outdated product information.
+- [x] Barcode lookup, including clear handling for missing or outdated product information.
 - [ ] Offline capture and reliable later synchronisation.
 - [ ] Optional notifications when drafts need review.
 
@@ -150,6 +150,43 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
   to production as deployment `dpl_7kDLNGSqjkpRq6GUMZrzSprFDZe7`. The live
   version matched and the health endpoint confirmed its Supabase connection.
   A signed-in real-label Gateway request remains the final functional check.
+
+### Live label-analysis feedback — 12 October 2026
+
+- A signed-in production test confirmed that photo analysis runs successfully
+  through Vercel AI Gateway without a Gemini key.
+- Corrected runtime authentication to read Vercel's short-lived OIDC token from
+  the function request header. Released commit `9af990e0e60ee1c4baedc3513069384535a715ae`
+  as production deployment `dpl_CRDFZkhczX85fmody5xfinGCmaux`.
+- A real package then exposed two mapping issues: visible wheat set only the
+  parent gluten result, and the visible brand was suggested as the supplier.
+  Extraction now preserves explicitly named gluten and tree-nut subtype levels,
+  leaves unmentioned subtypes not reviewed, always leaves supplier selection to
+  the user, and asks for a brand-aware consumer product name.
+- Regression coverage includes wheat and hazelnut subtype suggestions, rejection
+  of invented subtype values, an empty supplier suggestion and the production
+  OIDC-header path. All 28 focused tests, TypeScript and the production build
+  passed. Released commit `032c4840b3f7ed6ba43d497ffa25513245b2ddee`
+  as production deployment `dpl_4VYz9YkUnnMUyaoxa5jaP2ULP35E`; the owner
+  confirmed the corrected live test passed.
+
+### Barcode lookup — 12 October 2026
+
+- Added an authenticated Quick Add lookup for 8–14 digit food barcodes using
+  the Open Food Facts v3 product API. It suggests a brand-aware product name,
+  category, ingredient text, positively declared allergens and explicit dietary
+  labels; it never selects or invents a supplier.
+- Results are review-only suggestions. The form identifies Open Food Facts as
+  community data, shows the source record and its last-updated date when known,
+  and tells the user to verify every value against the current physical label.
+  Missing products and provider failures have separate messages and always leave
+  photo analysis and manual entry available.
+- Only positive allergen claims are mapped; missing database values remain not
+  reviewed. Wheat and named tree-nut subtypes are preserved when the provider
+  supplies them. The saved draft note records the barcode and verification need.
+- Verification passed: 30 focused API/photo tests, TypeScript, a live success
+  and missing-product API check, and the production build. A signed-in phone
+  trial with several real delivery products remains part of Session 4.
 - [ ] Assess whether an iPhone/iPad app adds enough value beyond the mobile portal.
 
 ## First-version acceptance criteria
