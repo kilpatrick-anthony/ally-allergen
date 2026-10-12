@@ -254,7 +254,6 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
                 <textarea rows={3} maxLength={2000} value={fields.notes} onChange={event => setFields({ ...fields, notes: event.target.value })} className={control} /></label>
               {fields.kind !== 'prepared_item' && (!record || record.status === 'draft') && <details className="rounded-lg border border-gray-300 p-3 dark:border-gray-600">
                 <summary className="min-h-11 cursor-pointer py-2 font-semibold">{text('captureAssessment')}</summary>
-                <p className="mb-4 text-sm text-gray-700 dark:text-gray-200">{text('captureAssessmentHelp')}</p>
                 <QuickAddAssessment warnings={fields.allergen_warnings} tags={fields.dietary_tags}
                   onWarnings={allergen_warnings => setFields(current => ({ ...current, allergen_warnings }))}
                   onTags={dietary_tags => setFields(current => ({ ...current, dietary_tags }))} />
