@@ -30,9 +30,11 @@ export default function QuickAddReview({ draft, suppliers, sites, ingredients, c
   const [working, setWorking] = useState(false)
   const lock = useRef(false)
   const heading = useRef<HTMLHeadingElement>(null)
+  const issues = useRef<HTMLDivElement>(null)
   const previousStatus = useRef(draft.status)
   const request = useRef<{ signature: string; id: string } | null>(null)
-  const dirty = JSON.stringify(review) !== baseline || !!note
+  const reviewDirty = JSON.stringify(review) !== baseline
+  const dirty = reviewDirty || !!note
   const base = `/api/quick-add-drafts/${draft.id}`
   useEffect(() => {
     if (previousStatus.current !== draft.status) {
@@ -74,6 +76,13 @@ export default function QuickAddReview({ draft, suppliers, sites, ingredients, c
     } finally { lock.current = false; setWorking(false) }
   }
 
+  function attemptApproval() {
+    if (reviewDirty) { setError('saveReviewBeforeApproval'); issues.current?.focus(); return }
+    if (note) { setError('clearReturnNoteBeforeApproval'); issues.current?.focus(); return }
+    if (missing.length) { setError('approvalIncomplete'); issues.current?.focus(); return }
+    void transition('approve')
+  }
+
   const missing = missingReviewDetails(review, draft.kind)
   const blocked = disabled || working || loading || loadFailed
   const control = 'mt-1 w-full rounded-lg border border-gray-300 bg-white p-3 text-base text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white'
@@ -87,8 +96,19 @@ export default function QuickAddReview({ draft, suppliers, sites, ingredients, c
     {draft.status === 'ready_for_review' && permissions.isCreator && <Button type="button" variant="tealOutline" disabled={blocked || dirty} onClick={() => void transition('withdraw')}>{text('withdraw')}</Button>}
     {draft.status === 'ready_for_review' && permissions.canReview && <>
       <p className="text-sm">{text(draft.kind === 'prepared_item' ? 'preparedReviewHelp' : 'reviewHelp')}</p>
+      <div ref={issues} tabIndex={-1} className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
+        <p className="font-semibold">{text('approvalChecklist')}</p>
+        {reviewDirty && <p className="mt-1">{text('saveReviewBeforeApproval')}</p>}
+        {!!note && <p className="mt-1">{text('clearReturnNoteBeforeApproval')}</p>}
+        {!!missing.length ? <ul className="mt-2 list-disc space-y-1 pl-5">{missing.map(key => <li key={key}>{text(key)}</li>)}</ul>
+          : !reviewDirty && !note && <p className="mt-1">{text('readyToApprove')}</p>}
+      </div>
       <fieldset disabled={blocked} className="space-y-4">
         <legend className="sr-only">{text('reviewTitle')}</legend>
+        <label className="block text-sm font-medium">{text('location')}
+          <select aria-label={text('location')} className={control} value={review.delivery_site_id || ''} onChange={event => setReview({ ...review, delivery_site_id: event.target.value || null })}>
+            <option value="">{text('noLocation')}</option>{sites.map(site => <option key={site.id} value={site.id}>{site.name}</option>)}
+          </select></label>
         {draft.kind !== 'prepared_item' && <label className="block text-sm font-medium">{text('reviewSupplier')}
           <select aria-label={text('reviewSupplier')} className={control} value={review.supplier_id || ''} onChange={event => setReview({ ...review, supplier_id: event.target.value || null, dietary_checked: false, evidence_checked: false })}>
             <option value="">{text('noSupplier')}</option>{suppliers.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
@@ -119,10 +139,9 @@ export default function QuickAddReview({ draft, suppliers, sites, ingredients, c
         {draft.kind !== 'prepared_item' && <label className="flex min-h-11 items-start gap-3 text-sm"><input className="mt-1" type="checkbox" checked={review.evidence_checked} onChange={event => setReview({ ...review, evidence_checked: event.target.checked })} />{text('evidenceChecked')}</label>}
       </fieldset>
 
-      {!!missing.length && <ul className="list-disc space-y-1 pl-5 text-sm">{missing.map(key => <li key={key}>{text(key)}</li>)}</ul>}
       <div className="flex flex-wrap gap-3">
         <Button variant="teal" type="button" disabled={blocked || !!note} onClick={() => void transition('review')}>{text('saveReview')}</Button>
-        <Button variant="teal" type="button" disabled={blocked || dirty || !!missing.length} onClick={() => void transition('approve')}>{text('approve')}</Button>
+        <Button variant="teal" type="button" disabled={blocked} onClick={attemptApproval}>{text('approve')}</Button>
       </div>
       <p className="text-sm">{text(draft.kind === 'ingredient' ? 'ingredientApprovalHelp' : draft.kind === 'prepared_item' ? 'preparedApprovalHelp' : 'productApprovalHelp')}</p>
       <label className="block text-sm font-medium">{text('returnNote')}<textarea className={control} disabled={blocked} maxLength={2000} value={note} onChange={event => setNote(event.target.value)} /></label>

@@ -29,11 +29,11 @@ async function createReviewDb() {
     insert into user_businesses values ('${uuid(3)}','${uuid(1)}','staff','Staff'),('${uuid(4)}','${uuid(1)}','manager','Manager'),('${uuid(7)}','${uuid(2)}','owner','Other owner');
     insert into sites values ('${uuid(5)}','${uuid(1)}','Kitchen'),('${uuid(8)}','${uuid(2)}','Other kitchen');
     insert into suppliers values ('${uuid(6)}','${uuid(1)}','Supplier'),('${uuid(9)}','${uuid(2)}','Other supplier');`)
-  for (const file of ['20261009214320_add_quick_add_drafts.sql','20261010182555_add_quick_add_photos.sql','20261010182600_add_quick_add_review.sql','20261010184710_add_quick_add_capture_assessment.sql','20261011195851_add_quick_add_category.sql','20261011201415_add_quick_add_prepared_items.sql']) await db.exec(fs.readFileSync(`supabase/migrations/${file}`,'utf8'))
+  for (const file of ['20261009214320_add_quick_add_drafts.sql','20261010182555_add_quick_add_photos.sql','20261010182600_add_quick_add_review.sql','20261010184710_add_quick_add_capture_assessment.sql','20261011195851_add_quick_add_category.sql','20261011204103_add_quick_add_prepared_items.sql','20261012163029_sync_quick_add_review_location.sql']) await db.exec(fs.readFileSync(`supabase/migrations/${file}`,'utf8'))
   await db.exec('grant select,insert,update on all tables in schema public to service_role; revoke update on quick_add_history from service_role;')
   return db
 }
 const allergens = ['cereals_gluten','crustaceans','eggs','fish','peanuts','soybeans','milk','nuts','celery','mustard','sesame','sulphites','lupin','molluscs']
-const completeReview = () => ({ supplier_id: uuid(6),description:'Reviewed product',category:'General',allergen_warnings:Object.fromEntries(allergens.map(a=>[a,'none'])),
+const completeReview = () => ({ supplier_id: uuid(6),delivery_site_id:uuid(5),description:'Reviewed product',category:'General',allergen_warnings:Object.fromEntries(allergens.map(a=>[a,'none'])),
   preferred_review_months:12,ingredient_declaration:'Water, salt',scope:'global',site_id:null,label_checked:true,evidence_checked:true })
 module.exports = { createReviewDb, completeReview, uuid }

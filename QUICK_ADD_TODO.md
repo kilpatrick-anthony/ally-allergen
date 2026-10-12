@@ -195,6 +195,20 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
 - Verification passed: 30 focused API/photo tests, TypeScript, a live success
   and missing-product API check, and the production build. A signed-in phone
   trial with several real delivery products remains part of Session 4.
+
+### Ready-for-review feedback — 12 October 2026
+
+- Managers can correct the delivery location while reviewing a submitted draft;
+  saving the review updates the draft's audited delivery context after checking
+  that the location belongs to the same business.
+- Label-photo thumbnails now open a large in-dialog viewer, including for
+  submitted read-only drafts, so the evidence can be checked before approval.
+- The review displays a prominent approval checklist and explains unsaved review
+  changes, incomplete requirements, or a pending return note immediately. The
+  Approve action now focuses that explanation instead of failing silently.
+- Verification passed: 30 focused API/photo tests, TypeScript, an isolated
+  PostgreSQL migration test, a rolled-back live database check and the production
+  build. A signed-in retest of the affected draft remains open.
 - [ ] Assess whether an iPhone/iPad app adds enough value beyond the mobile portal.
 
 ## First-version acceptance criteria

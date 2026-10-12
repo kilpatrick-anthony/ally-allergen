@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useId, useRef, useState } from 'react'
+import * as Dialog from '@radix-ui/react-dialog'
+import { X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import type { QuickAddFields } from '@/lib/quick-add'
@@ -47,6 +49,7 @@ export default function QuickAddPhotos({ draftId, disabled, onActivity, onApplyS
   const [working, setWorking] = useState(false)
   const [extracting, setExtracting] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<{ photoId: string; values: LabelSuggestions } | null>(null)
+  const [viewing, setViewing] = useState<{ src: string; label: string } | null>(null)
   const lock = useRef(false)
   const chooser = useRef<HTMLInputElement>(null)
   const restoreChooserFocus = useRef(false)
@@ -157,11 +160,11 @@ export default function QuickAddPhotos({ draftId, disabled, onActivity, onApplyS
       </div>}
       <ul className="grid grid-cols-2 gap-3">
         {photos.map((photo, index) => <li key={photo.id} className="min-w-0 rounded-lg border p-2">
-          {photo.preview || photo.state === 'ready' ? <a href={photo.preview || `${base}/${photo.id}`} target="_blank" rel="noopener noreferrer" aria-label={`${text('openPhoto')} ${index + 1}`}>
+          {photo.preview || photo.state === 'ready' ? <button type="button" className="w-full rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600" onClick={() => setViewing({ src: photo.preview || `${base}/${photo.id}`, label: `${text('labelPhoto')} ${index + 1}` })} aria-label={`${text('openPhoto')} ${index + 1}`}>
             {/* Private API image: do not route evidence through Next's image cache. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={photo.preview || `${base}/${photo.id}`} alt={`${text('labelPhoto')} ${index + 1}`} className="h-32 w-full object-contain" />
-          </a> : <p className="text-sm">{text('photoInterrupted')}</p>}
+          </button> : <p className="text-sm">{text('photoInterrupted')}</p>}
           <p className="mt-2 text-sm">{text(photo.state === 'ready' ? 'photoSaved' : 'photoPending')}</p>
           {photo.error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{text(photo.error)}</p>}
           <div className="mt-2 flex flex-wrap gap-2">
@@ -180,6 +183,22 @@ export default function QuickAddPhotos({ draftId, disabled, onActivity, onApplyS
           </div>}
         </li>)}
       </ul>
+      <Dialog.Root open={!!viewing} onOpenChange={open => { if (!open) setViewing(null) }}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-[110] bg-black/80" />
+          <Dialog.Content className="fixed inset-3 z-[111] flex flex-col rounded-xl bg-white p-3 shadow-2xl dark:bg-gray-900 sm:inset-8">
+            <div className="flex items-center justify-between gap-3">
+              <Dialog.Title className="font-semibold">{viewing?.label || text('labelPhoto')}</Dialog.Title>
+              <Dialog.Close className="flex min-h-11 min-w-11 items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800" aria-label={text('close')}><X aria-hidden="true" /></Dialog.Close>
+            </div>
+            {viewing && <div className="min-h-0 flex-1 overflow-auto">
+              {/* Authenticated private image, intentionally outside the Next image cache. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={viewing.src} alt={viewing.label} className="h-full w-full object-contain" />
+            </div>}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </>}
   </section>
 }
