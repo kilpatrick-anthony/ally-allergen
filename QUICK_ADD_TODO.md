@@ -87,7 +87,23 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
 - [x] Photo-assisted extraction of label information, with mandatory human review.
 - [x] Barcode lookup, including clear handling for missing or outdated product information.
 - [ ] Offline capture and reliable later synchronisation.
-- [ ] Optional notifications when drafts need review.
+- [x] Optional notifications when drafts need review.
+
+### Draft-review notifications — 12 October 2026
+
+- Owners and managers now receive both an in-app unread badge beside Saved
+  drafts and an email when a Quick Add draft is submitted for review. Staff do
+  not receive reviewer alerts.
+- Notification rows are scoped by business and reviewer. Email delivery is
+  claimed atomically, so request retries cannot send duplicate messages; a
+  failed email remains eligible for a later retry without blocking submission.
+- Opening Saved drafts clears that reviewer's unread badge. Returning,
+  withdrawing or approving a draft dismisses its outstanding in-app alerts,
+  while a later resubmission creates a fresh alert.
+- Migration `20261012202931_quick_add_review_notifications.sql` was applied and
+  verified with RLS enabled, direct client access revoked, and the claim
+  function restricted to the service role. PostgreSQL notification checks, all
+  30 Quick Add API/photo tests, TypeScript and the production build passed.
 
 ### Prepared menu items and recipes — 11 October 2026
 

@@ -70,6 +70,7 @@ export default function QuickAddReview({ draft, suppliers, sites, ingredients, c
       const data = await response.json()
       if (!response.ok) throw new Error(data.error)
       request.current = null; setNote(''); onChanged(data.draft)
+      if (action === 'submit') window.dispatchEvent(new Event('quick-add-submitted'))
     } catch (reason) {
       const known = ['forbidden', 'notFound', 'unauthorized', 'invalid', 'editConflict', 'pendingPhotos', 'returnNoteRequired', 'missingSupplier', 'missingEvidence', 'missingAllergens', 'missingLabel', 'missingDietaryCheck', 'missingIngredients', 'missingDescription', 'missingScope', 'locationUnavailable']
       setError(reason instanceof Error && known.includes(reason.message) ? reason.message : 'reviewUnavailable')

@@ -111,6 +111,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
   mocks['@/lib/allergen-ai'] = load('lib/allergen-ai.ts')
   mocks['@/lib/quick-add-review'] = load('lib/quick-add-review.ts')
   mocks['@/lib/server/quick-add'] = load('lib/server/quick-add.ts')
+  mocks['@/lib/server/quick-add-notifications'] = { notifyQuickAddReviewers: async () => {}, retryQuickAddReviewEmails: async () => {}, dismissQuickAddReviewNotifications: async () => {} }
   mocks['@/lib/server/quick-add-photos'] = load('lib/server/quick-add-photos.ts')
   mocks['@/lib/server/ai-gateway'] = load('lib/server/ai-gateway.ts')
   mocks['@/lib/server/product-barcode'] = load('lib/server/product-barcode.ts')

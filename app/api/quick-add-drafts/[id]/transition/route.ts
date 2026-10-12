@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { reviewFields } from '@/lib/quick-add-review'
 import { getDraft, quickAddContext, quickAddFailure, QuickAddError, requireDraftId } from '@/lib/server/quick-add'
+import { dismissQuickAddReviewNotifications, notifyQuickAddReviewers, retryQuickAddReviewEmails } from '@/lib/server/quick-add-notifications'
 
 const input = z.object({
   request_id: z.string().uuid(), version: z.number().int().min(1).max(2147483646),
@@ -35,6 +36,18 @@ export async function POST(request: NextRequest, route: { params: Promise<{ id: 
       if (statuses[code]) throw new QuickAddError(code, statuses[code])
       throw error
     }
-    return NextResponse.json({ draft: await getDraft(context, id) })
+    const updatedDraft = await getDraft(context, id)
+    if (values.action === 'submit') {
+      // A notification outage must never lose or roll back a valid submission.
+      const notify = draft.status === 'draft' ? notifyQuickAddReviewers : retryQuickAddReviewEmails
+      await notify(context, updatedDraft).catch(error => {
+        console.error('Quick Add review notifications failed:', error)
+      })
+    } else if (['withdraw', 'return', 'approve'].includes(values.action)) {
+      await dismissQuickAddReviewNotifications(context, id).catch(error => {
+        console.error('Quick Add review notification dismissal failed:', error)
+      })
+    }
+    return NextResponse.json({ draft: updatedDraft })
   } catch (error) { return quickAddFailure(error) }
 }

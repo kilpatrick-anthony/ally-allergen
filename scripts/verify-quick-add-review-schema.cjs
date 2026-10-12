@@ -19,6 +19,11 @@ const { createReviewDb, completeReview, uuid } = require('../tests/helpers/quick
  const submitId=uuid(sequence++)
  let d=await run(10,3,'submit',1,null,'',submitId)
  assert.equal(d.status,'ready_for_review');assert.equal(d.submitted_by,uuid(3))
+ await db.query('insert into quick_add_review_notifications(business_id,draft_id,user_id) values ($1,$2,$3)',[uuid(1),uuid(10),uuid(4)])
+ let claims=(await db.query('select * from claim_quick_add_review_emails($1,$2)',[uuid(10),uuid(1)])).rows
+ assert.equal(claims.length,1);assert.equal(claims[0].user_id,uuid(4))
+ claims=(await db.query('select * from claim_quick_add_review_emails($1,$2)',[uuid(10),uuid(1)])).rows
+ assert.equal(claims.length,0)
  assert.equal((await run(10,3,'submit',1,null,'',submitId)).version,2)
  await assert.rejects(run(10,3,'withdraw',2,null,'',submitId),/editConflict/)
  await assert.rejects(db.query("update quick_add_photos set state='removed' where draft_id=$1",[uuid(10)]),/photoDraftConflict/)
@@ -135,9 +140,10 @@ const { createReviewDb, completeReview, uuid } = require('../tests/helpers/quick
   await db.exec(`set role ${role}`)
   await assert.rejects(run(12,4,'approve',d.version),/permission denied/)
   await assert.rejects(db.query('select * from quick_add_history'),/permission denied/)
+  await assert.rejects(db.query('select * from quick_add_review_notifications'),/permission denied/)
   await db.exec('reset role')
  }
  assert.equal((await db.query("select count(*)::int as n from quick_add_history where action='approve'")).rows[0].n,5)
- console.log('PASS: PostgreSQL submission/return/withdraw, live roles, idempotency, validation, rollback, evidence links, review history and inactive packaged/prepared promotion.')
+ console.log('PASS: PostgreSQL submission/return/withdraw, live roles, notification claims, idempotency, validation, rollback, evidence links, review history and inactive packaged/prepared promotion.')
  await db.close()
 })().catch(error=>{console.error(error);process.exitCode=1})
