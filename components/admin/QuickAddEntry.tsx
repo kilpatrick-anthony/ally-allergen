@@ -1,6 +1,7 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import * as Dialog from '@radix-ui/react-dialog'
@@ -13,13 +14,15 @@ import QuickAddDialog from './QuickAddDialog'
 export default function QuickAddEntry({ initialKind = 'ingredient', siteId, onSaved, floating = false, showDrafts = true }: { initialKind?: QuickAddKind; siteId?: string | null; onSaved?: () => void; floating?: boolean; showDrafts?: boolean }) {
   const [open, setOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const [selectedKind, setSelectedKind] = useState<QuickAddKind>(initialKind)
   const trigger = useRef<HTMLButtonElement>(null)
   const { t } = useTranslation()
   const router = useRouter()
+  useEffect(() => setMounted(true), [])
   const openCapture = (kind: QuickAddKind) => { setSelectedKind(kind); setMenuOpen(false); setOpen(true) }
   const openPage = (href: string) => { setMenuOpen(false); router.push(href) }
-  if (floating) return <>
+  if (floating) return mounted ? createPortal(<>
     <Dialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
       <Dialog.Trigger asChild>
         <button ref={trigger} type="button" aria-label={t('quickAdd.addMenuTitle')} title={t('quickAdd.addMenuTitle')}
@@ -48,7 +51,7 @@ export default function QuickAddEntry({ initialKind = 'ingredient', siteId, onSa
       window.dispatchEvent(new Event('quick-add-saved'))
       onSaved?.()
     }} />}
-  </>
+  </>, document.body) : null
   return <div className="flex flex-wrap items-center gap-3">
     <Button variant="teal" icon={Plus} aria-haspopup="dialog" onClick={event => { trigger.current = event.currentTarget; setOpen(true) }}>{t('quickAdd.title')}</Button>
     {showDrafts && <Link className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-[#003842] underline dark:text-[#42b8ac]" href="/admin/quick-add">{t('quickAdd.drafts')}</Link>}

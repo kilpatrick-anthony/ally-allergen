@@ -10,6 +10,7 @@ interface CharacterMessageFormProps {
   character: Character
   context?: string
   customerFacing?: boolean
+  showIntro?: boolean
 }
 
 interface FormState {
@@ -21,7 +22,7 @@ interface FormState {
 
 const EMPTY_FORM: FormState = { name: '', email: '', message: '', website: '' }
 
-export function CharacterMessageForm({ character, context = '', customerFacing = false }: CharacterMessageFormProps) {
+export function CharacterMessageForm({ character, context = '', customerFacing = false, showIntro = true }: CharacterMessageFormProps) {
   const { t } = useTranslation()
   const [form, setForm] = useState<FormState>(EMPTY_FORM)
   const [submitting, setSubmitting] = useState(false)
@@ -74,9 +75,9 @@ export function CharacterMessageForm({ character, context = '', customerFacing =
 
   return (
     <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto bg-gray-50 p-4">
-      <div className="mb-4 rounded-xl border border-teal-100 bg-white px-3 py-3 text-sm leading-relaxed text-gray-700 shadow-sm">
+      {showIntro ? <div className="mb-4 rounded-xl border border-teal-100 bg-white px-3 py-3 text-sm leading-relaxed text-gray-700 shadow-sm">
         {t('messaging.intro', { name: characterName })}
-      </div>
+      </div> : null}
       {customerFacing && (
         <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900">
           {t('messaging.urgentAllergen')}
