@@ -19,6 +19,7 @@ import {
   Shield,
   CheckCircle2,
   AlertTriangle,
+  MessageCircle,
   type LucideIcon,
 } from 'lucide-react'
 import { useTranslation } from '@/lib/hooks/useTranslation'
@@ -63,6 +64,7 @@ export function Navigation() {
     { name: t('adminPortal.foodSafety'), href: '/admin/food-safety', icon: AlertTriangle },
     { name: t('admin.settings'),    href: '/admin/settings',     icon: Settings },
     { name: t('admin.help'),        href: '/admin/help',         icon: HelpCircle },
+    { name: t('liveDashboard.contactUs'), href: '/admin/contact', icon: MessageCircle },
     ...(isSuperAdmin ? [{ name: t('adminPortal.superAdmin'), href: '/super-admin', icon: Shield }] : []),
   ]
 

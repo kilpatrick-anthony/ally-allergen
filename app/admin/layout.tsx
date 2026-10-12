@@ -12,7 +12,6 @@ import { useTranslation } from '@/lib/hooks/useTranslation'
 import SpeechController from '@/components/SpeechController'
 import { trackAdminPageVisit } from '@/lib/hooks/useFrequentPages'
 import { FsaiNewsTicker } from '@/components/admin/FsaiNewsTicker'
-import { JenCoach } from '@/components/admin/JenCoach'
 import PortalLocalizationBridge from '@/components/shared/PortalLocalizationBridge'
 import QuickAddEntry from '@/components/admin/QuickAddEntry'
 
@@ -300,8 +299,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <div className="lg:hidden">
             <FsaiNewsTicker />
           </div>
-          {/* Jen — compliance coach floating widget */}
-          <JenCoach />
           <QuickAddEntry floating />
         </div>
           </div>

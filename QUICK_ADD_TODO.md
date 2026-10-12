@@ -229,6 +229,11 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
   tailored Quick Add capture. Supplier and location choices open their existing
   focused creation forms, so barcode, label and allergen controls never appear
   for records where they are irrelevant.
+- Physical testing showed the labelled launcher stretching across the viewport.
+  Restored the original compact circular `+` at the bottom-right on both mobile
+  and desktop while retaining the creation menu. Moved the floating Contact us
+  widget into a dedicated navigation page with the same support form and email
+  fallback, preventing the two global actions from competing for space.
 - [ ] Assess whether an iPhone/iPad app adds enough value beyond the mobile portal.
 
 ## First-version acceptance criteria

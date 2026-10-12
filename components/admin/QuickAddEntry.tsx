@@ -23,8 +23,8 @@ export default function QuickAddEntry({ initialKind = 'ingredient', siteId, onSa
     <Dialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
       <Dialog.Trigger asChild>
         <button ref={trigger} type="button" aria-label={t('quickAdd.addMenuTitle')} title={t('quickAdd.addMenuTitle')}
-          className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] left-1/2 z-50 flex h-16 -translate-x-1/2 items-center justify-center gap-2 rounded-full bg-[#003842] px-6 text-base font-semibold text-white shadow-2xl ring-4 ring-white/80 transition-transform hover:scale-105 hover:bg-[#005a60] focus-visible:outline-none focus-visible:ring-[#42b8ac] active:scale-95 dark:ring-gray-900 lg:bottom-[60px] lg:left-auto lg:right-24 lg:translate-x-0">
-          <Plus className="h-8 w-8" aria-hidden="true" />{t('quickAdd.add')}
+          className="fixed bottom-[calc(1.5rem+env(safe-area-inset-bottom))] right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#003842] text-white shadow-xl ring-1 ring-white/20 transition-colors hover:bg-[#005a60] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#42b8ac] focus-visible:ring-offset-2 active:bg-[#005a60] lg:bottom-[60px] lg:right-6">
+          <Plus className="h-7 w-7" aria-hidden="true" />
         </button>
       </Dialog.Trigger>
       <Dialog.Portal>
