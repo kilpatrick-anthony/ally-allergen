@@ -219,6 +219,16 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
   of one Product evidence section. A new draft explains that saving unlocks the
   photo step; after saving it becomes the immediate next action, and an existing
   draft keeps both evidence methods together above the single assessment.
+
+### Global Add launcher — 12 October 2026
+
+- Promoted the global `+ Add` action to a larger, centred mobile control and a
+  persistent desktop action. It opens a compact creation menu from every admin
+  page instead of assuming the user wants an ingredient.
+- Ingredient, bought-in product and prepared menu item choices open their
+  tailored Quick Add capture. Supplier and location choices open their existing
+  focused creation forms, so barcode, label and allergen controls never appear
+  for records where they are irrelevant.
 - [ ] Assess whether an iPhone/iPad app adds enough value beyond the mobile portal.
 
 ## First-version acceptance criteria
