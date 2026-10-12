@@ -17,6 +17,7 @@
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.95.3",
     "@vercel/analytics": "^2.0.1",
+    "@zxing/browser": "0.2.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.26",
     "html2canvas": "^1.4.1",
