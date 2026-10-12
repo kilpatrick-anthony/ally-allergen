@@ -145,7 +145,11 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
   fallback remains available if Gateway authentication, credits or providers are
   unavailable. Human review and the existing allergen-safety checks are unchanged.
 - Local verification passed: 28 Quick Add API/photo tests, TypeScript and the
-  production build. Deployment and a real-label Gateway request remain.
+  production build.
+- Released the merged `main` commit `d2aca9f6827619172fd6b21dba29f2281553d198`
+  to production as deployment `dpl_7kDLNGSqjkpRq6GUMZrzSprFDZe7`. The live
+  version matched and the health endpoint confirmed its Supabase connection.
+  A signed-in real-label Gateway request remains the final functional check.
 - [ ] Assess whether an iPhone/iPad app adds enough value beyond the mobile portal.
 
 ## First-version acceptance criteria
