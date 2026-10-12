@@ -215,6 +215,10 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
   count. Reviewers may mark only unanswered values as not present after checking
   the current label; existing warnings are preserved and evidence must be
   reconfirmed before approval.
+- Barcode lookup and packaging-label photos are now presented as steps 1 and 2
+  of one Product evidence section. A new draft explains that saving unlocks the
+  photo step; after saving it becomes the immediate next action, and an existing
+  draft keeps both evidence methods together above the single assessment.
 - [ ] Assess whether an iPhone/iPad app adds enough value beyond the mobile portal.
 
 ## First-version acceptance criteria

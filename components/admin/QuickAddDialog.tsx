@@ -243,7 +243,13 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
               {manualSupplier && <label className="block text-sm font-medium">{text('supplierName')}
                 <input aria-label={text('supplierName')} aria-describedby={`${formId}-supplier-note`} maxLength={200} value={fields.supplier_name} onChange={event => setFields({ ...fields, supplier_name: event.target.value })} className={control} />
                 <span id={`${formId}-supplier-note`} className="mt-1 block text-xs text-gray-500 dark:text-gray-300">{text('supplierNote')}</span></label>}</>}
-              {fields.kind !== 'prepared_item' && <QuickAddBarcode disabled={saving || photoBusy || reviewBusy || (!!record && record.status !== 'draft')} onApply={applyBarcodeSuggestions} />}
+              {fields.kind !== 'prepared_item' && <section aria-label={text('evidenceTitle')} className="space-y-3 rounded-xl border-2 border-teal-200 bg-teal-50/40 p-3 dark:border-teal-800 dark:bg-teal-950/20">
+                <div><h3 className="font-semibold">{text('evidenceTitle')}</h3><p className="mt-1 text-sm text-gray-700 dark:text-gray-200">{text('evidenceHelp')}</p></div>
+                <QuickAddBarcode disabled={saving || photoBusy || reviewBusy || (!!record && record.status !== 'draft')} onApply={applyBarcodeSuggestions} />
+                {record?.status === 'draft'
+                  ? <QuickAddPhotos key={record.id} draftId={record.id} disabled={saving || reviewBusy} onActivity={photoActivity} onApplySuggestions={applySuggestions} />
+                  : !record && <p className="rounded-lg border border-dashed border-teal-400 p-3 text-sm text-gray-700 dark:text-gray-200"><span className="font-semibold">2. {text('photos')}</span><br />{text('saveForPhotos')}</p>}
+              </section>}
               <label className="block text-sm font-medium">{text('notes')}
                 <textarea rows={3} maxLength={2000} value={fields.notes} onChange={event => setFields({ ...fields, notes: event.target.value })} className={control} /></label>
               {fields.kind !== 'prepared_item' && (!record || record.status === 'draft') && <details className="rounded-lg border border-gray-300 p-3 dark:border-gray-600">
@@ -260,9 +266,10 @@ export default function QuickAddDialog({ onClose, draftId, initialKind = 'ingred
               {error === 'editConflict' && <Button type="button" variant="tealOutline" className="mt-2" onClick={() => { if (window.confirm(text('discard'))) { if (draftId) setAttempt(value => value + 1); else if (record) view(record.id) } }}>{text('reload')}</Button>}
             </div>}
           </form>}
-          {fields.kind !== 'prepared_item' && !loading && !loadError && (record
-            ? <QuickAddPhotos key={record.id} draftId={record.id} disabled={saving || reviewBusy || record.status !== 'draft'} onActivity={photoActivity} onApplySuggestions={applySuggestions} />
-            : <p className="mt-4 text-sm text-gray-600 dark:text-gray-300">{text('saveForPhotos')}</p>)}
+          {fields.kind !== 'prepared_item' && !loading && !loadError && record && (success || record.status !== 'draft') && <div className="mt-5 rounded-xl border-2 border-teal-200 bg-teal-50/40 p-3 dark:border-teal-800 dark:bg-teal-950/20">
+            {success && <p className="font-semibold text-teal-900 dark:text-teal-100">{text('nextLabelPhotos')}</p>}
+            <QuickAddPhotos key={record.id} draftId={record.id} disabled={saving || reviewBusy || record.status !== 'draft'} onActivity={photoActivity} onApplySuggestions={applySuggestions} />
+          </div>}
           {!loading && !loadError && record && <QuickAddReview key={`review-${record.id}`} draft={record} suppliers={suppliers} sites={sites} ingredients={ingredients}
             categories={record.kind === 'ingredient' ? ingredientCategories : productCategories}
             disabled={saving || photoBusy || textDirty || unsavedPhotos} onActivity={reviewActivity}
