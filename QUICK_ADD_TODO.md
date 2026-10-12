@@ -177,9 +177,13 @@ Deliverable: a tested first version with any remaining issues explicitly recorde
   category, ingredient text, positively declared allergens and explicit dietary
   labels; it never selects or invents a supplier.
 - Users may type the printed barcode number or take/select a barcode photo.
-  Common 1D and 2D formats are decoded locally in the browser; the image is not
+  Common retail EAN, UPC, Code 128 and ITF formats are decoded locally in the browser; the image is not
   uploaded or saved. An unreadable or oversized photo falls back to another
   photo or manual number entry without changing the draft.
+- The initial generic decoder did not recognise several well-framed real phone
+  photos. It was replaced with a retail-barcode reader using EAN/UPC/Code 128/ITF
+  hints, high-resolution downscaling, central crops, contrast enhancement and
+  rotation attempts. A further physical-phone retest remains required.
 - Results are review-only suggestions. The form identifies Open Food Facts as
   community data, shows the source record and its last-updated date when known,
   and tells the user to verify every value against the current physical label.

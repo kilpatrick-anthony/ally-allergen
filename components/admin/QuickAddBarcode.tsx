@@ -10,6 +10,56 @@ type Props = { disabled?: boolean; onApply: (suggestions: Suggestions) => void }
 
 const knownErrors = ['barcodeInvalid', 'barcodeNotFound', 'barcodeUnavailable', 'unauthorized', 'forbidden']
 
+async function decodeBarcodePhoto(url: string) {
+  const [{ BrowserMultiFormatOneDReader }, { BarcodeFormat, DecodeHintType }] = await Promise.all([
+    import('@zxing/browser'), import('@zxing/library'),
+  ])
+  const image = new Image()
+  image.src = url
+  await image.decode()
+  if (!image.naturalWidth || !image.naturalHeight) throw new Error('barcodePhotoUnreadable')
+
+  const scale = Math.min(1, 2400 / Math.max(image.naturalWidth, image.naturalHeight))
+  const source = document.createElement('canvas')
+  source.width = Math.max(1, Math.round(image.naturalWidth * scale))
+  source.height = Math.max(1, Math.round(image.naturalHeight * scale))
+  const sourceContext = source.getContext('2d')
+  if (!sourceContext) throw new Error('barcodePhotoUnreadable')
+  sourceContext.fillStyle = '#fff'; sourceContext.fillRect(0, 0, source.width, source.height)
+  sourceContext.drawImage(image, 0, 0, source.width, source.height)
+
+  const hints = new Map()
+  hints.set(DecodeHintType.TRY_HARDER, true)
+  hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+    BarcodeFormat.EAN_13, BarcodeFormat.EAN_8, BarcodeFormat.UPC_A,
+    BarcodeFormat.UPC_E, BarcodeFormat.CODE_128, BarcodeFormat.ITF,
+  ])
+  const reader = new BrowserMultiFormatOneDReader(hints)
+  const crops = [
+    { x: 0, y: 0, width: source.width, height: source.height },
+    { x: Math.round(source.width * 0.08), y: Math.round(source.height * 0.2), width: Math.round(source.width * 0.84), height: Math.round(source.height * 0.6) },
+  ]
+  const attempts = crops.flatMap(crop => [
+    { crop, rotation: 0, contrast: false }, { crop, rotation: 90, contrast: false },
+    { crop, rotation: 270, contrast: false }, { crop, rotation: 0, contrast: true },
+  ])
+  for (const { crop, rotation, contrast } of attempts) {
+    const sideways = rotation === 90 || rotation === 270
+    const canvas = document.createElement('canvas')
+    canvas.width = sideways ? crop.height : crop.width
+    canvas.height = sideways ? crop.width : crop.height
+    const context = canvas.getContext('2d')
+    if (!context) continue
+    context.fillStyle = '#fff'; context.fillRect(0, 0, canvas.width, canvas.height)
+    if (contrast) context.filter = 'grayscale(1) contrast(1.8)'
+    context.translate(canvas.width / 2, canvas.height / 2)
+    context.rotate(rotation * Math.PI / 180)
+    context.drawImage(source, crop.x, crop.y, crop.width, crop.height, -crop.width / 2, -crop.height / 2, crop.width, crop.height)
+    try { return reader.decodeFromCanvas(canvas).getText() } catch { await Promise.resolve() }
+  }
+  throw new Error('barcodePhotoUnreadable')
+}
+
 export default function QuickAddBarcode({ disabled, onApply }: Props) {
   const { t } = useTranslation()
   const text = (key: string) => t(`quickAdd.${key}`)
@@ -42,9 +92,7 @@ export default function QuickAddBarcode({ disabled, onApply }: Props) {
       if (file.size > 15 * 1024 * 1024) throw new Error('barcodePhotoTooLarge')
       if (!file.type.startsWith('image/')) throw new Error('barcodePhotoUnreadable')
       url = URL.createObjectURL(file)
-      const { BrowserMultiFormatReader } = await import('@zxing/browser')
-      const result = await new BrowserMultiFormatReader().decodeFromImageUrl(url)
-      const value = result.getText().replace(/\D/g, '')
+      const value = (await decodeBarcodePhoto(url)).replace(/\D/g, '')
       if (!/^\d{8,14}$/.test(value)) throw new Error('barcodePhotoUnreadable')
       setBarcode(value)
       setReadingPhoto(false)
