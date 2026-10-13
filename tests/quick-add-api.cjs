@@ -66,14 +66,16 @@ test('staff cannot list, read or update another staff member or business draft',
   }
 })
 
-test('deleting a capture respects ownership, allows every approval status and removes stored label photos', async () => {
+test('deleting a capture respects ownership, allows every approval status and removes stored evidence', async () => {
   const s = setup()
   s.seed(uuid(10))
   s.seed(uuid(11), { created_by: colleague })
   s.seed(uuid(12), { status: 'ready_for_review' })
   s.seed(uuid(13), { status: 'approved', ingredient_id: uuid(20) })
   s.photos.push({ id: uuid(30), draft_id: uuid(10), business_id: business, state: 'ready' })
+  s.datasheets.push({ id: uuid(31), draft_id: uuid(10), business_id: business, state: 'ready', file_name: 'sheet.pdf', content_type: 'application/pdf' })
   s.objects.set(`${business}/${uuid(10)}/${uuid(30)}.jpg`, Buffer.from('label'))
+  s.objects.set(`${business}/${uuid(10)}/${uuid(31)}.pdf`, Buffer.from('%PDF-sheet'))
   assert.equal((await s.item.DELETE({}, params(uuid(11)))).status, 404)
   assert.equal((await s.item.DELETE({}, params(uuid(12)))).status, 200)
   assert.equal((await s.item.DELETE({}, params(uuid(13)))).status, 200)

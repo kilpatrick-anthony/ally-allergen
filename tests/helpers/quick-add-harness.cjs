@@ -8,7 +8,7 @@ const request = body => ({ json: async () => body })
 const params = id => ({ params: Promise.resolve({ id }) })
 
 function setup({ role = 'staff', token = 'valid', membership = true, dbFailure = false } = {}) {
-  const rows = [], photos = [], history = [], writes = [], objects = new Map()
+  const rows = [], photos = [], datasheets = [], history = [], writes = [], objects = new Map()
   const failures = { upload: false, remove: false, finalize: false, extraction: false, barcode: false, barcodeMissing: false }
   const gatewayRequests = []
   const hooks = { beforeUpload: null }
@@ -38,6 +38,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
       else if (table === 'ingredients') candidates = [{ id: uuid(20), business_id: business, name: 'Bread' }, { id: uuid(21), business_id: business, name: 'Butter' }]
       else if (table === 'quick_add_history') candidates = history
       else if (table === 'quick_add_photos') candidates = photos
+      else if (table === 'quick_add_datasheets') candidates = datasheets
       else { assert.equal(table, 'quick_add_drafts'); candidates = rows }
       if (mutation === 'insert') {
         writes.push(table)
@@ -63,7 +64,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
     return query
   } }
   db.storage = { from(bucket) {
-    assert.equal(bucket, 'quick-add-photos')
+    assert.ok(['quick-add-photos', 'quick-add-datasheets'].includes(bucket))
     return {
       async upload(path, bytes) {
         if (hooks.beforeUpload) await hooks.beforeUpload()
@@ -115,15 +116,19 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
   mocks['@/lib/server/quick-add'] = load('lib/server/quick-add.ts')
   mocks['@/lib/server/quick-add-notifications'] = { notifyQuickAddReviewers: async () => {}, retryQuickAddReviewEmails: async () => {}, dismissQuickAddReviewNotifications: async () => {} }
   mocks['@/lib/server/quick-add-photos'] = load('lib/server/quick-add-photos.ts')
+  mocks['@/lib/server/quick-add-datasheets'] = load('lib/server/quick-add-datasheets.ts')
   mocks['@/lib/server/ai-gateway'] = load('lib/server/ai-gateway.ts')
   mocks['@/lib/server/product-barcode'] = load('lib/server/product-barcode.ts')
   return {
     db, history, setRole: value => { role = value }, transition: load('app/api/quick-add-drafts/[id]/transition/route.ts'), evidence: load('app/api/quick-add-evidence/[photoId]/route.ts'),
     photoCollection: load('app/api/quick-add-drafts/[id]/photos/route.ts'),
     photoItem: load('app/api/quick-add-drafts/[id]/photos/[photoId]/route.ts'),
+    datasheetCollection: load('app/api/quick-add-drafts/[id]/datasheets/route.ts'),
+    datasheetItem: load('app/api/quick-add-drafts/[id]/datasheets/[datasheetId]/route.ts'),
+    datasheetEvidence: load('app/api/quick-add-datasheet-evidence/[datasheetId]/route.ts'),
     photoExtract: load('app/api/quick-add-drafts/[id]/photos/[photoId]/extract/route.ts'),
     productBarcode: load('app/api/product-barcode/route.ts'),
-    photoHelpers: mocks['@/lib/server/quick-add-photos'], photos, objects, failures, hooks, gatewayRequests,
+    photoHelpers: mocks['@/lib/server/quick-add-photos'], datasheetHelpers: mocks['@/lib/server/quick-add-datasheets'], photos, datasheets, objects, failures, hooks, gatewayRequests,
     collection: load('app/api/quick-add-drafts/route.ts'), item: load('app/api/quick-add-drafts/[id]/route.ts'), rows, writes,
     race: () => { concurrentEdit = true },
     seed(id, overrides = {}) { rows.push({ ...fields, allergen_warnings: {}, dietary_tags: [], id, business_id: business, created_by: actor, status: 'draft', version: 1, created_at: '2026-10-09T10:00:00Z', updated_at: '2026-10-09T10:00:00Z', ...overrides }) },

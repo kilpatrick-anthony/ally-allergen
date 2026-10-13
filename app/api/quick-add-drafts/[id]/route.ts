@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { draftColumns, getDraft, quickAddContext, quickAddFailure, QuickAddError, requireDraftId, updateDraftInput, validateDraftReferences } from '@/lib/server/quick-add'
 import { PHOTO_BUCKET, photoPath, photoQuery, type DraftPhoto } from '@/lib/server/quick-add-photos'
+import { datasheetPath, datasheetQuery, QUICK_ADD_DATASHEET_BUCKET, type DraftDatasheet } from '@/lib/server/quick-add-datasheets'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -51,6 +52,8 @@ export async function DELETE(_request: NextRequest, route: RouteContext) {
     const draft = await getDraft(context, id)
     const { data: photos, error: photoError } = await photoQuery(context, id)
     if (photoError) throw photoError
+    const { data: datasheets, error: datasheetError } = await datasheetQuery(context, id)
+    if (datasheetError) throw datasheetError
     let query = context.supabase.from('quick_add_drafts').delete().eq('id', id)
       .eq('business_id', context.businessId).eq('version', draft.version)
     if (context.role === 'staff') query = query.eq('created_by', context.userId)
@@ -61,6 +64,11 @@ export async function DELETE(_request: NextRequest, route: RouteContext) {
     if (paths.length) {
       const cleanup = await context.supabase.storage.from(PHOTO_BUCKET).remove(paths)
       if (cleanup.error) console.error('Quick Add photo cleanup failed:', cleanup.error)
+    }
+    const datasheetPaths = (datasheets || []).map((item: DraftDatasheet) => datasheetPath(item))
+    if (datasheetPaths.length) {
+      const cleanup = await context.supabase.storage.from(QUICK_ADD_DATASHEET_BUCKET).remove(datasheetPaths)
+      if (cleanup.error) console.error('Quick Add datasheet cleanup failed:', cleanup.error)
     }
     return NextResponse.json({ deleted: true })
   } catch (error) { return quickAddFailure(error) }

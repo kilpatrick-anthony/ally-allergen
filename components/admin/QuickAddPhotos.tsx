@@ -166,7 +166,7 @@ export default function QuickAddPhotos({ draftId, disabled, offlineDraft = false
 
   const blocked = disabled || working || loading || loadFailed
   return <section aria-label={text('photos')} className="mt-5 space-y-3 border-t pt-4 dark:border-gray-700">
-    <h3 className="font-semibold">2. {text('photos')}</h3>
+    <h3 className="font-semibold">{text('photos')} <span className="font-normal text-gray-500 dark:text-gray-300">({text('optional')})</span></h3>
     <p id={helpId} className="text-sm text-gray-600 dark:text-gray-300">{text('photoHelp')}</p>
     {loading ? <p role="status">{text('loading')}</p> : <>
       <div className="flex flex-wrap gap-3">

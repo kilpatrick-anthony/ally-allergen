@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { X } from 'lucide-react'
 import QuickAddAssessment from '@/components/admin/QuickAddAssessment'
 import QuickAddPhotos, { type LabelSuggestions } from '@/components/admin/QuickAddPhotos'
+import QuickAddDatasheets from '@/components/admin/QuickAddDatasheets'
 import QuickAddReview from '@/components/admin/QuickAddReview'
 import QuickAddIngredients, { type QuickAddIngredientOption } from '@/components/admin/QuickAddIngredients'
 import QuickAddBarcode from '@/components/admin/QuickAddBarcode'
@@ -301,8 +302,12 @@ export default function QuickAddDialog({ onClose, page = false, draftId, initial
                 <div><h3 className="font-semibold">{text('evidenceTitle')}</h3><p className="mt-1 text-sm text-gray-700 dark:text-gray-200">{text('evidenceHelp')}</p></div>
                 <QuickAddBarcode disabled={saving || photoBusy || reviewBusy || (!!record && record.status !== 'draft')} onApply={applyBarcodeSuggestions} />
                 {record?.status === 'draft'
-                  ? <QuickAddPhotos key={record.id} draftId={record.id} disabled={saving || reviewBusy} onActivity={photoActivity} onApplySuggestions={applySuggestions} />
-                  : !record && <p className="rounded-lg border border-dashed border-teal-400 p-3 text-sm text-gray-700 dark:text-gray-200"><span className="font-semibold">2. {text('photos')}</span><br />{text('saveForPhotos')}</p>}
+                  ? <><QuickAddPhotos key={record.id} draftId={record.id} disabled={saving || reviewBusy} onActivity={photoActivity} onApplySuggestions={applySuggestions} />
+                    <QuickAddDatasheets key={`datasheet-${record.id}`} draftId={record.id} disabled={saving || reviewBusy} onActivity={working => photoActivity(working, false)} /></>
+                  : !record && <div className="space-y-3">
+                    <p className="rounded-lg border border-dashed border-teal-400 p-3 text-sm text-gray-700 dark:text-gray-200"><span className="font-semibold">{text('photos')} ({text('optional')})</span><br />{text('saveForPhotos')}</p>
+                    <p className="rounded-lg border border-dashed border-teal-400 p-3 text-sm text-gray-700 dark:text-gray-200"><span className="font-semibold">{text('datasheets')} ({text('optional')})</span><br />{text('saveForDatasheet')}</p>
+                  </div>}
               </section>}
               <label className="block text-sm font-medium">{text('notes')}
                 <textarea rows={3} maxLength={2000} value={fields.notes} onChange={event => setFields({ ...fields, notes: event.target.value })} className={control} /></label>
@@ -320,8 +325,9 @@ export default function QuickAddDialog({ onClose, page = false, draftId, initial
             </div>}
           </form>}
           {fields.kind !== 'prepared_item' && !loading && !loadError && record && (success || record.status !== 'draft') && <div className="mt-5 rounded-xl border-2 border-teal-200 bg-teal-50/40 p-3 dark:border-teal-800 dark:bg-teal-950/20">
-            {success && <p className="font-semibold text-teal-900 dark:text-teal-100">{text('nextLabelPhotos')}</p>}
+            {success && <p className="font-semibold text-teal-900 dark:text-teal-100">{text('optionalEvidence')}</p>}
             <QuickAddPhotos key={record.id} draftId={record.id} disabled={saving || reviewBusy || record.status !== 'draft'} onActivity={photoActivity} onApplySuggestions={applySuggestions} />
+            <QuickAddDatasheets key={`datasheet-${record.id}`} draftId={record.id} disabled={saving || reviewBusy || record.status !== 'draft'} onActivity={working => photoActivity(working, false)} />
           </div>}
           {!loading && !loadError && record && <QuickAddReview key={`review-${record.id}`} draft={record} suppliers={suppliers} sites={sites} ingredients={ingredients}
             categories={record.kind === 'ingredient' ? ingredientCategories : productCategories}
