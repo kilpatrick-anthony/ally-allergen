@@ -248,14 +248,16 @@ export async function PUT(
       if (links && links.length > 0) {
         const menuItemIds = links.map((l: { menu_item_id: string }) => l.menu_item_id)
 
-        // 2. For each menu item, fetch all its ingredients and recompute strict intersection
-        for (const menuItemId of menuItemIds) {
+        // 2. Recompute affected menu items concurrently. Running these database
+        // round trips sequentially made heavily-used ingredients slow enough for
+        // the browser/proxy to abandon an otherwise successful save.
+        await Promise.all(menuItemIds.map(async (menuItemId: string) => {
           const { data: allLinks } = await supabase
             .from('menu_item_ingredients')
             .select('ingredient_id')
             .eq('menu_item_id', menuItemId)
 
-          if (!allLinks || allLinks.length === 0) continue
+          if (!allLinks || allLinks.length === 0) return
 
           const ingredientIds = allLinks.map((l: { ingredient_id: string }) => l.ingredient_id)
 
@@ -264,7 +266,7 @@ export async function PUT(
             .select('certifications, allergen_warnings')
             .in('id', ingredientIds)
 
-          if (!ingredientRows) continue
+          if (!ingredientRows) return
 
           // Strict intersection: dietary label only carries over if ALL ingredients have it
           const allCerts: string[][] = ingredientRows.map((r: { certifications: string[] | null }) => r.certifications || [])
@@ -303,7 +305,7 @@ export async function PUT(
               ...(mergedAllergens !== undefined && { allergen_warnings: mergedAllergens }),
             })
             .eq('id', menuItemId)
-        }
+        }))
       }
     } catch (cascadeErr) {
       // Non-fatal: cascade failure shouldn't block the ingredient save response
