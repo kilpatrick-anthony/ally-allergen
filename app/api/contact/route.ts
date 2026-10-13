@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const adminEmail = process.env.SUPER_ADMIN_EMAIL || 'anthony@allyjen.ie'
+    const adminEmail = 'info@allyjen.ie'
     const submittedAt = new Date().toLocaleString('en-IE', { timeZone: 'Europe/Dublin' })
 
     // Send notification to admin

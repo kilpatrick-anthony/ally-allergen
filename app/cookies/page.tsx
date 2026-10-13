@@ -65,7 +65,7 @@ export default function CookiePolicyPage() {
 
       <section>
         <h2>7. Contact</h2>
-        <p>Questions about this policy can be sent to <a href="mailto:sales@allyjen.ie">sales@allyjen.ie</a>.</p>
+        <p>Questions about this policy can be sent to <a href="mailto:info@allyjen.ie">info@allyjen.ie</a>.</p>
       </section>
     </LegalPageLayout>
   )

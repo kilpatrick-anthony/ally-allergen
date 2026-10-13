@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const safeRole = typeof role === 'string' && role.trim() ? role.trim() : 'Not specified'
     const safeMessage = typeof message === 'string' ? message.trim() : ''
     const submittedAt = new Date().toLocaleString('en-IE', { timeZone: 'Europe/Dublin' })
-    const adminEmail = process.env.SUPER_ADMIN_EMAIL || 'anthony@allyjen.ie'
+    const adminEmail = 'info@allyjen.ie'
 
     // Notify admin
     await sendMail({

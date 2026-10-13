@@ -68,7 +68,7 @@ export default function BookDemoPage() {
       }
       setSubmitted(true)
     } catch {
-      setError('Failed to submit. Please try emailing us directly at hello@allyjen.ie')
+      setError('Failed to submit. Please try emailing us directly at info@allyjen.ie')
     } finally {
       setSubmitting(false)
     }

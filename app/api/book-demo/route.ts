@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Valid email address is required' }, { status: 400 })
     }
 
-    const adminEmail = process.env.SUPER_ADMIN_EMAIL || 'anthony@allyjen.ie'
+    const adminEmail = 'info@allyjen.ie'
     const submittedAt = new Date().toLocaleString('en-IE', { timeZone: 'Europe/Dublin' })
 
     // Notify admin

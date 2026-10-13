@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const safeMessage = escapeHtml(message).replace(/\n/g, '<br>')
     const safeContext = escapeHtml(context || 'Not provided')
     const submittedAt = new Date().toLocaleString('en-IE', { timeZone: 'Europe/Dublin' })
-    const supportEmail = process.env.SUPPORT_EMAIL || process.env.SUPER_ADMIN_EMAIL || 'info@allyjen.ie'
+    const supportEmail = 'info@allyjen.ie'
 
     const [teamDelivery, confirmationDelivery] = await Promise.allSettled([
       sendMail({

@@ -456,7 +456,7 @@ export async function POST(req: NextRequest) {
 
   // Human escalation flow for admin coach only.
   if (_source === 'admin-coach' && shouldEscalateToHuman(sanitised)) {
-    const recipient = process.env.SUPER_ADMIN_EMAIL || 'anthony@allyjen.ie'
+    const recipient = 'info@allyjen.ie'
     const normalizedHistory = normalizeHistory(chatHistory)
 
     if (!canSendEscalationNow(ip)) {

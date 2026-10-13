@@ -61,7 +61,7 @@ export default function TermsPage() {
 
       <section>
         <h2>10. Governing law and contact</h2>
-        <p>These terms are governed by Irish law, and the Irish courts have jurisdiction, subject to any mandatory rights that apply. Questions may be sent to <a href="mailto:sales@allyjen.ie">sales@allyjen.ie</a>.</p>
+        <p>These terms are governed by Irish law, and the Irish courts have jurisdiction, subject to any mandatory rights that apply. Questions may be sent to <a href="mailto:info@allyjen.ie">info@allyjen.ie</a>.</p>
       </section>
     </LegalPageLayout>
   )
