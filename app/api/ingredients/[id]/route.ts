@@ -69,7 +69,7 @@ export async function GET(
 
     const { data: variants, error: variantsError } = await supabase
       .from('ingredient_supplier_variants')
-      .select('supplier_id, allergen_warnings, certifications, assessment_status, notes, last_reviewed_at, supplier:suppliers(id, name)')
+      .select('id, supplier_id, brand, allergen_warnings, certifications, assessment_status, notes, last_reviewed_at, supplier:suppliers(id, name)')
       .eq('business_id', userBusiness.business_id)
       .eq('ingredient_id', id)
 
@@ -162,8 +162,9 @@ export async function PUT(
       previousIngredient?.allergen_warnings || allergen_warnings || {},
       previousIngredient?.certifications || certifications || []
     )
-    for (const [supplierName, supplier] of supplierRecords) {
-      completeProfiles[supplierName].supplier_id = supplier.id
+    for (const [profileKey, profile] of Object.entries(completeProfiles)) {
+      const supplier = supplierRecords.get(profile.supplier_name || profileKey)
+      if (supplier) profile.supplier_id = supplier.id
     }
     const derivedSafety = deriveEffectiveIngredientSafety(completeProfiles)
     const effectiveAllergens = derivedSafety?.allergen_warnings || allergen_warnings || {}
@@ -283,7 +284,7 @@ export async function PUT(
           const knownCertNames = new Set(mergedCerts)
           // We can't know which existing entries were manual vs auto, so union — then
           // remove auto certs that no longer pass the intersection
-          const autoCertNames = ['Vegan','Vegetarian','Gluten-Free','Halal','Kosher','Organic','Fair Trade','Lactose-Free','Coeliac-Friendly']
+          const autoCertNames = ['Vegan','Vegetarian','Gluten-Free','Dairy Free','Halal','Kosher','Organic','Fair Trade','Lactose-Free','Coeliac-Friendly']
           const manualEntries = existingDietary.filter(d => !autoCertNames.includes(d) || knownCertNames.has(d))
           const combined = Array.from(new Set([...manualEntries, ...mergedCerts]))
 

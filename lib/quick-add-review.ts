@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { ALLERGEN_LIST, GLUTEN_TYPES, TREE_NUT_TYPES } from '@/types/allergen'
 
 export const reviewLevels = ['none', 'cross_contamination', 'traces', 'may_contain', 'not_suitable', 'contains'] as const
-export const dietaryTags = ['Vegan', 'Vegetarian', 'Gluten-Free', 'Halal', 'Kosher', 'Organic', 'Fair Trade', 'Lactose-Free', 'Coeliac-Friendly'] as const
+export const dietaryTags = ['Vegan', 'Vegetarian', 'Gluten-Free', 'Dairy Free', 'Halal', 'Kosher', 'Organic', 'Fair Trade', 'Lactose-Free', 'Coeliac-Friendly'] as const
 export const dietaryTagFields = z.array(z.enum(dietaryTags)).max(dietaryTags.length).transform(tags => [...new Set(tags)].sort())
 export const allergenFields = z.object(Object.fromEntries(ALLERGEN_LIST.map(item => [item.id, z.enum(reviewLevels).optional()]))).extend({
   cereals_gluten_levels: z.object(Object.fromEntries(GLUTEN_TYPES.map(item => [item.key, z.enum(reviewLevels).optional()]))).strict().optional(),

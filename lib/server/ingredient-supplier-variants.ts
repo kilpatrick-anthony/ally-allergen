@@ -71,17 +71,23 @@ export async function syncIngredientSupplierVariants(
   profiles: SupplierProfileMap,
   userId: string
 ) {
-  const desiredSupplierIds = new Set(Array.from(supplierRecords.values(), (supplier) => supplier.id))
   const { data: existing, error: existingError } = await supabase
     .from('ingredient_supplier_variants')
-    .select('id, supplier_id')
+    .select('id')
     .eq('business_id', businessId)
     .eq('ingredient_id', ingredientId)
 
   if (existingError) throw existingError
 
+  const existingIds = new Set((existing || []).map((variant: { id: string }) => variant.id))
+  const desiredVariantIds = new Set(
+    Object.values(profiles).flatMap((profile) =>
+      profile.variant_id && existingIds.has(profile.variant_id) ? [profile.variant_id] : []
+    )
+  )
+
   const obsoleteIds = (existing || [])
-    .filter((variant: { id: string; supplier_id: string }) => !desiredSupplierIds.has(variant.supplier_id))
+    .filter((variant: { id: string }) => !desiredVariantIds.has(variant.id))
     .map((variant: { id: string }) => variant.id)
 
   if (obsoleteIds.length > 0) {
@@ -93,12 +99,16 @@ export async function syncIngredientSupplierVariants(
     if (deleteError) throw deleteError
   }
 
-  const rows = Array.from(supplierRecords.entries()).map(([supplierName, supplier]) => {
-    const profile = profiles[supplierName]
+  const rows = Object.entries(profiles).flatMap(([profileKey, profile]) => {
+    const supplierName = (profile.supplier_name || profileKey).trim()
+    const supplier = supplierRecords.get(supplierName)
+    if (!supplier) return []
     return {
+      ...(profile.variant_id && existingIds.has(profile.variant_id) ? { id: profile.variant_id } : {}),
       business_id: businessId,
       ingredient_id: ingredientId,
       supplier_id: supplier.id,
+      brand: typeof profile?.brand === 'string' ? profile.brand.trim().slice(0, 200) : '',
       allergen_warnings: profile?.allergen_warnings || {},
       certifications: profile?.certifications || [],
       assessment_status: profile?.assessment_status || 'needs_review',
@@ -109,11 +119,22 @@ export async function syncIngredientSupplierVariants(
     }
   })
 
-  if (rows.length > 0) {
+  const existingRows = rows.filter((row) => 'id' in row)
+  const newRows = rows.filter((row) => !('id' in row))
+
+  if (existingRows.length > 0) {
     const { error: upsertError } = await supabase
       .from('ingredient_supplier_variants')
-      .upsert(rows, { onConflict: 'ingredient_id,supplier_id' })
+      .upsert(existingRows, { onConflict: 'id' })
 
     if (upsertError) throw upsertError
+  }
+
+  if (newRows.length > 0) {
+    const { error: insertError } = await supabase
+      .from('ingredient_supplier_variants')
+      .insert(newRows)
+
+    if (insertError) throw insertError
   }
 }

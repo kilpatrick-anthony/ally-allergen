@@ -161,8 +161,9 @@ export async function POST(request: NextRequest) {
       allergen_warnings || {},
       Array.isArray(certifications) ? certifications : []
     )
-    for (const [supplierName, supplier] of supplierRecords) {
-      completeProfiles[supplierName].supplier_id = supplier.id
+    for (const [profileKey, profile] of Object.entries(completeProfiles)) {
+      const supplier = supplierRecords.get(profile.supplier_name || profileKey)
+      if (supplier) profile.supplier_id = supplier.id
     }
     const derivedSafety = deriveEffectiveIngredientSafety(completeProfiles)
     const effectiveAllergens = derivedSafety?.allergen_warnings || allergen_warnings || {}

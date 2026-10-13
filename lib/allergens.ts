@@ -3,7 +3,7 @@
 import {
   Wheat, Fish, Egg, Milk, Shell, Bean, Salad, Sprout, 
   Circle, Leaf, Beaker, Sun, Flower2, TreeDeciduous, Snail,
-  Apple, WheatOff, Moon, Star, Globe, Droplets, ShieldCheck, Target,
+  Apple, WheatOff, Moon, Star, Globe, Droplets, MilkOff, ShieldCheck, Target,
   type LucideIcon
 } from 'lucide-react'
 
@@ -190,7 +190,8 @@ const DIETARY_LABEL_ICONS: { keywords: string[]; icon: LucideIcon; color: string
   { keywords: ['kosher'], icon: Star, color: '#3b82f6' },
   { keywords: ['organic'], icon: Sprout, color: '#22c55e' },
   { keywords: ['fair trade'], icon: Globe, color: '#8b5cf6' },
-  { keywords: ['lactose', 'dairy'], icon: Droplets, color: '#06b6d4' },
+  { keywords: ['dairy'], icon: MilkOff, color: '#0ea5e9' },
+  { keywords: ['lactose'], icon: Droplets, color: '#06b6d4' },
   { keywords: ['coeliac', 'celiac'], icon: ShieldCheck, color: '#ec4899' },
 ]
 

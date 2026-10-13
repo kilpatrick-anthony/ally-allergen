@@ -28,7 +28,9 @@ interface SupplierNote {
 }
 
 interface SupplierIngredientVariant {
+  id: string
   ingredient_id: string
+  brand: string
   allergen_warnings: Record<string, unknown>
   assessment_status: 'needs_review' | 'assessed'
   ingredient: { id: string; name: string; category?: string } | Array<{ id: string; name: string; category?: string }>
@@ -111,9 +113,9 @@ export default function SupplierDetailPage() {
                 if (!ingredient) return null
                 const assessed = variant.assessment_status === 'assessed'
                 return (
-                  <div key={variant.ingredient_id} className="rounded-xl border border-gray-200 p-4">
+                  <div key={variant.id} className="rounded-xl border border-gray-200 p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="min-w-0"><Link href={`/admin/ingredients/${ingredient.id}`} className="font-semibold text-[#003842] hover:underline">{ingredient.name}</Link><p className="mt-0.5 text-xs text-gray-500">{ingredient.category || t('uncategorized')}</p></div>
+                      <div className="min-w-0"><Link href={`/admin/ingredients/${ingredient.id}`} className="font-semibold text-[#003842] hover:underline">{ingredient.name}</Link>{variant.brand && <p className="mt-0.5 text-sm font-medium text-gray-700 dark:text-gray-200">{variant.brand}</p>}<p className="mt-0.5 text-xs text-gray-500">{ingredient.category || t('uncategorized')}</p></div>
                       <div className="flex items-center gap-2"><Badge variant={assessed ? 'success' : 'warning'}>{assessed ? t('ingredientsPortal.reviewed') : t('ingredientsPortal.needsReview')}</Badge><Link href={`/admin/ingredients/${ingredient.id}/edit`}><Button variant="ghost" size="sm">{t('supplierPortal.editProfile')}</Button></Link></div>
                     </div>
                     <div className="mt-3 border-t border-gray-100 pt-3"><AllergenWarningDisplay warnings={variant.allergen_warnings as any} compact={true} showNone={true} /></div>

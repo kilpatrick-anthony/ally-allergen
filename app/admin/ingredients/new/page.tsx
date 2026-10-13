@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { 
   Package, ArrowLeft, Save, X, AlertCircle, Plus, Trash2,
-  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck,
+  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, MilkOff, ShieldCheck,
 } from 'lucide-react'
 
 import { Container } from '@/components/layout/Container'
@@ -29,6 +29,7 @@ export default function NewIngredientPage() {
   const { showNotification } = useNotification()
   const { t } = useTranslation()
   const router = useRouter()
+  const [returnTo, setReturnTo] = useState('/admin/ingredients')
   const [saving, setSaving] = useState(false)
   const [datasheets, setDatasheets] = useState<any[]>([])
   
@@ -64,6 +65,13 @@ export default function NewIngredientPage() {
 
   // Per-supplier profiles
   const [supplierProfiles, setSupplierProfiles] = useState<SupplierProfileMap>({})
+
+  useEffect(() => {
+    const requestedPath = new URLSearchParams(window.location.search).get('returnTo')
+    if (requestedPath === '/admin/ingredients' || requestedPath?.startsWith('/admin/ingredients?')) {
+      setReturnTo(requestedPath)
+    }
+  }, [])
 
   const parseJsonSafely = async (response: Response) => {
     const contentType = response.headers.get('content-type') || ''
@@ -170,6 +178,7 @@ export default function NewIngredientPage() {
     { name: 'Organic', color: '#22c55e', icon: Sprout },
     { name: 'Fair Trade', color: '#8b5cf6', icon: Globe },
     { name: 'Lactose-Free', color: '#06b6d4', icon: Droplets },
+    { name: 'Dairy Free', color: '#0ea5e9', icon: MilkOff },
     { name: 'Coeliac-Friendly', color: '#ec4899', icon: ShieldCheck }
   ]
 
@@ -233,7 +242,7 @@ export default function NewIngredientPage() {
       }
 
       showNotification(t('ingredientsPortal.ingredientSaved'), 'success')
-      router.push('/admin/ingredients')
+      router.push(returnTo)
     } catch (error: any) {
       console.error('Error saving ingredient:', error)
       showNotification(t('ingredientsPortal.saveIngredientFailed', { error: error.message || '' }), 'error')
@@ -595,7 +604,7 @@ export default function NewIngredientPage() {
 
         {/* Action Buttons */}
         <div className="flex justify-start gap-4">
-          <Link href="/admin/ingredients">
+          <Link href={returnTo}>
             <Button variant="outline">
               {t('accessPoints.cancel')}
             </Button>

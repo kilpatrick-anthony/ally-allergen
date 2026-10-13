@@ -14,7 +14,7 @@ import {
   SortAsc, SortDesc, MoreVertical, Upload, FileText,
   ChevronDown, Filter as FilterIcon, Leaf, Heart, 
   Flame, Droplet, Utensils, Zap, Apple, WheatOff, 
-  Moon, Star, Sprout, Globe, Wheat, 
+  Moon, Star, Sprout, Globe, Wheat, MilkOff,
   Shell, Egg, Fish, TreeDeciduous, Carrot, Sparkles, Flower2, Nut, Milk, Truck, CircleDot,
   Bean, Salad, Sun, Circle, Beaker, Snail, Droplets, ShieldCheck
 } from 'lucide-react'
@@ -83,6 +83,7 @@ const dietaryAttributes = [
   { id: 'organic', name: 'Organic', icon: Sprout, color: '#22c55e' },
   { id: 'fair-trade', name: 'Fair Trade', icon: Globe, color: '#8b5cf6' },
   { id: 'lactose-free', name: 'Lactose-Free', icon: Droplets, color: '#06b6d4' },
+  { id: 'dairy-free', name: 'Dairy Free', icon: MilkOff, color: '#0ea5e9' },
   { id: 'coeliac-friendly', name: 'Coeliac-Friendly', icon: ShieldCheck, color: '#ec4899' },
 ]
 
@@ -136,6 +137,32 @@ export default function IngredientsPage() {
   const [selectedIngredientForDatasheets, setSelectedIngredientForDatasheets] = useState<any>(null)
   const [datasheets, setDatasheets] = useState<any[]>([])
   const [loadingDatasheets, setLoadingDatasheets] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setSearchTerm(params.get('q') || '')
+    if (params.get('allergen')) setSelectedAllergen(params.get('allergen')!)
+    if (params.get('certification')) setSelectedCertification(params.get('certification')!)
+    if (params.get('status')) setSelectedStatus(params.get('status')!)
+    if (params.get('category')) setSelectedCategory(params.get('category')!)
+    if (params.get('view') === 'list') setViewMode('list')
+    if (['name', 'date', 'status', 'compliance'].includes(params.get('sort') || '')) {
+      setSortBy(params.get('sort') as typeof sortBy)
+    }
+    if (params.get('direction') === 'desc') setSortDir('desc')
+  }, [])
+
+  const listStateParams = new URLSearchParams()
+  if (searchTerm) listStateParams.set('q', searchTerm)
+  if (selectedAllergen !== 'all') listStateParams.set('allergen', selectedAllergen)
+  if (selectedCertification !== 'all') listStateParams.set('certification', selectedCertification)
+  if (selectedStatus !== 'all') listStateParams.set('status', selectedStatus)
+  if (selectedCategory !== 'all') listStateParams.set('category', selectedCategory)
+  if (viewMode !== 'grid') listStateParams.set('view', viewMode)
+  if (sortBy !== 'name') listStateParams.set('sort', sortBy)
+  if (sortDir !== 'asc') listStateParams.set('direction', sortDir)
+  const ingredientListReturnPath = `/admin/ingredients${listStateParams.size ? `?${listStateParams}` : ''}`
+  const newIngredientHref = `/admin/ingredients/new?returnTo=${encodeURIComponent(ingredientListReturnPath)}`
 
   const fetchIngredients = useCallback(async (showLoading = true) => {
       try {
@@ -427,7 +454,7 @@ export default function IngredientsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Link href="/admin/ingredients/new" className="block">
+        <Link href={newIngredientHref} className="block">
           <Card className="hover:shadow-lg transition-all hover:border-emerald-500 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-emerald-600 group cursor-pointer">
             <div className="flex items-center justify-between">
               <div>
@@ -1134,7 +1161,7 @@ export default function IngredientsPage() {
               ? t('admin.tryAdjustingSearch')
               : t('admin.getStartedFirstIngredient')}
           </p>
-          <Link href="/admin/ingredients/new">
+          <Link href={newIngredientHref}>
             <Button variant="primary" icon={Plus}>
               {t('admin.addFirstIngredient')}
             </Button>

@@ -8,7 +8,7 @@ import { useNotification } from '@/lib/hooks/useNotification'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import {
   ArrowLeft, Save, X, Plus, Trash2,
-  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck, FileText, CheckCircle
+  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, MilkOff, ShieldCheck, FileText, CheckCircle
 } from 'lucide-react'
 
 import { Container } from '@/components/layout/Container'
@@ -120,6 +120,7 @@ export default function EditMenuItemPage() {
     { name: 'Organic', color: '#22c55e', icon: Sprout },
     { name: 'Fair Trade', color: '#8b5cf6', icon: Globe },
     { name: 'Lactose-Free', color: '#06b6d4', icon: Droplets },
+    { name: 'Dairy Free', color: '#0ea5e9', icon: MilkOff },
     { name: 'Coeliac-Friendly', color: '#ec4899', icon: ShieldCheck }
   ]
 

@@ -76,6 +76,7 @@ const isImageIcon = (icon?: string) => Boolean(icon && /^https?:\/\//.test(icon)
 export default function NewMenuItemPage() {
   const { t } = useTranslation()
   const router = useRouter()
+  const [returnTo, setReturnTo] = useState('/admin/menu-builder')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
@@ -123,6 +124,13 @@ export default function NewMenuItemPage() {
     'Sides', 'Snacks', 'Specials', 'Starters'
   ]
   const [categoryOptions, setCategoryOptions] = useState<string[]>(DEFAULT_MENU_CATEGORIES)
+
+  useEffect(() => {
+    const requestedPath = new URLSearchParams(window.location.search).get('returnTo')
+    if (requestedPath === '/admin/menu-builder' || requestedPath?.startsWith('/admin/menu-builder?')) {
+      setReturnTo(requestedPath)
+    }
+  }, [])
 
   useEffect(() => {
     fetch('/api/menu-items/categories')
@@ -299,7 +307,7 @@ export default function NewMenuItemPage() {
       
       // Redirect after a short delay
       setTimeout(() => {
-        router.push('/admin/menu-builder')
+        router.push(returnTo)
       }, 1000)
     } catch (error: any) {
       console.error('Error saving menu item:', error)
@@ -616,7 +624,7 @@ export default function NewMenuItemPage() {
                   <p className="mt-1 text-xs text-gray-500">{t('admin.dietaryClaimsHelp')}</p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {['Vegan', 'Vegetarian', 'Gluten-Free', 'Halal', 'Kosher', 'Organic', 'Lactose-Free', 'Coeliac-Friendly'].map(claim => (
+                  {['Vegan', 'Vegetarian', 'Gluten-Free', 'Dairy Free', 'Halal', 'Kosher', 'Organic', 'Fair Trade', 'Lactose-Free', 'Coeliac-Friendly'].map(claim => (
                     <button key={claim} type="button" onClick={() => setMenuItem(current => ({ ...current, dietary: current.dietary.includes(claim) ? current.dietary.filter(value => value !== claim) : [...current.dietary, claim] }))} className={`rounded-full border px-3 py-1.5 text-sm ${menuItem.dietary.includes(claim) ? 'border-[#42b8ac] bg-[#42b8ac]/10 text-[#0f766e]' : 'border-gray-300 text-gray-600'}`}>{claim}</button>
                   ))}
                 </div>
@@ -660,7 +668,7 @@ export default function NewMenuItemPage() {
               >
                 {saving ? t('admin.savingMenuItem') : t('admin.saveMenuItem')}
               </Button>
-              <Link href="/admin/menu-builder">
+              <Link href={returnTo}>
                 <Button
                   variant="outline"
                   fullWidth

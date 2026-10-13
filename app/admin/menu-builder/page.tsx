@@ -91,6 +91,26 @@ export default function MenuBuilderPage() {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [showFilters, setShowFilters] = useState(false)
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setSearchTerm(params.get('q') || '')
+    if (params.get('scope')) setScopeFilter(params.get('scope')!)
+    if (params.get('category')) setCategoryFilter(params.get('category')!)
+    if (params.get('view') === 'list') setViewMode('list')
+    if (params.get('sort') === 'date') setSortBy('date')
+    if (params.get('direction') === 'desc') setSortDir('desc')
+  }, [])
+
+  const listStateParams = new URLSearchParams()
+  if (searchTerm) listStateParams.set('q', searchTerm)
+  if (scopeFilter !== 'all') listStateParams.set('scope', scopeFilter)
+  if (categoryFilter !== 'all') listStateParams.set('category', categoryFilter)
+  if (viewMode !== 'grid') listStateParams.set('view', viewMode)
+  if (sortBy !== 'name') listStateParams.set('sort', sortBy)
+  if (sortDir !== 'asc') listStateParams.set('direction', sortDir)
+  const menuListReturnPath = `/admin/menu-builder${listStateParams.size ? `?${listStateParams}` : ''}`
+  const newMenuItemHref = `/admin/menu-builder/new?returnTo=${encodeURIComponent(menuListReturnPath)}`
+
   // Load menu items, sites, and ingredients
   useEffect(() => {
     const fetchData = async () => {
@@ -283,7 +303,7 @@ export default function MenuBuilderPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Link href="/admin/menu-builder/new" className="block">
+        <Link href={newMenuItemHref} className="block">
           <Card className="hover:shadow-lg transition-all hover:border-emerald-500 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-emerald-600 group cursor-pointer p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -463,7 +483,7 @@ export default function MenuBuilderPage() {
             <p className="text-gray-500 dark:text-gray-400 mb-6">
               {searchTerm || scopeFilter !== 'all' ? t('tryAdjustingFilters') : t('admin.createFirstMenuItemDesc')}
             </p>
-            <Link href="/admin/menu-builder/new">
+            <Link href={newMenuItemHref}>
               <Button variant="primary" icon={<Plus className="h-4 w-4" />}>
                 {t('admin.createFirstMenuItem')}
               </Button>

@@ -30,7 +30,7 @@ const NUT_TAGS: Record<string, string> = {
 const DIETARY_LABELS: Record<string, string> = {
   vegan: 'Vegan', vegetarian: 'Vegetarian', 'gluten-free': 'Gluten-Free', halal: 'Halal',
   kosher: 'Kosher', organic: 'Organic', 'fair-trade': 'Fair Trade',
-  'lactose-free': 'Lactose-Free', 'coeliac-friendly': 'Coeliac-Friendly',
+  'lactose-free': 'Lactose-Free', 'dairy-free': 'Dairy Free', 'coeliac-friendly': 'Coeliac-Friendly',
 }
 
 type Product = Record<string, unknown>

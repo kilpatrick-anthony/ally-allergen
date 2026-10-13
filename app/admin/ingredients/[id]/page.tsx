@@ -7,7 +7,7 @@ import Link from 'next/link'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { 
   Package, ArrowLeft, Edit, Trash2, AlertCircle, Check,
-  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, ShieldCheck, Truck, FileText, Download, ExternalLink, X, CircleDot
+  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, MilkOff, ShieldCheck, Truck, FileText, Download, ExternalLink, X, CircleDot
 } from 'lucide-react'
 
 import { Container } from '@/components/layout/Container'
@@ -42,6 +42,7 @@ export default function ViewIngredientPage() {
     { name: 'Organic', color: '#22c55e', icon: Sprout },
     { name: 'Fair Trade', color: '#8b5cf6', icon: Globe },
     { name: 'Lactose-Free', color: '#06b6d4', icon: Droplets },
+    { name: 'Dairy Free', color: '#0ea5e9', icon: MilkOff },
     { name: 'Coeliac-Friendly', color: '#ec4899', icon: ShieldCheck }
   ]
 
@@ -359,13 +360,14 @@ export default function ViewIngredientPage() {
           </Card>
 
           {/* Suppliers */}
-          {ingredient.suppliers && ingredient.suppliers.length > 0 && (
+          {ingredient.supplier_profiles && Object.keys(ingredient.supplier_profiles).length > 0 && (
             <Card>
               <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('admin.suppliers')}</h2>
               
               <div className="space-y-2">
-                {ingredient.suppliers.map((supplier: string) => {
-                  const profile = ingredient.supplier_profiles?.[supplier]
+                {Object.entries(ingredient.supplier_profiles).map(([profileKey, rawProfile]: [string, any]) => {
+                  const profile = rawProfile
+                  const supplier = profile.supplier_name || profileKey
                   const isAssessed = profile?.assessment_status === 'assessed'
                   const header = (
                     <div className="flex min-w-0 items-center gap-3">
@@ -375,7 +377,7 @@ export default function ViewIngredientPage() {
                   )
 
                   return (
-                    <div key={supplier} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                    <div key={profileKey} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
                       <div className="flex items-center justify-between gap-3">
                         {profile?.supplier_id ? (
                           <Link href={`/admin/suppliers/${profile.supplier_id}`} className="min-w-0 hover:underline">
@@ -386,6 +388,9 @@ export default function ViewIngredientPage() {
                           {isAssessed ? t('ingredientsPortal.reviewed') : t('ingredientsPortal.needsReview')}
                         </Badge>
                       </div>
+                      {profile?.brand && (
+                        <p className="mt-2 text-sm font-medium text-gray-700">{profile.brand}</p>
+                      )}
                       {profile?.allergen_warnings && (
                         <div className="mt-3 border-t border-gray-200 pt-3">
                           <AllergenWarningDisplay warnings={profile.allergen_warnings} compact={true} showNone={true} />

@@ -9,7 +9,7 @@ import {
   Wheat, Fish, Egg, Nut, Leaf, Milk, Carrot, Shell, 
   Circle, Sprout, Shrimp, Cookie, Beaker, ArrowRight, Clock, Home, Table2, Grid3x3,
   ChevronDown, ChevronUp, CheckSquare, Square, RefreshCw,
-  Moon, Apple, WheatOff, Star, Globe, Droplets, ShieldCheck, Salad
+  Moon, Apple, WheatOff, Star, Globe, Droplets, MilkOff, ShieldCheck, Salad
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import jsPDF from 'jspdf'
@@ -209,6 +209,7 @@ const DIETARY_OPTIONS = [
   { name: 'Organic',          color: '#22c55e', icon: Sprout },
   { name: 'Fair Trade',       color: '#8b5cf6', icon: Globe },
   { name: 'Lactose-Free',     color: '#06b6d4', icon: Droplets },
+  { name: 'Dairy Free',       color: '#0ea5e9', icon: MilkOff },
   { name: 'Coeliac-Friendly', color: '#ec4899', icon: ShieldCheck },
 ]
 
@@ -224,42 +225,42 @@ const KIOSK_FILTER_LABELS: Record<LanguageCode, FilterOptionLabels> = {
   en: {
     contains: 'Contains',
     allergens: { contains_cereals_gluten: 'Gluten', contains_crustaceans: 'Crustaceans', contains_eggs: 'Eggs', contains_fish: 'Fish', contains_peanuts: 'Peanuts', contains_soybeans: 'Soybeans', contains_milk: 'Milk', contains_nuts: 'Tree Nuts', contains_celery: 'Celery', contains_mustard: 'Mustard', contains_sesame: 'Sesame', contains_sulphites: 'Sulphites', contains_lupin: 'Lupin', contains_molluscs: 'Molluscs' },
-    dietary: { Vegan: 'Vegan', Vegetarian: 'Vegetarian', 'Gluten-Free': 'Gluten-Free', Halal: 'Halal', Kosher: 'Kosher', Organic: 'Organic', 'Fair Trade': 'Fair Trade', 'Lactose-Free': 'Lactose-Free', 'Coeliac-Friendly': 'Coeliac-Friendly' },
+    dietary: { Vegan: 'Vegan', Vegetarian: 'Vegetarian', 'Gluten-Free': 'Gluten-Free', Halal: 'Halal', Kosher: 'Kosher', Organic: 'Organic', 'Fair Trade': 'Fair Trade', 'Lactose-Free': 'Lactose-Free', 'Dairy Free': 'Dairy Free', 'Coeliac-Friendly': 'Coeliac-Friendly' },
     glutenTypes: { wheat: 'Wheat', rye: 'Rye', barley: 'Barley', oats: 'Oats', spelt: 'Spelt', kamut: 'Kamut' },
     treeNutTypes: { almonds: 'Almonds', hazelnuts: 'Hazelnuts', walnuts: 'Walnuts', cashews: 'Cashews', pecans: 'Pecans', brazil_nuts: 'Brazil nuts', pistachios: 'Pistachios', macadamia: 'Macadamia nuts' },
   },
   ga: {
     contains: 'Tá ann',
     allergens: { contains_cereals_gluten: 'Glútan', contains_crustaceans: 'Crústaigh', contains_eggs: 'Uibheacha', contains_fish: 'Iasc', contains_peanuts: 'Píseanna talún', contains_soybeans: 'Pónairí soighe', contains_milk: 'Bainne', contains_nuts: 'Cnónna crainn', contains_celery: 'Soilire', contains_mustard: 'Mustaird', contains_sesame: 'Síolta seasamain', contains_sulphites: 'Sulfítí', contains_lupin: 'Lúipín', contains_molluscs: 'Moilisc' },
-    dietary: { Vegan: 'Veigeánach', Vegetarian: 'Feoilséantach', 'Gluten-Free': 'Saor ó ghlútan', Halal: 'Halal', Kosher: 'Cóisir', Organic: 'Orgánach', 'Fair Trade': 'Cóirthrádáil', 'Lactose-Free': 'Saor ó lachtós', 'Coeliac-Friendly': 'Oiriúnach do chéiliaigh' },
+    dietary: { Vegan: 'Veigeánach', Vegetarian: 'Feoilséantach', 'Gluten-Free': 'Saor ó ghlútan', Halal: 'Halal', Kosher: 'Cóisir', Organic: 'Orgánach', 'Fair Trade': 'Cóirthrádáil', 'Lactose-Free': 'Saor ó lachtós', 'Dairy Free': 'Saor ó dhéiríocht', 'Coeliac-Friendly': 'Oiriúnach do chéiliaigh' },
     glutenTypes: { wheat: 'Cruithneacht', rye: 'Seagal', barley: 'Eorna', oats: 'Coirce', spelt: 'Speilt', kamut: 'Kamut' },
     treeNutTypes: { almonds: 'Almóinní', hazelnuts: 'Cnónna coill', walnuts: 'Gallchnónna', cashews: 'Cnónna caisiú', pecans: 'Cnónna peacán', brazil_nuts: 'Cnónna Brasaíle', pistachios: 'Pistéisí', macadamia: 'Cnónna macadamia' },
   },
   pt: {
     contains: 'Contém',
     allergens: { contains_cereals_gluten: 'Glúten', contains_crustaceans: 'Crustáceos', contains_eggs: 'Ovos', contains_fish: 'Peixe', contains_peanuts: 'Amendoins', contains_soybeans: 'Soja', contains_milk: 'Leite', contains_nuts: 'Frutos de casca rija', contains_celery: 'Aipo', contains_mustard: 'Mostarda', contains_sesame: 'Sésamo', contains_sulphites: 'Sulfitos', contains_lupin: 'Tremoço', contains_molluscs: 'Moluscos' },
-    dietary: { Vegan: 'Vegan', Vegetarian: 'Vegetariano', 'Gluten-Free': 'Sem glúten', Halal: 'Halal', Kosher: 'Kosher', Organic: 'Biológico', 'Fair Trade': 'Comércio justo', 'Lactose-Free': 'Sem lactose', 'Coeliac-Friendly': 'Adequado para celíacos' },
+    dietary: { Vegan: 'Vegan', Vegetarian: 'Vegetariano', 'Gluten-Free': 'Sem glúten', Halal: 'Halal', Kosher: 'Kosher', Organic: 'Biológico', 'Fair Trade': 'Comércio justo', 'Lactose-Free': 'Sem lactose', 'Dairy Free': 'Sem laticínios', 'Coeliac-Friendly': 'Adequado para celíacos' },
     glutenTypes: { wheat: 'Trigo', rye: 'Centeio', barley: 'Cevada', oats: 'Aveia', spelt: 'Espelta', kamut: 'Kamut' },
     treeNutTypes: { almonds: 'Amêndoas', hazelnuts: 'Avelãs', walnuts: 'Nozes', cashews: 'Cajus', pecans: 'Nozes-pecã', brazil_nuts: 'Castanhas-do-pará', pistachios: 'Pistácios', macadamia: 'Nozes de macadâmia' },
   },
   fr: {
     contains: 'Contient',
     allergens: { contains_cereals_gluten: 'Gluten', contains_crustaceans: 'Crustacés', contains_eggs: 'Œufs', contains_fish: 'Poisson', contains_peanuts: 'Arachides', contains_soybeans: 'Soja', contains_milk: 'Lait', contains_nuts: 'Fruits à coque', contains_celery: 'Céleri', contains_mustard: 'Moutarde', contains_sesame: 'Sésame', contains_sulphites: 'Sulfites', contains_lupin: 'Lupin', contains_molluscs: 'Mollusques' },
-    dietary: { Vegan: 'Végane', Vegetarian: 'Végétarien', 'Gluten-Free': 'Sans gluten', Halal: 'Halal', Kosher: 'Casher', Organic: 'Biologique', 'Fair Trade': 'Commerce équitable', 'Lactose-Free': 'Sans lactose', 'Coeliac-Friendly': 'Adapté aux cœliaques' },
+    dietary: { Vegan: 'Végane', Vegetarian: 'Végétarien', 'Gluten-Free': 'Sans gluten', Halal: 'Halal', Kosher: 'Casher', Organic: 'Biologique', 'Fair Trade': 'Commerce équitable', 'Lactose-Free': 'Sans lactose', 'Dairy Free': 'Sans produits laitiers', 'Coeliac-Friendly': 'Adapté aux cœliaques' },
     glutenTypes: { wheat: 'Blé', rye: 'Seigle', barley: 'Orge', oats: 'Avoine', spelt: 'Épeautre', kamut: 'Kamut' },
     treeNutTypes: { almonds: 'Amandes', hazelnuts: 'Noisettes', walnuts: 'Noix', cashews: 'Noix de cajou', pecans: 'Noix de pécan', brazil_nuts: 'Noix du Brésil', pistachios: 'Pistaches', macadamia: 'Noix de macadamia' },
   },
   es: {
     contains: 'Contiene',
     allergens: { contains_cereals_gluten: 'Gluten', contains_crustaceans: 'Crustáceos', contains_eggs: 'Huevos', contains_fish: 'Pescado', contains_peanuts: 'Cacahuetes', contains_soybeans: 'Soja', contains_milk: 'Leche', contains_nuts: 'Frutos de cáscara', contains_celery: 'Apio', contains_mustard: 'Mostaza', contains_sesame: 'Sésamo', contains_sulphites: 'Sulfitos', contains_lupin: 'Altramuces', contains_molluscs: 'Moluscos' },
-    dietary: { Vegan: 'Vegano', Vegetarian: 'Vegetariano', 'Gluten-Free': 'Sin gluten', Halal: 'Halal', Kosher: 'Kosher', Organic: 'Ecológico', 'Fair Trade': 'Comercio justo', 'Lactose-Free': 'Sin lactosa', 'Coeliac-Friendly': 'Apto para celíacos' },
+    dietary: { Vegan: 'Vegano', Vegetarian: 'Vegetariano', 'Gluten-Free': 'Sin gluten', Halal: 'Halal', Kosher: 'Kosher', Organic: 'Ecológico', 'Fair Trade': 'Comercio justo', 'Lactose-Free': 'Sin lactosa', 'Dairy Free': 'Sin lácteos', 'Coeliac-Friendly': 'Apto para celíacos' },
     glutenTypes: { wheat: 'Trigo', rye: 'Centeno', barley: 'Cebada', oats: 'Avena', spelt: 'Espelta', kamut: 'Kamut' },
     treeNutTypes: { almonds: 'Almendras', hazelnuts: 'Avellanas', walnuts: 'Nueces', cashews: 'Anacardos', pecans: 'Nueces pecanas', brazil_nuts: 'Nueces de Brasil', pistachios: 'Pistachos', macadamia: 'Nueces de macadamia' },
   },
   de: {
     contains: 'Enthält',
     allergens: { contains_cereals_gluten: 'Gluten', contains_crustaceans: 'Krebstiere', contains_eggs: 'Eier', contains_fish: 'Fisch', contains_peanuts: 'Erdnüsse', contains_soybeans: 'Sojabohnen', contains_milk: 'Milch', contains_nuts: 'Schalenfrüchte', contains_celery: 'Sellerie', contains_mustard: 'Senf', contains_sesame: 'Sesam', contains_sulphites: 'Sulfite', contains_lupin: 'Lupinen', contains_molluscs: 'Weichtiere' },
-    dietary: { Vegan: 'Vegan', Vegetarian: 'Vegetarisch', 'Gluten-Free': 'Glutenfrei', Halal: 'Halal', Kosher: 'Koscher', Organic: 'Bio', 'Fair Trade': 'Fairer Handel', 'Lactose-Free': 'Laktosefrei', 'Coeliac-Friendly': 'Für Zöliakie geeignet' },
+    dietary: { Vegan: 'Vegan', Vegetarian: 'Vegetarisch', 'Gluten-Free': 'Glutenfrei', Halal: 'Halal', Kosher: 'Koscher', Organic: 'Bio', 'Fair Trade': 'Fairer Handel', 'Lactose-Free': 'Laktosefrei', 'Dairy Free': 'Milchproduktefrei', 'Coeliac-Friendly': 'Für Zöliakie geeignet' },
     glutenTypes: { wheat: 'Weizen', rye: 'Roggen', barley: 'Gerste', oats: 'Hafer', spelt: 'Dinkel', kamut: 'Kamut' },
     treeNutTypes: { almonds: 'Mandeln', hazelnuts: 'Haselnüsse', walnuts: 'Walnüsse', cashews: 'Cashewkerne', pecans: 'Pekannüsse', brazil_nuts: 'Paranüsse', pistachios: 'Pistazien', macadamia: 'Macadamianüsse' },
   },

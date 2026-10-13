@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   AlertTriangle,
   CheckCircle2,
@@ -14,6 +14,7 @@ import AllergenWarningSelector from '@/components/admin/AllergenWarningSelector'
 import { Button } from '@/components/ui/Button'
 import {
   buildCompleteSupplierProfiles,
+  normalizeSupplierNames,
   type SupplierProfileMap,
   type SupplierSafetyProfile,
 } from '@/lib/ingredient-supplier-profiles'
@@ -25,6 +26,23 @@ type CertificationOption = {
   color: string
   icon: React.ComponentType<{ className?: string }>
 }
+
+const createBlankAllergenWarnings = (): AllergenWarnings => ({
+  cereals_gluten: 'none',
+  crustaceans: 'none',
+  eggs: 'none',
+  fish: 'none',
+  peanuts: 'none',
+  soybeans: 'none',
+  milk: 'none',
+  nuts: 'none',
+  celery: 'none',
+  mustard: 'none',
+  sesame: 'none',
+  sulphites: 'none',
+  lupin: 'none',
+  molluscs: 'none',
+})
 
 interface IngredientSupplierVariantsEditorProps {
   suppliers: string[]
@@ -51,53 +69,74 @@ export default function IngredientSupplierVariantsEditor({
   const [selectedSupplier, setSelectedSupplier] = useState('')
   const [newSupplier, setNewSupplier] = useState('')
   const [expandedSuppliers, setExpandedSuppliers] = useState<Set<string>>(() => new Set())
+  const [supplierToReveal, setSupplierToReveal] = useState<string | null>(null)
+  const supplierSectionRefs = useRef(new Map<string, HTMLElement>())
 
-  const unselectedSuppliers = useMemo(() => {
-    const selected = new Set(suppliers.map((supplier) => supplier.toLocaleLowerCase()))
-    return availableSuppliers.filter((supplier) => !selected.has(supplier.toLocaleLowerCase()))
-  }, [availableSuppliers, suppliers])
+  useEffect(() => {
+    if (!supplierToReveal) return
 
-  const reviewCount = suppliers.filter(
-    (supplier) => profiles[supplier]?.assessment_status !== 'assessed'
-  ).length
+    const section = supplierSectionRefs.current.get(supplierToReveal)
+    if (!section) return
+
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    section.querySelector<HTMLButtonElement>('[data-supplier-toggle]')?.focus({ preventScroll: true })
+    setSupplierToReveal(null)
+  }, [supplierToReveal, suppliers])
+
+  const displayedProfiles = Object.keys(profiles).length > 0
+    ? profiles
+    : buildCompleteSupplierProfiles(suppliers, profiles, fallbackAllergens, fallbackCertifications)
+  const variantEntries = Object.entries(displayedProfiles)
+
+  const reviewCount = variantEntries.filter(([, profile]) => profile.assessment_status !== 'assessed').length
+
+  const emitProfiles = (nextProfiles: SupplierProfileMap) => {
+    onChange(
+      normalizeSupplierNames(Object.entries(nextProfiles).map(([key, profile]) => profile.supplier_name || key)),
+      nextProfiles
+    )
+  }
 
   const addSupplier = (rawName: string) => {
     const name = rawName.trim()
-    if (!name || suppliers.some((supplier) => supplier.toLocaleLowerCase() === name.toLocaleLowerCase())) {
-      return
-    }
+    if (!name) return
 
-    const nextSuppliers = [...suppliers, name]
-    const nextProfiles = buildCompleteSupplierProfiles(
-      nextSuppliers,
-      profiles,
-      fallbackAllergens,
-      fallbackCertifications
-    )
-    onChange(nextSuppliers, nextProfiles)
-    setExpandedSuppliers((current) => new Set(current).add(name))
+    const profileKey = crypto.randomUUID()
+    const nextProfiles = { ...displayedProfiles }
+    nextProfiles[profileKey] = {
+      supplier_name: name,
+      brand: '',
+      allergen_warnings: createBlankAllergenWarnings(),
+      certifications: [],
+      assessment_status: 'needs_review',
+      notes: '',
+      last_reviewed_at: null,
+    }
+    emitProfiles(nextProfiles)
+    setExpandedSuppliers((current) => new Set(current).add(profileKey))
+    setSupplierToReveal(profileKey)
   }
 
-  const updateProfile = (supplier: string, updates: Partial<SupplierSafetyProfile>) => {
-    const current = profiles[supplier] || {
+  const updateProfile = (profileKey: string, updates: Partial<SupplierSafetyProfile>) => {
+    const current = displayedProfiles[profileKey] || {
       allergen_warnings: fallbackAllergens,
       certifications: fallbackCertifications,
       assessment_status: 'needs_review' as const,
     }
 
-    onChange(suppliers, {
-      ...profiles,
-      [supplier]: { ...current, ...updates },
+    emitProfiles({
+      ...displayedProfiles,
+      [profileKey]: { ...current, ...updates },
     })
   }
 
-  const removeSupplier = (supplier: string) => {
-    const nextProfiles = { ...profiles }
-    delete nextProfiles[supplier]
-    onChange(suppliers.filter((name) => name !== supplier), nextProfiles)
+  const removeSupplier = (profileKey: string) => {
+    const nextProfiles = { ...displayedProfiles }
+    delete nextProfiles[profileKey]
+    emitProfiles(nextProfiles)
     setExpandedSuppliers((current) => {
       const next = new Set(current)
-      next.delete(supplier)
+      next.delete(profileKey)
       return next
     })
   }
@@ -123,7 +162,7 @@ export default function IngredientSupplierVariantsEditor({
             {t('ingredientsPortal.supplierVariantsHelp')}
           </p>
         </div>
-        {suppliers.length > 0 && (
+        {variantEntries.length > 0 && (
           <div className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${reviewCount > 0 ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'}`}>
             {reviewCount > 0 ? <AlertTriangle className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
             {reviewCount > 0 ? t('ingredientsPortal.profilesNeedReview', { count: reviewCount }) : t('ingredientsPortal.allProfilesReviewed')}
@@ -142,7 +181,7 @@ export default function IngredientSupplierVariantsEditor({
           className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-transparent focus:ring-2 focus:ring-[#42b8ac] dark:border-gray-600 dark:bg-gray-800 dark:text-white"
         >
           <option value="">{loadingSuppliers ? t('ingredientsPortal.loadingSuppliers') : t('ingredientsPortal.chooseExistingSupplier')}</option>
-          {unselectedSuppliers.map((supplier) => <option key={supplier} value={supplier}>{supplier}</option>)}
+          {availableSuppliers.map((supplier) => <option key={supplier} value={supplier}>{supplier}</option>)}
         </select>
         <div className="flex min-w-0 gap-2">
           <input
@@ -174,23 +213,31 @@ export default function IngredientSupplierVariantsEditor({
         </div>
       </div>
 
-      {suppliers.length === 0 ? (
+      {variantEntries.length === 0 ? (
         <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-6 text-center text-sm text-gray-500 dark:border-gray-600 dark:bg-gray-800/50 dark:text-gray-400">
           {t('ingredientsPortal.noSupplierVariants')}
         </div>
       ) : (
         <div className="space-y-3">
-          {suppliers.map((supplier) => {
-            const profile = profiles[supplier]
-            const isExpanded = expandedSuppliers.has(supplier)
+          {variantEntries.map(([profileKey, profile]) => {
+            const supplier = profile.supplier_name || profileKey
+            const isExpanded = expandedSuppliers.has(profileKey)
             const isAssessed = profile?.assessment_status === 'assessed'
 
             return (
-              <section key={supplier} className="overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+              <section
+                key={profileKey}
+                ref={(element) => {
+                  if (element) supplierSectionRefs.current.set(profileKey, element)
+                  else supplierSectionRefs.current.delete(profileKey)
+                }}
+                className="scroll-mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800"
+              >
                 <div className="flex items-center gap-2 p-3 sm:p-4">
                   <button
                     type="button"
-                    onClick={() => toggleExpanded(supplier)}
+                    data-supplier-toggle
+                    onClick={() => toggleExpanded(profileKey)}
                     className="flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#42b8ac]"
                     aria-expanded={isExpanded}
                   >
@@ -202,7 +249,7 @@ export default function IngredientSupplierVariantsEditor({
                   </button>
                   <button
                     type="button"
-                    onClick={() => removeSupplier(supplier)}
+                    onClick={() => removeSupplier(profileKey)}
                     aria-label={t('ingredientsPortal.removeSupplier', { supplier })}
                     className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                   >
@@ -220,10 +267,28 @@ export default function IngredientSupplierVariantsEditor({
                     )}
 
                     <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor={`supplier-brand-${profileKey}`}>
+                        {t('ingredientsPortal.variantBrand')}
+                      </label>
+                      <input
+                        id={`supplier-brand-${profileKey}`}
+                        type="text"
+                        value={profile?.brand || ''}
+                        onChange={(event) => updateProfile(profileKey, { brand: event.target.value })}
+                        maxLength={200}
+                        placeholder={t('ingredientsPortal.variantBrandPlaceholder')}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-[#42b8ac] dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      />
+                      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {t('ingredientsPortal.variantBrandHelp')}
+                      </p>
+                    </div>
+
+                    <div>
                       <h3 className="mb-3 text-sm font-semibold text-gray-800 dark:text-gray-200">{t('ingredientsPortal.allergensSuppliedBy', { supplier })}</h3>
                       <AllergenWarningSelector
                         value={profile?.allergen_warnings || fallbackAllergens}
-                        onChange={(allergen_warnings) => updateProfile(supplier, {
+                        onChange={(allergen_warnings) => updateProfile(profileKey, {
                           allergen_warnings,
                           assessment_status: 'assessed',
                           last_reviewed_at: new Date().toISOString(),
@@ -242,7 +307,7 @@ export default function IngredientSupplierVariantsEditor({
                               key={name}
                               onClick={() => {
                                 const current = profile?.certifications || []
-                                updateProfile(supplier, {
+                                updateProfile(profileKey, {
                                   certifications: selected ? current.filter((item) => item !== name) : [...current, name],
                                   assessment_status: 'assessed',
                                   last_reviewed_at: new Date().toISOString(),
@@ -260,13 +325,13 @@ export default function IngredientSupplierVariantsEditor({
                     </div>
 
                     <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor={`supplier-notes-${supplier}`}>
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor={`supplier-notes-${profileKey}`}>
                         {t('ingredientsPortal.profileNotes')}
                       </label>
                       <textarea
-                        id={`supplier-notes-${supplier}`}
+                        id={`supplier-notes-${profileKey}`}
                         value={profile?.notes || ''}
-                        onChange={(event) => updateProfile(supplier, { notes: event.target.value })}
+                        onChange={(event) => updateProfile(profileKey, { notes: event.target.value })}
                         rows={2}
                         placeholder={t('ingredientsPortal.profileNotesPlaceholder')}
                         className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-[#42b8ac] dark:border-gray-600 dark:bg-gray-800 dark:text-white"
@@ -278,7 +343,7 @@ export default function IngredientSupplierVariantsEditor({
                         type="button"
                         variant={isAssessed ? 'outline' : 'primary'}
                         icon={<CheckCircle2 className="h-4 w-4" />}
-                        onClick={() => updateProfile(supplier, {
+                        onClick={() => updateProfile(profileKey, {
                           assessment_status: 'assessed',
                           last_reviewed_at: new Date().toISOString(),
                         })}

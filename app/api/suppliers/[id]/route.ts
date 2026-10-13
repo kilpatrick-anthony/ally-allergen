@@ -57,7 +57,7 @@ export async function GET(
 
     const { data: variants, error: variantsError } = await supabase
       .from('ingredient_supplier_variants')
-      .select('ingredient_id, allergen_warnings, certifications, assessment_status, last_reviewed_at, ingredient:ingredients(id, name, category, status)')
+      .select('id, ingredient_id, brand, allergen_warnings, certifications, assessment_status, last_reviewed_at, ingredient:ingredients(id, name, category, status)')
       .eq('business_id', businessId)
       .eq('supplier_id', id)
       .order('created_at', { ascending: false })

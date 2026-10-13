@@ -3,7 +3,7 @@ import { computeWorstCaseAllergens } from '@/types/allergen'
 
 const STANDARD_DIETARY = new Set([
   'Vegan', 'Vegetarian', 'Gluten-Free', 'Halal', 'Kosher', 'Organic',
-  'Fair Trade', 'Lactose-Free', 'Coeliac-Friendly',
+  'Fair Trade', 'Lactose-Free', 'Dairy Free', 'Coeliac-Friendly',
 ])
 
 type SupabaseClient = any

@@ -3,7 +3,10 @@ import { computeWorstCaseAllergens, type AllergenWarnings } from '@/types/allerg
 export type SupplierAssessmentStatus = 'needs_review' | 'assessed'
 
 export type SupplierSafetyProfile = {
+  variant_id?: string
   supplier_id?: string
+  supplier_name?: string
+  brand?: string
   allergen_warnings: AllergenWarnings
   certifications: string[]
   assessment_status?: SupplierAssessmentStatus
@@ -35,11 +38,32 @@ export function buildCompleteSupplierProfiles(
   fallbackAllergens: AllergenWarnings,
   fallbackCertifications: string[]
 ): SupplierProfileMap {
+  const existingEntries = Object.entries(profiles || {})
+  if (existingEntries.length > 0) {
+    return Object.fromEntries(existingEntries.flatMap(([profileKey, existing]) => {
+      const supplierName = (existing.supplier_name || profileKey).trim()
+      if (!supplierName) return []
+      return [[profileKey, {
+        variant_id: existing.variant_id,
+        supplier_id: existing.supplier_id,
+        supplier_name: supplierName,
+        brand: typeof existing.brand === 'string' ? existing.brand.trim().slice(0, 200) : '',
+        allergen_warnings: existing.allergen_warnings || fallbackAllergens,
+        certifications: Array.isArray(existing.certifications) ? existing.certifications : fallbackCertifications,
+        assessment_status: existing.assessment_status || 'needs_review',
+        notes: existing.notes || '',
+        last_reviewed_at: existing.last_reviewed_at || null,
+      } satisfies SupplierSafetyProfile]]
+    }))
+  }
+
   return Object.fromEntries(
     normalizeSupplierNames(suppliers).map((supplierName) => {
       const existing = profiles?.[supplierName]
       return [supplierName, {
+        supplier_name: supplierName,
         supplier_id: existing?.supplier_id,
+        brand: typeof existing?.brand === 'string' ? existing.brand.trim().slice(0, 200) : '',
         allergen_warnings: existing?.allergen_warnings || fallbackAllergens,
         certifications: Array.isArray(existing?.certifications)
           ? existing.certifications
@@ -81,8 +105,11 @@ export function profilesFromVariantRows(rows: any[]): SupplierProfileMap {
       const supplierName = supplier?.name?.trim()
       if (!supplierName) return []
 
-      return [[supplierName, {
+      return [[row.id, {
+        variant_id: row.id,
         supplier_id: row.supplier_id,
+        supplier_name: supplierName,
+        brand: typeof row.brand === 'string' ? row.brand : '',
         allergen_warnings: row.allergen_warnings || {},
         certifications: Array.isArray(row.certifications) ? row.certifications : [],
         assessment_status: row.assessment_status === 'assessed' ? 'assessed' : 'needs_review',

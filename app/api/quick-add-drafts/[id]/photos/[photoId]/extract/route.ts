@@ -7,7 +7,7 @@ import { PHOTO_BUCKET, photoPath, photoQuery, type DraftPhoto } from '@/lib/serv
 export const runtime = 'nodejs'
 type Route = { params: Promise<{ id: string; photoId: string }> }
 
-const DIETARY_TAGS = new Set(['Vegan', 'Vegetarian', 'Gluten-Free', 'Halal', 'Kosher', 'Organic', 'Fair Trade', 'Lactose-Free', 'Coeliac-Friendly'])
+const DIETARY_TAGS = new Set(['Vegan', 'Vegetarian', 'Gluten-Free', 'Dairy Free', 'Halal', 'Kosher', 'Organic', 'Fair Trade', 'Lactose-Free', 'Coeliac-Friendly'])
 const PROMPT = `Analyse this food label for a human reviewer. Return JSON only:
 {"name":"","description":"","allergen_warnings":{},"dietary_tags":[],"notes":[]}
 
