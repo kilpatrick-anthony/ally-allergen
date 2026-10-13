@@ -33,19 +33,6 @@ const TEAM: { photo: string; name: string; role: string; phone?: string; phoneHr
     ],
   },
   {
-    photo: '/James.png',
-    name: "James O'Brien",
-    role: 'Sales and Accounts Manager',
-    phone: '+353 89 658 0997',
-    phoneHref: 'tel:+353896580997',
-    bio: [
-      "James is AllyJen's Sales and Accounts Manager and is often one of the first people our customers get to know.",
-      "His role is centred around people: understanding how a business currently manages its allergen information, identifying where AllyJen can make life easier, and helping customers find the right solution for their operation.",
-      "From the first conversation through to becoming an AllyJen customer, James works closely with businesses to make the process straightforward and personal. He also supports our existing accounts, building long-term customer relationships and ensuring our customers continue to get real value from the platform.",
-      "For James, sales isn't simply about bringing new businesses on board. It's about listening, understanding what each customer actually needs and building relationships that last.",
-    ],
-  },
-  {
     photo: '/Alex.png',
     name: 'Alex Murphy',
     role: 'Brand Ambassador',
@@ -247,7 +234,7 @@ export default function AboutPage() {
             <img src="/Logo-AllyJen.svg" alt="AllyJen" className="h-24 w-auto" />
             <div className="flex flex-col items-center md:items-end gap-3">
               <div className="flex items-center gap-2">
-                <a href="tel:+353896580997" aria-label="Call James on +353 89 658 0997" title="Call James: +353 89 658 0997" className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 transition-colors hover:bg-[#42b8ac] hover:text-white">
+                <a href="tel:+353896580997" aria-label="Call AllyJen on +353 89 658 0997" title="Call AllyJen: +353 89 658 0997" className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 transition-colors hover:bg-[#42b8ac] hover:text-white">
                   <Phone className="h-4 w-4" aria-hidden="true" />
                 </a>
                 <a

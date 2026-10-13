@@ -381,7 +381,7 @@ export default function CareersPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <img src="/Logo-AllyJen.svg" alt="AllyJen" className="h-24 w-auto" />
             <div className="flex flex-col items-center md:items-end gap-2">
-              <a href="tel:+353896580997" aria-label="Call James on +353 89 658 0997" title="Call James: +353 89 658 0997" className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 transition-colors hover:bg-[#42b8ac] hover:text-white">
+              <a href="tel:+353896580997" aria-label="Call AllyJen on +353 89 658 0997" title="Call AllyJen: +353 89 658 0997" className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white/70 transition-colors hover:bg-[#42b8ac] hover:text-white">
                 <Phone className="h-4 w-4" aria-hidden="true" />
               </a>
               <p className="text-sm text-white/40">© 2026 AllyJen Solutions Limited.</p>

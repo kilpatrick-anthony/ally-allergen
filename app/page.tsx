@@ -26,7 +26,6 @@ import { getPlanDefinition } from '@/lib/plans'
 const TEAM_PREVIEW = [
   { photo: '/Anthony.png', name: 'Anthony Kilpatrick', role: 'Co-Founder' },
   { photo: '/Alvin.png', name: 'Alvin Galligan', role: 'Co-Founder' },
-  { photo: '/James.png', name: "James O'Brien", role: 'Sales and Accounts Manager' },
   { photo: '/Alex.png', name: 'Alex Murphy', role: 'Brand Ambassador' },
 ]
 
@@ -540,7 +539,7 @@ export default function LandingPage() {
               AllyJen was founded by a team who experienced the challenges of allergen management up close, and built a platform to solve it properly.
             </p>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 my-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 my-8">
               {TEAM_PREVIEW.map((member) => (
                 <div key={member.name} className="flex flex-col items-center rounded-2xl border border-gray-200 bg-white px-3 py-5 shadow-sm">
                   <Image
@@ -715,7 +714,7 @@ export default function LandingPage() {
                   </a>
                   <a href="tel:+353896580997" className="mt-2 flex w-fit items-center gap-2 text-sm text-white hover:text-[#42b8ac] transition-colors">
                     <Phone className="h-4 w-4 text-[#42b8ac] flex-shrink-0" />
-                    James: +353 89 658 0997
+                    +353 89 658 0997
                   </a>
                 </div>
               </div>
@@ -731,7 +730,7 @@ export default function LandingPage() {
             <img src="/Logo-AllyJen.svg" alt="AllyJen" className="h-24 w-auto" />
             <div className="flex flex-col items-center md:items-end gap-3">
               <div className="grid grid-cols-4 place-items-center gap-3" aria-label="Contact AllyJen">
-                <a href="tel:+353896580997" aria-label="Call James on +353 89 658 0997" title="Call James: +353 89 658 0997" className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10 leading-none text-white/70 transition-colors hover:bg-[#42b8ac] hover:text-white sm:h-9 sm:w-9">
+                <a href="tel:+353896580997" aria-label="Call AllyJen on +353 89 658 0997" title="Call AllyJen: +353 89 658 0997" className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10 leading-none text-white/70 transition-colors hover:bg-[#42b8ac] hover:text-white sm:h-9 sm:w-9">
                   <Phone className="h-4 w-4" aria-hidden="true" />
                 </a>
                 <a
