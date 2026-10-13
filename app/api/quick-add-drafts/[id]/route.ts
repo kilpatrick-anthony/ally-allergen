@@ -49,11 +49,10 @@ export async function DELETE(_request: NextRequest, route: RouteContext) {
     const { id } = await route.params
     requireDraftId(id)
     const draft = await getDraft(context, id)
-    if (draft.status !== 'draft') throw new QuickAddError('editConflict', 409)
     const { data: photos, error: photoError } = await photoQuery(context, id)
     if (photoError) throw photoError
     let query = context.supabase.from('quick_add_drafts').delete().eq('id', id)
-      .eq('business_id', context.businessId).eq('status', 'draft').eq('version', draft.version)
+      .eq('business_id', context.businessId).eq('version', draft.version)
     if (context.role === 'staff') query = query.eq('created_by', context.userId)
     const { data: deleted, error } = await query.select('id').maybeSingle()
     if (error) throw error

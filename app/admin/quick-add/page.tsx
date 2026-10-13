@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
-import QuickAddEntry from '@/components/admin/QuickAddEntry'
 import QuickAddDialog from '@/components/admin/QuickAddDialog'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { missingReviewDetails } from '@/lib/quick-add-review'
@@ -80,9 +79,8 @@ function Drafts() {
   }, [offset, revision, status])
 
   return <Container>
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-      <div><h1 ref={heading} tabIndex={-1} className="text-3xl font-bold text-gray-900 dark:text-white">{text('drafts')}</h1><p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{text('listNote')}</p></div>
-      <QuickAddEntry onSaved={() => { setOffset(0); setRevision(value => value + 1) }} />
+    <div className="mb-6">
+      <h1 ref={heading} tabIndex={-1} className="text-3xl font-bold text-gray-900 dark:text-white">{text('drafts')}</h1><p className="mt-2 text-sm text-gray-600 dark:text-gray-300">{text('listNote')}</p>
     </div>
     <label className="mb-5 block text-sm font-medium">{text('filterStatus')}
       <select value={status} onChange={event => { setStatus(event.target.value); setOffset(0) }} className="ml-3 rounded-lg border bg-white p-3 text-gray-900 dark:bg-gray-800 dark:text-white">
@@ -94,7 +92,7 @@ function Drafts() {
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
       {drafts.map(draft => <Card key={draft.id} className="text-gray-900 dark:text-gray-100">
         <div className="flex items-start justify-between gap-2"><p className="text-xs font-semibold text-teal-700 dark:text-teal-300">{text(draft.kind)} · {text(draft.status)}</p>
-          {draft.status === 'draft' && <button type="button" disabled={deleting === draft.id} onClick={() => void deleteDraft(draft)} aria-label={`${text('deleteDraft')}: ${draft.name}`} title={text('deleteDraft')} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-red-700 hover:bg-red-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 disabled:opacity-50 dark:text-red-300 dark:hover:bg-red-950"><Trash2 className="h-5 w-5" aria-hidden="true" /></button>}
+          <button type="button" disabled={deleting === draft.id} onClick={() => void deleteDraft(draft)} aria-label={`${text('deleteDraft')}: ${draft.name}`} title={text('deleteDraft')} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-red-700 hover:bg-red-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-700 disabled:opacity-50 dark:text-red-300 dark:hover:bg-red-950"><Trash2 className="h-5 w-5" aria-hidden="true" /></button>
         </div>
         <h2 className="mt-2 break-words text-lg font-semibold text-gray-900 dark:text-white">{draft.name}</h2>
         <p className="mt-1 text-sm text-gray-700 dark:text-gray-200">{text('author')}: {draft.author_name || text('teamMember')} · {draft.site_name || text('noLocation')}</p>

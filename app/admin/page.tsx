@@ -1,7 +1,6 @@
 // app/admin/page.tsx - Production-ready dashboard with onboarding
 'use client'
 
-import QuickAddEntry from '@/components/admin/QuickAddEntry'
 import DashboardDraftSummary from '@/components/admin/DashboardDraftSummary'
 
 import React from 'react'
@@ -200,10 +199,7 @@ export default function AdminDashboard() {
       <Container>
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white lg:text-3xl">{t('admin.dashboardTitle')}</h1>
-          <div className="flex items-center gap-2">
-            {languagePrompt}
-            <div className="hidden lg:block"><QuickAddEntry showDrafts={false} onSaved={() => window.dispatchEvent(new Event('quick-add-saved'))} /></div>
-          </div>
+          {languagePrompt}
         </div>
         <div className="flex flex-col">
         <div className="order-1 mb-5 lg:order-2"><DashboardDraftSummary /></div>
@@ -328,7 +324,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="mb-6 flex flex-wrap items-center justify-end gap-2">{languagePrompt}<div className="hidden lg:block"><QuickAddEntry showDrafts={false} onSaved={() => window.dispatchEvent(new Event('quick-add-saved'))} /></div></div>
+      <div className="mb-6 flex flex-wrap items-center justify-end gap-2">{languagePrompt}</div>
       <div className="mb-6"><DashboardDraftSummary /></div>
 
       {/* Quick Start Guide */}
