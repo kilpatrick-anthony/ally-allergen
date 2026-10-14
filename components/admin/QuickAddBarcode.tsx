@@ -6,7 +6,7 @@ import { useTranslation } from '@/lib/hooks/useTranslation'
 import type { LabelSuggestions } from '@/components/admin/QuickAddPhotos'
 
 type Suggestions = LabelSuggestions & { barcode: string; category: string; last_updated: string | null; source_url: string }
-type Props = { disabled?: boolean; onApply: (suggestions: Suggestions) => void }
+type Props = { disabled?: boolean; onApply: (suggestions: Suggestions) => void; expanded?: boolean }
 
 const knownErrors = ['barcodeInvalid', 'barcodeNotFound', 'barcodeUnavailable', 'unauthorized', 'forbidden']
 
@@ -60,7 +60,7 @@ async function decodeBarcodePhoto(url: string) {
   throw new Error('barcodePhotoUnreadable')
 }
 
-export default function QuickAddBarcode({ disabled, onApply }: Props) {
+export default function QuickAddBarcode({ disabled, onApply, expanded = false }: Props) {
   const { t } = useTranslation()
   const text = (key: string) => t(`quickAdd.${key}`)
   const helpId = useId()
@@ -109,12 +109,12 @@ export default function QuickAddBarcode({ disabled, onApply }: Props) {
 
   const working = busy || readingPhoto
 
-  return <details className="rounded-lg border border-gray-300 p-3 dark:border-gray-600">
+  return <details open={expanded || undefined} className="rounded-lg border border-gray-300 p-3 dark:border-gray-600">
     <summary className="min-h-11 cursor-pointer py-2 font-semibold">{text('barcodeTitle')} <span className="font-normal text-gray-500 dark:text-gray-300">({text('optional')})</span></summary>
     <p id={helpId} className="mb-3 text-sm text-gray-700 dark:text-gray-200">{text('barcodeHelp')}</p>
     <div className="flex flex-wrap items-end gap-2">
       <label className="min-w-48 flex-1 text-sm font-medium">{text('barcode')}
-        <input inputMode="numeric" autoComplete="off" pattern="[0-9]{8,14}" minLength={8} maxLength={14} required
+        <input inputMode="numeric" autoComplete="off" maxLength={14}
           aria-describedby={helpId} value={barcode} onChange={event => { setBarcode(event.target.value.replace(/\D/g, '').slice(0, 14)); setError(''); setResult(null) }}
           onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void lookup() } }}
           className="mt-1 w-full rounded-lg border border-gray-300 bg-white p-3 text-base text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white" />

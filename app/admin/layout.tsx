@@ -296,6 +296,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             )}
             {children}
           </main>
+          {pathname !== '/admin/quick-add/new' && <>
           {/* Food safety news ticker — fixed to the bottom of the screen (desktop only) */}
           <div className="hidden lg:block fixed bottom-0 left-[224px] right-0 z-40">
             <FsaiNewsTicker />
@@ -305,6 +306,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <FsaiNewsTicker />
           </div>
           <QuickAddEntry floating />
+          </>}
           <QuickAddOfflineSync />
         </div>
           </div>

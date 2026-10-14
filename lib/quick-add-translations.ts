@@ -1,5 +1,7 @@
+import { quickAddCaptureTranslations } from '@/lib/quick-add-capture-translations'
 // Keep stored assessment values language-independent; these strings are display labels only.
 const en = {
+  ...quickAddCaptureTranslations.en,
   "tag_Vegan": "Vegan",
   "tag_Vegetarian": "Vegetarian",
   "tag_Gluten-Free": "Gluten-Free",
@@ -115,6 +117,7 @@ const en = {
 type QuickAddStrings = Record<keyof typeof en, string>
 
 const ga = {
+  ...quickAddCaptureTranslations.ga,
   "tag_Vegan": "Veigeánach",
   "tag_Vegetarian": "Feoilséantach",
   "tag_Gluten-Free": "Saor ó ghlútan",
@@ -297,6 +300,7 @@ const ga = {
 } satisfies QuickAddStrings
 
 const pt = {
+  ...quickAddCaptureTranslations.pt,
   "tag_Vegan": "Vegano",
   "tag_Vegetarian": "Vegetariano",
   "tag_Gluten-Free": "Sem glúten",
@@ -479,6 +483,7 @@ const pt = {
 } satisfies QuickAddStrings
 
 const fr = {
+  ...quickAddCaptureTranslations.fr,
   "tag_Vegan": "Végane",
   "tag_Vegetarian": "Végétarien",
   "tag_Gluten-Free": "Sans gluten",
@@ -661,6 +666,7 @@ const fr = {
 } satisfies QuickAddStrings
 
 const es = {
+  ...quickAddCaptureTranslations.es,
   "tag_Vegan": "Vegano",
   "tag_Vegetarian": "Vegetariano",
   "tag_Gluten-Free": "Sin gluten",
@@ -843,6 +849,7 @@ const es = {
 } satisfies QuickAddStrings
 
 const de = {
+  ...quickAddCaptureTranslations.de,
   "tag_Vegan": "Vegan",
   "tag_Vegetarian": "Vegetarisch",
   "tag_Gluten-Free": "Glutenfrei",

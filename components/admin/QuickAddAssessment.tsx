@@ -43,7 +43,10 @@ export default function QuickAddAssessment({ warnings, tags, onWarnings, onTags 
     const next = { ...warnings }
     if (value) next[key] = value as typeof reviewLevels[number]
     else delete next[key]
-    if (key === 'cereals_gluten' || key === 'nuts') delete next[`${key}_levels`]
+    if (key === 'cereals_gluten' || key === 'nuts') {
+      if (!value || value === 'none') delete next[`${key}_levels`]
+      else next[`${key}_levels`] = Object.fromEntries((key === 'cereals_gluten' ? GLUTEN_TYPES : TREE_NUT_TYPES).map(type => [type.key, value as typeof reviewLevels[number]]))
+    }
     onWarnings(next)
   }
   function setSubtype(group: string, subtype: string, value: string) {
@@ -52,7 +55,9 @@ export default function QuickAddAssessment({ warnings, tags, onWarnings, onTags 
     if (value) levels[subtype] = value as typeof reviewLevels[number]
     else delete levels[subtype]
     const worst = Object.values(levels).reduce((a, b) => reviewLevels.indexOf(a) > reviewLevels.indexOf(b) ? a : b, 'none')
-    onWarnings({ ...warnings, [key]: levels, [group]: worst === 'none' ? warnings[group] : worst })
+    const entries = group === 'cereals_gluten' ? GLUTEN_TYPES : TREE_NUT_TYPES
+    const allReviewed = entries.every(entry => validLevel(levels[entry.key]))
+    onWarnings({ ...warnings, [key]: levels, [group]: worst === 'none' && !allReviewed ? warnings[group] : worst })
   }
   function markUnansweredNotPresent() {
     const next = { ...warnings }

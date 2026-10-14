@@ -1,0 +1,146 @@
+// Run against a local app. Real capture handlers use an in-memory fixture; no live records or emails.
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright')
+const assert = require('node:assert/strict')
+const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs')
+const catalog = require('../tests/helpers/translation-catalog.cjs')
+
+;(async () => {
+  const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] })
+  try {
+    for (const language of (process.env.QUICK_ADD_LANGUAGES || 'en').split(',')) {
+      const labels = catalog[language], q = labels.quickAdd
+      assert.deepEqual(Object.keys(q).sort(), Object.keys(catalog.en.quickAdd).sort())
+      for (const width of [390, 1440]) {
+        const context = await browser.newContext({ viewport: { width, height: 900 }, hasTouch: width < 500 })
+        const fixture = setup(), errors = []
+        const page = await context.newPage()
+        page.on('pageerror', error => errors.push(error.message))
+        await context.addInitScript(({ language, actor, business }) => {
+          localStorage.setItem('defaultLanguage', language)
+          localStorage.setItem('jencoach_dismissed', 'true')
+          sessionStorage.setItem('ally_user', actor)
+          sessionStorage.setItem('ally_biz', business)
+        }, { language, actor: uuid(3), business: uuid(1) })
+        await page.route('**/*.supabase.co/**', route => route.abort())
+        await page.route('**/api/**', async route => {
+          const req = route.request(), url = new URL(req.url()), method = req.method()
+          let response = { status: 200, body: {} }
+          const body = { json: async () => req.postDataJSON() }
+          if (url.pathname === '/api/auth/session') response.body = { authenticated: true, user: { id: uuid(3), name: 'Capture tester', email: 'test@example.invalid', role: 'staff', businessId: uuid(1) } }
+          else if (url.pathname.startsWith('/api/business/')) response.body = { settings: { defaultLanguage: language } }
+          else if (url.pathname === '/api/sites') response.body = { sites: [{ id: uuid(5), name: 'Kitchen' }] }
+          else if (url.pathname === '/api/suppliers') response.body = { suppliers: [{ id: uuid(6), name: 'Existing supplier' }] }
+          else if (url.pathname.includes('/categories')) response.body = { categories: ['Bakery'] }
+          else if (url.pathname === '/api/ingredients') response.body = { ingredients: [{ id: uuid(20), name: 'Bread', category: 'Bakery', allergen_warnings: { milk: 'contains' }, certifications: ['Vegetarian'] }, { id: uuid(21), name: 'Butter', category: 'Dairy' }] }
+          else if (url.pathname === '/api/product-barcode') response = await fixture.productBarcode.GET({ nextUrl: url })
+          else if (url.pathname === '/api/quick-add-drafts') response = method === 'POST' ? await fixture.collection.POST(body) : await fixture.collection.GET({ nextUrl: url })
+          else if (url.pathname.startsWith('/api/quick-add-drafts/')) {
+            const [, , , id, group, fileId, action] = url.pathname.split('/')
+            const params = { params: Promise.resolve({ id, photoId: fileId, datasheetId: fileId }) }
+            if (group === 'photos' || group === 'datasheets') {
+              const request = new Request(url, { method, headers: req.headers(), ...(method === 'PUT' ? { body: req.postDataBuffer() } : {}) })
+              response = action === 'extract' ? await fixture.photoExtract.POST(request, params)
+                : fileId ? await (group === 'photos' ? fixture.photoItem : fixture.datasheetItem)[method](request, params)
+                  : await (group === 'photos' ? fixture.photoCollection : fixture.datasheetCollection).GET(request, params)
+            } else response = await fixture.item[method](body, params)
+          } else if (url.pathname.includes('notification')) response.body = { notifications: [] }
+          if (response instanceof Response) return route.fulfill({ status: response.status, headers: Object.fromEntries(response.headers), body: Buffer.from(await response.arrayBuffer()) })
+          await route.fulfill({ status: response.status, json: response.body })
+        })
+        const base = process.env.BASE_URL || 'http://localhost:3107'
+        await page.goto(`${base}/admin/quick-add/new?kind=ingredient`)
+        await page.getByRole('heading', { name: q.captureStart, exact: true }).waitFor()
+        const cookies = page.getByRole('button', { name: labels.cookieConsent.rejectNonEssential, exact: true })
+        if (await cookies.isVisible()) await cookies.click()
+        const form = page.locator('form').filter({ has: page.getByLabel(q.kind, { exact: true }) })
+        const save = page.getByRole('button', { name: q.save, exact: true })
+        await save.click()
+        assert.equal(await form.getByLabel(q.name).getAttribute('aria-invalid'), 'true')
+        await page.getByRole('button', { name: `${q.capturePhoto} ${q.capturePhotoHelp}`, exact: true }).click()
+        const image = await require('sharp')({ create: { width: 160, height: 80, channels: 3, background: '#ddeeff' } }).png().toBuffer()
+        await form.getByLabel(q.choosePhotos, { exact: true }).setInputFiles([{ name: 'label.png', mimeType: 'image/png', buffer: image }, { name: 'ingredients.png', mimeType: 'image/png', buffer: image }])
+        await form.getByText(q.filesPending, { exact: true }).first().waitFor()
+        assert.equal(fixture.rows.length, 0, 'Selecting a photo does not require creating a draft')
+        await form.getByLabel(q.name).fill('New bread')
+        await page.getByRole('button', { name: `${q.captureDatasheet} ${q.captureDatasheetHelp}`, exact: true }).click()
+        await form.getByLabel(q.uploadDatasheet, { exact: true }).setInputFiles({ name: 'bread.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7\nBread\n%%EOF') })
+        await form.getByText('bread.pdf', { exact: true }).waitFor()
+        await page.getByRole('button', { name: `${q.captureManual} ${q.captureManualHelp}`, exact: true }).click()
+        await form.getByLabel(labels.allergenNames.cereals_gluten, { exact: true }).selectOption('contains')
+        for (const key of ['barley', 'oats', 'rye', 'wheat']) assert.equal(await form.getByLabel(labels.allergenSubtypes[key], { exact: true }).inputValue(), 'contains')
+        await form.getByLabel(labels.allergenSubtypes.oats, { exact: true }).selectOption('none')
+        await form.getByLabel(labels.allergenNames.nuts, { exact: true }).selectOption('may_contain')
+        assert.equal(await form.getByLabel(labels.allergenSubtypes.almonds, { exact: true }).inputValue(), 'may_contain')
+        await form.getByLabel(q.tag_Vegetarian, { exact: true }).check()
+        await page.getByRole('button', { name: `${q.capturePhoto} ${q.capturePhotoHelp}`, exact: true }).click()
+        const bounds = await save.boundingBox()
+        assert.ok(bounds && bounds.y >= 0 && bounds.y + bounds.height <= 900, 'Save remains within the viewport on a long assessment')
+        assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'No horizontal page overflow')
+        await page.screenshot({ path: `/tmp/quick-add-capture-${language}-${width}.png`, fullPage: true })
+        fixture.failures.upload = true
+        await save.click()
+        await form.getByText(q.filesUploadFailed, { exact: true }).waitFor()
+        assert.equal(fixture.rows.length, 1, 'Partial failure leaves one saved draft')
+        fixture.failures.upload = false
+        await form.getByText('label.png', { exact: true }).locator('..').getByRole('button', { name: q.removePhoto, exact: true }).click()
+        await form.getByText('label.png', { exact: true }).waitFor({ state: 'hidden' })
+        assert.equal(fixture.photos[0].state, 'removed', 'Removing a failed staged photo clears its server reservation')
+        await save.click()
+        await page.getByText(q.saved, { exact: true }).waitFor()
+        assert.equal(fixture.rows.length, 1, 'Retry reuses the draft and attachment IDs')
+        assert.equal(fixture.photos.filter(item => item.state === 'ready').length, 1)
+        assert.equal(fixture.datasheets.filter(item => item.state === 'ready').length, 1)
+        assert.equal(fixture.rows[0].allergen_warnings.cereals_gluten_levels.oats, 'none')
+        assert.deepEqual(Array.from(fixture.rows[0].dietary_tags), ['Vegetarian'])
+        await page.getByRole('button', { name: q.another, exact: true }).click()
+        await page.getByRole('button', { name: `${q.captureBarcode} ${q.captureBarcodeHelp}`, exact: true }).click()
+        await form.getByLabel(q.barcode, { exact: true }).fill('12345678')
+        await form.getByRole('button', { name: q.barcodeLookup, exact: true }).click()
+        await form.getByRole('button', { name: q.applySuggestions, exact: true }).click()
+        assert.ok((await form.getByLabel(q.name).inputValue()).length > 0)
+        await form.getByLabel(q.barcode, { exact: true }).fill('123')
+        await page.getByRole('button', { name: `${q.captureManual} ${q.captureManualHelp}`, exact: true }).click()
+        await save.click()
+        await page.getByText(q.saved, { exact: true }).waitFor()
+        assert.equal(fixture.rows.length, 2, 'An incomplete optional barcode does not block saving')
+        await page.getByRole('button', { name: q.another, exact: true }).click()
+        await form.getByLabel(q.kind, { exact: true }).selectOption('packaged_product')
+        await form.getByLabel(q.name).fill('Bought-in dessert')
+        await save.click()
+        await page.getByText(q.saved, { exact: true }).waitFor()
+        assert.equal(fixture.rows[2].kind, 'packaged_product')
+        await page.getByRole('button', { name: q.another, exact: true }).click()
+        await form.getByLabel(q.kind, { exact: true }).selectOption('prepared_item')
+        await form.getByLabel(q.name).fill('Toast')
+        await form.getByLabel('Bread', { exact: true }).check()
+        const preview = form.getByRole('region', { name: q.recipePreview, exact: true })
+        await preview.getByText(labels.allergenNames.milk, { exact: true }).waitFor()
+        assert.equal(await page.getByRole('heading', { name: q.captureStart, exact: true }).count(), 0, 'Prepared recipes have their own starting flow')
+        await save.click()
+        await page.getByText(q.saved, { exact: true }).waitFor()
+        assert.deepEqual(Array.from(fixture.rows[3].ingredient_ids), [uuid(20)])
+        await page.getByRole('button', { name: q.another, exact: true }).click()
+        await form.getByLabel(q.kind, { exact: true }).selectOption('ingredient')
+        await form.getByLabel(q.name).fill('Offline capture')
+        await page.getByRole('button', { name: `${q.captureDatasheet} ${q.captureDatasheetHelp}`, exact: true }).click()
+        await form.getByLabel(q.uploadDatasheet, { exact: true }).setInputFiles({ name: 'offline.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.7\nOffline\n%%EOF') })
+        await form.getByText('offline.pdf', { exact: true }).waitFor()
+        await page.evaluate(() => Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => false }))
+        await save.click()
+        await form.getByText(q.datasheetOffline, { exact: true }).waitFor()
+        assert.equal(fixture.rows.length, 4, 'Offline datasheets remain selected until reconnection or removal')
+        await form.getByRole('button', { name: q.removeDatasheet, exact: true }).click()
+        await page.getByRole('button', { name: `${q.capturePhoto} ${q.capturePhotoHelp}`, exact: true }).click()
+        await form.getByLabel(q.choosePhotos, { exact: true }).setInputFiles({ name: 'offline-label.png', mimeType: 'image/png', buffer: image })
+        await form.getByText(q.filesPending, { exact: true }).waitFor()
+        await save.click()
+        await page.getByText(q.queuedOffline, { exact: true }).waitFor()
+        await page.getByText(q.offlinePhotoQueued, { exact: true }).waitFor()
+        assert.equal(fixture.rows.length, 4, 'Offline text and photos are queued locally rather than sent')
+        assert.deepEqual(errors, [], 'No browser runtime errors')
+        console.log(`${language} ${width}px: capture choices, staged files, retry, parent/subtype edits, barcode, recipe preview, saving and offline photos passed`)
+        await context.close()
+      }
+    }
+  } finally { await browser.close() }
+})().catch(error => { console.error(error); process.exitCode = 1 })

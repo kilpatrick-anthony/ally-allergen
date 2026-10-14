@@ -50,23 +50,26 @@ export default function AllergenWarningSelector({
       ...value,
       [allergenId]: level
     };
-    
-    // If setting to 'none', clear subtypes
-    if (level === 'none') {
-      if (allergenId === 'cereals_gluten') {
-        delete newValue.cereals_gluten_types;
-      } else if (allergenId === 'nuts') {
-        delete newValue.nuts_types;
-      }
-      setShowSubtypes(prev => ({ ...prev, [allergenId]: false }));
-    } else {
-      // If setting to non-none and has subtypes, show subtype selector
-      const allergen = ALLERGEN_LIST.find(a => a.id === allergenId);
-      if (allergen && 'hasSubtypes' in allergen && allergen.hasSubtypes) {
+
+    if (allergenId === 'cereals_gluten' || allergenId === 'nuts') {
+      const levelsKey = allergenId === 'cereals_gluten' ? 'cereals_gluten_levels' : 'nuts_levels';
+      const legacyTypesKey = allergenId === 'cereals_gluten' ? 'cereals_gluten_types' : 'nuts_types';
+      const allTypes = allergenId === 'cereals_gluten'
+        ? GLUTEN_TYPES.map(type => type.key)
+        : TREE_NUT_TYPES.map(type => type.key);
+
+      if (level === 'none') {
+        delete newValue[levelsKey];
+        delete newValue[legacyTypesKey];
+        setShowSubtypes(prev => ({ ...prev, [allergenId]: false }));
+      } else {
+        newValue[levelsKey] = Object.fromEntries(
+          allTypes.map(type => [type, level])
+        );
         setShowSubtypes(prev => ({ ...prev, [allergenId]: true }));
       }
     }
-    
+
     onChange(newValue);
   };
 

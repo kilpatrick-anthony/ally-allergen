@@ -10,9 +10,9 @@ import { listOfflineQuickAddPhotos, removeOfflineQuickAddPhoto, saveOfflineQuick
 
 type Photo = { id: string; state: 'pending' | 'ready'; file?: Blob; preview?: string; error?: string; queued?: boolean }
 export type LabelSuggestions = { name: string; supplier_name: string; description: string; allergen_warnings: QuickAddFields['allergen_warnings']; dietary_tags: string[]; notes: string[] }
-type Props = { draftId: string; disabled?: boolean; offlineDraft?: boolean; onActivity: (busy: boolean, unsaved: boolean) => void; onApplySuggestions: (suggestions: LabelSuggestions) => void }
+type Props = { draftId: string; disabled?: boolean; offlineDraft?: boolean; excludeIds?: string[]; onActivity: (busy: boolean, unsaved: boolean) => void; onApplySuggestions: (suggestions: LabelSuggestions) => void }
 
-async function prepare(file: File): Promise<Blob> {
+export async function prepareQuickAddPhoto(file: File): Promise<Blob> {
   if (file.size > 30 * 1024 * 1024) throw new Error('photoSourceTooLarge')
   if (!/\.(jpe?g|png|webp|heic|heif)$/i.test(file.name) && !/^image\/(jpeg|png|webp|heic|heif)$/.test(file.type)) throw new Error('photoFormat')
   const url = URL.createObjectURL(file)
@@ -38,7 +38,7 @@ async function prepare(file: File): Promise<Blob> {
 const knownErrors = ['photoFormat', 'photoInvalid', 'photoTooLarge', 'photoSourceTooLarge', 'photoLimit', 'photoConflict', 'extractionUnavailable', 'extractionFailed', 'unauthorized', 'forbidden', 'notFound', 'editConflict']
 const errorCode = (reason: unknown) => reason instanceof Error && knownErrors.includes(reason.message) ? reason.message : 'photoFailed'
 
-export default function QuickAddPhotos({ draftId, disabled, offlineDraft = false, onActivity, onApplySuggestions }: Props) {
+export default function QuickAddPhotos({ draftId, disabled, offlineDraft = false, excludeIds, onActivity, onApplySuggestions }: Props) {
   const { t } = useTranslation()
   const text = (key: string) => t(`quickAdd.${key}`)
   const helpId = useId()
@@ -118,7 +118,7 @@ export default function QuickAddPhotos({ draftId, disabled, offlineDraft = false
       if (files.length + photos.length > 12) throw new Error('photoLimit')
       for (const file of files) {
         try {
-          const prepared = await prepare(file)
+          const prepared = await prepareQuickAddPhoto(file)
           const preview = URL.createObjectURL(prepared)
           previews.current.add(preview)
           const photo: Photo = { id: crypto.randomUUID(), state: 'pending', file: prepared, preview }
@@ -186,7 +186,7 @@ export default function QuickAddPhotos({ draftId, disabled, offlineDraft = false
         {loadFailed && <Button type="button" variant="tealOutline" disabled={working} onClick={() => setAttempt(value => value + 1)}>{text('retry')}</Button>}
       </div>}
       <ul className="grid grid-cols-2 gap-3">
-        {photos.map((photo, index) => <li key={photo.id} className="min-w-0 rounded-lg border p-2">
+        {photos.filter(photo => !excludeIds?.includes(photo.id)).map((photo, index) => <li key={photo.id} className="min-w-0 rounded-lg border p-2">
           {photo.preview || photo.state === 'ready' ? <button type="button" className="w-full rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600" onClick={() => setViewing({ src: photo.preview || `${base}/${photo.id}`, label: `${text('labelPhoto')} ${index + 1}` })} aria-label={`${text('openPhoto')} ${index + 1}`}>
             {/* Private API image: do not route evidence through Next's image cache. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}

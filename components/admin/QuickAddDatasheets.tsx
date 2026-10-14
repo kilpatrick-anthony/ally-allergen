@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/Button'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 
 type Datasheet = { id: string; file_name: string; content_type: string; byte_size: number; state: string; created_at: string }
-type Props = { draftId: string; disabled?: boolean; onActivity?: (busy: boolean) => void }
+type Props = { draftId: string; disabled?: boolean; excludeIds?: string[]; onActivity?: (busy: boolean) => void }
 
-export default function QuickAddDatasheets({ draftId, disabled, onActivity }: Props) {
+export default function QuickAddDatasheets({ draftId, disabled, excludeIds, onActivity }: Props) {
   const { t } = useTranslation()
   const text = (key: string) => t(`quickAdd.${key}`)
   const helpId = useId()
@@ -66,7 +66,7 @@ export default function QuickAddDatasheets({ draftId, disabled, onActivity }: Pr
       </label>
       {working && <p role="status">{text('datasheetWorking')}</p>}
       {error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{text(error)}</p>}
-      {!!items.length && <ul className="space-y-2">{items.map(item => <li key={item.id} className="flex items-center justify-between gap-3 rounded-lg border p-3">
+      {!!items.length && <ul className="space-y-2">{items.filter(item => !excludeIds?.includes(item.id)).map(item => <li key={item.id} className="flex items-center justify-between gap-3 rounded-lg border p-3">
         <a href={`${base}/${item.id}`} className="flex min-w-0 items-center gap-2 font-medium text-teal-700 underline dark:text-teal-300"><FileText className="h-5 w-5 shrink-0" aria-hidden="true" /><span className="truncate">{item.file_name}</span></a>
         <Button type="button" variant="ghost" size="sm" icon={Trash2} disabled={blocked} aria-label={`${text('removeDatasheet')}: ${item.file_name}`} onClick={() => void remove(item)}>{text('removeDatasheet')}</Button>
       </li>)}</ul>}
