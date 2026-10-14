@@ -1,5 +1,6 @@
 const en = {
   analyseDatasheet: 'Suggest details from datasheet', analysingDatasheet: 'Analysing datasheet…',
+  datasheetToAnalyse: 'Datasheet to scan',
   datasheetExtractionFailed: 'The datasheet could not be analysed. Try again, or enter the details manually. Your selected file is still attached to this entry.',
   datasheetExtractionUnavailable: 'Datasheet analysis is currently unavailable. You can still attach the document and enter the details manually.',
   datasheetExtractionBusy: 'The datasheet scan service is busy. Wait a moment and try again.',
@@ -20,6 +21,7 @@ export const quickAddDatasheetTranslations = {
   en,
   ga: {
     analyseDatasheet: 'Mol sonraí ón mbileog sonraí', analysingDatasheet: 'Anailís ar an mbileog sonraí…',
+    datasheetToAnalyse: 'Bileog sonraí le scanadh',
     datasheetExtractionFailed: 'Níorbh fhéidir an bhileog sonraí a anailísiú. Bain triail eile as nó iontráil na sonraí de láimh. Tá an comhad roghnaithe fós leis an iontráil seo.',
     datasheetExtractionUnavailable: 'Níl anailís bileog sonraí ar fáil faoi láthair. Is féidir an doiciméad a cheangal agus na sonraí a iontráil de láimh fós.',
     datasheetExtractionBusy: 'Tá an tseirbhís scanadh bileog sonraí gnóthach. Fan nóiméad agus bain triail eile as.',
@@ -36,6 +38,7 @@ export const quickAddDatasheetTranslations = {
   } satisfies Strings,
   pt: {
     analyseDatasheet: 'Sugerir detalhes da ficha técnica', analysingDatasheet: 'A analisar a ficha técnica…',
+    datasheetToAnalyse: 'Ficha técnica a analisar',
     datasheetExtractionFailed: 'Não foi possível analisar a ficha técnica. Tente novamente ou introduza os dados manualmente. O ficheiro selecionado continua nesta entrada.',
     datasheetExtractionUnavailable: 'A análise de fichas técnicas está indisponível. Pode anexar o documento e introduzir os dados manualmente.',
     datasheetExtractionBusy: 'O serviço de análise está ocupado. Aguarde um momento e tente novamente.',
@@ -52,6 +55,7 @@ export const quickAddDatasheetTranslations = {
   } satisfies Strings,
   fr: {
     analyseDatasheet: 'Suggérer des détails depuis la fiche', analysingDatasheet: 'Analyse de la fiche technique…',
+    datasheetToAnalyse: 'Fiche technique à analyser',
     datasheetExtractionFailed: 'La fiche technique n’a pas pu être analysée. Réessayez ou saisissez les détails manuellement. Le fichier sélectionné reste joint à cette entrée.',
     datasheetExtractionUnavailable: 'L’analyse des fiches techniques est indisponible. Vous pouvez joindre le document et saisir les détails manuellement.',
     datasheetExtractionBusy: 'Le service d’analyse est occupé. Patientez un instant et réessayez.',
@@ -68,6 +72,7 @@ export const quickAddDatasheetTranslations = {
   } satisfies Strings,
   es: {
     analyseDatasheet: 'Sugerir detalles desde la ficha', analysingDatasheet: 'Analizando la ficha técnica…',
+    datasheetToAnalyse: 'Ficha técnica a analizar',
     datasheetExtractionFailed: 'No se pudo analizar la ficha técnica. Inténtelo de nuevo o introduzca los datos manualmente. El archivo seleccionado sigue en esta entrada.',
     datasheetExtractionUnavailable: 'El análisis de fichas técnicas no está disponible. Puede adjuntar el documento e introducir los datos manualmente.',
     datasheetExtractionBusy: 'El servicio de análisis está ocupado. Espere un momento e inténtelo de nuevo.',
@@ -84,6 +89,7 @@ export const quickAddDatasheetTranslations = {
   } satisfies Strings,
   de: {
     analyseDatasheet: 'Details aus Datenblatt vorschlagen', analysingDatasheet: 'Datenblatt wird analysiert…',
+    datasheetToAnalyse: 'Datenblatt zur Analyse',
     datasheetExtractionFailed: 'Das Datenblatt konnte nicht analysiert werden. Versuchen Sie es erneut oder geben Sie die Details manuell ein. Die ausgewählte Datei bleibt bei diesem Eintrag.',
     datasheetExtractionUnavailable: 'Die Datenblattanalyse ist derzeit nicht verfügbar. Sie können das Dokument anhängen und die Details manuell eingeben.',
     datasheetExtractionBusy: 'Der Analysedienst ist ausgelastet. Warten Sie kurz und versuchen Sie es erneut.',

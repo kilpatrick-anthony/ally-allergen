@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useId, useState } from 'react'
+import { ScanLine } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import type { LabelSuggestions } from './QuickAddPhotos'
@@ -16,6 +17,7 @@ export default function QuickAddPendingEvidence({ kind, items, onChange, disable
   const { t } = useTranslation()
   const text = (key: string) => t(`quickAdd.${key}`)
   const helpId = useId()
+  const [selectedId, setSelectedId] = useState('')
   const [working, setWorking] = useState(false)
   const [error, setError] = useState('')
   const [extracting, setExtracting] = useState<string | null>(null)
@@ -39,6 +41,7 @@ export default function QuickAddPendingEvidence({ kind, items, onChange, disable
     } finally { setExtracting(null); onBusy(false) }
   }
   const visible = items.filter(item => item.kind === kind)
+  const selected = visible.find(item => item.id === selectedId) || visible[visible.length - 1]
   async function choose(files: File[]) {
     if (disabled || working || !files.length) return
     setWorking(true); onBusy(true); setError('')
@@ -54,13 +57,14 @@ export default function QuickAddPendingEvidence({ kind, items, onChange, disable
         additions.push({ id: crypto.randomUUID(), kind, name: file.name, blob })
       }
       onChange([...items, ...additions])
+      if (kind === 'datasheet') setSelectedId(additions[additions.length - 1].id)
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'photoFailed') }
     finally { setWorking(false); onBusy(false) }
   }
   const blocked = disabled || working || !!extracting
   return <section className="space-y-3" aria-label={text(kind === 'photo' ? 'photos' : 'datasheets')}>
     <p id={helpId} className="text-sm text-gray-600 dark:text-gray-300">{text(kind === 'photo' ? 'photoHelp' : 'datasheetHelp')}</p>
-    <div className="flex flex-wrap gap-3">
+    <div className="flex flex-wrap items-end gap-3">
       {kind === 'photo' && <label className="relative inline-flex min-h-11 items-center rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-teal-600">
         {text('takePhoto')}<input type="file" accept="image/*" capture="environment" aria-label={text('takePhoto')} aria-describedby={helpId} disabled={blocked}
           className="absolute inset-0 w-full opacity-0" onChange={event => { const files = Array.from(event.target.files || []); event.target.value = ''; void choose(files) }} />
@@ -71,6 +75,16 @@ export default function QuickAddPendingEvidence({ kind, items, onChange, disable
           aria-label={text(kind === 'photo' ? 'choosePhotos' : 'uploadDatasheet')} aria-describedby={helpId} disabled={blocked}
           className="absolute inset-0 w-full opacity-0" onChange={event => { const files = Array.from(event.target.files || []); event.target.value = ''; void choose(files) }} />
       </label>
+      {kind === 'datasheet' && onApplySuggestions && <>
+        {visible.length > 1 && <label className="min-w-0 max-w-full text-sm font-medium">{text('datasheetToAnalyse')}
+          <select aria-label={text('datasheetToAnalyse')} value={selected?.id || ''} disabled={blocked} onChange={event => setSelectedId(event.target.value)} className="mt-1 block min-h-11 w-full max-w-full rounded-lg border bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white">
+            {visible.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+        </label>}
+        <Button type="button" icon={ScanLine} variant="tealOutline" disabled={blocked || !selected}
+          aria-label={selected ? `${text('analyseDatasheet')}: ${selected.name}` : text('analyseDatasheet')}
+          onClick={() => { if (selected) void extract(selected) }}>{text(extracting ? 'analysingDatasheet' : 'analyseDatasheet')}</Button>
+      </>}
     </div>
     <p className="text-xs text-gray-600 dark:text-gray-300">{text('filesSaveHelp')}</p>
     {working && <p role="status">{text('photoWorking')}</p>}
@@ -80,7 +94,6 @@ export default function QuickAddPendingEvidence({ kind, items, onChange, disable
       <p className="break-words text-sm font-medium">{item.name}</p>
       {item.error && <p role="alert" className="text-xs text-red-700 dark:text-red-300">{text(item.error)}</p>}
       <p className={`text-xs ${item.error ? 'text-red-700 dark:text-red-300' : 'text-gray-600 dark:text-gray-300'}`}>{text(item.error ? 'filesRetryHelp' : 'filesPending')}</p>
-      {kind === 'datasheet' && onApplySuggestions && <Button type="button" variant="tealOutline" disabled={blocked} aria-label={`${text('analyseDatasheet')}: ${item.name}`} onClick={() => void extract(item)}>{text(extracting === item.id ? 'analysingDatasheet' : 'analyseDatasheet')}</Button>}
       {suggestions?.id === item.id && <div className="my-3 space-y-2 rounded-lg bg-teal-50 p-3 text-sm text-teal-950 dark:bg-teal-950 dark:text-teal-50">
         <p role="status" className="font-semibold">{text('suggestionsReady')}</p>
         <p>{text('datasheetSuggestionsReview')}</p>

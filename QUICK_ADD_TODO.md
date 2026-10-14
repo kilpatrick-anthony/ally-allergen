@@ -630,3 +630,20 @@ rolled-back test transaction. Application deployment is in progress.
   covered phone/desktop widths and all six languages, with failure/retry coverage.
 - The supplied PDF, unrelated screenshot and local Supabase CLI metadata are
   excluded from this commit. No production deployment was run as part of this work.
+
+### Datasheet scan action beside upload — 14 October 2026
+
+- Moved Suggest details from datasheet into the upload-control row for new entries
+  and saved drafts. It is visible from the start, disabled with no selected file,
+  and enabled immediately after file selection, before any draft is saved.
+- Multiple datasheets share an explicitly labelled file selector beside the scan
+  action. Newly selected/uploaded documents become the selected scan target;
+  removing a selected file falls back to a remaining document. Added the selector
+  label in all six languages.
+- Browser coverage now checks the initial disabled action, upload-row placement,
+  selection/enabling, multiple-file selection/removal, scan-before-save and the
+  same upload-row placement after saving. Production build/TypeScript passed.
+- Phone (390px) and desktop (1440px) browser flows passed in all six languages,
+  using fixture API/storage and scan responses. Inspected English phone/desktop
+  upload-area screenshots. Changes are on `agent/quick-add-datasheet-scan`;
+  no production deployment was run as part of this follow-up.

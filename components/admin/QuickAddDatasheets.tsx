@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useId, useState } from 'react'
-import { FileText, Trash2, Upload } from 'lucide-react'
+import { FileText, ScanLine, Trash2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import type { LabelSuggestions } from './QuickAddPhotos'
@@ -16,6 +16,7 @@ export default function QuickAddDatasheets({ draftId, disabled, excludeIds, onAc
   const helpId = useId()
   const base = `/api/quick-add-drafts/${draftId}/datasheets`
   const [items, setItems] = useState<Datasheet[]>([])
+  const [selectedId, setSelectedId] = useState('')
   const [loading, setLoading] = useState(true)
   const [working, setWorking] = useState(false)
   const [error, setError] = useState('')
@@ -56,6 +57,7 @@ export default function QuickAddDatasheets({ draftId, disabled, excludeIds, onAc
       const result = await response.json()
       if (!response.ok) throw new Error(result.error)
       setItems(current => [...current, result.datasheet])
+      setSelectedId(result.datasheet.id)
     } catch (reason) {
       const code = reason instanceof Error ? reason.message : ''
       setError(['datasheetTooLarge','datasheetFormat','datasheetLimit','datasheetConflict','editConflict'].includes(code) ? code : 'datasheetUploadFailed')
@@ -74,23 +76,37 @@ export default function QuickAddDatasheets({ draftId, disabled, excludeIds, onAc
     finally { setWorking(false); onActivity?.(false) }
   }
 
+  const visible = items.filter(item => !excludeIds?.includes(item.id))
+  const analysable = visible.filter(item => item.state === 'ready')
+  const selected = analysable.find(item => item.id === selectedId) || analysable[analysable.length - 1]
   const blocked = disabled || working || loading || !!extracting
   return <section aria-label={text('datasheets')} className="mt-5 space-y-3 border-t pt-4 dark:border-gray-700">
     <h3 className="font-semibold">{text('datasheets')} <span className="font-normal text-gray-500 dark:text-gray-300">({text('optional')})</span></h3>
     <p id={helpId} className="text-sm text-gray-600 dark:text-gray-300">{text('datasheetHelp')}</p>
     {loading ? <p role="status">{text('loading')}</p> : <>
+      <div className="flex flex-wrap items-end gap-3">
       <label className={`relative inline-flex min-h-11 items-center gap-2 rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-teal-600 ${blocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
         <Upload className="h-4 w-4" aria-hidden="true" />{text('uploadDatasheet')}
         <input type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" disabled={blocked} aria-describedby={helpId} className="absolute inset-0 w-full opacity-0" onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void upload(file) }} />
       </label>
+      {onApplySuggestions && <>
+        {analysable.length > 1 && <label className="min-w-0 max-w-full text-sm font-medium">{text('datasheetToAnalyse')}
+          <select aria-label={text('datasheetToAnalyse')} value={selected?.id || ''} disabled={blocked} onChange={event => setSelectedId(event.target.value)} className="mt-1 block min-h-11 w-full max-w-full rounded-lg border bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white">
+            {analysable.map(item => <option key={item.id} value={item.id}>{item.file_name}</option>)}
+          </select>
+        </label>}
+        <Button type="button" icon={ScanLine} variant="tealOutline" disabled={blocked || !selected}
+          aria-label={selected ? `${text('analyseDatasheet')}: ${selected.file_name}` : text('analyseDatasheet')}
+          onClick={() => { if (selected) void extract(selected) }}>{text(extracting ? 'analysingDatasheet' : 'analyseDatasheet')}</Button>
+      </>}
+      </div>
       {working && <p role="status">{text('datasheetWorking')}</p>}
       {error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{text(error)}</p>}
-      {!!items.length && <ul className="space-y-2">{items.filter(item => !excludeIds?.includes(item.id)).map(item => <li key={item.id} className="space-y-3 rounded-lg border p-3">
+      {!!items.length && <ul className="space-y-2">{visible.map(item => <li key={item.id} className="space-y-3 rounded-lg border p-3">
         <div className="flex items-center justify-between gap-3">
         <a href={`${base}/${item.id}`} className="flex min-w-0 items-center gap-2 font-medium text-teal-700 underline dark:text-teal-300"><FileText className="h-5 w-5 shrink-0" aria-hidden="true" /><span className="truncate">{item.file_name}</span></a>
         <Button type="button" variant="ghost" size="sm" icon={Trash2} disabled={blocked} aria-label={`${text('removeDatasheet')}: ${item.file_name}`} onClick={() => void remove(item)}>{text('removeDatasheet')}</Button>
         </div>
-        {onApplySuggestions && item.state === 'ready' && <Button type="button" variant="tealOutline" disabled={blocked} aria-label={`${text('analyseDatasheet')}: ${item.file_name}`} onClick={() => void extract(item)}>{text(extracting === item.id ? 'analysingDatasheet' : 'analyseDatasheet')}</Button>}
         {suggestions?.id === item.id && <div className="space-y-2 rounded-lg bg-teal-50 p-3 text-sm text-teal-950 dark:bg-teal-950 dark:text-teal-50">
           <p role="status" className="font-semibold">{text('suggestionsReady')}</p><p>{text('datasheetSuggestionsReview')}</p>
           {suggestions.values.name && <p className="break-words"><span className="font-medium">{text('suggestedName')}: </span>{suggestions.values.name}</p>}
