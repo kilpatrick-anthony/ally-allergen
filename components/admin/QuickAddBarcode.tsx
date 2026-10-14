@@ -1,12 +1,13 @@
 'use client'
 
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
+import { ScanLine } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import type { LabelSuggestions } from '@/components/admin/QuickAddPhotos'
 
 type Suggestions = LabelSuggestions & { barcode: string; category: string; last_updated: string | null; source_url: string }
-type Props = { disabled?: boolean; onApply: (suggestions: Suggestions) => void; expanded?: boolean }
+type Props = { disabled?: boolean; onApply: (suggestions: Suggestions) => void; onActivity?: (busy: boolean) => void }
 
 const knownErrors = ['barcodeInvalid', 'barcodeNotFound', 'barcodeUnavailable', 'unauthorized', 'forbidden']
 
@@ -60,11 +61,26 @@ async function decodeBarcodePhoto(url: string) {
   throw new Error('barcodePhotoUnreadable')
 }
 
-export default function QuickAddBarcode({ disabled, onApply, expanded = false }: Props) {
+export default function QuickAddBarcode({ disabled, onApply, onActivity }: Props) {
   const { t } = useTranslation()
   const text = (key: string) => t(`quickAdd.${key}`)
   const helpId = useId()
   const [barcode, setBarcode] = useState('')
+  const [photo, setPhoto] = useState<File | null>(null)
+  const [preview, setPreview] = useState('')
+  useEffect(() => {
+    if (!photo) { setPreview(''); return }
+    const url = URL.createObjectURL(photo)
+    setPreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [photo])
+  function choosePhoto(file: File) {
+    if (disabled || busy || readingPhoto) return
+    setError(''); setResult(null)
+    if (file.size > 15 * 1024 * 1024) { setError('barcodePhotoTooLarge'); return }
+    if (!file.type.startsWith('image/')) { setError('barcodePhotoUnreadable'); return }
+    setPhoto(file); setBarcode('')
+  }
   const [busy, setBusy] = useState(false)
   const [readingPhoto, setReadingPhoto] = useState(false)
   const [error, setError] = useState('')
@@ -72,6 +88,7 @@ export default function QuickAddBarcode({ disabled, onApply, expanded = false }:
 
   async function lookup(value = barcode, fromPhoto = false) {
     if (busy || (readingPhoto && !fromPhoto) || disabled) return
+    if (!navigator.onLine) { setError('scanOffline'); return }
     setBusy(true); setError(''); setResult(null)
     try {
       const response = await fetch(`/api/product-barcode?barcode=${encodeURIComponent(value.trim())}`, { cache: 'no-store', signal: AbortSignal.timeout(12000) })
@@ -108,28 +125,40 @@ export default function QuickAddBarcode({ disabled, onApply, expanded = false }:
   }
 
   const working = busy || readingPhoto
+  useEffect(() => { onActivity?.(working) }, [working, onActivity])
 
-  return <details open={expanded || undefined} className="rounded-lg border border-gray-300 p-3 dark:border-gray-600">
-    <summary className="min-h-11 cursor-pointer py-2 font-semibold">{text('barcodeTitle')}</summary>
-    <p id={helpId} className="mb-3 text-sm text-gray-700 dark:text-gray-200">{text('barcodeHelp')}</p>
-    <div className="flex flex-wrap items-end gap-2">
-      <label className="min-w-48 flex-1 text-sm font-medium">{text('barcode')}
-        <input inputMode="numeric" autoComplete="off" maxLength={14}
-          aria-describedby={helpId} value={barcode} onChange={event => { setBarcode(event.target.value.replace(/\D/g, '').slice(0, 14)); setError(''); setResult(null) }}
-          onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); void lookup() } }}
-          className="mt-1 w-full rounded-lg border border-gray-300 bg-white p-3 text-base text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white" />
-      </label>
-      <Button type="button" variant="tealOutline" loading={busy} disabled={disabled || working} onClick={() => void lookup()}>{text(busy ? 'barcodeLooking' : 'barcodeLookup')}</Button>
-    </div>
-    <div className="mt-3">
-      <label className={`relative inline-flex min-h-11 items-center rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-teal-600 ${working || disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}>
-        {text(readingPhoto ? 'barcodeReading' : 'barcodeTakePhoto')}
+  return <section aria-label={text('barcodeTitle')} className="space-y-3">
+    <h3 className="font-semibold">{text('barcodeTitle')}</h3>
+    <p id={helpId} className="text-sm text-gray-600 dark:text-gray-300">{text('barcodeCaptureHelp')}</p>
+    <div className="flex flex-wrap items-end gap-3">
+      <label className="relative inline-flex min-h-11 items-center rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-teal-600">
+        {text('barcodeTakePhoto')}
         <input type="file" accept="image/*" capture="environment" disabled={disabled || working}
           aria-label={text('barcodeTakePhoto')} aria-describedby={`${helpId}-photo`} className="absolute inset-0 w-full opacity-0"
-          onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void readPhoto(file) }} />
+          onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) choosePhoto(file) }} />
       </label>
-      <p id={`${helpId}-photo`} className="mt-1 text-xs text-gray-500 dark:text-gray-300">{text('barcodePhotoHelp')}</p>
+      <label className="relative inline-flex min-h-11 items-center rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-teal-600">
+        {text('chooseBarcodePhoto')}
+        <input type="file" accept="image/*" disabled={disabled || working} aria-label={text('chooseBarcodePhoto')} aria-describedby={`${helpId}-photo`} className="absolute inset-0 w-full opacity-0"
+          onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) choosePhoto(file) }} />
+      </label>
+      <Button type="button" icon={ScanLine} variant="tealOutline" disabled={disabled || working || (!photo && !barcode.trim())}
+        onClick={() => { if (photo) void readPhoto(photo); else void lookup() }}>{text(readingPhoto ? 'barcodeReading' : busy ? 'barcodeLooking' : 'barcodeLookup')}</Button>
     </div>
+    <p id={`${helpId}-photo`} className="text-xs text-gray-600 dark:text-gray-300">{text('barcodePhotoHelp')}</p>
+    <label className="block text-sm font-medium">{text('barcode')}
+      <input inputMode="numeric" autoComplete="off" maxLength={14} disabled={disabled || working}
+        aria-describedby={helpId} value={barcode} onChange={event => { setBarcode(event.target.value.replace(/\D/g, '').slice(0, 14)); setPhoto(null); setError(''); setResult(null) }}
+        onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); if (!photo) void lookup() } }}
+        className="mt-1 w-full rounded-lg border border-gray-300 bg-white p-3 text-base text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white" />
+    </label>
+    {photo && preview && <div className="rounded-lg border p-3">
+      {/* Local barcode previews never leave this device. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={preview} alt={text('barcodePhoto')} className="h-40 w-full rounded object-contain" />
+      <p className="mt-2 break-words text-sm font-medium">{photo.name}</p>
+      <Button type="button" variant="ghost" disabled={disabled || working} onClick={() => { setPhoto(null); setResult(null); setError('') }}>{text('removePhoto')}</Button>
+    </div>}
     {error && <p role="alert" className="mt-2 text-sm text-red-700 dark:text-red-300">{text(error)}</p>}
     {result && <div className="mt-3 rounded-lg bg-teal-50 p-3 text-sm text-teal-950 dark:bg-teal-950 dark:text-teal-50">
       <p role="status" className="font-semibold">{result.name || text('barcodeFound')}</p>
@@ -141,5 +170,5 @@ export default function QuickAddBarcode({ disabled, onApply, expanded = false }:
         <Button type="button" variant="ghost" onClick={() => setResult(null)}>{text('dismissSuggestions')}</Button>
       </div>
     </div>}
-  </details>
+  </section>
 }

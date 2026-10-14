@@ -647,3 +647,31 @@ rolled-back test transaction. Application deployment is in progress.
   using fixture API/storage and scan responses. Inspected English phone/desktop
   upload-area screenshots. Changes are on `agent/quick-add-datasheet-scan`;
   no production deployment was run as part of this follow-up.
+
+### Consistent Quick Add capture and scanning — 14 October 2026
+
+- Barcode, label-photo and datasheet capture now share the same interaction:
+  choose/take a file (or type a barcode), explicitly scan, review/apply suggestions,
+  and save the draft. Capture and scan controls stay together, with an initially
+  disabled scan action until there is an input to read.
+- Added a private, authenticated staged-photo scan endpoint. It validates and
+  normalises the image, uses the same reader as saved photos, and creates no draft,
+  photo record, inventory item or stored object. Both photo paths use the bounded
+  reasoning/output settings and reject truncated responses.
+- Staged and saved label photos have a selector when more than one is available.
+  Barcode photos now show a local preview and wait for Look up instead of starting
+  automatically; manual number entry remains available. Barcode images stay local.
+- All scans require connectivity and show a translated reconnection message while
+  ordinary offline text/photo capture and later synchronisation remain supported.
+  Add another clears scan state; saving/closing is blocked while a scan is running.
+- Updated interaction labels and Help in all six languages. Fifty relevant API,
+  photo, datasheet, extraction and offline tests passed; production build and
+  TypeScript passed. Browser checks use fixture storage/AI and a real barcode
+  image decoded by the app; they do not create live inventory or evidence.
+- Complete 390px/1440px browser journeys passed in English, Irish, Portuguese,
+  French, Spanish and German. Checks include pre-save photo scan failure/retry,
+  explicit application, no premature evidence storage, staged/saved scan-control
+  placement, real barcode-photo decoding, manual barcode lookup and offline
+  scan guidance followed by successful queued text/photo capture. Inspected the
+  phone-width photo and barcode panels. Changes remain on the Quick Add branch;
+  no production deployment was run as part of this work.

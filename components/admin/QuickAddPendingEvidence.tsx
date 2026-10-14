@@ -24,20 +24,21 @@ export default function QuickAddPendingEvidence({ kind, items, onChange, disable
   const [suggestions, setSuggestions] = useState<{ id: string; values: LabelSuggestions } | null>(null)
   async function extract(item: PendingEvidence) {
     if (disabled || working || extracting) return
+    if (!navigator.onLine) { setError('scanOffline'); return }
     setExtracting(item.id); onBusy(true); setError(''); setSuggestions(null)
     try {
       const extension = item.name.split('.').pop()?.toLowerCase()
-      const mime = extension === 'pdf' ? 'application/pdf' : extension === 'doc' ? 'application/msword' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-      const response = await fetch('/api/quick-add-datasheets/extract', {
-        method: 'POST', headers: { 'Content-Type': mime, 'X-File-Name': encodeURIComponent(item.name) },
+      const mime = kind === 'photo' ? 'image/jpeg' : extension === 'pdf' ? 'application/pdf' : extension === 'doc' ? 'application/msword' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      const response = await fetch(kind === 'photo' ? '/api/quick-add-photos/extract' : '/api/quick-add-datasheets/extract', {
+        method: 'POST', headers: { 'Content-Type': mime, ...(kind === 'datasheet' ? { 'X-File-Name': encodeURIComponent(item.name) } : {}) },
         body: item.blob, signal: AbortSignal.timeout(55000),
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error)
       setSuggestions({ id: item.id, values: result.suggestions })
     } catch (reason) {
-      const code = reason instanceof Error ? reason.name === 'TimeoutError' ? 'datasheetExtractionTimeout' : reason.message : ''
-      setError(['datasheetLegacyWord', 'datasheetUnreadable', 'datasheetTooLarge', 'datasheetFormat', 'datasheetExtractionUnavailable', 'datasheetExtractionFailed', 'datasheetExtractionBusy', 'datasheetExtractionTimeout', 'unauthorized', 'forbidden'].includes(code) ? code : 'datasheetExtractionFailed')
+      const code = reason instanceof Error ? reason.name === 'TimeoutError' ? kind === 'photo' ? 'extractionFailed' : 'datasheetExtractionTimeout' : reason.message : ''
+      setError(['photoFormat', 'photoInvalid', 'photoTooLarge', 'extractionUnavailable', 'extractionFailed', 'datasheetLegacyWord', 'datasheetUnreadable', 'datasheetTooLarge', 'datasheetFormat', 'datasheetExtractionUnavailable', 'datasheetExtractionFailed', 'datasheetExtractionBusy', 'datasheetExtractionTimeout', 'unauthorized', 'forbidden'].includes(code) ? code : kind === 'photo' ? 'extractionFailed' : 'datasheetExtractionFailed')
     } finally { setExtracting(null); onBusy(false) }
   }
   const visible = items.filter(item => item.kind === kind)
@@ -57,13 +58,13 @@ export default function QuickAddPendingEvidence({ kind, items, onChange, disable
         additions.push({ id: crypto.randomUUID(), kind, name: file.name, blob })
       }
       onChange([...items, ...additions])
-      if (kind === 'datasheet') setSelectedId(additions[additions.length - 1].id)
+      setSelectedId(additions[additions.length - 1].id)
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'photoFailed') }
     finally { setWorking(false); onBusy(false) }
   }
   const blocked = disabled || working || !!extracting
   return <section className="space-y-3" aria-label={text(kind === 'photo' ? 'photos' : 'datasheets')}>
-    <p id={helpId} className="text-sm text-gray-600 dark:text-gray-300">{text(kind === 'photo' ? 'photoHelp' : 'datasheetHelp')}</p>
+    <p id={helpId} className="text-sm text-gray-600 dark:text-gray-300">{text(kind === 'photo' ? 'photoCaptureHelp' : 'datasheetHelp')}</p>
     <div className="flex flex-wrap items-end gap-3">
       {kind === 'photo' && <label className="relative inline-flex min-h-11 items-center rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-teal-600">
         {text('takePhoto')}<input type="file" accept="image/*" capture="environment" aria-label={text('takePhoto')} aria-describedby={helpId} disabled={blocked}
@@ -75,15 +76,15 @@ export default function QuickAddPendingEvidence({ kind, items, onChange, disable
           aria-label={text(kind === 'photo' ? 'choosePhotos' : 'uploadDatasheet')} aria-describedby={helpId} disabled={blocked}
           className="absolute inset-0 w-full opacity-0" onChange={event => { const files = Array.from(event.target.files || []); event.target.value = ''; void choose(files) }} />
       </label>
-      {kind === 'datasheet' && onApplySuggestions && <>
-        {visible.length > 1 && <label className="min-w-0 max-w-full text-sm font-medium">{text('datasheetToAnalyse')}
-          <select aria-label={text('datasheetToAnalyse')} value={selected?.id || ''} disabled={blocked} onChange={event => setSelectedId(event.target.value)} className="mt-1 block min-h-11 w-full max-w-full rounded-lg border bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white">
+      {onApplySuggestions && <>
+        {visible.length > 1 && <label className="min-w-0 max-w-full text-sm font-medium">{text(kind === 'photo' ? 'photoToAnalyse' : 'datasheetToAnalyse')}
+          <select aria-label={text(kind === 'photo' ? 'photoToAnalyse' : 'datasheetToAnalyse')} value={selected?.id || ''} disabled={blocked} onChange={event => setSelectedId(event.target.value)} className="mt-1 block min-h-11 w-full max-w-full rounded-lg border bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white">
             {visible.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}
           </select>
         </label>}
         <Button type="button" icon={ScanLine} variant="tealOutline" disabled={blocked || !selected}
-          aria-label={selected ? `${text('analyseDatasheet')}: ${selected.name}` : text('analyseDatasheet')}
-          onClick={() => { if (selected) void extract(selected) }}>{text(extracting ? 'analysingDatasheet' : 'analyseDatasheet')}</Button>
+          aria-label={selected ? `${text(kind === 'photo' ? 'analysePhoto' : 'analyseDatasheet')}: ${selected.name}` : text(kind === 'photo' ? 'analysePhoto' : 'analyseDatasheet')}
+          onClick={() => { if (selected) void extract(selected) }}>{text(kind === 'photo' ? extracting ? 'analysingPhoto' : 'analysePhoto' : extracting ? 'analysingDatasheet' : 'analyseDatasheet')}</Button>
       </>}
     </div>
     <p className="text-xs text-gray-600 dark:text-gray-300">{text('filesSaveHelp')}</p>
@@ -96,7 +97,7 @@ export default function QuickAddPendingEvidence({ kind, items, onChange, disable
       <p className={`text-xs ${item.error ? 'text-red-700 dark:text-red-300' : 'text-gray-600 dark:text-gray-300'}`}>{text(item.error ? 'filesRetryHelp' : 'filesPending')}</p>
       {suggestions?.id === item.id && <div className="my-3 space-y-2 rounded-lg bg-teal-50 p-3 text-sm text-teal-950 dark:bg-teal-950 dark:text-teal-50">
         <p role="status" className="font-semibold">{text('suggestionsReady')}</p>
-        <p>{text('datasheetSuggestionsReview')}</p>
+        <p>{text(kind === 'photo' ? 'suggestionsReview' : 'datasheetSuggestionsReview')}</p>
         {suggestions.values.name && <p className="break-words">{text('suggestedName')}: {suggestions.values.name}</p>}
         {suggestions.values.description && <p>{suggestions.values.description}</p>}
         <dl>{ALLERGEN_LIST.map(allergen => {

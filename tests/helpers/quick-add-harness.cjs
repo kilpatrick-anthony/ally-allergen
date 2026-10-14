@@ -120,6 +120,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
   mocks['@/lib/server/quick-add-photos'] = load('lib/server/quick-add-photos.ts')
   mocks['@/lib/server/quick-add-datasheets'] = load('lib/server/quick-add-datasheets.ts')
   mocks['@/lib/server/ai-gateway'] = load('lib/server/ai-gateway.ts')
+  mocks['@/lib/server/quick-add-photo-extraction'] = load('lib/server/quick-add-photo-extraction.ts')
   mocks['@/lib/server/quick-add-datasheet-extraction'] = load('lib/server/quick-add-datasheet-extraction.ts')
   mocks['@/lib/server/product-barcode'] = load('lib/server/product-barcode.ts')
   return {
@@ -131,6 +132,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
     datasheetEvidence: load('app/api/quick-add-datasheet-evidence/[datasheetId]/route.ts'),
     stagedDatasheetExtract: load('app/api/quick-add-datasheets/extract/route.ts'),
     datasheetExtract: load('app/api/quick-add-drafts/[id]/datasheets/[datasheetId]/extract/route.ts'),
+    stagedPhotoExtract: load('app/api/quick-add-photos/extract/route.ts'),
     photoExtract: load('app/api/quick-add-drafts/[id]/photos/[photoId]/extract/route.ts'),
     productBarcode: load('app/api/product-barcode/route.ts'),
     photoHelpers: mocks['@/lib/server/quick-add-photos'], datasheetHelpers: mocks['@/lib/server/quick-add-datasheets'], photos, datasheets, objects, failures, hooks, gatewayRequests,

@@ -164,6 +164,7 @@ const { setup, uuid } = require('../tests/helpers/quick-add-harness.cjs');
   await dialog.getByRole('img',{name:`${q.labelPhoto} 2`,exact:true}).waitFor();
   await dialog.getByText(q.photoSaved,{exact:true}).nth(1).waitFor();
   assert.equal(backend.photos.filter(p=>p.state==='ready').length,2);
+  await dialog.getByLabel(q.photoToAnalyse,{exact:true}).selectOption({label:`${q.labelPhoto} 1`});
   await dialog.getByRole('button',{name:`${q.analysePhoto} 1`,exact:true}).click();
   await dialog.getByText(q.suggestionsReady,{exact:true}).waitFor();
   await dialog.getByRole('button',{name:q.applySuggestions,exact:true}).click();

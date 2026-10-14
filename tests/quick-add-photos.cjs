@@ -153,3 +153,49 @@ test('photo extraction requires draft access and returns review-only sanitised s
   s.rows[0].status = 'ready_for_review'
   assert.equal((await s.photoExtract.POST(extractionRequest, route())).status, 409)
 })
+
+
+test('staged photo scanning authenticates and normalizes evidence without creating a draft or storing files', async () => {
+  const bytes = await fixture()
+  const s = setup()
+  const result = await s.stagedPhotoExtract.POST(new Request('https://test/extract', { method: 'POST', body: bytes, headers: { 'x-vercel-oidc-token': 'fixture-token' } }))
+  assert.equal(result.status, 200)
+  assert.equal(result.headers['Cache-Control'], 'private, no-store')
+  assert.equal(result.body.suggestions.name, 'AI Bakery Bread')
+  assert.equal(result.body.suggestions.allergen_warnings.milk, undefined)
+  assert.equal(s.rows.length, 0); assert.equal(s.photos.length, 0); assert.equal(s.objects.size, 0); assert.equal(s.writes.length, 0)
+  const request = JSON.parse(s.gatewayRequests[0].options.body)
+  assert.equal(request.reasoning_effort, 'low')
+  const image = request.messages[0].content[1].image_url.url
+  assert.match(image, /^data:image\/jpeg;base64,/)
+  const metadata = await sharp(Buffer.from(image.split(',')[1], 'base64')).metadata()
+  assert.equal(metadata.format, 'jpeg')
+  assert.equal(metadata.exif, undefined)
+})
+
+test('staged photo scanning rejects expired sessions, removed roles, oversized and disguised images before inference', async () => {
+  const bytes = await fixture()
+  const request = (data = bytes, headers = {}) => new Request('https://test/extract', { method: 'POST', body: data, headers: { 'x-vercel-oidc-token': 'fixture-token', ...headers } })
+  for (const [options, status] of [[{ token: null }, 401], [{ token: 'expired' }, 401], [{ role: 'removed' }, 403], [{ membership: false }, 403]]) {
+    const s = setup(options)
+    assert.equal((await s.stagedPhotoExtract.POST(request())).status, status)
+    assert.equal(s.gatewayRequests.length, 0)
+  }
+  const s = setup()
+  assert.equal((await s.stagedPhotoExtract.POST(request(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect width="20" height="20"/></svg>')))).status, 415)
+  assert.equal((await s.stagedPhotoExtract.POST(request(bytes, { 'content-length': String(5 * 1024 * 1024) }))).status, 413)
+  assert.equal((await s.stagedPhotoExtract.POST(request(bytes, { 'x-vercel-oidc-token': '' }))).status, 503)
+  assert.equal(s.gatewayRequests.length, 0)
+})
+
+test('staged photo scan failures and truncated output leave capture empty and can be retried', async () => {
+  const bytes = await fixture(), s = setup()
+  const request = () => new Request('https://test/extract', { method: 'POST', body: bytes, headers: { 'x-vercel-oidc-token': 'fixture-token' } })
+  s.failures.extraction = true
+  assert.equal((await s.stagedPhotoExtract.POST(request())).status, 502)
+  s.failures.extraction = false; s.failures.gatewayFinishReason = 'length'
+  assert.equal((await s.stagedPhotoExtract.POST(request())).status, 502)
+  assert.equal(s.rows.length, 0); assert.equal(s.objects.size, 0)
+  s.failures.gatewayFinishReason = 'stop'
+  assert.equal((await s.stagedPhotoExtract.POST(request())).status, 200)
+})

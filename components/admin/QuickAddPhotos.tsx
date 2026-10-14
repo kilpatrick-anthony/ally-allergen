@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import { X } from 'lucide-react'
+import { ScanLine, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import type { QuickAddFields } from '@/lib/quick-add'
@@ -48,6 +48,7 @@ export default function QuickAddPhotos({ draftId, disabled, offlineDraft = false
   const [error, setError] = useState('')
   const [attempt, setAttempt] = useState(0)
   const [working, setWorking] = useState(false)
+  const [selectedId, setSelectedId] = useState('')
   const [extracting, setExtracting] = useState<string | null>(null)
   const [suggestions, setSuggestions] = useState<{ photoId: string; values: LabelSuggestions } | null>(null)
   const [viewing, setViewing] = useState<{ src: string; label: string } | null>(null)
@@ -124,6 +125,7 @@ export default function QuickAddPhotos({ draftId, disabled, offlineDraft = false
           const photo: Photo = { id: crypto.randomUUID(), state: 'pending', file: prepared, preview }
           setPhotos(current => [...current, photo])
           await upload(photo)
+          setSelectedId(photo.id)
         } catch (reason) { setError(errorCode(reason)) }
       }
     } catch (reason) { setError(errorCode(reason)) }
@@ -154,39 +156,51 @@ export default function QuickAddPhotos({ draftId, disabled, offlineDraft = false
 
   async function extract(photo: Photo) {
     if (blocked || extracting) return
+    if (!navigator.onLine) { setError('scanOffline'); return }
     setExtracting(photo.id); setError(''); setSuggestions(null)
     try {
-      const response = await fetch(`${base}/${photo.id}/extract`, { method: 'POST', signal: AbortSignal.timeout(35000) })
+      const response = await fetch(`${base}/${photo.id}/extract`, { method: 'POST', signal: AbortSignal.timeout(55000) })
       const data = await response.json()
       if (!response.ok) throw new Error(data.error)
       setSuggestions({ photoId: photo.id, values: data.suggestions })
-    } catch (reason) { setError(errorCode(reason)) }
+    } catch (reason) { const code = errorCode(reason); setError(code === 'photoFailed' ? 'extractionFailed' : code) }
     finally { setExtracting(null) }
   }
 
+  const visible = photos.filter(photo => !excludeIds?.includes(photo.id))
+  const analysable = visible.filter(photo => photo.state === 'ready' && !photo.queued)
+  const selected = analysable.find(photo => photo.id === selectedId) || analysable[analysable.length - 1]
   const blocked = disabled || working || loading || loadFailed
   return <section aria-label={text('photos')} className="mt-5 space-y-3 border-t pt-4 dark:border-gray-700">
     <h3 className="font-semibold">{text('photos')} <span className="font-normal text-gray-500 dark:text-gray-300">({text('optional')})</span></h3>
     <p id={helpId} className="text-sm text-gray-600 dark:text-gray-300">{text('photoHelp')}</p>
     {loading ? <p role="status">{text('loading')}</p> : <>
-      <div className="flex flex-wrap gap-3">
-        <label className="relative rounded-lg border p-3 focus-within:ring-2 focus-within:ring-teal-600">
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="relative inline-flex min-h-11 items-center rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-teal-600">
           {text('takePhoto')}
           <input aria-label={text('takePhoto')} aria-describedby={helpId} type="file" accept="image/*" capture="environment" disabled={blocked}
             className="absolute inset-0 w-full opacity-0" onChange={event => { const files = Array.from(event.target.files || []); event.target.value = ''; void choose(files) }} />
         </label>
-        <label className="relative rounded-lg border p-3 focus-within:ring-2 focus-within:ring-teal-600">
+        <label className="relative inline-flex min-h-11 items-center rounded-lg border px-3 py-2 focus-within:ring-2 focus-within:ring-teal-600">
           {text('choosePhotos')}
           <input ref={chooser} aria-label={text('choosePhotos')} aria-describedby={helpId} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple disabled={blocked}
             className="absolute inset-0 w-full opacity-0" onChange={event => { const files = Array.from(event.target.files || []); event.target.value = ''; void choose(files) }} />
         </label>
+        {analysable.length > 1 && <label className="min-w-0 max-w-full text-sm font-medium">{text('photoToAnalyse')}
+          <select aria-label={text('photoToAnalyse')} value={selected?.id || ''} disabled={blocked || !!extracting} onChange={event => setSelectedId(event.target.value)} className="mt-1 block min-h-11 w-full max-w-full rounded-lg border bg-white p-2 text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white">
+            {analysable.map(photo => <option key={photo.id} value={photo.id}>{text('labelPhoto')} {visible.indexOf(photo) + 1}</option>)}
+          </select>
+        </label>}
+        <Button type="button" icon={ScanLine} variant="tealOutline" disabled={blocked || !!extracting || !selected}
+          aria-label={selected ? `${text('analysePhoto')} ${visible.indexOf(selected) + 1}` : text('analysePhoto')}
+          onClick={() => { if (selected) void extract(selected) }}>{text(extracting ? 'analysingPhoto' : 'analysePhoto')}</Button>
       </div>
       {working && <p role="status">{text('photoWorking')}</p>}
       {error && <div role="alert"><p className="text-sm text-red-700 dark:text-red-300">{text(error)}</p>
         {loadFailed && <Button type="button" variant="tealOutline" disabled={working} onClick={() => setAttempt(value => value + 1)}>{text('retry')}</Button>}
       </div>}
       <ul className="grid grid-cols-2 gap-3">
-        {photos.filter(photo => !excludeIds?.includes(photo.id)).map((photo, index) => <li key={photo.id} className="min-w-0 rounded-lg border p-2">
+        {visible.map((photo, index) => <li key={photo.id} className="min-w-0 rounded-lg border p-2">
           {photo.preview || photo.state === 'ready' ? <button type="button" className="w-full rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600" onClick={() => setViewing({ src: photo.preview || `${base}/${photo.id}`, label: `${text('labelPhoto')} ${index + 1}` })} aria-label={`${text('openPhoto')} ${index + 1}`}>
             {/* Private API image: do not route evidence through Next's image cache. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -196,7 +210,6 @@ export default function QuickAddPhotos({ draftId, disabled, offlineDraft = false
           {photo.error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{text(photo.error)}</p>}
           <div className="mt-2 flex flex-wrap gap-2">
             {photo.file && photo.state !== 'ready' && !photo.queued && <Button type="button" variant="tealOutline" disabled={blocked} aria-label={`${text('retry')}: ${text('labelPhoto')} ${index + 1}`} onClick={() => void act(photo, false)}>{text('retry')}</Button>}
-            {photo.state === 'ready' && !photo.queued && <Button type="button" variant="tealOutline" disabled={blocked || !!extracting} aria-label={`${text('analysePhoto')} ${index + 1}`} onClick={() => void extract(photo)}>{extracting === photo.id ? text('analysingPhoto') : text('analysePhoto')}</Button>}
             <Button type="button" variant="ghost" disabled={blocked || !!extracting} aria-label={`${text('removePhoto')} ${index + 1}`} onClick={() => void act(photo, true)}>{text('removePhoto')}</Button>
           </div>
           {suggestions?.photoId === photo.id && <div className="mt-3 rounded-lg bg-teal-50 p-3 text-sm text-teal-950 dark:bg-teal-950 dark:text-teal-50">

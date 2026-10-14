@@ -25,6 +25,7 @@ export default function QuickAddDatasheets({ draftId, disabled, excludeIds, onAc
 
   async function extract(item: Datasheet) {
     if (blocked || extracting) return
+    if (!navigator.onLine) { setError('scanOffline'); return }
     setExtracting(item.id); onActivity?.(true); setError(''); setSuggestions(null)
     try {
       const response = await fetch(`${base}/${item.id}/extract`, { method: 'POST', signal: AbortSignal.timeout(55000) })
