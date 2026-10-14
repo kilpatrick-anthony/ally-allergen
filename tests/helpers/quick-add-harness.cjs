@@ -85,7 +85,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
   const mocks = {
     'next/headers': { cookies: async () => ({ get: () => token ? { value: token } : undefined }) },
     'next/server': { NextResponse: TestResponse },
-    sharp: { default: require('sharp') }, 'node:crypto': require('node:crypto'), 'node:util': require('node:util'),
+    sharp: { default: require('sharp') }, mammoth: require('mammoth'), 'node:crypto': require('node:crypto'), 'node:util': require('node:util'),
     '@/lib/auth': { verifySessionToken: async () => { if (token !== 'valid') throw new Error('Invalid token'); return { userId: actor, role: 'owner' } } },
     '@/lib/supabase/server': { createServiceClient: () => db }, zod: { z },
   }
@@ -114,6 +114,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
   mocks['@/lib/allergen-ai'] = load('lib/allergen-ai.ts')
   mocks['@/lib/quick-add-review'] = load('lib/quick-add-review.ts')
   mocks['@/lib/server/quick-add'] = load('lib/server/quick-add.ts')
+  mocks['@/lib/server/quick-add-suggestions'] = load('lib/server/quick-add-suggestions.ts')
   mocks['@/lib/server/quick-add-notifications'] = { notifyQuickAddReviewers: async () => {}, retryQuickAddReviewEmails: async () => {}, dismissQuickAddReviewNotifications: async () => {} }
   mocks['@/lib/server/quick-add-photos'] = load('lib/server/quick-add-photos.ts')
   mocks['@/lib/server/quick-add-datasheets'] = load('lib/server/quick-add-datasheets.ts')
@@ -126,6 +127,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
     datasheetCollection: load('app/api/quick-add-drafts/[id]/datasheets/route.ts'),
     datasheetItem: load('app/api/quick-add-drafts/[id]/datasheets/[datasheetId]/route.ts'),
     datasheetEvidence: load('app/api/quick-add-datasheet-evidence/[datasheetId]/route.ts'),
+    datasheetExtract: load('app/api/quick-add-drafts/[id]/datasheets/[datasheetId]/extract/route.ts'),
     photoExtract: load('app/api/quick-add-drafts/[id]/photos/[photoId]/extract/route.ts'),
     productBarcode: load('app/api/product-barcode/route.ts'),
     photoHelpers: mocks['@/lib/server/quick-add-photos'], datasheetHelpers: mocks['@/lib/server/quick-add-datasheets'], photos, datasheets, objects, failures, hooks, gatewayRequests,

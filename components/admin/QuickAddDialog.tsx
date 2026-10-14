@@ -74,6 +74,8 @@ export default function QuickAddDialog({ onClose, page = false, draftId, initial
     setPhotoBusy(working); setUnsavedPhotos(unsaved)
   }, [])
   const applySuggestions = useCallback((suggestions: LabelSuggestions) => {
+    setAssessmentOpen(true)
+    setSuccess(false)
     setFields(current => {
       const additions = [suggestions.description, ...suggestions.notes].filter(Boolean).join('\n')
       return { ...current, name: suggestions.name || current.name,
@@ -343,9 +345,9 @@ export default function QuickAddDialog({ onClose, page = false, draftId, initial
                   {record && <QuickAddPhotos key={`${record.id}-${attachmentRevision}`} draftId={record.id} excludeIds={pendingEvidence.map(item => item.id)} disabled={saving || datasheetBusy || stagingBusy || reviewBusy || record.status !== 'draft'} onActivity={photoActivity} onApplySuggestions={applySuggestions} />}
                 </div>
                 <div id={`${formId}-capture-datasheet`} hidden={captureMethod !== 'datasheet'}>
-                  <p className="mb-3 text-sm text-gray-600 dark:text-gray-300">{text('datasheetEvidenceOnly')}</p>
+                  <p className="mb-3 text-sm text-gray-600 dark:text-gray-300">{text('datasheetAnalysisHelp')}</p>
                   {(!record || pendingEvidence.some(item => item.kind === 'datasheet')) && <QuickAddPendingEvidence kind="datasheet" items={pendingEvidence} onChange={changePendingEvidence} disabled={saving || photoBusy || datasheetBusy || stagingBusy || reviewBusy} onBusy={setStagingBusy} />}
-                  {record && <QuickAddDatasheets key={`${record.id}-${attachmentRevision}`} draftId={record.id} excludeIds={pendingEvidence.map(item => item.id)} disabled={saving || photoBusy || stagingBusy || reviewBusy || record.status !== 'draft'} onActivity={setDatasheetBusy} />}
+                  {record && <QuickAddDatasheets key={`${record.id}-${attachmentRevision}`} draftId={record.id} excludeIds={pendingEvidence.map(item => item.id)} disabled={saving || photoBusy || stagingBusy || reviewBusy || record.status !== 'draft'} onActivity={setDatasheetBusy} onApplySuggestions={applySuggestions} />}
                 </div>
                 <a href={`#${formId}-item-details`} className="inline-flex min-h-11 items-center text-sm font-semibold text-teal-800 underline dark:text-teal-200">{text('captureContinue')}</a>
               </div>}
@@ -405,7 +407,7 @@ export default function QuickAddDialog({ onClose, page = false, draftId, initial
           {fields.kind !== 'prepared_item' && !loading && !loadError && record && (success || record.status !== 'draft') && <div className="mt-5 rounded-xl border-2 border-teal-200 bg-teal-50/40 p-3 dark:border-teal-800 dark:bg-teal-950/20">
             {success && <p className="font-semibold text-teal-900 dark:text-teal-100">{text('optionalEvidence')}</p>}
             <QuickAddPhotos key={record.id} draftId={record.id} disabled={saving || datasheetBusy || reviewBusy || record.status !== 'draft'} onActivity={photoActivity} onApplySuggestions={applySuggestions} />
-            <QuickAddDatasheets key={`datasheet-${record.id}`} draftId={record.id} disabled={saving || photoBusy || reviewBusy || record.status !== 'draft'} onActivity={setDatasheetBusy} />
+            <QuickAddDatasheets key={`datasheet-${record.id}`} draftId={record.id} disabled={saving || photoBusy || reviewBusy || record.status !== 'draft'} onActivity={setDatasheetBusy} onApplySuggestions={applySuggestions} />
           </div>}
           {!loading && !loadError && record && <QuickAddReview key={`review-${record.id}`} draft={record} suppliers={suppliers} sites={sites} ingredients={ingredients}
             categories={record.kind === 'ingredient' ? ingredientCategories : productCategories}

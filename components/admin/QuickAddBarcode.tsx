@@ -110,7 +110,7 @@ export default function QuickAddBarcode({ disabled, onApply, expanded = false }:
   const working = busy || readingPhoto
 
   return <details open={expanded || undefined} className="rounded-lg border border-gray-300 p-3 dark:border-gray-600">
-    <summary className="min-h-11 cursor-pointer py-2 font-semibold">{text('barcodeTitle')} <span className="font-normal text-gray-500 dark:text-gray-300">({text('optional')})</span></summary>
+    <summary className="min-h-11 cursor-pointer py-2 font-semibold">{text('barcodeTitle')}</summary>
     <p id={helpId} className="mb-3 text-sm text-gray-700 dark:text-gray-200">{text('barcodeHelp')}</p>
     <div className="flex flex-wrap items-end gap-2">
       <label className="min-w-48 flex-1 text-sm font-medium">{text('barcode')}

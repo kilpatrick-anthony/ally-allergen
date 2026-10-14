@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { sanitiseWarnings } from '@/lib/allergen-ai'
+import { cleanQuickAddSuggestions } from '@/lib/server/quick-add-suggestions'
 import { AiGatewayError, analyseWithAiGateway, hasAiGatewayCredentials } from '@/lib/server/ai-gateway'
 import { getDraft, quickAddContext, quickAddFailure, QuickAddError, requireDraftId } from '@/lib/server/quick-add'
 import { PHOTO_BUCKET, photoPath, photoQuery, type DraftPhoto } from '@/lib/server/quick-add-photos'
@@ -7,7 +7,6 @@ import { PHOTO_BUCKET, photoPath, photoQuery, type DraftPhoto } from '@/lib/serv
 export const runtime = 'nodejs'
 type Route = { params: Promise<{ id: string; photoId: string }> }
 
-const DIETARY_TAGS = new Set(['Vegan', 'Vegetarian', 'Gluten-Free', 'Dairy Free', 'Halal', 'Kosher', 'Organic', 'Fair Trade', 'Lactose-Free', 'Coeliac-Friendly'])
 const PROMPT = `Analyse this food label for a human reviewer. Return JSON only:
 {"name":"","description":"","allergen_warnings":{},"dietary_tags":[],"notes":[]}
 
@@ -39,15 +38,6 @@ export async function POST(request: NextRequest, route: Route) {
       if (error instanceof AiGatewayError && error.status === 503) throw new QuickAddError('extractionUnavailable', 503)
       throw new QuickAddError('extractionFailed', error instanceof AiGatewayError && error.status === 429 ? 429 : 502)
     }
-    let parsed: Record<string, unknown>
-    try { parsed = JSON.parse(content) } catch { throw new QuickAddError('extractionFailed', 502) }
-    const warnings = sanitiseWarnings((parsed.allergen_warnings || {}) as Record<string, string>)
-    const allergen_warnings = Object.fromEntries(Object.entries(warnings).filter(([, level]) => level !== 'none'))
-    const clean = (value: unknown, limit: number) => typeof value === 'string' ? value.trim().slice(0, limit) : ''
-    return NextResponse.json({ suggestions: {
-      name: clean(parsed.name, 200), supplier_name: '', description: clean(parsed.description, 500),
-      allergen_warnings, dietary_tags: Array.isArray(parsed.dietary_tags) ? [...new Set(parsed.dietary_tags.map(String).filter(tag => DIETARY_TAGS.has(tag)))] : [],
-      notes: Array.isArray(parsed.notes) ? parsed.notes.map(note => clean(note, 300)).filter(Boolean).slice(0, 5) : [],
-    } }, { headers: { 'Cache-Control': 'private, no-store' } })
+    return NextResponse.json({ suggestions: cleanQuickAddSuggestions(content) }, { headers: { 'Cache-Control': 'private, no-store' } })
   } catch (error) { return quickAddFailure(error) }
 }

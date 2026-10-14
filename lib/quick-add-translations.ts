@@ -1,4 +1,5 @@
 import { quickAddCaptureTranslations } from '@/lib/quick-add-capture-translations'
+import { quickAddDatasheetTranslations } from '@/lib/quick-add-datasheet-translations'
 // Keep stored assessment values language-independent; these strings are display labels only.
 const en = {
   ...quickAddCaptureTranslations.en,
@@ -1031,4 +1032,8 @@ const de = {
   "level_cross_contamination": "Hergestellt in einem Betrieb, der dieses Allergen verarbeitet"
 } satisfies QuickAddStrings
 
-export const quickAddTranslations = { en, ga, pt, fr, es, de }
+export const quickAddTranslations = {
+  en: { ...en, ...quickAddDatasheetTranslations.en }, ga: { ...ga, ...quickAddDatasheetTranslations.ga },
+  pt: { ...pt, ...quickAddDatasheetTranslations.pt }, fr: { ...fr, ...quickAddDatasheetTranslations.fr },
+  es: { ...es, ...quickAddDatasheetTranslations.es }, de: { ...de, ...quickAddDatasheetTranslations.de },
+}

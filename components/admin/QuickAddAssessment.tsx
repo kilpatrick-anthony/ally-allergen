@@ -11,7 +11,7 @@ type Props = { warnings: Warnings; tags: readonly string[]; onWarnings: (value: 
 export default function QuickAddAssessment({ warnings, tags, onWarnings, onTags }: Props) {
   const { t } = useTranslation()
   const text = (key: string) => t(`quickAdd.${key}`)
-  const control = 'mt-1 w-full rounded-lg border border-gray-300 bg-white p-3 text-base text-gray-900 dark:border-gray-600 dark:bg-gray-900 dark:text-white'
+  const control = 'mt-1 w-full rounded-lg border p-3 text-base text-gray-900 dark:text-white'
   const validLevel = (value: unknown): value is typeof reviewLevels[number] => typeof value === 'string' && reviewLevels.includes(value as typeof reviewLevels[number])
   const groupDetails = [{ key: 'cereals_gluten', entries: GLUTEN_TYPES }, { key: 'nuts', entries: TREE_NUT_TYPES }]
   const missingMain = ALLERGEN_LIST.filter(allergen => !validLevel(warnings[allergen.id])).map(allergen => allergen.id)
@@ -32,7 +32,7 @@ export default function QuickAddAssessment({ warnings, tags, onWarnings, onTags 
 
   function levelSelect(label: string, value: string, change: (value: string) => void, needsReview = false) {
     return <label className={`block text-sm font-medium ${needsReview ? 'text-red-700 dark:text-red-300' : ''}`}>{label}
-      <select aria-label={label} aria-invalid={needsReview || undefined} className={`${control} ${needsReview ? 'border-red-600 ring-2 ring-red-200 dark:border-red-400 dark:ring-red-900' : ''}`} value={value} onChange={event => change(event.target.value)}>
+      <select aria-label={label} aria-invalid={needsReview || undefined} className={`${control} ${needsReview ? 'border-red-600 bg-white ring-2 ring-red-200 dark:border-red-400 dark:bg-gray-900 dark:ring-red-900' : validLevel(value) && value !== 'none' ? 'border-emerald-600 bg-emerald-50 ring-2 ring-emerald-100 dark:border-emerald-400 dark:bg-emerald-950 dark:ring-emerald-900' : 'border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-900'}`} value={value} onChange={event => change(event.target.value)}>
         <option value="">{text('unknown')}</option>
         {reviewLevels.map(level => <option key={level} value={level}>{text(`level_${level}`)}</option>)}
       </select>
@@ -80,6 +80,7 @@ export default function QuickAddAssessment({ warnings, tags, onWarnings, onTags 
     </fieldset>
     <div className="space-y-3">
       <h4 className="font-semibold">{text('allergenReview')}</h4>
+      <p className="text-xs text-gray-600 dark:text-gray-300">{text('allergenHighlightHelp')}</p>
       {outstanding > 0 && <div className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-950 dark:border-red-700 dark:bg-red-950 dark:text-red-100">
         <p className="font-semibold">{text('allergenOutstanding').replace('{count}', String(outstanding))}</p>
         <p className="mt-1">{text('markUnansweredHelp')}</p>

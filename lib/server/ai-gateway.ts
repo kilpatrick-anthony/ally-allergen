@@ -12,6 +12,7 @@ export class AiGatewayError extends Error {
 type AnalyseOptions = {
   prompt: string
   image?: { mimeType: string; base64: string }
+  file?: { filename: string; mimeType: 'application/pdf'; base64: string }
   maxOutputTokens?: number
   request?: Request
 }
@@ -26,11 +27,16 @@ export function hasAiGatewayCredentials(request?: Request) {
   return Boolean(gatewayToken(request))
 }
 
-export async function analyseWithAiGateway({ prompt, image, maxOutputTokens = 1000, request }: AnalyseOptions) {
+export async function analyseWithAiGateway({ prompt, image, file, maxOutputTokens = 1000, request }: AnalyseOptions) {
   const token = gatewayToken(request)
   if (!token) throw new AiGatewayError(503, 'AI Gateway is not configured')
 
-  const content = image
+  const content = file
+    ? [
+        { type: 'text', text: prompt },
+        { type: 'file', file: { filename: file.filename, file_data: `data:${file.mimeType};base64,${file.base64}` } },
+      ]
+    : image
     ? [
         { type: 'text', text: prompt },
         { type: 'image_url', image_url: { url: `data:${image.mimeType};base64,${image.base64}` } },

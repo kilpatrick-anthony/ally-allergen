@@ -4,11 +4,13 @@ import { useEffect, useId, useState } from 'react'
 import { FileText, Trash2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { useTranslation } from '@/lib/hooks/useTranslation'
+import type { LabelSuggestions } from './QuickAddPhotos'
+import { ALLERGEN_LIST } from '@/types/allergen'
 
 type Datasheet = { id: string; file_name: string; content_type: string; byte_size: number; state: string; created_at: string }
-type Props = { draftId: string; disabled?: boolean; excludeIds?: string[]; onActivity?: (busy: boolean) => void }
+type Props = { draftId: string; disabled?: boolean; excludeIds?: string[]; onActivity?: (busy: boolean) => void; onApplySuggestions?: (suggestions: LabelSuggestions) => void }
 
-export default function QuickAddDatasheets({ draftId, disabled, excludeIds, onActivity }: Props) {
+export default function QuickAddDatasheets({ draftId, disabled, excludeIds, onActivity, onApplySuggestions }: Props) {
   const { t } = useTranslation()
   const text = (key: string) => t(`quickAdd.${key}`)
   const helpId = useId()
@@ -17,6 +19,22 @@ export default function QuickAddDatasheets({ draftId, disabled, excludeIds, onAc
   const [loading, setLoading] = useState(true)
   const [working, setWorking] = useState(false)
   const [error, setError] = useState('')
+  const [extracting, setExtracting] = useState<string | null>(null)
+  const [suggestions, setSuggestions] = useState<{ id: string; values: LabelSuggestions } | null>(null)
+
+  async function extract(item: Datasheet) {
+    if (blocked || extracting) return
+    setExtracting(item.id); onActivity?.(true); setError(''); setSuggestions(null)
+    try {
+      const response = await fetch(`${base}/${item.id}/extract`, { method: 'POST', signal: AbortSignal.timeout(55000) })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error)
+      setSuggestions({ id: item.id, values: result.suggestions })
+    } catch (reason) {
+      const code = reason instanceof Error ? reason.message : ''
+      setError(['datasheetLegacyWord', 'datasheetUnreadable', 'extractionUnavailable', 'extractionFailed', 'editConflict', 'notFound', 'forbidden', 'unauthorized'].includes(code) ? code : 'extractionFailed')
+    } finally { setExtracting(null); onActivity?.(false) }
+  }
 
   useEffect(() => {
     const controller = new AbortController()
@@ -30,7 +48,7 @@ export default function QuickAddDatasheets({ draftId, disabled, excludeIds, onAc
   }, [base])
 
   async function upload(file: File) {
-    if (disabled || working) return
+    if (disabled || working || extracting) return
     setWorking(true); onActivity?.(true); setError('')
     try {
       const id = crypto.randomUUID()
@@ -45,17 +63,18 @@ export default function QuickAddDatasheets({ draftId, disabled, excludeIds, onAc
   }
 
   async function remove(item: Datasheet) {
-    if (disabled || working || !window.confirm(`${text('removeDatasheetConfirm')}\n\n${item.file_name}`)) return
+    if (disabled || working || extracting || !window.confirm(`${text('removeDatasheetConfirm')}\n\n${item.file_name}`)) return
     setWorking(true); onActivity?.(true); setError('')
     try {
       const response = await fetch(`${base}/${item.id}`, { method: 'DELETE', signal: AbortSignal.timeout(20000) })
       if (!response.ok) throw new Error((await response.json()).error)
       setItems(current => current.filter(current => current.id !== item.id))
+      if (suggestions?.id === item.id) setSuggestions(null)
     } catch { setError('datasheetRemoveFailed') }
     finally { setWorking(false); onActivity?.(false) }
   }
 
-  const blocked = disabled || working || loading
+  const blocked = disabled || working || loading || !!extracting
   return <section aria-label={text('datasheets')} className="mt-5 space-y-3 border-t pt-4 dark:border-gray-700">
     <h3 className="font-semibold">{text('datasheets')} <span className="font-normal text-gray-500 dark:text-gray-300">({text('optional')})</span></h3>
     <p id={helpId} className="text-sm text-gray-600 dark:text-gray-300">{text('datasheetHelp')}</p>
@@ -66,9 +85,26 @@ export default function QuickAddDatasheets({ draftId, disabled, excludeIds, onAc
       </label>
       {working && <p role="status">{text('datasheetWorking')}</p>}
       {error && <p role="alert" className="text-sm text-red-700 dark:text-red-300">{text(error)}</p>}
-      {!!items.length && <ul className="space-y-2">{items.filter(item => !excludeIds?.includes(item.id)).map(item => <li key={item.id} className="flex items-center justify-between gap-3 rounded-lg border p-3">
+      {!!items.length && <ul className="space-y-2">{items.filter(item => !excludeIds?.includes(item.id)).map(item => <li key={item.id} className="space-y-3 rounded-lg border p-3">
+        <div className="flex items-center justify-between gap-3">
         <a href={`${base}/${item.id}`} className="flex min-w-0 items-center gap-2 font-medium text-teal-700 underline dark:text-teal-300"><FileText className="h-5 w-5 shrink-0" aria-hidden="true" /><span className="truncate">{item.file_name}</span></a>
         <Button type="button" variant="ghost" size="sm" icon={Trash2} disabled={blocked} aria-label={`${text('removeDatasheet')}: ${item.file_name}`} onClick={() => void remove(item)}>{text('removeDatasheet')}</Button>
+        </div>
+        {onApplySuggestions && item.state === 'ready' && <Button type="button" variant="tealOutline" disabled={blocked} aria-label={`${text('analyseDatasheet')}: ${item.file_name}`} onClick={() => void extract(item)}>{text(extracting === item.id ? 'analysingDatasheet' : 'analyseDatasheet')}</Button>}
+        {suggestions?.id === item.id && <div className="space-y-2 rounded-lg bg-teal-50 p-3 text-sm text-teal-950 dark:bg-teal-950 dark:text-teal-50">
+          <p role="status" className="font-semibold">{text('suggestionsReady')}</p><p>{text('datasheetSuggestionsReview')}</p>
+          {suggestions.values.name && <p className="break-words"><span className="font-medium">{text('suggestedName')}: </span>{suggestions.values.name}</p>}
+          <dl className="space-y-1">{ALLERGEN_LIST.map(allergen => {
+            const level = suggestions.values.allergen_warnings[allergen.id]
+            return typeof level === 'string' && level !== 'none' ? <div key={allergen.id}><dt className="inline font-medium">{t(`allergenNames.${allergen.id}`)}: </dt><dd className="inline">{text(`level_${level}`)}</dd></div> : null
+          })}</dl>
+          {suggestions.values.dietary_tags.length > 0 && <p>{text('dietaryTags')}: {suggestions.values.dietary_tags.map(tag => text(`tag_${tag}`)).join(', ')}</p>}
+          {suggestions.values.notes.length > 0 && <ul className="list-disc pl-4">{suggestions.values.notes.map((note, index) => <li key={index}>{note}</li>)}</ul>}
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="teal" disabled={disabled} onClick={() => { onApplySuggestions?.(suggestions.values); setSuggestions(null) }}>{text('applySuggestions')}</Button>
+            <Button type="button" variant="ghost" onClick={() => setSuggestions(null)}>{text('dismissSuggestions')}</Button>
+          </div>
+        </div>}
       </li>)}</ul>}
     </>}
   </section>
