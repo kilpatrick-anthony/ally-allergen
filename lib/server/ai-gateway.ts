@@ -14,6 +14,7 @@ type AnalyseOptions = {
   image?: { mimeType: string; base64: string }
   file?: { filename: string; mimeType: 'application/pdf'; base64: string }
   maxOutputTokens?: number
+  reasoningEffort?: 'low'
   request?: Request
 }
 
@@ -27,7 +28,7 @@ export function hasAiGatewayCredentials(request?: Request) {
   return Boolean(gatewayToken(request))
 }
 
-export async function analyseWithAiGateway({ prompt, image, file, maxOutputTokens = 1000, request }: AnalyseOptions) {
+export async function analyseWithAiGateway({ prompt, image, file, maxOutputTokens = 1000, reasoningEffort, request }: AnalyseOptions) {
   const token = gatewayToken(request)
   if (!token) throw new AiGatewayError(503, 'AI Gateway is not configured')
 
@@ -55,11 +56,14 @@ export async function analyseWithAiGateway({ prompt, image, file, maxOutputToken
       messages: [{ role: 'user', content }],
       response_format: { type: 'json_object' },
       max_tokens: maxOutputTokens,
+      ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {}),
     }),
   })
 
   if (!response.ok) throw new AiGatewayError(response.status)
   const payload = await response.json()
+  // Even a parseable prefix must not be treated as a complete assessment.
+  if (payload?.choices?.[0]?.finish_reason === 'length') throw new AiGatewayError(502, 'AI Gateway response was truncated')
   const result = payload?.choices?.[0]?.message?.content
   if (typeof result !== 'string' || !result.trim()) throw new AiGatewayError(502, 'AI Gateway returned an empty response')
   return result

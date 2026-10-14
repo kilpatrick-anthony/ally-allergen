@@ -31,8 +31,8 @@ export default function QuickAddDatasheets({ draftId, disabled, excludeIds, onAc
       if (!response.ok) throw new Error(result.error)
       setSuggestions({ id: item.id, values: result.suggestions })
     } catch (reason) {
-      const code = reason instanceof Error ? reason.message : ''
-      setError(['datasheetLegacyWord', 'datasheetUnreadable', 'extractionUnavailable', 'extractionFailed', 'editConflict', 'notFound', 'forbidden', 'unauthorized'].includes(code) ? code : 'extractionFailed')
+      const code = reason instanceof Error ? reason.name === 'TimeoutError' ? 'datasheetExtractionTimeout' : reason.message : ''
+      setError(['datasheetLegacyWord', 'datasheetUnreadable', 'datasheetExtractionUnavailable', 'datasheetExtractionFailed', 'datasheetExtractionBusy', 'datasheetExtractionTimeout', 'editConflict', 'notFound', 'forbidden', 'unauthorized'].includes(code) ? code : 'datasheetExtractionFailed')
     } finally { setExtracting(null); onActivity?.(false) }
   }
 

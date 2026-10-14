@@ -543,3 +543,90 @@ rolled-back test transaction. Application deployment is in progress.
   The live version endpoint matched, unauthenticated Quick Add/category requests
   returned 401 and the initial production error-log scan was clean.
 - Authenticated live-storage and physical-phone delivery trials remain open.
+
+### Datasheet scanning and manual attachments — 14 October 2026
+
+- Selected datasheets now offer Suggest details from datasheet before the first
+  draft save. Analysis requires the live Quick Add session/business role, validates
+  the file and creates no draft or stored attachment. Suggestions require explicit
+  review and application; saving attaches the original selected file.
+- Staged and saved datasheets share the PDF/.docx reader and suggestion filters.
+  PDFs retain their visual pages for scanned documents and allergen tables. Older
+  .doc files remain evidence-only and require PDF/.docx conversion for analysis.
+- Manual ingredient and bought-in product entry now shows optional photo and
+  datasheet upload controls before saving, including existing upload retry handling.
+  Updated the scan instructions in all six languages.
+- TypeScript, production build and 45 relevant API, evidence, extraction and offline
+  tests passed. Browser capture/save/retry flows passed at 390px and 1440px in
+  all six languages with fixture storage and AI responses. The reported
+  real-document extraction failure still needs the
+  original file/type and failure details to reproduce. These changes are local
+  and have not been deployed.
+
+### PDF scan failure follow-up — 14 October 2026
+
+- The delivery trial used a PDF and received the generic photo-analysis failure
+  message. This identifies a failed scan, not incorrect extracted suggestions.
+- Datasheet scans now use document-specific messages and distinguish service
+  unavailability, rate limits and timeouts from other scan failures. Both staged
+  and saved PDFs keep their evidence and entered details available for retry.
+- Added server diagnostics containing only model, provider status, timeout flag,
+  content type, byte size and invalid-response flag; document contents, filenames,
+  credentials and provider bodies are excluded.
+- The PDF request format matches the current Gateway file-input documentation.
+  The recent runtime-log window returned no matching entries. The original PDF
+  is still needed to reproduce the cause; no PDF-reading fix is claimed here.
+- Follow-up verification passed: 21 focused API/evidence tests, TypeScript,
+  production build, matching error keys in all six language catalogs, and English
+  and German browser flows at phone/desktop widths. Browser checks simulate a
+  busy scan service, verify unchanged fields/no draft creation, then retry and
+  explicitly apply suggestions. Changes remain local and undeployed.
+
+### Supplied Strawberry Granola PDF — 14 October 2026
+
+- Inspected `public/440134 - Strawberry Granola.pdf`: three readable pages;
+  the exact bytes pass the datasheet upload validator and local PDF text reader.
+- A live Gateway request with the application's PDF payload returned HTTP 401
+  (`authentication_error`) before analysis. This workspace's saved OIDC token
+  expired on 17 August 2026. No AI result was produced.
+- Refreshing into a temporary environment file could not finish because the
+  local Vercel CLI is signed out; its login flow was cancelled. No credentials,
+  project settings, deployed files or draft records were changed by this check.
+- Need CLI sign-in to refresh local credentials and complete the exact-document
+  live scan. The user confirmed the reported failure was on allyjen.ie; the
+  local 401 therefore does not establish the production cause. The live version
+  matches commit `1b3f07d`, whose scan-error path discards the provider detail.
+  Deployment-scoped logs returned no matching entries. A temporary local probe
+  is prepared to run the supplied PDF through the real extraction helper once
+  local Gateway authentication is available.
+
+### Reproduced and fixed PDF response truncation — 14 October 2026
+
+- After CLI sign-in, refreshed the ignored local OIDC token while preserving
+  the other local environment values. Removed the temporary environment download.
+- Reproduced the supplied Strawberry Granola PDF failure against the real Gateway:
+  HTTP 200 with `finish_reason: length`; 1,728 reasoning tokens consumed nearly
+  all of the 1,800-token allowance, leaving JSON cut off inside the description.
+  This is separate from the earlier expired-local-credential problem.
+- Datasheet requests now specify low reasoning effort and a 4,096-token total
+  allowance. The shared Gateway reader also rejects `finish_reason: length`, even
+  if a truncated response happens to contain parseable JSON. Other callers retain
+  their existing reasoning configuration.
+- The exact same PDF then completed successfully (`finish_reason: stop`) through
+  the real extraction helper, returning the Strawberry Granola product name,
+  explicitly declared oats and a source-conflict note for human review. No draft,
+  inventory item or stored evidence was created by the live probe.
+- All 47 relevant API, photo, datasheet, extraction and offline tests passed,
+  including rejection of parseable-but-truncated output and a successful retry.
+  Production build and its TypeScript checks also passed.
+  Application changes remain local and have not been deployed to allyjen.ie.
+
+### Git handoff — 14 October 2026
+
+- Quick Add scan-before-save, optional manual-entry evidence and the verified PDF
+  truncation fix are grouped on `agent/quick-add-datasheet-scan` for GitHub.
+- Verification: the exact supplied PDF completed a real scan; 47 relevant tests,
+  production build and TypeScript checks passed. Earlier browser verification
+  covered phone/desktop widths and all six languages, with failure/retry coverage.
+- The supplied PDF, unrelated screenshot and local Supabase CLI metadata are
+  excluded from this commit. No production deployment was run as part of this work.

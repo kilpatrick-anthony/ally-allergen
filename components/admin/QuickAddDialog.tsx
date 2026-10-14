@@ -337,16 +337,18 @@ export default function QuickAddDialog({ onClose, page = false, draftId, initial
                   </button>)}
                 </div>
               </section>}
-              <div className={`grid min-w-0 gap-5 ${fields.kind !== 'prepared_item' && captureMethod && captureMethod !== 'manual' ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]' : ''}`}>
-              {fields.kind !== 'prepared_item' && <div hidden={!captureMethod || captureMethod === 'manual'} className="min-w-0 self-start space-y-4 rounded-xl border border-teal-200 bg-teal-50/30 p-4 dark:border-teal-800 dark:bg-teal-950/20 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto">
+              <div className={`grid min-w-0 gap-5 ${fields.kind !== 'prepared_item' && captureMethod ? 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]' : ''}`}>
+              {fields.kind !== 'prepared_item' && <div hidden={!captureMethod} className="min-w-0 self-start space-y-4 rounded-xl border border-teal-200 bg-teal-50/30 p-4 dark:border-teal-800 dark:bg-teal-950/20 lg:sticky lg:top-6 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto">
                 <div id={`${formId}-capture-barcode`} hidden={captureMethod !== 'barcode'}><QuickAddBarcode expanded={captureMethod === 'barcode'} disabled={saving || evidenceBusy || reviewBusy || (!!record && record.status !== 'draft')} onApply={applyBarcodeSuggestions} /></div>
-                <div id={`${formId}-capture-photo`} hidden={captureMethod !== 'photo'}>
+                <div id={`${formId}-capture-photo`} hidden={captureMethod !== 'photo' && captureMethod !== 'manual'}>
+                  {!record && <h3 className="mb-3 font-semibold">{text('photos')} ({text('optional')})</h3>}
                   {(!record || pendingEvidence.some(item => item.kind === 'photo')) && <QuickAddPendingEvidence kind="photo" items={pendingEvidence} onChange={changePendingEvidence} disabled={saving || photoBusy || datasheetBusy || stagingBusy || reviewBusy} onBusy={setStagingBusy} />}
                   {record && <QuickAddPhotos key={`${record.id}-${attachmentRevision}`} draftId={record.id} excludeIds={pendingEvidence.map(item => item.id)} disabled={saving || datasheetBusy || stagingBusy || reviewBusy || record.status !== 'draft'} onActivity={photoActivity} onApplySuggestions={applySuggestions} />}
                 </div>
-                <div id={`${formId}-capture-datasheet`} hidden={captureMethod !== 'datasheet'}>
+                <div id={`${formId}-capture-datasheet`} hidden={captureMethod !== 'datasheet' && captureMethod !== 'manual'}>
+                  {!record && <h3 className="mb-3 font-semibold">{text('datasheets')} ({text('optional')})</h3>}
                   <p className="mb-3 text-sm text-gray-600 dark:text-gray-300">{text('datasheetAnalysisHelp')}</p>
-                  {(!record || pendingEvidence.some(item => item.kind === 'datasheet')) && <QuickAddPendingEvidence kind="datasheet" items={pendingEvidence} onChange={changePendingEvidence} disabled={saving || photoBusy || datasheetBusy || stagingBusy || reviewBusy} onBusy={setStagingBusy} />}
+                  {(!record || pendingEvidence.some(item => item.kind === 'datasheet')) && <QuickAddPendingEvidence onApplySuggestions={applySuggestions} kind="datasheet" items={pendingEvidence} onChange={changePendingEvidence} disabled={saving || photoBusy || datasheetBusy || stagingBusy || reviewBusy} onBusy={setStagingBusy} />}
                   {record && <QuickAddDatasheets key={`${record.id}-${attachmentRevision}`} draftId={record.id} excludeIds={pendingEvidence.map(item => item.id)} disabled={saving || photoBusy || stagingBusy || reviewBusy || record.status !== 'draft'} onActivity={setDatasheetBusy} onApplySuggestions={applySuggestions} />}
                 </div>
                 <a href={`#${formId}-item-details`} className="inline-flex min-h-11 items-center text-sm font-semibold text-teal-800 underline dark:text-teal-200">{text('captureContinue')}</a>

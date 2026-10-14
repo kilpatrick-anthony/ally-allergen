@@ -103,7 +103,8 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
             labels_tags: ['en:vegetarian', 'en:fair-trade'], last_modified_t: 1_700_000_000,
           } }) }
         }
-        return failures.extraction ? { ok: false, status: 502 } : { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: JSON.stringify({ name: 'AI Bakery Bread', supplier_name: 'AI Bakery', description: 'Sliced bread', allergen_warnings: { cereals_gluten: 'contains', cereals_gluten_levels: { wheat: 'contains', rye: 'invented' }, nuts: 'may_contain', nuts_levels: { hazelnuts: 'may_contain' }, milk: 'none', fish: 'invented' }, dietary_tags: ['Vegan', 'Invented'], notes: ['Check the small print'] }) } }] }) }
+        if (failures.gatewayStatus) return { ok: false, status: failures.gatewayStatus }
+        return failures.extraction ? { ok: false, status: 502 } : { ok: true, status: 200, json: async () => ({ choices: [{ finish_reason: failures.gatewayFinishReason || 'stop', message: { content: JSON.stringify({ name: 'AI Bakery Bread', supplier_name: 'AI Bakery', description: 'Sliced bread', allergen_warnings: { cereals_gluten: 'contains', cereals_gluten_levels: { wheat: 'contains', rye: 'invented' }, nuts: 'may_contain', nuts_levels: { hazelnuts: 'may_contain' }, milk: 'none', fish: 'invented' }, dietary_tags: ['Vegan', 'Invented'], notes: ['Check the small print'] }) } }] }) }
       },
       require: name => { assert.ok(mocks[name], name); return mocks[name] }, console: { error() {} } }
     vm.createContext(context)
@@ -119,6 +120,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
   mocks['@/lib/server/quick-add-photos'] = load('lib/server/quick-add-photos.ts')
   mocks['@/lib/server/quick-add-datasheets'] = load('lib/server/quick-add-datasheets.ts')
   mocks['@/lib/server/ai-gateway'] = load('lib/server/ai-gateway.ts')
+  mocks['@/lib/server/quick-add-datasheet-extraction'] = load('lib/server/quick-add-datasheet-extraction.ts')
   mocks['@/lib/server/product-barcode'] = load('lib/server/product-barcode.ts')
   return {
     db, history, setRole: value => { role = value }, transition: load('app/api/quick-add-drafts/[id]/transition/route.ts'), evidence: load('app/api/quick-add-evidence/[photoId]/route.ts'),
@@ -127,6 +129,7 @@ function setup({ role = 'staff', token = 'valid', membership = true, dbFailure =
     datasheetCollection: load('app/api/quick-add-drafts/[id]/datasheets/route.ts'),
     datasheetItem: load('app/api/quick-add-drafts/[id]/datasheets/[datasheetId]/route.ts'),
     datasheetEvidence: load('app/api/quick-add-datasheet-evidence/[datasheetId]/route.ts'),
+    stagedDatasheetExtract: load('app/api/quick-add-datasheets/extract/route.ts'),
     datasheetExtract: load('app/api/quick-add-drafts/[id]/datasheets/[datasheetId]/extract/route.ts'),
     photoExtract: load('app/api/quick-add-drafts/[id]/photos/[photoId]/extract/route.ts'),
     productBarcode: load('app/api/product-barcode/route.ts'),
