@@ -1,7 +1,7 @@
 // components/admin/DatasheetUploader.tsx
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { Upload, X, FileText, AlertCircle, Check, Loader2, Calendar } from 'lucide-react'
 import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
@@ -22,6 +22,7 @@ interface DatasheetFile {
 }
 
 interface DatasheetUploaderProps {
+  disabled?: boolean
   entityType: 'ingredient' | 'menu_item'
   entityId?: string
   existingDatasheets?: DatasheetFile[]
@@ -33,6 +34,7 @@ interface DatasheetUploaderProps {
 
 export default function DatasheetUploader({
   entityType,
+  disabled = false,
   entityId,
   existingDatasheets,
   onFilesChange,
@@ -41,6 +43,7 @@ export default function DatasheetUploader({
   compact = false
 }: DatasheetUploaderProps) {
   const { t } = useTranslation()
+  const uploaderId = useId()
   const [files, setFiles] = useState<DatasheetFile[]>(existingDatasheets ?? [])
   const [dragActive, setDragActive] = useState(false)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
@@ -139,6 +142,7 @@ export default function DatasheetUploader({
   }
 
   const handleFiles = (fileList: FileList) => {
+    if (disabled) return
     const newFiles: DatasheetFile[] = Array.from(fileList).map(file => ({
       file,
       file_name: file.name,
@@ -156,6 +160,7 @@ export default function DatasheetUploader({
     const updatedFiles = files.filter((_, i) => i !== index)
     setFiles(updatedFiles)
     onFilesChange?.(updatedFiles)
+    setEditingIndex(null)
   }
 
   const updateFileMetadata = (index: number, metadata: Partial<DatasheetFile>) => {
@@ -164,7 +169,6 @@ export default function DatasheetUploader({
     )
     setFiles(updatedFiles)
     onFilesChange?.(updatedFiles)
-    setEditingIndex(null)
   }
 
   const formatFileSize = (bytes: number) => {
@@ -204,7 +208,7 @@ export default function DatasheetUploader({
             variant="secondary"
             size="sm"
             onClick={() => fileInputRef.current?.click()}
-            disabled={files.length >= maxFiles}
+            disabled={disabled || files.length >= maxFiles}
           >
             <Upload className="h-4 w-4 mr-1" />
             {t('ingredientsPortal.addFiles')}
@@ -213,6 +217,8 @@ export default function DatasheetUploader({
         
         <input
           ref={fileInputRef}
+          aria-label={t('admin.productDatasheets')}
+          disabled={disabled}
           type="file"
           multiple
           accept={acceptedTypes.join(',')}
@@ -284,6 +290,8 @@ export default function DatasheetUploader({
       >
         <input
           ref={fileInputRef}
+          aria-label={t('admin.productDatasheets')}
+          disabled={disabled}
           type="file"
           multiple
           accept={acceptedTypes.join(',')}
@@ -304,7 +312,7 @@ export default function DatasheetUploader({
             variant="secondary"
             size="md"
             onClick={() => fileInputRef.current?.click()}
-            disabled={files.length >= maxFiles}
+            disabled={disabled || files.length >= maxFiles}
           >
             <Upload className="h-4 w-4 mr-2" />
             {t('ingredientsPortal.selectFiles')}
@@ -335,14 +343,14 @@ export default function DatasheetUploader({
               className="border border-gray-200 rounded-lg bg-white hover:shadow-sm transition-shadow"
             >
               <div className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3 flex-1 min-w-0">
+                <div className="flex flex-col items-start justify-between gap-3 sm:flex-row">
+                  <div className="flex w-full min-w-0 flex-1 items-start space-x-3">
                     <span className="text-2xl mt-1">{getFileIcon(file.file_type)}</span>
                     <div className="min-w-0 flex-1">
                       <h5 className="text-sm font-medium text-gray-900 truncate">
                         {file.file_name}
                       </h5>
-                      <div className="flex items-center space-x-3 mt-1">
+                      <div className="mt-1 flex flex-wrap items-center gap-2">
                         <span className="text-xs text-gray-500">
                           {formatFileSize(file.file_size)}
                         </span>
@@ -363,13 +371,14 @@ export default function DatasheetUploader({
 
                       {/* Additional metadata when editing */}
                       {editingIndex === index && (
-                        <div className="mt-3 space-y-3 pt-3 border-t border-gray-100">
+                        <div id={`${uploaderId}-${index}-metadata`} className="mt-3 space-y-3 pt-3 border-t border-gray-100">
                           <div className="grid grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                              <label htmlFor={`${uploaderId}-${index}-supplier`} className="block text-xs font-medium text-gray-700 mb-1">
                                 {t('ingredientsPortal.supplierName')}
                               </label>
                               <select
+                                aria-label={t('ingredientsPortal.selectExistingSupplier') + ': ' + file.file_name}
                                 defaultValue=""
                                 onChange={(e) => {
                                   if (e.target.value) {
@@ -389,6 +398,8 @@ export default function DatasheetUploader({
                               </select>
                               <input
                                 type="text"
+                                id={`${uploaderId}-${index}-supplier`}
+                                maxLength={200}
                                 value={file.supplier_name || ''}
                                 onChange={(e) => updateFileMetadata(index, { supplier_name: e.target.value })}
                                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -396,11 +407,13 @@ export default function DatasheetUploader({
                               />
                             </div>
                             <div>
-                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                              <label htmlFor={`${uploaderId}-${index}-version`} className="block text-xs font-medium text-gray-700 mb-1">
                                 {t('corePortal.version')}
                               </label>
                               <input
                                 type="text"
+                                id={`${uploaderId}-${index}-version`}
+                                maxLength={100}
                                 value={file.version || ''}
                                 onChange={(e) => updateFileMetadata(index, { version: e.target.value })}
                                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -409,23 +422,26 @@ export default function DatasheetUploader({
                             </div>
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                            <label htmlFor={`${uploaderId}-${index}-review`} className="block text-xs font-medium text-gray-700 mb-1">
                               <Calendar className="inline h-3 w-3 mr-1" />
                               {t('ingredientsPortal.nextReviewDate')}
                             </label>
                             <input
                               type="date"
-                              value={file.next_review_date || ''}
+                              id={`${uploaderId}-${index}-review`}
+                                value={file.next_review_date || ''}
                               onChange={(e) => updateFileMetadata(index, { next_review_date: e.target.value })}
                               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                            <label htmlFor={`${uploaderId}-${index}-notes`} className="block text-xs font-medium text-gray-700 mb-1">
                               {t('ingredientsPortal.notes')}
                             </label>
                             <textarea
-                              value={file.notes || ''}
+                              id={`${uploaderId}-${index}-notes`}
+                                maxLength={10000}
+                                value={file.notes || ''}
                               onChange={(e) => updateFileMetadata(index, { notes: e.target.value })}
                               rows={2}
                               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -437,12 +453,13 @@ export default function DatasheetUploader({
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-2 ml-3">
+                  <div className="flex shrink-0 items-center gap-2 self-end sm:ml-3 sm:self-start">
                     {editingIndex === index ? (
                       <Button
                         type="button"
                         variant="primary"
                         size="sm"
+                        aria-label={t('regularForms.finishDocumentDetails', { name: file.file_name })}
                         onClick={() => setEditingIndex(null)}
                       >
                         <Check className="h-4 w-4" />
@@ -452,6 +469,9 @@ export default function DatasheetUploader({
                         type="button"
                         variant="secondary"
                         size="sm"
+                        aria-label={t('regularForms.editDocumentDetails', { name: file.file_name })}
+                        aria-expanded={false}
+                        aria-controls={`${uploaderId}-${index}-metadata`}
                         onClick={() => setEditingIndex(index)}
                       >
                         {t('ingredientsPortal.editInfo')}

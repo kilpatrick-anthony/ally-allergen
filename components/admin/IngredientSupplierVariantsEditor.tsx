@@ -172,7 +172,7 @@ export default function IngredientSupplierVariantsEditor({
         <div className="flex min-w-0 gap-2">
           <input
             type="text"
-            value={newSupplier}
+            data-unsaved-draft value={newSupplier}
             onChange={(event) => setNewSupplier(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') {
@@ -291,6 +291,7 @@ export default function IngredientSupplierVariantsEditor({
                             <button
                               type="button"
                               key={name}
+                              aria-pressed={selected}
                               onClick={() => {
                                 const current = profile?.certifications || []
                                 updateProfile(profileKey, {
@@ -299,8 +300,8 @@ export default function IngredientSupplierVariantsEditor({
                                   last_reviewed_at: null,
                                 })
                               }}
-                              className={`flex min-h-11 items-center gap-2 rounded-lg border-2 px-3 py-2 text-left text-xs font-semibold transition ${selected ? 'shadow-sm' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300'}`}
-                              style={selected ? { borderColor: color, backgroundColor: `${color}15`, color } : undefined}
+                              className={`flex min-h-11 items-center gap-2 rounded-lg border-2 px-3 py-2 text-left text-xs font-semibold transition ${selected ? 'bg-teal-50 text-gray-900 shadow-sm dark:bg-teal-950 dark:text-gray-100' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300'}`}
+                              style={selected ? { borderColor: color } : undefined}
                             >
                               <Icon className="h-4 w-4 shrink-0" />
                               <span>{name}</span>
@@ -327,6 +328,7 @@ export default function IngredientSupplierVariantsEditor({
                     <div className="flex justify-end">
                       <Button
                         type="button"
+                        data-review-profile={!isAssessed || undefined}
                         disabled={!isAllergenAssessmentComplete(profile?.allergen_warnings)}
                         variant={isAssessed ? 'outline' : 'primary'}
                         icon={<CheckCircle2 className="h-4 w-4" />}

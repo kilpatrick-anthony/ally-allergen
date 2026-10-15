@@ -221,7 +221,7 @@ export default function AllergenWarningSelector({
 
                 {/* Warning Level Selector */}
                 <div className="w-full sm:w-56 sm:flex-shrink-0">
-                  <select
+                  <select data-allergen-input
                     aria-label={t(`allergenNames.${allergen.id}`)}
                     value={currentLevel}
                     onChange={(e) => handleLevelChange(allergen.id, e.target.value as AllergenLevel)}

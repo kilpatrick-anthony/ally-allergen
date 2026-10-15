@@ -4,6 +4,9 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useRegularFormValidation } from '@/lib/hooks/useRegularFormValidation'
+import { FormValidationSummary, FormFieldError } from '@/components/admin/FormValidationSummary'
+import { useUnsavedChanges } from '@/lib/hooks/useUnsavedChanges'
 import { RegularFormActions } from '@/components/admin/RegularFormActions'
 import { useListReturnPath } from '@/lib/hooks/useListReturnPath'
 import { useNotification } from '@/lib/hooks/useNotification'
@@ -35,6 +38,7 @@ export default function NewIngredientPage() {
   const router = useRouter()
   const { returnTo } = useListReturnPath('/admin/ingredients')
   const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState('')
   const saveLock = useRef(false)
   const [itemSaver] = useState(() => createRegularItemSaver('ingredient'))
   const [uploadRetryNeeded, setUploadRetryNeeded] = useState(false)
@@ -159,16 +163,17 @@ export default function NewIngredientPage() {
     { name: 'Coeliac-Friendly', color: '#ec4899', icon: ShieldCheck }
   ]
 
+  const { confirmLeave, markSaved } = useUnsavedChanges({ ingredient, supplierProfiles, datasheets, customCertInput }, true)
+
+  const { issues, reportIssues, fieldProps } = useRegularFormValidation({ ingredient, supplierProfiles })
+
   const handleSave = async () => {
     if (saveLock.current) return
-    if (!ingredient.name.trim()) {
-      showNotification(t('ingredientsPortal.nameRequired'), 'error')
-      return
-    }
-    if (!isIngredientAssessmentComplete(ingredient.allergen_warnings, supplierProfiles)) {
-      showNotification(t('regularAssessment.completeIngredient'), 'error')
-      return
-    }
+    setFormError('')
+    if (reportIssues([
+      ...(!ingredient.name.trim() ? [{ field: 'regular-name', message: t('ingredientsPortal.nameRequired') }] : []),
+      ...(!isIngredientAssessmentComplete(ingredient.allergen_warnings, supplierProfiles) ? [{ field: 'regular-assessment', message: t('regularAssessment.completeIngredient') }] : []),
+    ])) return
     saveLock.current = true
     setSaving(true)
     try {
@@ -179,11 +184,12 @@ export default function NewIngredientPage() {
       )
       setUploadRetryNeeded(false)
       showNotification(t('ingredientsPortal.ingredientSaved'), 'success')
-      router.push(returnTo)
+      markSaved(); router.push(returnTo)
     } catch (error: unknown) {
       if (error instanceof AttachmentUploadError) {
         setUploadRetryNeeded(true)
       } else {
+        setFormError(error instanceof RegularItemSaveError && ['completeIngredient', 'completeMenu'].includes(error.code || '') ? t(`regularAssessment.${error.code}`) : error instanceof Error ? error.message : t('regularItemSave.saveFailed'))
         showNotification(error instanceof RegularItemSaveError && ['completeIngredient', 'completeMenu'].includes(error.code || '') ? t(`regularAssessment.${error.code}`) : error instanceof Error ? error.message : t('regularItemSave.saveFailed'), 'error')
       }
       saveLock.current = false
@@ -272,6 +278,7 @@ export default function NewIngredientPage() {
           </div>
         </div>
 
+        <FormValidationSummary issues={issues} />
         {/* Basic Information */}
         <Card className="mb-8">
           <div className="p-6 border-b">
@@ -283,26 +290,29 @@ export default function NewIngredientPage() {
             <div className="space-y-6">
               {/* Ingredient Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="regular-name" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('ingredientsPortal.ingredientName')} *
                 </label>
                 <input
                   type="text"
+                  {...fieldProps('regular-name')}
                   value={ingredient.name}
                   onChange={(e) => setIngredient({...ingredient, name: e.target.value})}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                   placeholder={t('ingredientsPortal.newNamePlaceholder')}
                 />
+                <FormFieldError field="regular-name" issues={issues} />
               </div>
 
               {/* Category */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="regular-category" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('admin.category')}
                 </label>
                 <input
                   type="text"
                   list="ingredient-categories"
+                  {...fieldProps('regular-category')}
                   value={ingredient.category}
                   onChange={(e) => setIngredient({...ingredient, category: e.target.value})}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
@@ -317,16 +327,18 @@ export default function NewIngredientPage() {
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="regular-description" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('ingredientsPortal.descriptionOptional')}
                 </label>
                 <textarea
+                  {...fieldProps('regular-description')}
                   value={ingredient.description}
                   onChange={(e) => setIngredient({...ingredient, description: e.target.value})}
                   rows={3}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                   placeholder={t('ingredientsPortal.newDescriptionPlaceholder')}
                 />
+                <FormFieldError field="regular-description" issues={issues} />
               </div>
 
             </div>
@@ -334,6 +346,7 @@ export default function NewIngredientPage() {
         </Card>
 
         <Card className="mb-8 p-6">
+          <div id="regular-assessment" tabIndex={-1}>
           <IngredientSupplierVariantsEditor
             suppliers={ingredient.suppliers}
             profiles={supplierProfiles}
@@ -344,6 +357,7 @@ export default function NewIngredientPage() {
             certificationOptions={certificationOptions}
             onChange={handleSupplierVariantsChange}
           />
+          </div>
         </Card>
 
         {/* Product Datasheets */}
@@ -381,19 +395,19 @@ export default function NewIngredientPage() {
                     return (
                       <button
                         key={cert.name}
+                        aria-pressed={isSelected}
                         type="button"
                         onClick={() => toggleCertification(cert.name)}
                         className={`
                           relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
                           ${isSelected
-                            ? 'border-opacity-100 shadow-md'
-                            : 'border-gray-200 hover:border-gray-300 hover:shadow-lg'
+                            ? 'border-opacity-100 bg-teal-50 shadow-md dark:bg-teal-950'
+                            : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-lg dark:bg-gray-800'
                           }
                           group cursor-pointer
                         `}
                         style={{
-                          borderColor: isSelected ? cert.color : undefined,
-                          backgroundColor: isSelected ? `${cert.color}15` : '#fff'
+                          borderColor: isSelected ? cert.color : undefined
                         }}
                       >
                         <div
@@ -411,7 +425,7 @@ export default function NewIngredientPage() {
                         </div>
                         <span
                           className={`text-xs font-semibold text-center transition-colors ${
-                            isSelected ? 'text-gray-900' : 'text-gray-700'
+                            isSelected ? 'text-gray-900 dark:text-gray-100' : 'text-gray-700 dark:text-gray-200'
                           }`}
                         >
                           {cert.name}
@@ -433,6 +447,7 @@ export default function NewIngredientPage() {
                   {/* Custom Certification Card */}
                   <button
                     type="button"
+                    aria-expanded={showCustomCertInput}
                     onClick={() => setShowCustomCertInput(!showCustomCertInput)}
                     className={`
                       relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
@@ -554,7 +569,7 @@ export default function NewIngredientPage() {
         {!isIngredientAssessmentComplete(ingredient.allergen_warnings, supplierProfiles) && (
           <p className="mb-4 text-sm font-medium text-amber-900 dark:text-amber-200">{t('regularAssessment.completeIngredient')}</p>
         )}
-        <RegularFormActions onSave={handleSave} onCancel={() => router.push(returnTo)} saveLabel={saving ? t('admin.savingMenuItem') : uploadRetryNeeded ? t('regularItemSave.saveAndRetry') : t('ingredientsPortal.saveIngredient')} disabled={!ingredient.name.trim()} busy={saving} />
+        <RegularFormActions feedback={formError || (uploadRetryNeeded ? t('regularItemSave.documentsPending') : '') ? { text: formError || (uploadRetryNeeded ? t('regularItemSave.documentsPending') : ''), error: true } : undefined} onSave={handleSave} onCancel={() => { if (confirmLeave()) router.push(returnTo) }} saveLabel={saving ? t('admin.savingMenuItem') : uploadRetryNeeded ? t('regularItemSave.saveAndRetry') : t('ingredientsPortal.saveIngredient')} disabled={false} busy={saving} />
       </div>
     </Container>
 

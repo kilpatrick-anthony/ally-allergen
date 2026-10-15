@@ -29,6 +29,14 @@ remain isolated. Authenticated production-data journeys and physical-device
 acceptance remain outstanding. The per-batch local-only notes below record the
 state when each implementation was first completed.
 
+Current release includes batches six to eight: unsaved-change protection and
+validation, edit-document retry/metadata recovery, and keyboard/selection-state
+accessibility improvements. The development notes below retain their original
+local-only status. Final checks passed: 67 regression tests, the production build,
+and twelve browser fixture runs across all six languages at phone/desktop widths,
+including picker keyboard checks in both themes. These checks do not establish
+authenticated production-data, physical-device or screen-reader acceptance.
+
 ### Priority 1 — assessment, saving and functional correctness
 
 - [x] Start new allergen assessments as not yet assessed; distinguish unanswered values from explicitly confirmed not present, including supplier profiles and the menu summary. Released; production acceptance checks pending.
@@ -51,8 +59,11 @@ state when each implementation was first completed.
 - [x] Establish ingredient supplier variants before dietary/allergen entry, so adding a supplier does not unexpectedly replace the visible assessment controls. Released; production acceptance checks pending.
 - [x] Move optional menu colour/image controls below ingredients and assessment, with consistent dietary controls and explanations for calculated values in creation and editing. Released; production acceptance checks pending.
 - [x] Keep Save and Cancel accessible on long forms at phone and desktop widths using a consistent action area. Released; production acceptance checks pending.
-- [ ] Warn before leaving unsaved changes; retain entered details on errors and align save progress, success and partial-failure feedback.
-- [ ] Associate labels with fields, name icon-only actions, show inline validation with useful focus behaviour, and explain incomplete requirements consistently across supported languages and themes.
+- [x] Warn before leaving unsaved regular forms through Cancel, navigation links, browser Back and refresh/close; allow completed saves/deletes to navigate without a discard warning. Implemented locally; release pending.
+- [x] Retain entered details on validation/server errors; show linked error summaries, inline name/description errors and persistent save-error feedback with useful focus. Implemented locally; release pending.
+- [x] Finish edit-form document partial-failure recovery: distinguish the saved record from failed document operations, retain confirmed uploads/deletions/metadata updates and retry only outstanding work while the editor stays open. Implemented locally; release pending.
+- [x] Give both regular menu ingredient pickers accessible dialog/search names, keyboard focus containment, Escape handling and focus return; expose certification and prepared/bought-in selection states. Implemented locally; release pending.
+- [ ] Finish the remaining field-label/icon-action audit (including custom certification entry and review-frequency controls) and verify incomplete requirements across supported languages/themes; retain physical-device and screen-reader acceptance as separate checks.
 
 ### Priority 3 — verify the changes, then resume the existing trials
 
@@ -208,6 +219,96 @@ state when each implementation was first completed.
 - Local implementation only: no migrations, production writes or deployment.
   Unsaved-change warnings, broader inline validation/focus improvements and physical
   device/deployed-route checks remain outstanding.
+
+### Sixth implementation — unsaved changes and validation (15 October 2026)
+
+- Regular ingredient/menu creation and editing compare editable values against the
+  initially loaded form. Unsaved navigation prompts cover Cancel, Back/navigation
+  links and normal browser Back. Refresh/close use the browser's native warning;
+  browser/OS support still needs the physical-device checks below. Completed
+  saves and deletes bypass the warning; failed saves keep entered values protected.
+- Changes include supplier profiles, assessments, recipe ingredients, dietary
+  claims, appearance, review settings and queued documents. Reverting values
+  restores the clean state. Attachment comparison ignores uploader display flags
+  and treats add/remove reverts as unchanged, while file replacement, removal and
+  supplier/review/note edits remain unsaved. Unsubmitted supplier/custom-claim text
+  also triggers the leave warning.
+- Saving with missing information shows a linked error summary and focuses the
+  relevant field, recipe selector, supplier/label requirement or assessment. Name,
+  description and category labels are associated with their controls; required
+  name/description errors also appear inline with aria-invalid/describedby.
+  Save remains available so users can ask the form what is missing.
+- Ingredient server errors and new-item document retry messages stay beside the
+  persistent actions. Menu edit upload/delete progress and save success use
+  translated messages. New warning/validation/progress copy covers all six
+  supported languages. Broader field/icon naming and edit-document retry work
+  remain explicitly unchecked above.
+- Verification: 52 focused tests and the production build passed. Fixture browser
+  checks cover all four forms at 390px/1440px in English/German: pristine/reverted
+  forms, declined Cancel/Back/refresh, accepted browser Back, simulated save
+  failures, retained values and name-error focus. Assessment/save regressions
+  remain covered with simulated APIs and service workers blocked. A focused phone
+  run additionally verifies description/supplier error focus and that successful
+  saves do not trigger discard prompts.
+- This batch is local only. No deployment, database migration or production-data
+  write was performed. The earlier production release remains unchanged.
+
+### Seventh implementation — edit documents and accessible controls (15 October 2026)
+
+- Both regular edit forms share document recovery. They update the existing record
+  first, then settle all document operations before allowing retry. Successful
+  uploads, deletions and metadata updates are remembered for the open editor;
+  retry updates the same record with the latest fields and repeats only unfinished
+  document operations. Repeated saves share one attempt, and inputs/drop handling
+  are disabled while it runs.
+- Partial failure explicitly says the item was saved and offers Save and retry
+  documents. Metadata changes to an uploaded file use its returned document ID;
+  removing it after a partial save deletes that ID instead of uploading again.
+  An acknowledged upload with unreadable JSON is never repeated. If its missing
+  reference prevents later edits/removal, the form asks for refresh/review.
+- Existing document supplier/version/review-date/notes edits now persist through a
+  metadata-only PATCH. The endpoint verifies the JWT and current owner/manager/
+  staff membership, scopes updates to the business and document ID, validates
+  fields/dates and rejects file/ownership/association changes. No schema change.
+- Metadata editing stays open through typing. Fields have associated labels and
+  labelled edit/finish controls. Phone document rows stack controls beneath the
+  filename so longer translations do not squeeze the filename to zero width.
+  Menu recipe removal, image/colour/icon selection and picker Close controls have
+  accessible names or selection state; Close and Done remain distinct.
+- Verification: 67 focused tests and the production build passed. New API tests
+  cover permissions, cross-business/missing rows and invalid metadata; recovery
+  tests cover mixed failures, retries, overlapping saves, slower operations,
+  acknowledged upload references and unchanged metadata. Browser fixtures test
+  both editors at 390px/1440px in English/German with mixed upload/delete/PATCH
+  failures, latest record fields, retained typing and no repeated successful
+  document operations. Regular assessment/save regressions remain included.
+- Recovery bookkeeping remains local to the open editor. Refresh/reopening and
+  uploads whose successful server write was never acknowledged still need server
+  reconciliation/idempotency work. No production-data writes or deployment were
+  performed; this batch and batch six remain local.
+
+### Eighth implementation — keyboard access and selection states (15 October 2026)
+
+- Both regular menu forms share an ingredient picker built on the existing dialog
+  library. It names the dialog and search field, contains keyboard focus, supports
+  Escape, and returns focus to Add ingredients after closing. Existing immediate
+  recipe selection and Done behaviour are preserved.
+- Ingredient certifications (including supplier profiles) and menu supply type
+  now announce their selected state. Certification labels use readable neutral
+  text with light/dark selected backgrounds; selection keeps its coloured border.
+- Keep explicitly translated action-bar and recipe-picker trigger labels out of
+  the legacy automatic translator. Extended locale checks found it rewriting the
+  Portuguese draft action and French recipe trigger to different wording/case.
+- Browser verification covers search/no results, Tab/Shift+Tab wrap, Space to
+  select and undo, Escape/reopen, Done and focus return in both menu forms.
+- Verification passed: all 67 regression tests and the final production build.
+  Twelve browser runs cover nine journeys each in English, Irish, Portuguese,
+  French, Spanish and German at 390px/1440px; picker keyboard checks run in light
+  and dark themes. Inspected English/German phone picker screenshots. API calls
+  use isolated fixtures and service workers are blocked.
+- This batch is local only; no migration, production data write or deployment
+  was performed. Remaining field-label auditing and real screen-reader/device
+  checks stay open.
 
 ## Session 1 — Review the current system and agree the first version
 

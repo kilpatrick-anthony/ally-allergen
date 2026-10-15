@@ -44,6 +44,7 @@ export function MenuItemSupplyFields({ value, suppliers, onChange }: Props) {
       <div className="grid gap-3 sm:grid-cols-2">
         <button
           type="button"
+          aria-pressed={!packaged}
           onClick={() => onChange({ item_type: 'prepared' })}
           className={`rounded-xl border-2 p-4 text-left transition ${!packaged ? 'border-[#42b8ac] bg-[#42b8ac]/10' : 'border-gray-200 hover:border-[#42b8ac]/60 dark:border-gray-600'}`}
         >
@@ -53,6 +54,7 @@ export function MenuItemSupplyFields({ value, suppliers, onChange }: Props) {
         </button>
         <button
           type="button"
+          aria-pressed={packaged}
           onClick={() => onChange({ item_type: 'packaged_product' })}
           className={`rounded-xl border-2 p-4 text-left transition ${packaged ? 'border-[#42b8ac] bg-[#42b8ac]/10' : 'border-gray-200 hover:border-[#42b8ac]/60 dark:border-gray-600'}`}
         >
@@ -70,7 +72,7 @@ export function MenuItemSupplyFields({ value, suppliers, onChange }: Props) {
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.supplier')}
-              <select className={`${fieldClass} mt-1`} value={value.supplier_id || ''} onChange={e => onChange({ supplier_id: e.target.value || null })}>
+              <select id="regular-supplier" className={`${fieldClass} mt-1`} value={value.supplier_id || ''} onChange={e => onChange({ supplier_id: e.target.value || null })}>
                 <option value="">{t('admin.selectSupplier')}</option>
                 {suppliers.map(supplier => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}
               </select>
@@ -89,7 +91,7 @@ export function MenuItemSupplyFields({ value, suppliers, onChange }: Props) {
             <textarea rows={5} className={`${fieldClass} mt-1`} value={value.ingredient_declaration} onChange={e => onChange({ ingredient_declaration: e.target.value })} placeholder={t('admin.ingredientDeclarationPlaceholder')} />
           </label>
           <label className="flex cursor-pointer items-start gap-3 rounded-lg bg-white p-3 text-sm dark:bg-gray-800">
-            <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[#42b8ac]" checked={Boolean(value.label_verified_at)} onChange={e => onChange({ label_verified_at: e.target.checked ? new Date().toISOString() : null })} />
+            <input id="regular-label-check" type="checkbox" className="mt-0.5 h-4 w-4 accent-[#42b8ac]" checked={Boolean(value.label_verified_at)} onChange={e => onChange({ label_verified_at: e.target.checked ? new Date().toISOString() : null })} />
             <span><strong className="block text-gray-900 dark:text-white">{t('admin.labelDetailsChecked')}</strong><span className="text-xs text-gray-500 dark:text-gray-400">{t('admin.labelDetailsCheckedHelp')}</span></span>
           </label>
         </div>

@@ -1,9 +1,16 @@
 // app/admin/menu-builder/[id]/edit/page.tsx
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import { createRegularEditSaver, EditDocumentSaveError } from '@/lib/regular-edit-save'
+import { RegularItemSaveError } from '@/lib/regular-item-save'
+import { changedAttachments } from '@/lib/regular-form-state'
+import { useRegularFormValidation } from '@/lib/hooks/useRegularFormValidation'
+import { FormValidationSummary, FormFieldError } from '@/components/admin/FormValidationSummary'
+import { useUnsavedChanges } from '@/lib/hooks/useUnsavedChanges'
+import { IngredientPicker } from '@/components/admin/IngredientPicker'
 import { MenuDietaryFields } from '@/components/admin/MenuDietaryFields'
 import { RegularFormActions } from '@/components/admin/RegularFormActions'
 import { useListReturnPath } from '@/lib/hooks/useListReturnPath'
@@ -95,6 +102,9 @@ export default function EditMenuItemPage() {
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const saveLock = useRef(false)
+  const [documentRetry, setDocumentRetry] = useState(false)
+  const [editSaver] = useState(() => createRegularEditSaver('menu_item'))
   const [deleting, setDeleting] = useState(false)
   const [marking, setMarking] = useState(false)
   const [menuItem, setMenuItem] = useState<MenuItem | null>(null)
@@ -107,7 +117,6 @@ export default function EditMenuItemPage() {
   const [datasheetsTouched, setDatasheetsTouched] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
   const [saveMessage, setSaveMessage] = useState('')
-  const [ingredientSearch, setIngredientSearch] = useState('')
   const [loadingIngredientDatasheets, setLoadingIngredientDatasheets] = useState(false)
   const [compliance, setCompliance] = useState<any>(null)
   const [loadingCompliance, setLoadingCompliance] = useState(false)
@@ -295,10 +304,6 @@ export default function EditMenuItemPage() {
     })
   }
 
-  const filteredIngredients = ingredients.filter(ing =>
-    ing.name.toLowerCase().includes(ingredientSearch.toLowerCase())
-  )
-
   const handleDelete = async () => {
     if (!menuItem || !confirm(t('menuBuilderPortal.deleteNamedConfirm', { name: menuItem.name }))) {
       return
@@ -315,7 +320,7 @@ export default function EditMenuItemPage() {
         throw new Error((data.errorCode === 'completeMenu' ? t('regularAssessment.completeMenu') : data.error) || t('menuBuilderPortal.deleteFailed'))
       }
 
-      router.push(returnTo)
+      markSaved(); router.push(returnTo)
     } catch (error: any) {
       console.error('Error deleting menu item:', error)
       showNotification(error.message || t('menuBuilderPortal.deleteFailed'), 'error')
@@ -376,108 +381,42 @@ export default function EditMenuItemPage() {
     }
   }, [itemId, menuItem])
 
+  const { confirmLeave, markSaved } = useUnsavedChanges({ menuItem, datasheets: datasheetsTouched ? changedAttachments(datasheets, existingDatasheets) : null }, !loading && Boolean(menuItem))
+
+  const { issues, reportIssues, fieldProps } = useRegularFormValidation(menuItem)
+
   const handleSave = async () => {
-    if (!menuItem || !menuItem.name.trim() || (menuItem.status === 'active' && !menuItem.description.trim())) {
-      setSaveStatus('error')
-      setSaveMessage(t('regularItemSave.requiredFields'))
-      return
-    }
+    if (saveLock.current) return
+    if (!menuItem) return
+    const active = menuItem?.status === 'active'
+    const ready = isAllergenAssessmentComplete(menuItem.allergen_warnings) && (menuItem.item_type === 'prepared'
+      ? menuItem.ingredients.length > 0
+      : Boolean(menuItem.supplier_id && menuItem.ingredient_declaration.trim() && menuItem.label_verified_at))
+    if (reportIssues([
+      ...(!menuItem.name.trim() ? [{ field: 'regular-name', message: t('regularForms.nameRequired') }] : []),
+      ...(active && !menuItem.description.trim() ? [{ field: 'regular-description', message: t('regularForms.descriptionRequired') }] : []),
+      ...(active && !ready ? [{ field: menuItem.item_type === 'prepared' ? 'regular-recipe' : !menuItem.supplier_id ? 'regular-supplier' : !menuItem.ingredient_declaration.trim() ? 'regular-declaration' : !menuItem.label_verified_at ? 'regular-label-check' : 'regular-assessment', message: t('regularAssessment.completeMenu') }] : []),
+    ])) return
 
+    saveLock.current = true
+    setSaving(true)
+    setSaveStatus('saving')
+    setSaveMessage(t('admin.savingMenuItem'))
     try {
-      setSaving(true)
-      setSaveStatus('saving')
-      setSaveMessage('Saving menu item...')
-
-      const response = await fetch(`/api/menu-items/${menuItem.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(menuItem)
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error((data.errorCode === 'completeMenu' ? t('regularAssessment.completeMenu') : data.error) || 'Failed to save menu item')
-      }
-
-      const currentDatasheets = datasheetsTouched ? datasheets : existingDatasheets
-      const currentDatasheetIds = new Set(
-        currentDatasheets
-          .map((datasheet: any) => datasheet.id)
-          .filter((id: any): id is string => typeof id === 'string' && id.length > 0)
-      )
-      const removedDatasheetIds = existingDatasheets
-        .map((datasheet: any) => datasheet.id)
-        .filter((id: any): id is string => typeof id === 'string' && id.length > 0)
-        .filter((id: string) => !currentDatasheetIds.has(id))
-
-      if (removedDatasheetIds.length > 0) {
-        setSaveMessage('Deleting removed datasheets...')
-        await Promise.all(
-          removedDatasheetIds.map(async (id: string) => {
-            const deleteResponse = await fetch(`/api/datasheets/${id}`, { method: 'DELETE' })
-            if (!deleteResponse.ok) {
-              const deleteData = await deleteResponse.json()
-              throw new Error(deleteData.error || 'Failed to delete datasheet')
-            }
-          })
-        )
-      }
-
-      // Upload datasheets if any
-      if (currentDatasheets.length > 0) {
-        try {
-          setSaveMessage('Uploading datasheets...')
-          const uploadPromises = currentDatasheets
-            .filter((datasheet) => datasheet.file)
-            .map(async (datasheet) => {
-              const fileName = datasheet.file_name || datasheet.file?.name || 'datasheet'
-              const formData = new FormData()
-              formData.append('file', datasheet.file)
-              formData.append('menu_item_id', menuItem.id)
-              if (datasheet.supplier_name) formData.append('supplier_name', datasheet.supplier_name)
-              if (datasheet.version) formData.append('version', datasheet.version)
-              if (datasheet.next_review_date) formData.append('next_review_date', datasheet.next_review_date)
-              if (datasheet.notes) formData.append('notes', datasheet.notes)
-
-              const uploadResponse = await fetch('/api/upload/datasheet', {
-                method: 'POST',
-                body: formData
-              })
-
-              const uploadData = await uploadResponse.json()
-              if (!uploadResponse.ok) {
-                const errorMsg = uploadData.details
-                  ? `${uploadData.error}: ${uploadData.details}`
-                  : uploadData.error || `Failed to upload ${fileName}`
-                throw new Error(errorMsg)
-              }
-              return uploadData
-            })
-
-          await Promise.all(uploadPromises)
-          setDatasheets([])
-          setExistingDatasheets([])
-        } catch (uploadError: any) {
-          console.error('Error uploading datasheets:', uploadError)
-          setSaveStatus('error')
-          setSaveMessage(uploadError?.message || 'Failed to upload datasheets')
-          return
-        }
-      }
-
+      await editSaver.save(menuItem.id, menuItem, datasheetsTouched ? datasheets : existingDatasheets, existingDatasheets, t('regularItemSave.saveFailed'))
+      setDocumentRetry(false)
       setSaveStatus('success')
-      setSaveMessage('Menu item updated successfully!')
-
-      // Redirect after a short delay
-      setTimeout(() => {
-        router.push(returnTo)
-      }, 1000)
-    } catch (error: any) {
-      console.error('Error saving menu item:', error)
+      setSaveMessage(t('regularItemSave.saved'))
+      markSaved(); router.push(returnTo)
+    } catch (error: unknown) {
+      setDocumentRetry(error instanceof EditDocumentSaveError)
       setSaveStatus('error')
-      setSaveMessage(error?.message || 'Failed to save menu item')
+      setSaveMessage(error instanceof EditDocumentSaveError
+        ? t(error.needsReload ? 'regularForms.documentsNeedRefresh' : 'regularForms.editDocumentsPending')
+        : error instanceof RegularItemSaveError && error.code === 'completeMenu'
+          ? t('regularAssessment.completeMenu') : error instanceof Error ? error.message : t('regularItemSave.saveFailed'))
     } finally {
+      saveLock.current = false
       setSaving(false)
     }
   }
@@ -531,6 +470,7 @@ export default function EditMenuItemPage() {
   return (
     <>
       <Container>
+      <fieldset disabled={saving || deleting} className="min-w-0">
         {/* Header */}
         <div className="mb-8">
           <Link
@@ -548,32 +488,36 @@ export default function EditMenuItemPage() {
           </p>
         </div>
 
+        <FormValidationSummary issues={issues} />
         {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form Section */}
           <div className="lg:col-span-2 space-y-6">
             {/* Menu Item Name */}
             <Card className="p-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="regular-name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t('admin.menuItemName')} *
               </label>
               <input
                 type="text"
-                value={menuItem.name}
+                {...fieldProps('regular-name')}
+                  value={menuItem.name}
                 onChange={(e) => setMenuItem({ ...menuItem, name: e.target.value })}
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
+                <FormFieldError field="regular-name" issues={issues} />
             </Card>
 
             {/* Category */}
             <Card className="p-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="regular-category" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t('admin.category')}
               </label>
               <input
                 type="text"
                 list="menu-item-categories"
-                value={menuItem.category}
+                {...fieldProps('regular-category')}
+                  value={menuItem.category}
                 onChange={(e) => setMenuItem({ ...menuItem, category: e.target.value })}
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 placeholder={t('admin.categoryPlaceholder')}
@@ -587,15 +531,17 @@ export default function EditMenuItemPage() {
 
             {/* Description */}
             <Card className="p-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="regular-description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t('admin.itemDescription')} {menuItem.status === 'active' ? '*' : `(${t('admin.optional')})`}
               </label>
               <textarea
-                value={menuItem.description}
+                {...fieldProps('regular-description')}
+                  value={menuItem.description}
                 onChange={(e) => setMenuItem({ ...menuItem, description: e.target.value })}
                 rows={4}
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
+                <FormFieldError field="regular-description" issues={issues} />
             </Card>
 
             <Card className="p-6">
@@ -638,6 +584,7 @@ export default function EditMenuItemPage() {
                           <span className="text-sm text-gray-800 dark:text-gray-200">{ingredient.name}</span>
                           <button
                             type="button"
+                            aria-label={t('regularForms.removeIngredient', { name: ingredient.name })}
                             onClick={() => handleIngredientSelect(ingredient.id)}
                             className="text-gray-500 dark:text-gray-400 hover:text-red-600"
                           >
@@ -651,6 +598,8 @@ export default function EditMenuItemPage() {
               </div>
 
               <Button
+                id="regular-recipe"
+                data-no-translate
                 onClick={() => setShowIngredientSelector(true)}
                 variant="outline"
                 icon={<Plus className="h-4 w-4" />}
@@ -664,7 +613,7 @@ export default function EditMenuItemPage() {
             {/* Allergen Information */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('admin.allergenInformation')}
+                <span id="regular-assessment" tabIndex={-1}>{t('admin.allergenInformation')}</span>
               </label>
               {menuItem.item_type === 'prepared' ? (
                 <>
@@ -701,6 +650,7 @@ export default function EditMenuItemPage() {
                 {t('admin.menuItemDatasheetsDesc')}
               </p>
               <DatasheetUploader
+              disabled={saving || deleting}
                 entityType="menu_item"
                 existingDatasheets={existingDatasheets}
                 onFilesChange={handleDatasheetsChange}
@@ -839,6 +789,7 @@ export default function EditMenuItemPage() {
               </p>
               <div className="flex items-center gap-4">
                 <input
+                  aria-label={t('admin.tileColour')}
                   type="color"
                   value={menuItem.color || '#ffffff'}
                   onChange={(e) => setMenuItem({ ...menuItem, color: e.target.value === '#ffffff' ? '' : e.target.value })}
@@ -875,6 +826,7 @@ export default function EditMenuItemPage() {
               <div className="mb-5 pb-5 border-b border-gray-200 dark:border-gray-600">
                 <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{t('admin.uploadCustomImage')}</p>
                 <input
+                  aria-label={t('admin.uploadCustomImage')}
                   type="file"
                   accept="image/*"
                   onChange={(e) => {
@@ -927,6 +879,8 @@ export default function EditMenuItemPage() {
                         ? 'border-[#42b8ac] bg-[#42b8ac]/10'
                         : 'border-gray-200 dark:border-gray-600 hover:border-[#42b8ac] hover:bg-[#42b8ac]/10'
                     }`}
+                    aria-label={t('regularForms.menuIconLabel', { name: preset.name })}
+                    aria-pressed={menuItem.icon === preset.icon}
                     title={preset.name}
                   >
                     {preset.icon}
@@ -967,80 +921,12 @@ export default function EditMenuItemPage() {
           </div>
         </div>
 
-        <RegularFormActions feedback={saveStatus === 'idle' ? undefined : { text: saveMessage, error: saveStatus === 'error' }} onSave={handleSave} onCancel={() => router.push(returnTo)} saveLabel={saving ? t('admin.savingMenuItem') : t('admin.saveMenuItem')} disabled={!menuItem.name.trim() || (menuItem.status === 'active' && !menuItem.description.trim())} busy={saving || uploadingIcon || deleting} />
+        <RegularFormActions feedback={saveStatus === 'idle' ? undefined : { text: saveMessage, error: saveStatus === 'error' }} onSave={handleSave} onCancel={() => { if (confirmLeave()) router.push(returnTo) }} saveLabel={saving ? t('admin.savingMenuItem') : documentRetry ? t('regularItemSave.saveAndRetry') : t('admin.saveMenuItem')} disabled={false} busy={saving || uploadingIcon || deleting} />
+      </fieldset>
       </Container>
 
-      {/* Ingredient Selector Modal */}
-      {showIngredientSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <Card className="w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-            <div className="p-6 border-b dark:border-gray-700">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">{t('admin.selectIngredientsTitle')}</h2>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.chooseIngredientsForMenuItem')}</p>
-                </div>
-                <button
-                  onClick={() => setShowIngredientSelector(false)}
-                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-                >
-                  <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-4 border-b dark:border-gray-700">
-              <div className="relative">
-                <input
-                  type="text"
-                  value={ingredientSearch}
-                  onChange={(e) => setIngredientSearch(e.target.value)}
-                  placeholder={t('admin.searchIngredients')}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                />
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              {filteredIngredients.length === 0 ? (
-                <div className="text-center text-gray-500 dark:text-gray-400 py-8">
-                  {t('admin.noIngredientsFound')}
-                </div>
-              ) : (
-                filteredIngredients.map((ingredient) => (
-                  <label
-                    key={ingredient.id}
-                    className="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={menuItem.ingredients.includes(ingredient.id)}
-                      onChange={() => handleIngredientSelect(ingredient.id)}
-                      className="w-4 h-4 rounded border-gray-300 text-[#42b8ac] focus:ring-[#42b8ac]"
-                    />
-                    <span className="ml-3 min-w-0">
-                      <span className="block text-gray-900 dark:text-white">{ingredient.name}</span>
-                      <span className="block truncate text-xs text-gray-500">
-                        {ingredient.suppliers.length > 0 ? ingredient.suppliers.join(', ') : t('menuBuilderPortal.noSupplierLinked')}
-                      </span>
-                    </span>
-                  </label>
-                ))
-              )}
-            </div>
-
-            <div className="p-6 border-t dark:border-gray-700">
-              <Button
-                variant="primary"
-                fullWidth
-                onClick={() => setShowIngredientSelector(false)}
-              >
-                {t('admin.done')}
-              </Button>
-            </div>
-          </Card>
-        </div>
-      )}
+      <IngredientPicker open={showIngredientSelector} onOpenChange={setShowIngredientSelector}
+        ingredients={ingredients} selectedIds={menuItem.ingredients} onToggle={handleIngredientSelect} />
 
     </>
   )

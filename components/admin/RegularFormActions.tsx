@@ -34,7 +34,7 @@ export function RegularFormActions({ onSave, onCancel, saveLabel, disabled, busy
   }, [height])
   return <>
     <div aria-hidden="true" style={{ height }} />
-    <div ref={bar} role="region" aria-label={t('regularForms.actions')} aria-busy={busy}
+    <div ref={bar} data-no-translate role="region" aria-label={t('regularForms.actions')} aria-busy={busy}
       className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-lg dark:border-gray-700 dark:bg-gray-900 lg:left-[224px]">
       {feedback?.text && <p role={feedback.error ? 'alert' : 'status'} className={`mx-auto mb-3 max-w-7xl text-sm ${feedback.error ? 'text-red-700 dark:text-red-200' : 'text-gray-700 dark:text-gray-200'}`}>{feedback.text}</p>}
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-end gap-3">

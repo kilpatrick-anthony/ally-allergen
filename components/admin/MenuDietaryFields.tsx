@@ -22,7 +22,7 @@ export function MenuDietaryFields({ prepared, value, onChange }: { prepared: boo
       </div>
       <label className="mt-4 block text-sm text-gray-700 dark:text-gray-200">
         {t('regularForms.customClaim')}
-        <input value={custom} onChange={event => setCustom(event.target.value)} className="mt-2 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
+        <input data-unsaved-draft value={custom} onChange={event => setCustom(event.target.value)} className="mt-2 block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-gray-900 dark:border-gray-600 dark:bg-gray-800 dark:text-white" />
       </label>
       <Button className="mt-2" variant="outline" disabled={!custom.trim()} onClick={() => { if (!value.includes(custom.trim())) onChange([...value, custom.trim()]); setCustom('') }}>{t('admin.add')}</Button>
     </>}

@@ -1,9 +1,15 @@
 // app/admin/ingredients/[id]/edit/page.tsx
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import { createRegularEditSaver, EditDocumentSaveError } from '@/lib/regular-edit-save'
+import { RegularItemSaveError } from '@/lib/regular-item-save'
+import { changedAttachments } from '@/lib/regular-form-state'
+import { useRegularFormValidation } from '@/lib/hooks/useRegularFormValidation'
+import { FormValidationSummary, FormFieldError } from '@/components/admin/FormValidationSummary'
+import { useUnsavedChanges } from '@/lib/hooks/useUnsavedChanges'
 import { RegularFormActions } from '@/components/admin/RegularFormActions'
 import { useListReturnPath } from '@/lib/hooks/useListReturnPath'
 import { useNotification } from '@/lib/hooks/useNotification'
@@ -42,6 +48,10 @@ export default function EditIngredientPage() {
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const saveLock = useRef(false)
+  const [documentRetry, setDocumentRetry] = useState(false)
+  const [editSaver] = useState(() => createRegularEditSaver('ingredient'))
+  const [formError, setFormError] = useState('')
   const [deleting, setDeleting] = useState(false)
   const [marking, setMarking] = useState(false)
   const [datasheets, setDatasheets] = useState<any[]>([])
@@ -198,7 +208,7 @@ export default function EditIngredientPage() {
         const data = await parseJsonSafely(response)
         throw new Error(data.error || 'Failed to delete ingredient')
       }
-      router.push(returnTo)
+      markSaved(); router.push(returnTo)
     } catch (error: any) {
       console.error('Error deleting ingredient:', error)
       showNotification(t('ingredientsPortal.deleteIngredientFailed', { error: error.message || '' }), 'error')
@@ -257,92 +267,32 @@ export default function EditIngredientPage() {
     }
   }, [ingredientId, loading])
 
-  const handleSave = async () => {
-    if (!ingredient.name) {
-      showNotification(t('ingredientsPortal.nameRequired'), 'error')
-      return
-    }
+  const { confirmLeave, markSaved } = useUnsavedChanges({ ingredient, supplierProfiles, datasheets: datasheetsTouched ? changedAttachments(datasheets, existingDatasheets) : null, customCertInput }, !loading)
 
-    if (!isIngredientAssessmentComplete(ingredient.allergen_warnings, supplierProfiles)) {
-      showNotification(t('regularAssessment.completeIngredient'), 'error')
-      return
-    }
+  const { issues, reportIssues, fieldProps } = useRegularFormValidation({ ingredient, supplierProfiles })
+
+  const handleSave = async () => {
+    if (saveLock.current) return
+    setFormError('')
+    if (reportIssues([
+      ...(!ingredient.name.trim() ? [{ field: 'regular-name', message: t('ingredientsPortal.nameRequired') }] : []),
+      ...(!isIngredientAssessmentComplete(ingredient.allergen_warnings, supplierProfiles) ? [{ field: 'regular-assessment', message: t('regularAssessment.completeIngredient') }] : []),
+    ])) return
+    saveLock.current = true
     setSaving(true)
     try {
-      const response = await fetch(`/api/ingredients/${ingredientId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...ingredient, supplier_profiles: supplierProfiles })
-      })
-      const data = await parseJsonSafely(response)
-      if (!response.ok) {
-        throw new Error(data.errorCode === 'completeIngredient' ? t('regularAssessment.completeIngredient') : data.error || 'Failed to update ingredient')
-      }
-
-      const currentDatasheets = datasheetsTouched ? datasheets : existingDatasheets
-      const currentDatasheetIds = new Set(
-        currentDatasheets
-          .map((datasheet: any) => datasheet.id)
-          .filter((id: any): id is string => typeof id === 'string' && id.length > 0)
-      )
-      const removedDatasheetIds = existingDatasheets
-        .map((datasheet: any) => datasheet.id)
-        .filter((id: any): id is string => typeof id === 'string' && id.length > 0)
-        .filter((id: string) => !currentDatasheetIds.has(id))
-
-      if (removedDatasheetIds.length > 0) {
-        const deleteResults = await Promise.all(
-          removedDatasheetIds.map(async (id: string) => {
-            const deleteResponse = await fetch(`/api/datasheets/${id}`, { method: 'DELETE' })
-            if (!deleteResponse.ok) {
-              const errorData = await parseJsonSafely(deleteResponse)
-              throw new Error(errorData.error || 'Failed to delete datasheet')
-            }
-            return id
-          })
-        )
-        console.log('🗑️ Deleted datasheets:', deleteResults.length)
-      }
-
-      // Upload only new datasheets that include a File object
-      if (currentDatasheets.length > 0) {
-        console.log('📤 Uploading', currentDatasheets.length, 'datasheets...')
-
-        const uploadPromises = currentDatasheets.map(async (datasheet) => {
-          if (!datasheet.file) return
-
-          const fileName = datasheet.file_name || datasheet.file?.name || 'datasheet'
-          const formData = new FormData()
-          formData.append('file', datasheet.file)
-          formData.append('ingredient_id', String(ingredientId))
-          if (datasheet.supplier_name) formData.append('supplier_name', datasheet.supplier_name)
-          if (datasheet.version) formData.append('version', datasheet.version)
-          if (datasheet.next_review_date) formData.append('next_review_date', datasheet.next_review_date)
-          if (datasheet.notes) formData.append('notes', datasheet.notes)
-
-          const uploadResponse = await fetch('/api/upload/datasheet', {
-            method: 'POST',
-            body: formData
-          })
-
-          if (!uploadResponse.ok) {
-            const errorData = await parseJsonSafely(uploadResponse)
-            console.error('Failed to upload:', fileName, errorData)
-            throw new Error(t('ingredientsPortal.uploadDatasheetFailed', { fileName, error: errorData.error || t('ingredientsPortal.unknownError') }))
-          }
-
-          return parseJsonSafely(uploadResponse)
-        })
-
-        await Promise.all(uploadPromises)
-        console.log('✅ All datasheets uploaded successfully')
-      }
-
-      router.push(returnTo)
-    } catch (error: any) {
-      console.error('Error updating ingredient:', error)
-      showNotification(t('ingredientsPortal.updateIngredientFailed', { error: error.message || '' }), 'error')
+      await editSaver.save(String(ingredientId), { ...ingredient, supplier_profiles: supplierProfiles }, datasheetsTouched ? datasheets : existingDatasheets, existingDatasheets, t('regularItemSave.saveFailed'))
+      setDocumentRetry(false)
+      markSaved(); router.push(returnTo)
+    } catch (error: unknown) {
+      setDocumentRetry(error instanceof EditDocumentSaveError)
+      const message = error instanceof EditDocumentSaveError
+        ? t(error.needsReload ? 'regularForms.documentsNeedRefresh' : 'regularForms.editDocumentsPending')
+        : error instanceof RegularItemSaveError && error.code === 'completeIngredient'
+          ? t('regularAssessment.completeIngredient') : error instanceof Error ? error.message : t('regularItemSave.saveFailed')
+      setFormError(message)
     } finally {
+      saveLock.current = false
       setSaving(false)
     }
   }
@@ -412,6 +362,7 @@ export default function EditIngredientPage() {
   return (
     <>
       <Container>
+      <fieldset disabled={saving || deleting} className="min-w-0">
         <div className="mb-6">
         <Link href={returnTo}>
           <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />}>
@@ -433,6 +384,7 @@ export default function EditIngredientPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <FormValidationSummary issues={issues} />
         {/* Main Form */}
         <div className="lg:col-span-2 space-y-6">
           {/* Basic Information */}
@@ -441,38 +393,43 @@ export default function EditIngredientPage() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="regular-name" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('accessPoints.name')} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
+                  {...fieldProps('regular-name')}
                   value={ingredient.name}
                   onChange={(e) => setIngredient({ ...ingredient, name: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                   placeholder={t('ingredientsPortal.namePlaceholder')}
                 />
+                <FormFieldError field="regular-name" issues={issues} />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="regular-description" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('ingredientsPortal.description')}
                 </label>
                 <textarea
+                  {...fieldProps('regular-description')}
                   value={ingredient.description}
                   onChange={(e) => setIngredient({ ...ingredient, description: e.target.value })}
                   rows={4}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                   placeholder={t('ingredientsPortal.descriptionPlaceholder')}
                 />
+                <FormFieldError field="regular-description" issues={issues} />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label htmlFor="regular-category" className="block text-sm font-medium text-gray-700 mb-2">
                   {t('admin.category')}
                 </label>
                 <input
                   type="text"
                   list="ingredient-categories"
+                  {...fieldProps('regular-category')}
                   value={ingredient.category}
                   onChange={(e) => setIngredient({ ...ingredient, category: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
@@ -488,7 +445,8 @@ export default function EditIngredientPage() {
           </Card>
 
           <Card className="p-6">
-            <IngredientSupplierVariantsEditor
+            <div id="regular-assessment" tabIndex={-1}>
+          <IngredientSupplierVariantsEditor
               suppliers={ingredient.suppliers}
               profiles={supplierProfiles}
               availableSuppliers={availableSuppliers}
@@ -498,12 +456,14 @@ export default function EditIngredientPage() {
               certificationOptions={certificationOptions}
               onChange={handleSupplierVariantsChange}
             />
+          </div>
           </Card>
 
           {/* Datasheets Section */}
           <Card>
             <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('admin.productDatasheets')}</h2>
             <DatasheetUploader
+              disabled={saving || deleting}
               existingDatasheets={existingDatasheets}
               onFilesChange={handleDatasheetsChange}
               entityType="ingredient"
@@ -522,16 +482,16 @@ export default function EditIngredientPage() {
                 return (
                   <button
                     key={cert.name}
+                    type="button"
+                    aria-pressed={isSelected}
                     onClick={() => toggleCertification(cert.name)}
                     className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
                       isSelected
-                        ? 'border-current shadow-sm'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-current bg-teal-50 text-gray-900 shadow-sm dark:bg-teal-950 dark:text-gray-100'
+                        : 'border-gray-200 text-gray-700 hover:border-gray-300 dark:text-gray-200'
                     }`}
                     style={{
-                      borderColor: isSelected ? cert.color : undefined,
-                      backgroundColor: isSelected ? `${cert.color}15` : undefined,
-                      color: isSelected ? cert.color : '#6b7280'
+                      borderColor: isSelected ? cert.color : undefined
                     }}
                   >
                     {typeof Icon === 'function' && React.createElement(Icon as React.ComponentType<{className: string}>, { className: 'h-5 w-5' })}
@@ -745,8 +705,9 @@ export default function EditIngredientPage() {
         </div>
       </div>
 
-        <RegularFormActions onSave={handleSave} onCancel={() => router.push(returnTo)} saveLabel={saving ? t('admin.savingMenuItem') : t('admin.saveChanges')} disabled={!ingredient.name.trim()} busy={saving || deleting} />
-    </Container>
+        <RegularFormActions feedback={formError ? { text: formError, error: true } : undefined} onSave={handleSave} onCancel={() => { if (confirmLeave()) router.push(returnTo) }} saveLabel={saving ? t('admin.savingMenuItem') : documentRetry ? t('regularItemSave.saveAndRetry') : t('admin.saveChanges')} disabled={false} busy={saving || deleting} />
+    </fieldset>
+      </Container>
 
     </>
   )
