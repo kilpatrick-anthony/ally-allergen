@@ -29,7 +29,7 @@ remain isolated. Authenticated production-data journeys and physical-device
 acceptance remain outstanding. The per-batch local-only notes below record the
 state when each implementation was first completed.
 
-Current release includes batches six to eight: unsaved-change protection and
+Production release `ba2c953` (15 October 2026) includes batches six to eight: unsaved-change protection and
 validation, edit-document retry/metadata recovery, and keyboard/selection-state
 accessibility improvements. The development notes below retain their original
 local-only status. Final checks passed: 67 regression tests, the production build,
@@ -37,13 +37,21 @@ and twelve browser fixture runs across all six languages at phone/desktop widths
 including picker keyboard checks in both themes. These checks do not establish
 authenticated production-data, physical-device or screen-reader acceptance.
 
+This release adds batches nine and ten: labelled custom certification and
+review controls, expanded allergen/supplier accessibility, improved contrast and
+focus after removing or clearing controls. Verification passed: 69 regression
+tests, the production build and targeted phone/desktop checks in all six
+languages. The local-only notes below describe the original implementation
+state; physical-device, screen-reader and authenticated production-data
+acceptance remain open.
+
 ### Priority 1 — assessment, saving and functional correctness
 
 - [x] Start new allergen assessments as not yet assessed; distinguish unanswered values from explicitly confirmed not present, including supplier profiles and the menu summary. Released; production acceptance checks pending.
 - [x] Separate saving an incomplete menu item as a draft from making it active. Explain draft visibility and enforce assessment/source requirements on the server as well as in the interface. Released; production acceptance checks pending.
 - [x] Require complete regular ingredient assessments and explicit supplier-profile review before saving an ingredient for use. Released; production acceptance checks pending.
 - [ ] Support incomplete drafts through the regular ingredient route, with clear activation controls and verified exclusion from recipe selectors, calculations, reports and customer menus. Until that coordinated work is complete, regular ingredient saves require a complete assessment.
-- [x] Retain the created item ID after partial document-upload failure; retry only failed attachments without creating another item or duplicating successful uploads. Implemented locally for both regular new-item forms; release pending.
+- [x] Retain the created item ID after partial document-upload failure; retry only failed attachments without creating another item or duplicating successful uploads. Released; production-data acceptance pending.
 - [x] Implement persistent ingredient bulk Archive/Delete with appropriate permissions, confirmation and failure feedback; implement or remove the unfinished bulk View/Duplicate actions. Released; production acceptance checks pending.
 - [x] Fix the ingredient allergen filter to match stable allergen identifiers rather than mismatched display names. Released; production acceptance checks pending.
 - [x] Use actual timestamps for date sorting and make Date added/Last updated labels match the field being sorted. Released; production acceptance checks pending.
@@ -59,11 +67,13 @@ authenticated production-data, physical-device or screen-reader acceptance.
 - [x] Establish ingredient supplier variants before dietary/allergen entry, so adding a supplier does not unexpectedly replace the visible assessment controls. Released; production acceptance checks pending.
 - [x] Move optional menu colour/image controls below ingredients and assessment, with consistent dietary controls and explanations for calculated values in creation and editing. Released; production acceptance checks pending.
 - [x] Keep Save and Cancel accessible on long forms at phone and desktop widths using a consistent action area. Released; production acceptance checks pending.
-- [x] Warn before leaving unsaved regular forms through Cancel, navigation links, browser Back and refresh/close; allow completed saves/deletes to navigate without a discard warning. Implemented locally; release pending.
-- [x] Retain entered details on validation/server errors; show linked error summaries, inline name/description errors and persistent save-error feedback with useful focus. Implemented locally; release pending.
-- [x] Finish edit-form document partial-failure recovery: distinguish the saved record from failed document operations, retain confirmed uploads/deletions/metadata updates and retry only outstanding work while the editor stays open. Implemented locally; release pending.
-- [x] Give both regular menu ingredient pickers accessible dialog/search names, keyboard focus containment, Escape handling and focus return; expose certification and prepared/bought-in selection states. Implemented locally; release pending.
-- [ ] Finish the remaining field-label/icon-action audit (including custom certification entry and review-frequency controls) and verify incomplete requirements across supported languages/themes; retain physical-device and screen-reader acceptance as separate checks.
+- [x] Warn before leaving unsaved regular forms through Cancel, navigation links, browser Back and refresh/close; allow completed saves/deletes to navigate without a discard warning. Released in `ba2c953`; production-data acceptance pending.
+- [x] Retain entered details on validation/server errors; show linked error summaries, inline name/description errors and persistent save-error feedback with useful focus. Released in `ba2c953`; production-data acceptance pending.
+- [x] Finish edit-form document partial-failure recovery: distinguish the saved record from failed document operations, retain confirmed uploads/deletions/metadata updates and retry only outstanding work while the editor stays open. Released in `ba2c953`; production-data acceptance pending.
+- [x] Give both regular menu ingredient pickers accessible dialog/search names, keyboard focus containment, Escape handling and focus return; expose certification and prepared/bought-in selection states. Released in `ba2c953`; production-data acceptance pending.
+- [x] Label custom certification entry and close/remove actions; retain keyboard focus through add/close/remove; use named native radio choices for review frequency; label supplier/site fields and fix declaration validation focus. Implemented locally in batch nine; release pending.
+- [x] Audit expanded allergen details, supplier disclosures, disappearing actions, menu appearance controls and selected edit statuses; connect captions/groups, respect disabled assessments and restore useful focus. Implemented locally in batch ten; release pending.
+- [ ] Complete manual accessibility acceptance, including screen readers, zoom/text sizing, physical devices and states beyond the automated language/theme fixtures.
 
 ### Priority 3 — verify the changes, then resume the existing trials
 
@@ -309,6 +319,67 @@ authenticated production-data, physical-device or screen-reader acceptance.
 - This batch is local only; no migration, production data write or deployment
   was performed. Remaining field-label auditing and real screen-reader/device
   checks stay open.
+
+### Ninth implementation — regular form labels and review controls (15 October 2026)
+
+- Replaced review-frequency buttons with a labelled native radio group on all four
+  forms. Choices announce their checked state, support arrow-key navigation and
+  use visible focus styling with readable light/dark text and backgrounds.
+- Custom certification entry has a visible label, focused input, Enter handling
+  that respects IME composition, and a named Close action on both ingredient
+  forms. Add/close/remove restore focus; remove controls have named 44px targets.
+  Custom names stay outside automatic translation, and empty Add is disabled.
+- Named the existing/new supplier controls, associated both menu site-scope
+  labels with their selects, exposed ingredient edit status selections, and
+  connected missing declaration validation to its actual textarea.
+- Verification passed: 67 regression tests, the final production build, and four
+  final browser fixture runs (nine journeys each) in English/German at
+  390px/1440px. Checks cover radio arrow keys, visible field labels, custom claim
+  add by click/Enter, empty Add, close/remove and focus return, declaration-error
+  focus, both themes and no horizontal overflow. Inspected final English/German
+  phone screenshots. Custom entry occupies its own full-width row on phones;
+  Add/Close sit below it and Add uses the darker button style.
+- These changes are local only; no deployment, migration or production-data
+  write is included. Other-language, dynamic-state and screen-reader/device
+  acceptance remains outstanding.
+- The previous production release `ba2c953` was confirmed READY on allyjen.ie
+  and internal.allyjen.ie. Published interface checks passed with simulated data;
+  unauthenticated ingredient/menu API reads returned 401 and the initial runtime
+  error scan found no errors. This does not verify real production-data writes.
+
+### Tenth implementation — expanded assessment and disappearing-control audit (15 October 2026)
+
+- Linked parent and grain/tree-nut captions to their selectors with per-instance
+  IDs and associated detail instructions. Expanded sections have named groups;
+  bulk controls have 44px targets and obey the assessment disabled setting.
+- Removed unused disclosure state; visibility continues to follow the parent
+  warning level. Clearing the final subtype returns focus to the parent selector
+  when the detail fields disappear. Assessment values/severity rules are unchanged.
+- Supplier disclosure buttons identify their named content regions, support normal
+  Enter/Space activation, and have 44px targets. Removing a supplier returns focus
+  to the supplier chooser. Recipe removal returns focus to Add ingredients.
+- Clearing menu colour/image has a context-specific translated name and returns
+  focus to its input. Removing a custom menu claim returns focus to custom entry.
+  Edit status buttons expose selection and use stronger selected-text contrast.
+- Added explicit dark backgrounds for assessment cards/help and readable bulk
+  action text. Browser checks measure expanded-caption contrast after theme
+  transitions settle; this covers those captions, not a full accessibility audit.
+- Verification passed: 69 regression tests (including two new rendering checks),
+  the final production build and twelve targeted browser runs across English,
+  Irish, Portuguese, French, Spanish and German at 390px/1440px. Each run covers
+  four add/edit journeys, with expanded assessment checks in both themes,
+  translated incomplete counters, label/group targets, bulk/subtype edits,
+  supplier keyboard disclosure, custom claims, appearance clearing and focus
+  return. An English phone regression also passed all nine full journeys.
+- Inspected expanded dark-theme captions, including the final German phone
+  screenshot. Tests measure caption contrast after theme transitions and support
+  browser-reported lab()/oklch() colours. They do not establish full accessibility
+  conformance. API/storage requests use fixtures and service workers are blocked.
+- A workspace restart interrupted the last browser runs. The code/build were
+  preserved; remaining runs were resumed and completed, with their output kept
+  in ignored .next/regular-dynamic-*.log files.
+- This batch remains local with batch nine; no migration, production write or
+  deployment is included. Physical-device/screen-reader acceptance stays open.
 
 ## Session 1 — Review the current system and agree the first version
 

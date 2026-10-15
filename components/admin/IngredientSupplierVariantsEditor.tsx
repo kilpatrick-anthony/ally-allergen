@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import {
   AlertTriangle,
   CheckCircle2,
@@ -52,6 +52,8 @@ export default function IngredientSupplierVariantsEditor({
   onChange,
 }: IngredientSupplierVariantsEditorProps) {
   const { t } = useTranslation()
+  const instanceId = useId()
+  const supplierChoice = useRef<HTMLSelectElement>(null)
   const [selectedSupplier, setSelectedSupplier] = useState('')
   const [newSupplier, setNewSupplier] = useState('')
   const [expandedSuppliers, setExpandedSuppliers] = useState<Set<string>>(() => new Set())
@@ -125,6 +127,7 @@ export default function IngredientSupplierVariantsEditor({
       next.delete(profileKey)
       return next
     })
+    requestAnimationFrame(() => supplierChoice.current?.focus())
   }
 
   const toggleExpanded = (supplier: string) => {
@@ -157,7 +160,8 @@ export default function IngredientSupplierVariantsEditor({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-        <select
+        <select ref={supplierChoice}
+          aria-label={t('ingredientsPortal.chooseExistingSupplier')}
           value={selectedSupplier}
           onChange={(event) => {
             const value = event.target.value
@@ -171,6 +175,7 @@ export default function IngredientSupplierVariantsEditor({
         </select>
         <div className="flex min-w-0 gap-2">
           <input
+            aria-label={t('ingredientsPortal.enterNewSupplier')}
             type="text"
             data-unsaved-draft value={newSupplier}
             onChange={(event) => setNewSupplier(event.target.value)}
@@ -205,7 +210,8 @@ export default function IngredientSupplierVariantsEditor({
         </div>
       ) : (
         <div className="space-y-3">
-          {variantEntries.map(([profileKey, profile]) => {
+          {variantEntries.map(([profileKey, profile], index) => {
+            const panelId = `${instanceId}-supplier-${index}`
             const supplier = profile.supplier_name || profileKey
             const isExpanded = expandedSuppliers.has(profileKey)
             const isAssessed = profile?.assessment_status === 'assessed' && isAllergenAssessmentComplete(profile.allergen_warnings)
@@ -222,10 +228,12 @@ export default function IngredientSupplierVariantsEditor({
                 <div className="flex items-center gap-2 p-3 sm:p-4">
                   <button
                     type="button"
+                    id={`${panelId}-toggle`}
                     data-supplier-toggle
                     onClick={() => toggleExpanded(profileKey)}
-                    className="flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#42b8ac]"
+                    className="flex min-h-11 min-w-0 flex-1 items-center gap-3 rounded-lg text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#42b8ac]"
                     aria-expanded={isExpanded}
+                    aria-controls={isExpanded ? panelId : undefined}
                   >
                     {isExpanded ? <ChevronDown className="h-5 w-5 shrink-0 text-gray-500" /> : <ChevronRight className="h-5 w-5 shrink-0 text-gray-500" />}
                     <span className="min-w-0 flex-1 truncate font-semibold text-gray-900 dark:text-white">{supplier}</span>
@@ -237,14 +245,14 @@ export default function IngredientSupplierVariantsEditor({
                     type="button"
                     onClick={() => removeSupplier(profileKey)}
                     aria-label={t('ingredientsPortal.removeSupplier', { supplier })}
-                    className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                    className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg p-2 text-gray-600 dark:text-gray-300 hover:bg-red-50 hover:text-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
 
                 {isExpanded && (
-                  <div className="space-y-6 border-t border-gray-200 bg-gray-50/70 p-4 sm:p-5 dark:border-gray-700 dark:bg-gray-900/30">
+                  <div id={panelId} role="region" aria-labelledby={`${panelId}-toggle`} className="space-y-6 border-t border-gray-200 bg-gray-50/70 p-4 sm:p-5 dark:border-gray-700 dark:bg-gray-900/30">
                     {!isAssessed && (
                       <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
                         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />

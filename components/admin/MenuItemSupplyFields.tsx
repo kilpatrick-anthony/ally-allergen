@@ -88,7 +88,7 @@ export function MenuItemSupplyFields({ value, suppliers, onChange }: Props) {
             </label>
           </div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.fullIngredientDeclaration')}
-            <textarea rows={5} className={`${fieldClass} mt-1`} value={value.ingredient_declaration} onChange={e => onChange({ ingredient_declaration: e.target.value })} placeholder={t('admin.ingredientDeclarationPlaceholder')} />
+            <textarea id="regular-declaration" rows={5} className={`${fieldClass} mt-1`} value={value.ingredient_declaration} onChange={e => onChange({ ingredient_declaration: e.target.value })} placeholder={t('admin.ingredientDeclarationPlaceholder')} />
           </label>
           <label className="flex cursor-pointer items-start gap-3 rounded-lg bg-white p-3 text-sm dark:bg-gray-800">
             <input id="regular-label-check" type="checkbox" className="mt-0.5 h-4 w-4 accent-[#42b8ac]" checked={Boolean(value.label_verified_at)} onChange={e => onChange({ label_verified_at: e.target.checked ? new Date().toISOString() : null })} />

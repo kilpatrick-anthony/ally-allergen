@@ -333,6 +333,7 @@ export default function EditIngredientPage() {
       }))
       setCustomCertInput('')
       setShowCustomCertInput(false)
+      requestAnimationFrame(() => document.getElementById('regular-custom-certification-toggle')?.focus())
     }
   }
 
@@ -341,6 +342,7 @@ export default function EditIngredientPage() {
       ...prev,
       certifications: prev.certifications.filter(c => c !== cert)
     }))
+    requestAnimationFrame(() => (document.getElementById('regular-custom-certification') || document.getElementById('regular-custom-certification-toggle'))?.focus())
   }
 
   if (loading) {
@@ -503,6 +505,9 @@ export default function EditIngredientPage() {
               {/* Custom Certification */}
               {!showCustomCertInput && (
                 <button
+                  id="regular-custom-certification-toggle"
+                  type="button"
+                  data-no-translate
                   onClick={() => setShowCustomCertInput(true)}
                   className="w-full flex items-center gap-3 p-3 rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-700 transition-all"
                 >
@@ -512,25 +517,32 @@ export default function EditIngredientPage() {
               )}
 
               {showCustomCertInput && (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={customCertInput}
-                    onChange={(e) => setCustomCertInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addCustomCertification()}
-                    placeholder={t('ingredientsPortal.customCertification')}
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                    autoFocus
-                  />
-                  <Button size="sm" onClick={addCustomCertification}>
+                <div className="flex flex-wrap items-end gap-2">
+                  <label className="min-w-0 basis-full break-words text-sm font-medium text-gray-700 dark:text-gray-200 sm:flex-1 sm:basis-0" data-no-translate>
+                    {t('ingredientsPortal.customCertification')}
+                    <input
+                      id="regular-custom-certification"
+                      type="text"
+                      value={customCertInput}
+                      onChange={(e) => setCustomCertInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); addCustomCertification() } }}
+                      placeholder={t('ingredientsPortal.customCertification')}
+                      className="mt-1 min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-teal-700 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      autoFocus
+                    />
+                  </label>
+                  <Button variant="secondary" className="min-h-11" disabled={!customCertInput.trim()} onClick={addCustomCertification}>
                     {t('admin.add')}
                   </Button>
                   <Button
                     size="sm"
+                    className="min-h-11 min-w-11"
                     variant="ghost"
+                    aria-label={t('admin.close')}
                     onClick={() => {
                       setShowCustomCertInput(false)
                       setCustomCertInput('')
+                      requestAnimationFrame(() => document.getElementById('regular-custom-certification-toggle')?.focus())
                     }}
                   >
                     <X className="h-4 w-4" />
@@ -541,15 +553,18 @@ export default function EditIngredientPage() {
               {/* Display custom certifications */}
               {ingredient.certifications.filter(cert =>
                 !certificationOptions.some(opt => opt.name === cert)
-              ).map((cert, index) => (
+              ).map((cert) => (
                 <div
-                  key={index}
+                  key={cert}
+                  data-no-translate
                   className="flex items-center justify-between p-3 rounded-lg border-2 border-gray-300 bg-gray-50"
                 >
                   <span className="font-medium text-gray-700">{cert}</span>
                   <button
+                    type="button"
+                    aria-label={t('regularForms.removeIngredient', { name: cert })}
                     onClick={() => removeCertification(cert)}
-                    className="text-gray-400 hover:text-red-600 transition-colors"
+                    className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-gray-600 hover:text-red-700 focus-visible:ring-2 focus-visible:ring-teal-700 dark:text-gray-300"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -589,30 +604,36 @@ export default function EditIngredientPage() {
             </p>
             <div className="flex gap-3">
               <button
+                type="button"
+                aria-pressed={ingredient.status === 'active'}
                 onClick={() => setIngredient({ ...ingredient, status: 'active' })}
                 className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all ${
                   ingredient.status === 'active'
-                    ? 'bg-emerald-500 text-white shadow-md'
+                    ? 'bg-emerald-700 text-white shadow-md'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
                 {t('admin.active')}
               </button>
               <button
+                type="button"
+                aria-pressed={ingredient.status === 'review'}
                 onClick={() => setIngredient({ ...ingredient, status: 'review' })}
                 className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all ${
                   ingredient.status === 'review'
-                    ? 'bg-amber-500 text-white shadow-md'
+                    ? 'bg-amber-100 text-amber-950 shadow-md'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
                 {t('admin.draft')}
               </button>
               <button
+                type="button"
+                aria-pressed={ingredient.status === 'archived'}
                 onClick={() => setIngredient({ ...ingredient, status: 'archived' })}
                 className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all ${
                   ingredient.status === 'archived'
-                    ? 'bg-red-500 text-white shadow-md'
+                    ? 'bg-red-700 text-white shadow-md'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >

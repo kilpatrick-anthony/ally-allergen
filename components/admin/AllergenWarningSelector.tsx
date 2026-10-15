@@ -1,7 +1,7 @@
 // components/admin/AllergenWarningSelector.tsx
 'use client';
 
-import { useState } from 'react';
+import { useId } from 'react';
 import {
   AlertCircle, Info, AlertTriangle, ChevronDown, ChevronUp,
   Wheat, Shell, Egg, Fish, Sprout, Milk, TreeDeciduous, 
@@ -43,8 +43,7 @@ export default function AllergenWarningSelector({
   disabled = false 
 }: AllergenWarningSelectorProps) {
   const { t } = useTranslation();
-  const [expandedAllergen, setExpandedAllergen] = useState<AllergenId | null>(null);
-  const [showSubtypes, setShowSubtypes] = useState<{ cereals_gluten?: boolean; nuts?: boolean }>({});
+  const instanceId = useId();
 
   const handleLevelChange = (allergenId: AllergenId, level: AllergenLevel) => {
     const newValue = {
@@ -63,12 +62,10 @@ export default function AllergenWarningSelector({
       if (level === 'none') {
         delete newValue[levelsKey];
         delete newValue[legacyTypesKey];
-        setShowSubtypes(prev => ({ ...prev, [allergenId]: false }));
       } else {
         newValue[levelsKey] = Object.fromEntries(
           allTypes.map(type => [type, level])
         );
-        setShowSubtypes(prev => ({ ...prev, [allergenId]: true }));
       }
     }
 
@@ -116,6 +113,7 @@ export default function AllergenWarningSelector({
       [allergenId]: mainLevel,
       [levelsKey]: Object.keys(newLevels).length > 0 ? newLevels : undefined
     });
+    if (mainLevel === 'none') requestAnimationFrame(() => document.getElementById(`${instanceId}-${allergenId}`)?.focus());
   };
 
   const handleSetAllSubtypesToMainLevel = (allergenId: 'cereals_gluten' | 'nuts') => {
@@ -170,9 +168,9 @@ export default function AllergenWarningSelector({
       <p role="status" className="text-sm font-medium text-amber-900 dark:text-amber-200">
         {t('regularAssessment.remaining', { count: unansweredAllergenCount(value) })}
       </p>
-      <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+      <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950 dark:border-blue-800">
         <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
-        <div className="text-xs text-blue-900">
+        <div className="text-xs text-blue-900 dark:text-blue-100">
           <p className="font-semibold mb-1">{t('ingredientsPortal.selectWarningLevel')}</p>
           <p><strong>{t('ingredientsPortal.contains')}</strong> = {t('ingredientsPortal.presentMeaning')} | <strong>{t('mayContain')}</strong> = {t('ingredientsPortal.possibleMeaning')} | <strong>{t('tracesLabel')}</strong> = {t('ingredientsPortal.smallAmountsMeaning')} | <strong>{t('notSuitable')}</strong> = {t('ingredientsPortal.cannotGuaranteeSafetyMeaning')} | <strong>{t('crossContaminationLabel')}</strong> = {t('ingredientsPortal.sharedFacilityMeaning')}</p>
         </div>
@@ -189,7 +187,7 @@ export default function AllergenWarningSelector({
           return (
             <div 
               key={allergen.id} 
-              className="border-2 border-gray-200 rounded-lg p-4 transition-all bg-white hover:shadow-lg hover:border-gray-300 group cursor-pointer"
+              className="border-2 border-gray-200 rounded-lg p-4 transition-all bg-white dark:bg-gray-900 dark:border-gray-600 hover:shadow-lg hover:border-gray-300 group"
               style={{
                 '--allergen-color': allergen.color,
                 '--allergen-color-dark': darkerColor
@@ -214,23 +212,23 @@ export default function AllergenWarningSelector({
                       >
                         {allergen.number}
                       </span>
-                      <h4 className="font-semibold text-gray-900 group-hover:text-gray-700 transition-colors truncate">{t(`allergenNames.${allergen.id}`)}</h4>
+                      <label htmlFor={`${instanceId}-${allergen.id}`} className="font-semibold text-gray-900 dark:text-gray-100 transition-colors break-words">{t(`allergenNames.${allergen.id}`)}</label>
                     </div>
                   </div>
                 </div>
 
                 {/* Warning Level Selector */}
                 <div className="w-full sm:w-56 sm:flex-shrink-0">
-                  <select data-allergen-input
+                  <select data-allergen-input id={`${instanceId}-${allergen.id}`}
                     aria-label={t(`allergenNames.${allergen.id}`)}
                     value={currentLevel}
                     onChange={(e) => handleLevelChange(allergen.id, e.target.value as AllergenLevel)}
                     disabled={disabled}
-                    className={`w-full border-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    className={`min-h-11 w-full border-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                       severity === 'high' ? 'border-red-300 bg-red-50 text-red-900' :
                       severity === 'medium' ? 'border-amber-300 bg-amber-50 text-amber-900' :
                       severity === 'low' ? 'border-blue-300 bg-blue-50 text-blue-900' :
-                      'border-gray-300 bg-white text-gray-700'
+                      'border-gray-300 bg-white text-gray-700 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100'
                     } focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent`}
                   >
                     <option value="">{t('regularAssessment.unassessed')}</option>
@@ -245,15 +243,17 @@ export default function AllergenWarningSelector({
 
               {/* Subtypes Section */}
               {showSubtypes && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <div className="flex items-center justify-between mb-3">
-                    <h5 className="text-sm font-semibold text-gray-900">
+                <div role="group" aria-labelledby={`${instanceId}-${allergen.id}-subtypes`} className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <h5 id={`${instanceId}-${allergen.id}-subtypes`} className="min-w-0 text-sm font-semibold text-gray-900 dark:text-gray-100">
                       {t(allergen.id === 'cereals_gluten' ? 'ingredientsPortal.specifyGrainRisk' : 'ingredientsPortal.specifyNutRisk')}
                     </h5>
                     <button
                       type="button"
+                      disabled={disabled}
+                      aria-describedby={`${instanceId}-${allergen.id}-subtypes`}
                       onClick={() => handleSetAllSubtypesToMainLevel(allergen.id as 'cereals_gluten' | 'nuts')}
-                      className="text-xs text-[#42b8ac] hover:underline font-medium"
+                      className="min-h-11 rounded-lg px-2 text-xs text-teal-800 dark:text-teal-200 hover:underline font-medium focus-visible:ring-2 focus-visible:ring-teal-600 disabled:opacity-50"
                     >
                       {t('ingredientsPortal.setAllTo', { level: t(ALLERGEN_LEVEL_OPTIONS.find(o => o.value === currentLevel)?.labelKey || 'notPresent') })}
                     </button>
@@ -266,18 +266,20 @@ export default function AllergenWarningSelector({
                       
                       return (
                         <div key={glutenType.key} className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-3">
-                          <span className="text-sm font-medium text-gray-700 xs:w-24 xs:flex-shrink-0">
+                          <label htmlFor={`${instanceId}-${allergen.id}-${glutenType.key}`} className="text-sm font-medium text-gray-700 dark:text-gray-200 xs:w-24 xs:flex-shrink-0">
                             {t(`allergenSubtypes.${glutenType.key}`)}
-                          </span>
+                          </label>
                           <select
+                            id={`${instanceId}-${allergen.id}-${glutenType.key}`}
+                            aria-describedby={`${instanceId}-${allergen.id}-help`}
                             value={subtypeLevel}
                             onChange={(e) => handleSubtypeLevelChange('cereals_gluten', glutenType.key, e.target.value as AllergenLevel)}
                             disabled={disabled}
-                            className={`w-full border-2 rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                            className={`min-h-11 w-full border-2 rounded-lg px-3 py-1.5 text-sm transition-colors ${
                               subtypeSeverity === 'high' ? 'border-red-300 bg-red-50 text-red-900' :
                               subtypeSeverity === 'medium' ? 'border-amber-300 bg-amber-50 text-amber-900' :
                               subtypeSeverity === 'low' ? 'border-blue-300 bg-blue-50 text-blue-900' :
-                              'border-gray-300 bg-white text-gray-700'
+                              'border-gray-300 bg-white text-gray-700 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100'
                             } focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent`}
                           >
                             {ALLERGEN_LEVEL_OPTIONS.map((option) => (
@@ -296,18 +298,20 @@ export default function AllergenWarningSelector({
                       
                       return (
                         <div key={nutType.key} className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-3">
-                          <span className="text-sm font-medium text-gray-700 xs:w-24 xs:flex-shrink-0">
+                          <label htmlFor={`${instanceId}-${allergen.id}-${nutType.key}`} className="text-sm font-medium text-gray-700 dark:text-gray-200 xs:w-24 xs:flex-shrink-0">
                             {t(`allergenSubtypes.${nutType.key}`)}
-                          </span>
+                          </label>
                           <select
+                            id={`${instanceId}-${allergen.id}-${nutType.key}`}
+                            aria-describedby={`${instanceId}-${allergen.id}-help`}
                             value={subtypeLevel}
                             onChange={(e) => handleSubtypeLevelChange('nuts', nutType.key, e.target.value as AllergenLevel)}
                             disabled={disabled}
-                            className={`w-full border-2 rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                            className={`min-h-11 w-full border-2 rounded-lg px-3 py-1.5 text-sm transition-colors ${
                               subtypeSeverity === 'high' ? 'border-red-300 bg-red-50 text-red-900' :
                               subtypeSeverity === 'medium' ? 'border-amber-300 bg-amber-50 text-amber-900' :
                               subtypeSeverity === 'low' ? 'border-blue-300 bg-blue-50 text-blue-900' :
-                              'border-gray-300 bg-white text-gray-700'
+                              'border-gray-300 bg-white text-gray-700 dark:border-gray-500 dark:bg-gray-800 dark:text-gray-100'
                             } focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent`}
                           >
                             {ALLERGEN_LEVEL_OPTIONS.map((option) => (
@@ -321,7 +325,7 @@ export default function AllergenWarningSelector({
                     })}
                   </div>
                   
-                  <p className="mt-3 text-xs text-gray-600 bg-gray-50 rounded p-2">
+                  <p id={`${instanceId}-${allergen.id}-help`} className="mt-3 text-xs text-gray-600 bg-gray-50 rounded p-2 dark:bg-gray-800 dark:text-gray-300">
                     <Info className="h-3 w-3 inline mr-1" />
                     {t(allergen.id === 'cereals_gluten' ? 'ingredientsPortal.mainGrainLevelHelp' : 'ingredientsPortal.mainNutLevelHelp')}
                   </p>

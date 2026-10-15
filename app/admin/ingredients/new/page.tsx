@@ -233,6 +233,7 @@ export default function NewIngredientPage() {
       })
       setCustomCertInput('')
       setShowCustomCertInput(false)
+      requestAnimationFrame(() => document.getElementById('regular-custom-certification-toggle')?.focus())
     }
   }
 
@@ -241,6 +242,7 @@ export default function NewIngredientPage() {
       ...ingredient,
       certifications: ingredient.certifications.filter(c => c !== cert)
     })
+    requestAnimationFrame(() => (document.getElementById('regular-custom-certification') || document.getElementById('regular-custom-certification-toggle'))?.focus())
   }
 
   const isCustomCertification = (cert: string) => {
@@ -447,6 +449,9 @@ export default function NewIngredientPage() {
                   {/* Custom Certification Card */}
                   <button
                     type="button"
+                    id="regular-custom-certification-toggle"
+                    data-no-translate
+                    aria-controls="regular-custom-certification-panel"
                     aria-expanded={showCustomCertInput}
                     onClick={() => setShowCustomCertInput(!showCustomCertInput)}
                     className={`
@@ -478,21 +483,35 @@ export default function NewIngredientPage() {
 
                 {/* Custom Certification Input */}
                 {showCustomCertInput && (
-                  <div className="mt-4 flex gap-2">
-                    <input
-                      type="text"
-                      value={customCertInput}
-                      onChange={(e) => setCustomCertInput(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && addCustomCertification()}
-                      placeholder={t('ingredientsPortal.customCertificationPlaceholder')}
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                    />
+                  <div id="regular-custom-certification-panel" className="mt-4 flex flex-wrap items-end gap-2">
+                    <label className="min-w-0 basis-full break-words text-sm font-medium text-gray-700 dark:text-gray-200 sm:flex-1 sm:basis-0" data-no-translate>
+                      {t('ingredientsPortal.customCertification')}
+                      <input
+                        id="regular-custom-certification"
+                        autoFocus
+                        type="text"
+                        value={customCertInput}
+                        onChange={(e) => setCustomCertInput(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); addCustomCertification() } }}
+                        placeholder={t('ingredientsPortal.customCertificationPlaceholder')}
+                        className="mt-1 min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-teal-700 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      />
+                    </label>
                     <Button
-                      variant="primary"
+                      variant="secondary"
+                      className="min-h-11"
                       onClick={addCustomCertification}
                       disabled={!customCertInput.trim()}
                     >
                       {t('admin.add')}
+                    </Button>
+                    <Button variant="ghost" className="min-h-11 min-w-11" aria-label={t('admin.close')}
+                      onClick={() => {
+                        setShowCustomCertInput(false)
+                        setCustomCertInput('')
+                        requestAnimationFrame(() => document.getElementById('regular-custom-certification-toggle')?.focus())
+                      }}>
+                      <X className="h-4 w-4" aria-hidden="true" />
                     </Button>
                   </div>
                 )}
@@ -505,13 +524,15 @@ export default function NewIngredientPage() {
                       {ingredient.certifications.filter(cert => isCustomCertification(cert)).map(cert => (
                         <span
                           key={cert}
+                          data-no-translate
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium"
                         >
                           {cert}
                           <button
                             type="button"
+                            aria-label={t('regularForms.removeIngredient', { name: cert })}
                             onClick={() => removeCustomCertification(cert)}
-                            className="text-gray-500 hover:text-gray-700 transition-colors"
+                            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-gray-600 hover:text-gray-900 focus-visible:ring-2 focus-visible:ring-teal-700 dark:text-gray-300"
                           >
                             <X className="h-3.5 w-3.5" />
                           </button>

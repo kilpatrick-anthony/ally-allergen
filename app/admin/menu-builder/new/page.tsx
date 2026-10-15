@@ -402,7 +402,7 @@ export default function NewMenuItemPage() {
                           <button
                             type="button"
                             aria-label={t('regularForms.removeIngredient', { name: ingredient.name })}
-                            onClick={() => handleIngredientSelect(ingredient.id)}
+                            onClick={() => { handleIngredientSelect(ingredient.id); requestAnimationFrame(() => document.getElementById('regular-recipe')?.focus()) }}
                             className="text-gray-500 dark:text-gray-400 hover:text-red-600"
                           >
                             <X className="h-3 w-3" />
@@ -461,10 +461,10 @@ export default function NewMenuItemPage() {
             <p className="text-sm text-gray-600 dark:text-gray-300">{t('regularAssessment.draftHelp')}</p>
             {/* Site Scope */}
             <Card className="p-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label htmlFor="regular-site-scope" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t('admin.siteScope')}
               </label>
-              <select
+              <select id="regular-site-scope"
                 value={menuItem.site_id ?? 'global'}
                 onChange={(e) => setMenuItem({
                   ...menuItem,
@@ -501,8 +501,9 @@ export default function NewMenuItemPage() {
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
                 {t('admin.tileColourDesc')}
               </p>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-4">
                 <input
+                  id="regular-tile-colour"
                   aria-label={t('admin.tileColour')}
                   type="color"
                   value={menuItem.color || '#ffffff'}
@@ -518,8 +519,10 @@ export default function NewMenuItemPage() {
                 {menuItem.color && (
                   <button
                     type="button"
-                    onClick={() => setMenuItem({ ...menuItem, color: '' })}
-                    className="text-xs text-gray-500 hover:text-red-600 underline whitespace-nowrap"
+                    data-no-translate
+                    aria-label={`${t('admin.clear')}: ${t('admin.tileColour')}`}
+                    onClick={() => { setMenuItem({ ...menuItem, color: '' }); requestAnimationFrame(() => document.getElementById('regular-tile-colour')?.focus()) }}
+                    className="min-h-11 rounded px-2 text-xs text-gray-600 dark:text-gray-300 hover:text-red-700 underline focus-visible:ring-2 focus-visible:ring-teal-600"
                   >
                     {t('admin.clear')}
                   </button>
@@ -540,6 +543,7 @@ export default function NewMenuItemPage() {
               <div className="mb-5 pb-5 border-b border-gray-200 dark:border-gray-600">
                 <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{t('admin.uploadCustomImage')}</p>
                 <input
+                  id="regular-menu-image"
                   aria-label={t('admin.uploadCustomImage')}
                   type="file"
                   accept="image/*"
@@ -572,8 +576,10 @@ export default function NewMenuItemPage() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setMenuItem({ ...menuItem, icon: '' })}
-                    className="text-xs text-gray-500 hover:text-red-600 underline whitespace-nowrap"
+                    data-no-translate
+                    aria-label={`${t('admin.clear')}: ${t('admin.selectedIcon')}`}
+                    onClick={() => { setMenuItem({ ...menuItem, icon: '' }); requestAnimationFrame(() => document.getElementById('regular-menu-image')?.focus()) }}
+                    className="min-h-11 rounded px-2 text-xs text-gray-600 dark:text-gray-300 hover:text-red-700 underline focus-visible:ring-2 focus-visible:ring-teal-600"
                   >
                     {t('admin.clear')}
                   </button>
