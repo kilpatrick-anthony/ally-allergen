@@ -20,28 +20,37 @@ checks at 390px and 1440px using sample data and simulated API responses. It did
 not verify production writes or physical devices. Implementation progress and
 release status are recorded below; unchecked work remains outstanding.
 
+Production release (15 October 2026): batches one to five were published from
+commit `5baed6e` to [allyjen.ie](https://allyjen.ie). Vercel confirmed the production
+domain resolves to that commit with status READY. Read-only route checks passed;
+protected ingredient/menu API reads reject unauthenticated requests. Browser
+fixture checks use simulated API data and block service workers so those requests
+remain isolated. Authenticated production-data journeys and physical-device
+acceptance remain outstanding. The per-batch local-only notes below record the
+state when each implementation was first completed.
+
 ### Priority 1 — assessment, saving and functional correctness
 
-- [x] Start new allergen assessments as not yet assessed; distinguish unanswered values from explicitly confirmed not present, including supplier profiles and the menu summary. Implemented locally; release pending.
-- [x] Separate saving an incomplete menu item as a draft from making it active. Explain draft visibility and enforce assessment/source requirements on the server as well as in the interface. Implemented locally; release pending.
-- [x] Require complete regular ingredient assessments and explicit supplier-profile review before saving an ingredient for use. Implemented locally; release pending.
+- [x] Start new allergen assessments as not yet assessed; distinguish unanswered values from explicitly confirmed not present, including supplier profiles and the menu summary. Released; production acceptance checks pending.
+- [x] Separate saving an incomplete menu item as a draft from making it active. Explain draft visibility and enforce assessment/source requirements on the server as well as in the interface. Released; production acceptance checks pending.
+- [x] Require complete regular ingredient assessments and explicit supplier-profile review before saving an ingredient for use. Released; production acceptance checks pending.
 - [ ] Support incomplete drafts through the regular ingredient route, with clear activation controls and verified exclusion from recipe selectors, calculations, reports and customer menus. Until that coordinated work is complete, regular ingredient saves require a complete assessment.
 - [x] Retain the created item ID after partial document-upload failure; retry only failed attachments without creating another item or duplicating successful uploads. Implemented locally for both regular new-item forms; release pending.
-- [x] Implement persistent ingredient bulk Archive/Delete with appropriate permissions, confirmation and failure feedback; implement or remove the unfinished bulk View/Duplicate actions. Implemented locally; release pending.
-- [x] Fix the ingredient allergen filter to match stable allergen identifiers rather than mismatched display names. Implemented locally; release pending.
-- [x] Use actual timestamps for date sorting and make Date added/Last updated labels match the field being sorted. Implemented locally; release pending.
-- [x] Distinguish loading failures from empty lists and offer Retry without implying the business has no records. Implemented locally; release pending.
+- [x] Implement persistent ingredient bulk Archive/Delete with appropriate permissions, confirmation and failure feedback; implement or remove the unfinished bulk View/Duplicate actions. Released; production acceptance checks pending.
+- [x] Fix the ingredient allergen filter to match stable allergen identifiers rather than mismatched display names. Released; production acceptance checks pending.
+- [x] Use actual timestamps for date sorting and make Date added/Last updated labels match the field being sorted. Released; production acceptance checks pending.
+- [x] Distinguish loading failures from empty lists and offer Retry without implying the business has no records. Released; production acceptance checks pending.
 
 ### Priority 2 — consistent list pages and forms
 
-- [x] Replace the large stacked phone summary cards with a compact summary and a clear Add ingredient/Add menu item action; bring search and records higher up the page. Implemented locally; release pending.
-- [x] Give phone search its own full-width row and wrap filter, sort and view controls without horizontal overflow. Implemented locally; release pending.
-- [x] Align list status information and add useful Menu Builder filters for status and prepared/bought-in type; distinguish filtered empty results and offer Clear filters. Implemented locally; release pending.
-- [x] Preserve search, filters, sorting and view mode through regular view/edit/save/cancel/back journeys. Implemented locally; release pending.
-- [x] Align add/edit section order: details; supplier variants or recipe ingredients; evidence and assessment; availability and review; optional menu appearance. Implemented locally; release pending.
-- [x] Establish ingredient supplier variants before dietary/allergen entry, so adding a supplier does not unexpectedly replace the visible assessment controls. Implemented locally; release pending.
-- [x] Move optional menu colour/image controls below ingredients and assessment, with consistent dietary controls and explanations for calculated values in creation and editing. Implemented locally; release pending.
-- [x] Keep Save and Cancel accessible on long forms at phone and desktop widths using a consistent action area. Implemented locally; release pending.
+- [x] Replace the large stacked phone summary cards with a compact summary and a clear Add ingredient/Add menu item action; bring search and records higher up the page. Released; production acceptance checks pending.
+- [x] Give phone search its own full-width row and wrap filter, sort and view controls without horizontal overflow. Released; production acceptance checks pending.
+- [x] Align list status information and add useful Menu Builder filters for status and prepared/bought-in type; distinguish filtered empty results and offer Clear filters. Released; production acceptance checks pending.
+- [x] Preserve search, filters, sorting and view mode through regular view/edit/save/cancel/back journeys. Released; production acceptance checks pending.
+- [x] Align add/edit section order: details; supplier variants or recipe ingredients; evidence and assessment; availability and review; optional menu appearance. Released; production acceptance checks pending.
+- [x] Establish ingredient supplier variants before dietary/allergen entry, so adding a supplier does not unexpectedly replace the visible assessment controls. Released; production acceptance checks pending.
+- [x] Move optional menu colour/image controls below ingredients and assessment, with consistent dietary controls and explanations for calculated values in creation and editing. Released; production acceptance checks pending.
+- [x] Keep Save and Cancel accessible on long forms at phone and desktop widths using a consistent action area. Released; production acceptance checks pending.
 - [ ] Warn before leaving unsaved changes; retain entered details on errors and align save progress, success and partial-failure feedback.
 - [ ] Associate labels with fields, name icon-only actions, show inline validation with useful focus behaviour, and explain incomplete requirements consistently across supported languages and themes.
 

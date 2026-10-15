@@ -10,7 +10,7 @@ const catalog = require('../tests/helpers/translation-catalog.cjs')
   try {
     for (const language of (process.env.REVIEW_LANGUAGES || 'en,de').split(',')) {
       for (const width of (process.env.REVIEW_WIDTHS || '390,1440').split(',').map(Number)) {
-        const context = await browser.newContext({ viewport: { width, height: 900 } })
+        const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width, height: 900 } })
         const page = await context.newPage(), errors = [], posts = [], updates = [], ingredientUpdates = [], labels = catalog[language]
         page.setDefaultTimeout(10000)
         page.on('pageerror', error => errors.push(error.message))

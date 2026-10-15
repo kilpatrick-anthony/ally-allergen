@@ -8,7 +8,7 @@ const format = (value, replacements) => Object.entries(replacements).reduce((tex
   const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] })
   try {
     for (const language of (process.env.REVIEW_LANGUAGES || 'en,de').split(',')) for (const width of (process.env.REVIEW_WIDTHS || '390,1440').split(',').map(Number)) {
-      const context = await browser.newContext({ viewport: { width, height: 900 } }), page = await context.newPage()
+      const context = await browser.newContext({ serviceWorkers: 'block', viewport: { width, height: 900 } }), page = await context.newPage()
       const labels = catalog[language], errors = [], mutations = []
       let role = 'owner', ingredientFailure = true, menuFailure = true, denyArchive = true, denyDelete = true, cancel = true
       const warnings = Object.fromEntries(['cereals_gluten','crustaceans','eggs','fish','peanuts','soybeans','milk','nuts','celery','mustard','sesame','sulphites','lupin','molluscs'].map(key => [key, 'none']))
