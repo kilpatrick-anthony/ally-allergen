@@ -3,6 +3,7 @@
 
 import { AlertCircle, AlertTriangle, Info, Wheat, Shell, Egg, Fish, Nut, Sprout, Milk, Leaf, Carrot, Circle, Beaker, TreeDeciduous, Flower2, Bean, Salad, Sun, Snail } from 'lucide-react';
 import type { AllergenWarnings } from '@/types/allergen';
+import { isAllergenAssessmentComplete } from '@/lib/allergen-assessment';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 import { 
   ALLERGEN_LIST, 
@@ -43,6 +44,18 @@ export default function AllergenWarningDisplay({
     }).join(', ').toLowerCase();
   };
   const levelText = (level: string, name: string) => t(`allergenLevelText.${level}`, { allergen: name });
+  if (!isAllergenAssessmentComplete(warnings)) {
+    return (
+      <div className="space-y-2">
+        <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-950">
+          {t('regularAssessment.incomplete')}
+        </p>
+        {ALLERGEN_LIST.filter(({ id }) => warnings[id] && warnings[id] !== 'none').map(({ id, name }) => (
+          <p key={id} className="text-sm">{levelText(warnings[id], allergenName(id, name).toLowerCase())}</p>
+        ))}
+      </div>
+    );
+  }
   // Filter to only allergens with warnings
   const activeWarnings = ALLERGEN_LIST.filter(allergen => {
     const level = warnings[allergen.id];

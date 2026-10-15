@@ -1,3 +1,4 @@
+import { isIngredientAssessmentComplete } from '@/lib/allergen-assessment'
 import { getJwtSecret } from '@/lib/auth'
 // app/api/ingredients/[id]/route.ts
 import { createServiceClient } from '@/lib/supabase/server'
@@ -124,7 +125,7 @@ export async function PUT(
     const body = await request.json()
     const { name, description, category, allergen_warnings, suppliers, certifications, preferred_review_months, supplier_profiles } = body
 
-    if (!name) {
+    if (typeof name !== 'string' || !name.trim()) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
@@ -149,29 +150,36 @@ export async function PUT(
       .eq('business_id', userBusiness.business_id)
       .single()
 
+    if (!previousIngredient) return NextResponse.json({ error: 'Ingredient not found' }, { status: 404 })
+
     const normalizedSuppliers = normalizeSupplierNames(Array.isArray(suppliers) ? suppliers : [])
-    const supplierRecords = await ensureSupplierRecords(
-      supabase,
-      userBusiness.business_id,
-      normalizedSuppliers,
-      userId
-    )
     const completeProfiles = buildCompleteSupplierProfiles(
       normalizedSuppliers,
       supplier_profiles as SupplierProfileMap | undefined,
       previousIngredient?.allergen_warnings || allergen_warnings || {},
       previousIngredient?.certifications || certifications || []
     )
+    const derivedSafety = deriveEffectiveIngredientSafety(completeProfiles)
+    const effectiveAllergens = derivedSafety?.allergen_warnings || allergen_warnings || {}
+    const effectiveCertifications = derivedSafety?.certifications || certifications || []
+    if (!isIngredientAssessmentComplete(effectiveAllergens, completeProfiles)) {
+      return NextResponse.json({ error: 'Complete every allergen assessment and review each supplier profile before saving this ingredient.', errorCode: 'completeIngredient' }, { status: 400 })
+    }
+
+    const supplierRecords = await ensureSupplierRecords(
+      supabase,
+      userBusiness.business_id,
+      normalizedSuppliers,
+      userId
+    )
     for (const [profileKey, profile] of Object.entries(completeProfiles)) {
       const supplier = supplierRecords.get(profile.supplier_name || profileKey)
       if (supplier) profile.supplier_id = supplier.id
     }
-    const derivedSafety = deriveEffectiveIngredientSafety(completeProfiles)
-    const effectiveAllergens = derivedSafety?.allergen_warnings || allergen_warnings || {}
-    const effectiveCertifications = derivedSafety?.certifications || certifications || []
 
     // Update ingredient
     const updatePayload = {
+      status: ['active', 'review', 'archived'].includes(body.status) ? body.status : previousIngredient.status,
       name,
       description: description || '',
       category: category || '',
@@ -210,6 +218,7 @@ export async function PUT(
         await supabase
           .from('ingredients')
           .update({
+            status: previousIngredient.status,
             name: previousIngredient.name,
             description: previousIngredient.description,
             category: previousIngredient.category,
@@ -323,6 +332,50 @@ export async function PUT(
   }
 }
 
+// Archive is deliberately separate from full assessment edits. It cannot
+// activate an ingredient or replace its safety information.
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const token = (await cookies()).get('auth-token')?.value
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const { payload } = await jwtVerify(token, getJwtSecret())
+    if (typeof payload.userId !== 'string') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const supabase = createServiceClient()
+    const { data: membership, error: membershipError } = await supabase.from('user_businesses')
+      .select('business_id, role').eq('user_id', payload.userId).single()
+    if (membershipError || !membership || !['owner', 'manager'].includes(membership.role)) {
+      return NextResponse.json({ error: 'Only owners and managers can archive ingredients' }, { status: 403 })
+    }
+    const body = await request.json().catch(() => null)
+    if (!body || body.status !== 'archived' || Object.keys(body).some(key => key !== 'status')) {
+      return NextResponse.json({ error: 'This action only accepts archived status' }, { status: 400 })
+    }
+    const { data: previous, error: readError } = await supabase.from('ingredients')
+      .select('id, name, status').eq('id', id).eq('business_id', membership.business_id).maybeSingle()
+    if (readError) return NextResponse.json({ error: 'Could not load ingredient' }, { status: 500 })
+    if (!previous) return NextResponse.json({ error: 'Ingredient not found' }, { status: 404 })
+    if (previous.status === 'archived') return NextResponse.json({ ingredient: previous })
+    const { data: ingredient, error } = await supabase.from('ingredients')
+      .update({ status: 'archived', updated_at: new Date().toISOString() })
+      .eq('id', id).eq('business_id', membership.business_id).select('id, name, status').maybeSingle()
+    if (error) return NextResponse.json({ error: 'Could not archive ingredient' }, { status: 500 })
+    if (!ingredient) return NextResponse.json({ error: 'Ingredient not found' }, { status: 404 })
+    await recordAuditLog(supabase, {
+      businessId: membership.business_id, entityType: 'ingredient', entityId: id,
+      entityName: ingredient.name, action: 'updated',
+      changes: diffRecordFields(previous, ingredient, [{ key: 'status', label: 'Status' }]),
+      userId: payload.userId, userEmail: payload.email as string,
+    })
+    return NextResponse.json({ ingredient })
+  } catch {
+    return NextResponse.json({ error: 'Could not archive ingredient' }, { status: 500 })
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -359,20 +412,23 @@ export async function DELETE(
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
-    if (userBusiness.role === 'staff') {
+    if (!['owner', 'manager'].includes(userBusiness.role)) {
       return NextResponse.json(
-        { error: 'Staff members cannot delete ingredients' },
+        { error: 'Only owners and managers can delete ingredients' },
         { status: 403 }
       )
     }
 
     // Snapshot the row before deleting so we can record its name in the audit trail
-    const { data: ingredientToDelete } = await supabase
+    const { data: ingredientToDelete, error: readError } = await supabase
       .from('ingredients')
       .select('name')
       .eq('id', id)
       .eq('business_id', userBusiness.business_id)
-      .single()
+      .maybeSingle()
+
+    if (readError) return NextResponse.json({ error: 'Could not load ingredient' }, { status: 500 })
+    if (!ingredientToDelete) return NextResponse.json({ error: 'Ingredient not found' }, { status: 404 })
 
     // Delete ingredient
     const { error } = await supabase

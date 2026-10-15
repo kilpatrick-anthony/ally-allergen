@@ -1,10 +1,16 @@
 // app/admin/menu-builder/[id]/page.tsx
 'use client'
 
+import type { AllergenWarnings } from '@/types/allergen'
+
+import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay'
+
 import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import { useListReturnPath } from '@/lib/hooks/useListReturnPath'
 import { useNotification } from '@/lib/hooks/useNotification'
+import { isAllergenAssessmentComplete } from '@/lib/allergen-assessment'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { 
   Package, ArrowLeft, Edit, Trash2, AlertCircle, Check,
@@ -26,6 +32,7 @@ export default function ViewMenuItemPage() {
   const { t } = useTranslation()
   const { canDeleteContent } = useContentPermissions()
   const router = useRouter()
+  const { returnTo, withReturnTo } = useListReturnPath('/admin/menu-builder')
   const params = useParams()
   const menuItemId = params.id as string
   
@@ -122,7 +129,7 @@ export default function ViewMenuItemPage() {
         throw new Error(data.error || t('menuBuilderPortal.deleteFailed'))
       }
 
-      router.push('/admin/menu-builder')
+      router.push(returnTo)
     } catch (error: any) {
       console.error('Error deleting menu item:', error)
       showNotification(error.message || t('menuBuilderPortal.deleteFailed'), 'error')
@@ -159,7 +166,7 @@ export default function ViewMenuItemPage() {
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
             <p className="text-gray-600">{t('menuBuilderPortal.itemNotFound')}</p>
-            <Link href="/admin/menu-builder">
+            <Link href={returnTo}>
               <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />} className="mt-4">
                 {t('admin.backToMenuBuilder')}
               </Button>
@@ -172,7 +179,7 @@ export default function ViewMenuItemPage() {
 
   const allergenWarnings = menuItem.allergen_warnings || {}
   const activeAllergens = Object.entries(allergenWarnings)
-    .filter(([key, value]) => value !== 'none' && !key.endsWith('_levels') && !key.endsWith('_types'))
+    .filter(([key, value]) => key !== 'assessment_incomplete' && value !== 'none' && !key.endsWith('_levels') && !key.endsWith('_types'))
     .map(([key, value]) => {
       // Check if this allergen has sub-levels
       const levelsKey = `${key}_levels`
@@ -198,7 +205,7 @@ export default function ViewMenuItemPage() {
   return (
     <Container>
       <div className="mb-6">
-        <Link href="/admin/menu-builder">
+        <Link href={returnTo}>
           <Button variant="ghost" icon={<ArrowLeft />}>
             {t('admin.backToMenuBuilder')}
           </Button>
@@ -226,7 +233,7 @@ export default function ViewMenuItemPage() {
           </div>
         </div>
         <div className="flex gap-3 flex-shrink-0">
-          <Link href={`/admin/menu-builder/${menuItemId}/edit`}>
+          <Link href={withReturnTo(`/admin/menu-builder/${menuItemId}/edit`)}>
             <Button icon={<Edit />} className="bg-[#42b8ac] text-white hover:bg-[#3a9d95]">
               {t('team.edit')}
             </Button>
@@ -317,7 +324,9 @@ export default function ViewMenuItemPage() {
           <Card>
             <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('admin.allergenInformation')}</h2>
             
-            {activeAllergens.length === 0 ? (
+            {!isAllergenAssessmentComplete(allergenWarnings) ? (
+              <AllergenWarningDisplay warnings={allergenWarnings as AllergenWarnings} showNone={true} />
+            ) : activeAllergens.length === 0 ? (
               <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <Check className="h-5 w-5 text-green-600" />
                 <span className="text-green-800 font-medium">{t('ingredientsPortal.noAllergensPresent')}</span>
@@ -447,7 +456,7 @@ export default function ViewMenuItemPage() {
           <Card>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-[#003842]">{t('admin.productDatasheets')}</h2>
-              <Link href={`/admin/menu-builder/${menuItemId}/edit`}>
+              <Link href={withReturnTo(`/admin/menu-builder/${menuItemId}/edit`)}>
                 <Button variant="ghost" size="sm">
                   {t('ingredientsPortal.upload')}
                 </Button>

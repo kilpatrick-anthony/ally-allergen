@@ -1,8 +1,10 @@
 // app/admin/ingredients/page.tsx - Enhanced with Design System
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
+import { ManagementListHeader } from '@/components/admin/ManagementListHeader'
+import { listContextHref } from '@/lib/list-navigation'
 import React from 'react'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { 
@@ -22,8 +24,10 @@ import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { normalizeAllergenFilter, compareDateAdded, runIngredientBulkAction } from '@/lib/regular-list-actions'
 import { ALLERGEN_LIST } from '@/types/allergen'
 import DatasheetViewer from '@/components/admin/DatasheetViewer'
+import { isIngredientAssessmentComplete } from '@/lib/allergen-assessment'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { checkIngredientCompliance } from '@/lib/compliance'
 import { useContentPermissions } from '@/lib/hooks/useContentPermissions'
@@ -37,6 +41,7 @@ interface SubAllergen {
 }
 
 interface Allergen {
+  id: string
   name: string
   level: string
   subAllergens?: SubAllergen[]
@@ -50,27 +55,13 @@ interface Ingredient {
   allergens: Allergen[]
   certifications: string[]
   status: 'active' | 'review' | 'archived'
+  createdAt: string | null
   lastUpdated: string
+  assessmentComplete: boolean
   createdBy: string
   compliance: 'compliant' | 'warning' | 'error'
 }
 
-const allergenTypes = [
-  '1. Cereals containing gluten',
-  '2. Crustaceans',
-  '3. Eggs',
-  '4. Fish',
-  '5. Peanuts',
-  '6. Soybeans',
-  '7. Milk',
-  '8. Nuts',
-  '9. Celery',
-  '10. Mustard',
-  '11. Sesame seeds',
-  '12. Sulphur dioxide and sulphites',
-  '13. Lupin',
-  '14. Molluscs'
-]
 
 const dietaryAttributes = [
   { id: 'vegan', name: 'Vegan', icon: Leaf, color: '#16a34a' },
@@ -121,6 +112,10 @@ export default function IngredientsPage() {
   const { canDeleteContent } = useContentPermissions()
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const bulkLock = useRef(false)
+  const [bulkResult, setBulkResult] = useState<{ succeeded: number; failed: number } | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedAllergen, setSelectedAllergen] = useState('all')
   const [selectedCertification, setSelectedCertification] = useState('all')
@@ -131,6 +126,7 @@ export default function IngredientsPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
+  const [listReady, setListReady] = useState(false)
   const [showDatasheetModal, setShowDatasheetModal] = useState(false)
   const [selectedIngredientForDatasheets, setSelectedIngredientForDatasheets] = useState<any>(null)
   const [datasheets, setDatasheets] = useState<any[]>([])
@@ -139,7 +135,7 @@ export default function IngredientsPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     setSearchTerm(params.get('q') || '')
-    if (params.get('allergen')) setSelectedAllergen(params.get('allergen')!)
+    setSelectedAllergen(normalizeAllergenFilter(params.get('allergen')))
     if (params.get('certification')) setSelectedCertification(params.get('certification')!)
     if (params.get('status')) setSelectedStatus(params.get('status')!)
     if (params.get('category')) setSelectedCategory(params.get('category')!)
@@ -148,9 +144,12 @@ export default function IngredientsPage() {
       setSortBy(params.get('sort') as typeof sortBy)
     }
     if (params.get('direction') === 'desc') setSortDir('desc')
+    setShowFilters(params.get('filters') === '1')
+    setListReady(true)
   }, [])
 
   const listStateParams = new URLSearchParams()
+  if (showFilters) listStateParams.set('filters', '1')
   if (searchTerm) listStateParams.set('q', searchTerm)
   if (selectedAllergen !== 'all') listStateParams.set('allergen', selectedAllergen)
   if (selectedCertification !== 'all') listStateParams.set('certification', selectedCertification)
@@ -160,17 +159,21 @@ export default function IngredientsPage() {
   if (sortBy !== 'name') listStateParams.set('sort', sortBy)
   if (sortDir !== 'asc') listStateParams.set('direction', sortDir)
   const ingredientListReturnPath = `/admin/ingredients${listStateParams.size ? `?${listStateParams}` : ''}`
+  useEffect(() => {
+    if (listReady) window.history.replaceState(window.history.state, '', ingredientListReturnPath)
+  }, [listReady, ingredientListReturnPath])
   const newIngredientHref = `/admin/ingredients/new?returnTo=${encodeURIComponent(ingredientListReturnPath)}`
 
   const fetchIngredients = useCallback(async (showLoading = true) => {
       try {
         if (showLoading) setLoading(true)
+        setLoadError(false)
         console.log('📥 Fetching ingredients...')
         
         const response = await fetch('/api/ingredients', { cache: 'no-store' })
         const data = await response.json()
         
-        if (!response.ok) {
+        if (!response.ok || !Array.isArray(data.ingredients)) {
           throw new Error(data.error || 'Failed to fetch ingredients')
         }
         
@@ -204,51 +207,20 @@ export default function IngredientsPage() {
             name: ing.name,
             category: ing.category || '',
             suppliers: ing.suppliers || [],
-            allergens: ing.allergen_warnings ? 
-              (() => {
-                const warnings = ing.allergen_warnings
-                const allergenList: any[] = []
-                
-                // Handle regular allergens
-                Object.entries(warnings).forEach(([key, value]) => {
-                  if (value !== 'none' && !key.endsWith('_levels') && !key.endsWith('_types')) {
-                    // Check if this allergen has sub-levels
-                    const levelsKey = `${key}_levels`
-                    const hasSubLevels = warnings[levelsKey]
-                    
-                    if (hasSubLevels && typeof hasSubLevels === 'object') {
-                      // Extract sub-allergens that are not 'none'
-                      const subAllergens: any[] = []
-                      Object.entries(hasSubLevels).forEach(([subKey, subValue]: [string, any]) => {
-                        if (subValue !== 'none') {
-                          subAllergens.push({
-                            name: subKey.replace(/_/g, ' '),
-                            level: subValue,
-                            parent: key
-                          })
-                        }
-                      })
-                      if (subAllergens.length > 0) {
-                        allergenList.push({
-                          name: key.replace(/_/g, ' '),
-                          level: value,
-                          subAllergens
-                        })
-                      }
-                    } else {
-                      // Regular allergen without sub-levels
-                      allergenList.push({
-                        name: key.replace(/_/g, ' '),
-                        level: value
-                      })
-                    }
-                  }
-                })
-                
-                return allergenList
-              })() : [],
+            allergens: ALLERGEN_LIST.flatMap(({ id }) => {
+              const value = ing.allergen_warnings?.[id]
+              if (typeof value !== 'string' || value === 'none' || !value) return []
+              const levels = ing.allergen_warnings?.[`${id}_levels`]
+              const subAllergens = levels && typeof levels === 'object'
+                ? Object.entries(levels).filter(([, level]) => typeof level === 'string' && level !== 'none')
+                  .map(([key, level]) => ({ name: key.replace(/_/g, ' '), level: String(level), parent: id }))
+                : []
+              return [{ id, name: id.replace(/_/g, ' '), level: value, ...(subAllergens.length ? { subAllergens } : {}) }]
+            }),
+            assessmentComplete: isIngredientAssessmentComplete(ing.allergen_warnings, ing.supplier_profiles),
             certifications: ing.certifications || [],
             status: ing.status || 'active',
+            createdAt: ing.created_at || null,
             lastUpdated: (() => {
               try {
                 const dateStr = ing.updated_at || ing.created_at;
@@ -265,8 +237,10 @@ export default function IngredientsPage() {
         })
         
         setIngredients(mappedIngredients)
+        setSelectedIngredients(current => current.filter(id => mappedIngredients.some((item: Ingredient) => item.id === id)))
       } catch (error: any) {
         console.error('❌ Error fetching ingredients:', error)
+        setLoadError(true)
       } finally {
         if (showLoading) setLoading(false)
       }
@@ -280,7 +254,7 @@ export default function IngredientsPage() {
   const filteredIngredients = ingredients.filter(ingredient => {
     const matchesSearch = ingredient.name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesAllergen = selectedAllergen === 'all' || 
-                           ingredient.allergens.some(a => a.name === selectedAllergen)
+                           ingredient.allergens.some(a => a.id === selectedAllergen)
     const matchesCertification = selectedCertification === 'all' || 
                                 ingredient.certifications.includes(selectedCertification)
     const matchesStatus = selectedStatus === 'all' || ingredient.status === selectedStatus
@@ -295,7 +269,7 @@ export default function IngredientsPage() {
     if (sortBy === 'name') {
       cmp = a.name.localeCompare(b.name)
     } else if (sortBy === 'date') {
-      cmp = new Date(a.lastUpdated).getTime() - new Date(b.lastUpdated).getTime()
+      return compareDateAdded(a.createdAt, b.createdAt, sortDir) || a.name.localeCompare(b.name)
     } else if (sortBy === 'status') {
       cmp = a.status.localeCompare(b.status)
     } else if (sortBy === 'compliance') {
@@ -312,7 +286,7 @@ export default function IngredientsPage() {
 
   // Group sorted ingredients by category
   const groupedIngredients = sortedIngredients.reduce((acc, item) => {
-    const cat = item.category || 'Uncategorized'
+    const cat = sortBy === 'date' ? t('allItems') : item.category || 'Uncategorized'
     if (!acc[cat]) acc[cat] = []
     acc[cat].push(item)
     return acc
@@ -353,6 +327,7 @@ export default function IngredientsPage() {
 
   // Handle delete
   const handleDuplicate = async (id: string, name: string) => {
+    if (bulkLock.current) return
     try {
       const res = await fetch(`/api/ingredients/${id}`)
       const data = await res.json()
@@ -373,6 +348,7 @@ export default function IngredientsPage() {
   }
 
   const handleDelete = async (id: string) => {
+    if (bulkLock.current) return
     if (!confirm(t('ingredientsPortal.deleteIngredientConfirm'))) return
     
     try {
@@ -381,27 +357,31 @@ export default function IngredientsPage() {
         const data = await response.json()
         throw new Error(data.error || 'Failed to delete ingredient')
       }
-      setIngredients(ingredients.filter(ing => ing.id !== id))
+      setIngredients(current => current.filter(ing => ing.id !== id))
+      setSelectedIngredients(current => current.filter(selected => selected !== id))
     } catch (error: any) {
       console.error('Error deleting ingredient:', error)
       showNotification(t('ingredientsPortal.deleteIngredientFailed', { error: error?.message ?? '' }), 'error')
     }
   }
 
-  // Handle bulk actions
-  const handleBulkDelete = () => {
-    if (selectedIngredients.length > 0) {
-      setIngredients(ingredients.filter(i => !selectedIngredients.includes(i.id)))
-      setSelectedIngredients([])
-    }
-  }
-
-  const handleBulkArchive = () => {
-    if (selectedIngredients.length > 0) {
-      setIngredients(ingredients.map(i => 
-        selectedIngredients.includes(i.id) ? { ...i, status: 'archived' } : i
-      ))
-      setSelectedIngredients([])
+  const handleBulkAction = async (action: 'archive' | 'delete') => {
+    if (!canDeleteContent || bulkLock.current || selectedIngredients.length === 0) return
+    if (!confirm(t(action === 'archive' ? 'regularLists.confirmArchive' : 'regularLists.confirmDelete', { count: selectedIngredients.length }))) return
+    bulkLock.current = true
+    setBulkBusy(true)
+    setBulkResult(null)
+    try {
+      const result = await runIngredientBulkAction(selectedIngredients, action)
+      const succeeded = new Set(result.succeeded)
+      setIngredients(current => action === 'delete'
+        ? current.filter(item => !succeeded.has(item.id))
+        : current.map(item => succeeded.has(item.id) ? { ...item, status: 'archived' } : item))
+      setSelectedIngredients(result.failed)
+      setBulkResult({ succeeded: result.succeeded.length, failed: result.failed.length })
+    } finally {
+      bulkLock.current = false
+      setBulkBusy(false)
     }
   }
 
@@ -419,109 +399,29 @@ export default function IngredientsPage() {
     )
   }
 
+  if (loadError && ingredients.length === 0) return (
+    <Container><h1 className="mb-6 text-3xl font-bold">{t('admin.ingredientsManagement')}</h1>
+      <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-6 text-amber-950">
+        <p>{t('regularLists.loadFailed')}</p><Button className="mt-3" onClick={() => fetchIngredients()}>{t('regularLists.retry')}</Button>
+      </div>
+    </Container>
+  )
+
   return (
     <Container>
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex flex-wrap justify-between items-start gap-3">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 bg-gradient-to-br from-teal-400 to-teal-600 dark:from-teal-500 dark:to-gray-700 rounded-lg">
-                <Package className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('admin.ingredientsManagement')}</h1>
-                <p className="text-gray-600 dark:text-gray-300">
-                  {t('admin.manageAllergenIngredients')}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="primary" icon={Package}>
-              {stats.total} {t('admin.totalIngredients')}
-            </Badge>
-            <Badge variant={stats.withAllergens > 0 ? 'warning' : 'success'} icon={Shield}>
-              {stats.withAllergens} {t('admin.withAllergens')}
-            </Badge>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Link href={newIngredientHref} className="block">
-          <Card className="hover:shadow-lg transition-all hover:border-emerald-500 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-emerald-600 group cursor-pointer">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">{t('admin.addNew')}</p>
-                <p className="text-2xl font-bold text-[#003842] dark:text-[#42b8ac] mt-1 group-hover:text-white transition-colors">+</p>
-              </div>
-              <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-emerald-600 transition-all">
-                <Plus className="h-6 w-6 text-white transition-colors" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.createNewIngredient')}</div>
-            </div>
-          </Card>
-        </Link>
-
-        <Card className="hover:shadow-lg transition-all hover:border-[#42b8ac] hover:bg-gradient-to-br hover:from-[#42b8ac] hover:to-[#36948a] group cursor-pointer">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">{t('admin.ingredients')}</p>
-              <p className="text-2xl font-bold text-[#003842] dark:text-[#42b8ac] mt-1 group-hover:text-white transition-colors">{stats.total}</p>
-            </div>
-            <div className="p-3 bg-gradient-to-br from-[#42b8ac] to-[#36948a] rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-[#42b8ac] transition-all">
-              <Package className="h-6 w-6 text-white transition-colors" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.totalManagedIngredients')}</div>
-          </div>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-all hover:border-amber-500 hover:bg-gradient-to-br hover:from-amber-500 hover:to-amber-600 group cursor-pointer">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">{t('admin.allergens')}</p>
-              <p className="text-2xl font-bold text-[#003842] dark:text-[#42b8ac] mt-1 group-hover:text-white transition-colors">{stats.withAllergens}</p>
-            </div>
-            <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-amber-600 transition-all">
-              <AlertCircle className="h-6 w-6 text-white transition-colors" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.requireSpecialHandling')}</div>
-          </div>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-all hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-500 hover:to-blue-600 group cursor-pointer">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">{t('admin.suppliers')}</p>
-              <p className="text-2xl font-bold text-[#003842] dark:text-[#42b8ac] mt-1 group-hover:text-white transition-colors">{stats.suppliers}</p>
-            </div>
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-blue-600 transition-all">
-              <Truck className="h-6 w-6 text-white transition-colors" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.activeSuppliers')}</div>
-          </div>
-        </Card>
-
-      </div>
-
+      <ManagementListHeader title={t('admin.ingredientsManagement')} description={t('admin.manageAllergenIngredients')} icon={Package} addHref={newIngredientHref} addLabel={t('regularLists.addIngredient')} stats={[{ label: t('admin.ingredients'), value: stats.total }, { label: t('admin.withAllergens'), value: stats.withAllergens }, { label: t('admin.suppliers'), value: stats.suppliers }]} />
+      {loadError && <div role="alert" className="mb-4 rounded-lg border border-amber-300 p-4">
+        <p>{t('regularLists.loadFailed')}</p><Button onClick={() => fetchIngredients()}>{t('regularLists.retry')}</Button>
+      </div>}
       {/* Actions Bar */}
       <Card className="mb-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4 flex-1">
-            <div className="relative flex-1">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+            <div className="relative w-full min-w-0 basis-full md:w-auto md:flex-1 md:basis-auto">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
+                aria-label={t('admin.searchIngredients')}
                 placeholder={t('admin.searchIngredients')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -541,12 +441,16 @@ export default function IngredientsPage() {
 
             <div className="flex items-center border-l pl-4">
               <button
+                aria-label={t('regularLists.gridView')}
+                aria-pressed={viewMode === 'grid'}
                 onClick={() => setViewMode('grid')}
                 className={`p-2 rounded-l-lg ${viewMode === 'grid' ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
               >
                 <Grid className="h-4 w-4" />
               </button>
               <button
+                aria-label={t('regularLists.listView')}
+                aria-pressed={viewMode === 'list'}
                 onClick={() => setViewMode('list')}
                 className={`p-2 rounded-r-lg ${viewMode === 'list' ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
               >
@@ -556,6 +460,7 @@ export default function IngredientsPage() {
 
             <div className="flex items-center gap-1 border-l pl-4">
               <select
+                aria-label={t('regularLists.sortBy')}
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                 className="text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
@@ -581,9 +486,10 @@ export default function IngredientsPage() {
                 <Button
                   variant="ghost"
                   size="sm"
+                  disabled={bulkBusy}
                   onClick={() => setSelectedIngredients([])}
                 >
-                  {t('admin.clear')}
+                  {t('regularLists.clearSelection')}
                 </Button>
               </div>
             )}
@@ -600,13 +506,14 @@ export default function IngredientsPage() {
                   {t('admin.allergens')}
                 </label>
                 <select
+                  aria-label={t('admin.allergens')}
                   value={selectedAllergen}
                   onChange={(e) => setSelectedAllergen(e.target.value)}
                   className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
                 >
                   <option value="all">{t('admin.allAllergens')}</option>
-                  {allergenTypes.map(allergen => (
-                    <option key={allergen} value={allergen}>{allergen}</option>
+                  {ALLERGEN_LIST.map(allergen => (
+                    <option key={allergen.id} value={allergen.id}>{allergen.number}. {t(`allergenNames.${allergen.id}`)}</option>
                   ))}
                 </select>
               </div>
@@ -685,9 +592,9 @@ export default function IngredientsPage() {
       </Card>
 
       {/* Bulk Actions */}
-      {selectedIngredients.length > 0 && (
+      {canDeleteContent && selectedIngredients.length > 0 && (
         <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div role="group" aria-label={t('regularLists.bulkActions')} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
                 <Package className="h-5 w-5 text-blue-600" />
@@ -705,33 +612,14 @@ export default function IngredientsPage() {
               <Button
                 variant="outline"
                 size="sm"
-                icon={Eye}
-                onClick={() => {
-                  // Handle bulk view
-                }}
-              >
-                {t('admin.view')}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                icon={Copy}
-                onClick={() => {
-                  // Handle bulk duplicate
-                }}
-              >
-                {t('admin.duplicate')}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
                 icon={FileText}
-                onClick={handleBulkArchive}
+                disabled={bulkBusy}
+                onClick={() => handleBulkAction('archive')}
               >
                 {t('admin.archive')}
               </Button>
               {canDeleteContent && (
-                <Button variant="danger" size="sm" icon={Trash2} onClick={handleBulkDelete}>
+                <Button variant="danger" size="sm" icon={Trash2} disabled={bulkBusy} onClick={() => handleBulkAction('delete')}>
                   {t('admin.delete')}
                 </Button>
               )}
@@ -740,6 +628,10 @@ export default function IngredientsPage() {
         </Card>
       )}
 
+      {bulkResult && <p role="status" className="mb-4 text-sm font-medium text-gray-700 dark:text-gray-200">{bulkResult.failed
+        ? t('regularLists.partialResult', { succeeded: bulkResult.succeeded, failed: bulkResult.failed })
+        : t('regularLists.completed', { count: bulkResult.succeeded })}</p>}
+      {bulkBusy && <p role="status" className="mb-4 text-sm">{t('regularLists.processing')}</p>}
       {/* Ingredients Table - Updated */}
       <Card>
         {viewMode === 'list' ? (
@@ -750,7 +642,9 @@ export default function IngredientsPage() {
                 <th className="w-12 text-left py-3 px-4">
                   <input
                     type="checkbox"
-                    checked={selectedIngredients.length === sortedIngredients.length}
+                    disabled={bulkBusy || !canDeleteContent}
+                    aria-label={t('regularLists.selectAll')}
+                    checked={sortedIngredients.length > 0 && sortedIngredients.every(item => selectedIngredients.includes(item.id))}
                     onChange={(e) => {
                       if (e.target.checked) {
                         setSelectedIngredients(sortedIngredients.map(i => i.id))
@@ -788,6 +682,8 @@ export default function IngredientsPage() {
                   <td className="w-12 py-3 px-4">
                     <input
                       type="checkbox"
+                      disabled={bulkBusy || !canDeleteContent}
+                      aria-label={t('regularLists.selectItem', { name: ingredient.name })}
                       checked={selectedIngredients.includes(ingredient.id)}
                       onChange={(e) => {
                         if (e.target.checked) {
@@ -822,7 +718,8 @@ export default function IngredientsPage() {
                   </td>
                   <td className="w-1/4 py-3 px-4">
                     <div className="flex flex-wrap gap-1.5 max-w-full overflow-hidden">
-                      {ingredient.allergens.length === 0 ? (
+                      {!ingredient.assessmentComplete && <span className="text-xs font-medium text-amber-900 dark:text-amber-200">{t('regularAssessment.incomplete')}</span>}
+                      {ingredient.allergens.length === 0 && ingredient.assessmentComplete ? (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold border-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                           <Check className="h-3 w-3" />
                           {t('admin.none')}
@@ -1033,7 +930,7 @@ export default function IngredientsPage() {
                   </td>
                   <td className="w-24 py-3 px-4">
                     <div className="flex items-center gap-1">
-                      <Link href={`/admin/ingredients/${ingredient.id}`}>
+                      <Link href={listContextHref(`/admin/ingredients/${ingredient.id}`, ingredientListReturnPath)}>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1041,7 +938,7 @@ export default function IngredientsPage() {
                           title={t('admin.viewIngredient')}
                         />
                       </Link>
-                      <Link href={`/admin/ingredients/${ingredient.id}/edit`}>
+                      <Link href={listContextHref(`/admin/ingredients/${ingredient.id}/edit`, ingredientListReturnPath)}>
                         <Button
                           variant="ghost"
                           size="sm"
@@ -1103,7 +1000,8 @@ export default function IngredientsPage() {
                 <div>
                   <label className="text-xs font-medium text-gray-500 mb-2 block">{t('admin.allergens')}</label>
                   <div className="flex flex-wrap gap-1.5">
-                    {ingredient.allergens.length === 0 ? (
+                    {!ingredient.assessmentComplete && <span className="text-xs font-medium text-amber-900 dark:text-amber-200">{t('regularAssessment.incomplete')}</span>}
+                      {ingredient.allergens.length === 0 && ingredient.assessmentComplete ? (
                       <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium border-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                         <Check className="h-3 w-3" />
                         {t('admin.none')}
@@ -1120,10 +1018,10 @@ export default function IngredientsPage() {
               </div>
 
               <div className="flex items-center justify-end gap-1 pt-4 border-t dark:border-gray-700 mt-4">
-                <Link href={`/admin/ingredients/${ingredient.id}`}>
+                <Link href={listContextHref(`/admin/ingredients/${ingredient.id}`, ingredientListReturnPath)}>
                   <Button variant="ghost" size="sm" icon={Eye} title={t('admin.view')} />
                 </Link>
-                <Link href={`/admin/ingredients/${ingredient.id}/edit`}>
+                <Link href={listContextHref(`/admin/ingredients/${ingredient.id}/edit`, ingredientListReturnPath)}>
                   <Button variant="ghost" size="sm" icon={Edit} title={t('admin.edit')} />
                 </Link>
                 <Button
@@ -1153,13 +1051,16 @@ export default function IngredientsPage() {
           </div>
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('admin.noIngredientsFound')}</h3>
           <p className="text-gray-500 dark:text-gray-400 mb-6">
-            {searchTerm || selectedAllergen !== 'all' 
+            {searchTerm || selectedAllergen !== 'all' || selectedCertification !== 'all' || selectedStatus !== 'all' || selectedCategory !== 'all'
               ? t('admin.tryAdjustingSearch')
               : t('admin.getStartedFirstIngredient')}
           </p>
+          {(searchTerm || selectedAllergen !== 'all' || selectedCertification !== 'all' || selectedStatus !== 'all' || selectedCategory !== 'all') && (
+            <Button className="mr-3" variant="outline" onClick={() => { setSearchTerm(''); setSelectedAllergen('all'); setSelectedCertification('all'); setSelectedStatus('all'); setSelectedCategory('all') }}>{t('admin.clearFilters')}</Button>
+          )}
           <Link href={newIngredientHref}>
             <Button variant="primary" icon={Plus}>
-              {t('admin.addFirstIngredient')}
+              {ingredients.length ? t('admin.createNewIngredient') : t('admin.addFirstIngredient')}
             </Button>
           </Link>
         </div>

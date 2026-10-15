@@ -1,11 +1,13 @@
 // app/admin/ingredients/new/page.tsx
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { RegularFormActions } from '@/components/admin/RegularFormActions'
+import { useListReturnPath } from '@/lib/hooks/useListReturnPath'
 import { useNotification } from '@/lib/hooks/useNotification'
-import { 
+import {
   Package, ArrowLeft, Save, X, AlertCircle, Plus, Trash2,
   Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, MilkOff, ShieldCheck,
 } from 'lucide-react'
@@ -23,36 +25,26 @@ import {
   deriveEffectiveIngredientSafety,
   type SupplierProfileMap,
 } from '@/lib/ingredient-supplier-profiles'
+import { AttachmentUploadError, RegularItemSaveError, createRegularItemSaver } from '@/lib/regular-item-save'
+import { isIngredientAssessmentComplete } from '@/lib/allergen-assessment'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 
 export default function NewIngredientPage() {
   const { showNotification } = useNotification()
   const { t } = useTranslation()
   const router = useRouter()
-  const [returnTo, setReturnTo] = useState('/admin/ingredients')
+  const { returnTo } = useListReturnPath('/admin/ingredients')
   const [saving, setSaving] = useState(false)
+  const saveLock = useRef(false)
+  const [itemSaver] = useState(() => createRegularItemSaver('ingredient'))
+  const [uploadRetryNeeded, setUploadRetryNeeded] = useState(false)
   const [datasheets, setDatasheets] = useState<any[]>([])
-  
+
   const [ingredient, setIngredient] = useState({
     name: '',
     description: '',
     category: '',
-    allergen_warnings: {
-      cereals_gluten: 'none',
-      crustaceans: 'none',
-      eggs: 'none',
-      fish: 'none',
-      peanuts: 'none',
-      soybeans: 'none',
-      milk: 'none',
-      nuts: 'none',
-      celery: 'none',
-      mustard: 'none',
-      sesame: 'none',
-      sulphites: 'none',
-      lupin: 'none',
-      molluscs: 'none'
-    } as AllergenWarnings,
+    allergen_warnings: {} as AllergenWarnings,
     suppliers: [] as string[],
     certifications: [] as string[],
     preferred_review_months: 12,
@@ -66,21 +58,6 @@ export default function NewIngredientPage() {
   // Per-supplier profiles
   const [supplierProfiles, setSupplierProfiles] = useState<SupplierProfileMap>({})
 
-  useEffect(() => {
-    const requestedPath = new URLSearchParams(window.location.search).get('returnTo')
-    if (requestedPath === '/admin/ingredients' || requestedPath?.startsWith('/admin/ingredients?')) {
-      setReturnTo(requestedPath)
-    }
-  }, [])
-
-  const parseJsonSafely = async (response: Response) => {
-    const contentType = response.headers.get('content-type') || ''
-    if (contentType.includes('application/json')) {
-      return response.json()
-    }
-    const text = await response.text()
-    return { error: text || t('ingredientsPortal.unexpectedServerResponse') }
-  }
 
   const applyDefaultSupplierToDatasheets = (files: any[], suppliers: string[]) => {
     if (suppliers.length !== 1) {
@@ -118,16 +95,16 @@ export default function NewIngredientPage() {
     const fetchSuppliers = async () => {
       try {
         setLoadingSuppliers(true)
-        
+
         // Add timeout to prevent hanging
         const controller = new AbortController()
         const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
-        
+
         const response = await fetch('/api/suppliers', {
           signal: controller.signal
         })
         clearTimeout(timeoutId)
-        
+
         const data = await response.json()
 
         if (!response.ok) {
@@ -183,69 +160,33 @@ export default function NewIngredientPage() {
   ]
 
   const handleSave = async () => {
-    if (!ingredient.name) {
+    if (saveLock.current) return
+    if (!ingredient.name.trim()) {
       showNotification(t('ingredientsPortal.nameRequired'), 'error')
       return
     }
-
+    if (!isIngredientAssessmentComplete(ingredient.allergen_warnings, supplierProfiles)) {
+      showNotification(t('regularAssessment.completeIngredient'), 'error')
+      return
+    }
+    saveLock.current = true
     setSaving(true)
-    
     try {
-      console.log('Saving ingredient:', ingredient)
-      
-      const response = await fetch('/api/ingredients', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...ingredient, supplier_profiles: supplierProfiles })
-      })
-
-      const result = await parseJsonSafely(response)
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to save ingredient')
-      }
-
-      const ingredientId = result.ingredient.id
-      console.log('✅ Ingredient saved:', result.ingredient)
-
-      // Upload datasheets if any
-      if (datasheets.length > 0) {
-        console.log('📤 Uploading', datasheets.length, 'datasheets...')
-        
-        const uploadPromises = datasheets.map(async (datasheet) => {
-          if (!datasheet.file) return
-          
-          const formData = new FormData()
-          formData.append('file', datasheet.file)
-          formData.append('ingredient_id', ingredientId)
-          if (datasheet.supplier_name) formData.append('supplier_name', datasheet.supplier_name)
-          if (datasheet.version) formData.append('version', datasheet.version)
-          if (datasheet.next_review_date) formData.append('next_review_date', datasheet.next_review_date)
-          if (datasheet.notes) formData.append('notes', datasheet.notes)
-
-          const uploadResponse = await fetch('/api/upload/datasheet', {
-            method: 'POST',
-            body: formData
-          })
-
-          if (!uploadResponse.ok) {
-            const errorData = await parseJsonSafely(uploadResponse)
-            console.error('Failed to upload:', datasheet.file_name, errorData)
-            throw new Error(t('ingredientsPortal.uploadDatasheetFailed', { fileName: datasheet.file_name || t('ingredientsPortal.datasheet'), error: errorData.error || t('ingredientsPortal.unknownError') }))
-          }
-
-          return parseJsonSafely(uploadResponse)
-        })
-
-        await Promise.all(uploadPromises)
-        console.log('✅ All datasheets uploaded')
-      }
-
+      await itemSaver.save(
+        { ...ingredient, supplier_profiles: supplierProfiles },
+        datasheets,
+        t('regularItemSave.saveFailed'),
+      )
+      setUploadRetryNeeded(false)
       showNotification(t('ingredientsPortal.ingredientSaved'), 'success')
       router.push(returnTo)
-    } catch (error: any) {
-      console.error('Error saving ingredient:', error)
-      showNotification(t('ingredientsPortal.saveIngredientFailed', { error: error.message || '' }), 'error')
+    } catch (error: unknown) {
+      if (error instanceof AttachmentUploadError) {
+        setUploadRetryNeeded(true)
+      } else {
+        showNotification(error instanceof RegularItemSaveError && ['completeIngredient', 'completeMenu'].includes(error.code || '') ? t(`regularAssessment.${error.code}`) : error instanceof Error ? error.message : t('regularItemSave.saveFailed'), 'error')
+      }
+      saveLock.current = false
     } finally {
       setSaving(false)
     }
@@ -260,7 +201,7 @@ export default function NewIngredientPage() {
       ...(derived ? {
         allergen_warnings: derived.allergen_warnings,
         certifications: derived.certifications,
-      } : {}),
+      } : { allergen_warnings: {} as AllergenWarnings, certifications: [] }),
     }))
   }
 
@@ -306,14 +247,14 @@ export default function NewIngredientPage() {
         <div className="py-8">
         {/* Header */}
         <div className="mb-8">
-          <Link 
-            href="/admin/ingredients"
+          <Link
+            href={returnTo}
             className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 mb-4"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             {t('ingredientsPortal.backToIngredients')}
           </Link>
-          
+
           <div className="flex justify-between items-start">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -374,147 +315,6 @@ export default function NewIngredientPage() {
                 </datalist>
               </div>
 
-              {/* Certifications are entered per supplier once supplier variants exist. */}
-              {ingredient.suppliers.length === 0 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">
-                  {t('ingredientsPortal.certificationsAndDietaryAttributes')}
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-                  {certificationOptions.map(cert => {
-                    const isSelected = ingredient.certifications.includes(cert.name);
-                    const IconComponent = cert.icon;
-                    
-                    return (
-                      <button
-                        key={cert.name}
-                        type="button"
-                        onClick={() => toggleCertification(cert.name)}
-                        className={`
-                          relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
-                          ${isSelected
-                            ? 'border-opacity-100 shadow-md'
-                            : 'border-gray-200 hover:border-gray-300 hover:shadow-lg'
-                          }
-                          group cursor-pointer
-                        `}
-                        style={{
-                          borderColor: isSelected ? cert.color : undefined,
-                          backgroundColor: isSelected ? `${cert.color}15` : '#fff'
-                        }}
-                      >
-                        <div 
-                          className={`
-                            flex items-center justify-center w-12 h-12 rounded-lg transition-all
-                            ${isSelected 
-                              ? 'scale-100' 
-                              : 'group-hover:scale-110'
-                            }
-                            group-hover:shadow-lg
-                          `}
-                          style={{ backgroundColor: cert.color }}
-                        >
-                          {typeof cert.icon === 'function' && React.createElement(cert.icon as React.ComponentType<{className: string}>, { className: 'h-6 w-6 text-white' })}
-                        </div>
-                        <span 
-                          className={`text-xs font-semibold text-center transition-colors ${
-                            isSelected ? 'text-gray-900' : 'text-gray-700'
-                          }`}
-                        >
-                          {cert.name}
-                        </span>
-                        {isSelected && (
-                          <div 
-                            className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
-                            style={{ backgroundColor: cert.color }}
-                          >
-                            <svg className="w-3 h-3 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
-                              <path d="M5 13l4 4L19 7"></path>
-                            </svg>
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                  
-                  {/* Custom Certification Card */}
-                  <button
-                    type="button"
-                    onClick={() => setShowCustomCertInput(!showCustomCertInput)}
-                    className={`
-                      relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
-                      ${showCustomCertInput
-                        ? 'border-gray-400 shadow-md bg-gray-50'
-                        : 'border-gray-200 hover:border-gray-300 hover:shadow-lg bg-white'
-                      }
-                      group cursor-pointer
-                    `}
-                  >
-                    <div 
-                      className={`
-                        flex items-center justify-center w-12 h-12 rounded-lg transition-all bg-gray-500
-                        ${showCustomCertInput 
-                          ? 'scale-100' 
-                          : 'group-hover:scale-110'
-                        }
-                        group-hover:shadow-lg
-                      `}
-                    >
-                      <Plus className="h-6 w-6 text-white" />
-                    </div>
-                    <span className="text-xs font-semibold text-center text-gray-700">
-                      {t('ingredientsPortal.custom')}
-                    </span>
-                  </button>
-                </div>
-                
-                {/* Custom Certification Input */}
-                {showCustomCertInput && (
-                  <div className="mt-4 flex gap-2">
-                    <input
-                      type="text"
-                      value={customCertInput}
-                      onChange={(e) => setCustomCertInput(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && addCustomCertification()}
-                      placeholder={t('ingredientsPortal.customCertificationPlaceholder')}
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                    />
-                    <Button
-                      variant="primary"
-                      onClick={addCustomCertification}
-                      disabled={!customCertInput.trim()}
-                    >
-                      {t('admin.add')}
-                    </Button>
-                  </div>
-                )}
-                
-                {/* Display Custom Certifications */}
-                {ingredient.certifications.filter(cert => isCustomCertification(cert)).length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium text-gray-700 mb-2">{t('ingredientsPortal.customCertifications')}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {ingredient.certifications.filter(cert => isCustomCertification(cert)).map(cert => (
-                        <span
-                          key={cert}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium"
-                        >
-                          {cert}
-                          <button
-                            type="button"
-                            onClick={() => removeCustomCertification(cert)}
-                            className="text-gray-500 hover:text-gray-700 transition-colors"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-              )}
-
               {/* Description */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -545,6 +345,170 @@ export default function NewIngredientPage() {
             onChange={handleSupplierVariantsChange}
           />
         </Card>
+
+        {/* Product Datasheets */}
+        <Card className="mb-8">
+          <div className="p-6 border-b">
+            <div>
+              <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">{t('admin.productDatasheets')}</h2>
+              <p className="text-sm text-gray-600">
+                {t('ingredientsPortal.datasheetUploadHelp')}
+              </p>
+            </div>
+          </div>
+
+          <div className="p-6">
+            <DatasheetUploader
+              entityType="ingredient"
+              onFilesChange={(files) => setDatasheets(applyDefaultSupplierToDatasheets(files, ingredient.suppliers))}
+              maxFiles={5}
+            />
+          </div>
+        </Card>
+
+        <div className="mb-8">
+              {/* Certifications are entered per supplier once supplier variants exist. */}
+              {ingredient.suppliers.length === 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  {t('ingredientsPortal.certificationsAndDietaryAttributes')}
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                  {certificationOptions.map(cert => {
+                    const isSelected = ingredient.certifications.includes(cert.name);
+                    const IconComponent = cert.icon;
+
+                    return (
+                      <button
+                        key={cert.name}
+                        type="button"
+                        onClick={() => toggleCertification(cert.name)}
+                        className={`
+                          relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
+                          ${isSelected
+                            ? 'border-opacity-100 shadow-md'
+                            : 'border-gray-200 hover:border-gray-300 hover:shadow-lg'
+                          }
+                          group cursor-pointer
+                        `}
+                        style={{
+                          borderColor: isSelected ? cert.color : undefined,
+                          backgroundColor: isSelected ? `${cert.color}15` : '#fff'
+                        }}
+                      >
+                        <div
+                          className={`
+                            flex items-center justify-center w-12 h-12 rounded-lg transition-all
+                            ${isSelected
+                              ? 'scale-100'
+                              : 'group-hover:scale-110'
+                            }
+                            group-hover:shadow-lg
+                          `}
+                          style={{ backgroundColor: cert.color }}
+                        >
+                          {typeof cert.icon === 'function' && React.createElement(cert.icon as React.ComponentType<{className: string}>, { className: 'h-6 w-6 text-white' })}
+                        </div>
+                        <span
+                          className={`text-xs font-semibold text-center transition-colors ${
+                            isSelected ? 'text-gray-900' : 'text-gray-700'
+                          }`}
+                        >
+                          {cert.name}
+                        </span>
+                        {isSelected && (
+                          <div
+                            className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
+                            style={{ backgroundColor: cert.color }}
+                          >
+                            <svg className="w-3 h-3 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
+                              <path d="M5 13l4 4L19 7"></path>
+                            </svg>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+
+                  {/* Custom Certification Card */}
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomCertInput(!showCustomCertInput)}
+                    className={`
+                      relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
+                      ${showCustomCertInput
+                        ? 'border-gray-400 shadow-md bg-gray-50'
+                        : 'border-gray-200 hover:border-gray-300 hover:shadow-lg bg-white'
+                      }
+                      group cursor-pointer
+                    `}
+                  >
+                    <div
+                      className={`
+                        flex items-center justify-center w-12 h-12 rounded-lg transition-all bg-gray-500
+                        ${showCustomCertInput
+                          ? 'scale-100'
+                          : 'group-hover:scale-110'
+                        }
+                        group-hover:shadow-lg
+                      `}
+                    >
+                      <Plus className="h-6 w-6 text-white" />
+                    </div>
+                    <span className="text-xs font-semibold text-center text-gray-700">
+                      {t('ingredientsPortal.custom')}
+                    </span>
+                  </button>
+                </div>
+
+                {/* Custom Certification Input */}
+                {showCustomCertInput && (
+                  <div className="mt-4 flex gap-2">
+                    <input
+                      type="text"
+                      value={customCertInput}
+                      onChange={(e) => setCustomCertInput(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && addCustomCertification()}
+                      placeholder={t('ingredientsPortal.customCertificationPlaceholder')}
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
+                    />
+                    <Button
+                      variant="primary"
+                      onClick={addCustomCertification}
+                      disabled={!customCertInput.trim()}
+                    >
+                      {t('admin.add')}
+                    </Button>
+                  </div>
+                )}
+
+                {/* Display Custom Certifications */}
+                {ingredient.certifications.filter(cert => isCustomCertification(cert)).length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm font-medium text-gray-700 mb-2">{t('ingredientsPortal.customCertifications')}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {ingredient.certifications.filter(cert => isCustomCertification(cert)).map(cert => (
+                        <span
+                          key={cert}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium"
+                        >
+                          {cert}
+                          <button
+                            type="button"
+                            onClick={() => removeCustomCertification(cert)}
+                            className="text-gray-500 hover:text-gray-700 transition-colors"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              )}
+
+        </div>
 
         {/* Allergen Information — hidden when suppliers have their own profiles */}
         {ingredient.suppliers.length === 0 && (
@@ -582,42 +546,15 @@ export default function NewIngredientPage() {
           />
         </Card>
 
-        {/* Product Datasheets */}
-        <Card className="mb-8">
-          <div className="p-6 border-b">
-            <div>
-              <h2 className="text-lg font-semibold text-[#003842] dark:text-[#42b8ac]">{t('admin.productDatasheets')}</h2>
-              <p className="text-sm text-gray-600">
-                {t('ingredientsPortal.datasheetUploadHelp')}
-              </p>
-            </div>
+        {uploadRetryNeeded && (
+          <div role="alert" className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+            {t('regularItemSave.documentsPending')}
           </div>
-
-          <div className="p-6">
-            <DatasheetUploader
-              entityType="ingredient"
-              onFilesChange={(files) => setDatasheets(applyDefaultSupplierToDatasheets(files, ingredient.suppliers))}
-              maxFiles={5}
-            />
-          </div>
-        </Card>
-
-        {/* Action Buttons */}
-        <div className="flex justify-start gap-4">
-          <Link href={returnTo}>
-            <Button variant="outline">
-              {t('accessPoints.cancel')}
-            </Button>
-          </Link>
-          <Button
-            variant="primary"
-            icon={<Save className="h-4 w-4" />}
-            onClick={handleSave}
-            disabled={saving || !ingredient.name}
-          >
-            {saving ? t('admin.savingMenuItem') : t('ingredientsPortal.saveIngredient')}
-          </Button>
-        </div>
+        )}
+        {!isIngredientAssessmentComplete(ingredient.allergen_warnings, supplierProfiles) && (
+          <p className="mb-4 text-sm font-medium text-amber-900 dark:text-amber-200">{t('regularAssessment.completeIngredient')}</p>
+        )}
+        <RegularFormActions onSave={handleSave} onCancel={() => router.push(returnTo)} saveLabel={saving ? t('admin.savingMenuItem') : uploadRetryNeeded ? t('regularItemSave.saveAndRetry') : t('ingredientsPortal.saveIngredient')} disabled={!ingredient.name.trim()} busy={saving} />
       </div>
     </Container>
 

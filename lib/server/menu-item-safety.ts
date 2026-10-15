@@ -1,5 +1,5 @@
+import { isAllergenAssessmentComplete, isIngredientAssessmentComplete, mergeAllergenAssessments } from '@/lib/allergen-assessment'
 import type { AllergenWarnings } from '@/types/allergen'
-import { computeWorstCaseAllergens } from '@/types/allergen'
 
 const STANDARD_DIETARY = new Set([
   'Vegan', 'Vegetarian', 'Gluten-Free', 'Halal', 'Kosher', 'Organic',
@@ -21,12 +21,12 @@ export async function deriveMenuItemSafety(
   requestedDietary: string[]
 ) {
   if (ingredientIds.length === 0) {
-    return { allergenWarnings: requestedWarnings, dietary: requestedDietary }
+    return { allergenWarnings: requestedWarnings, dietary: requestedDietary, assessmentComplete: isAllergenAssessmentComplete(requestedWarnings) }
   }
 
   const { data, error } = await supabase
     .from('ingredients')
-    .select('id, allergen_warnings, certifications')
+    .select('id, allergen_warnings, certifications, status, supplier_profiles')
     .eq('business_id', businessId)
     .in('id', ingredientIds)
 
@@ -46,12 +46,11 @@ export async function deriveMenuItemSafety(
       )
   const customDietary = requestedDietary.filter((label) => !STANDARD_DIETARY.has(label))
 
-  return {
-    allergenWarnings: computeWorstCaseAllergens(
-      ingredientRows.map((row: any) => (row.allergen_warnings || {}) as AllergenWarnings)
-    ),
-    dietary: Array.from(new Set([...inheritedDietary, ...customDietary])),
-  }
+  const assessmentComplete = ingredientRows.every((row: any) =>
+    (!row.status || row.status === 'active') && isIngredientAssessmentComplete(row.allergen_warnings, row.supplier_profiles))
+  const allergenWarnings = mergeAllergenAssessments(ingredientRows.map((row: any) => (row.allergen_warnings || {}) as AllergenWarnings))
+  if (!assessmentComplete) allergenWarnings.assessment_incomplete = true
+  return { assessmentComplete, allergenWarnings, dietary: Array.from(new Set([...inheritedDietary, ...customDietary])) }
 }
 
 export async function replaceMenuItemIngredients(

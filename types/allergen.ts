@@ -135,6 +135,8 @@ export type AllergenId = typeof ALLERGEN_LIST[number]['id'];
 
 // Allergen warnings object for menu items
 export type AllergenWarnings = Record<AllergenId, AllergenLevel> & {
+  // Derived previews retain known warnings while signalling unassessed inputs.
+  assessment_incomplete?: boolean;
   // Optional subtype specifications (legacy - kept for backwards compatibility)
   cereals_gluten_types?: GlutenType[];
   nuts_types?: TreeNutType[];

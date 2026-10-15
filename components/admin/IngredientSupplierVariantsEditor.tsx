@@ -19,6 +19,7 @@ import {
   type SupplierSafetyProfile,
 } from '@/lib/ingredient-supplier-profiles'
 import type { AllergenWarnings } from '@/types/allergen'
+import { isAllergenAssessmentComplete } from '@/lib/allergen-assessment'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 
 type CertificationOption = {
@@ -27,22 +28,7 @@ type CertificationOption = {
   icon: React.ComponentType<{ className?: string }>
 }
 
-const createBlankAllergenWarnings = (): AllergenWarnings => ({
-  cereals_gluten: 'none',
-  crustaceans: 'none',
-  eggs: 'none',
-  fish: 'none',
-  peanuts: 'none',
-  soybeans: 'none',
-  milk: 'none',
-  nuts: 'none',
-  celery: 'none',
-  mustard: 'none',
-  sesame: 'none',
-  sulphites: 'none',
-  lupin: 'none',
-  molluscs: 'none',
-})
+const createBlankAllergenWarnings = (): AllergenWarnings => ({} as AllergenWarnings)
 
 interface IngredientSupplierVariantsEditorProps {
   suppliers: string[]
@@ -88,7 +74,7 @@ export default function IngredientSupplierVariantsEditor({
     : buildCompleteSupplierProfiles(suppliers, profiles, fallbackAllergens, fallbackCertifications)
   const variantEntries = Object.entries(displayedProfiles)
 
-  const reviewCount = variantEntries.filter(([, profile]) => profile.assessment_status !== 'assessed').length
+  const reviewCount = variantEntries.filter(([, profile]) => profile.assessment_status !== 'assessed' || !isAllergenAssessmentComplete(profile.allergen_warnings)).length
 
   const emitProfiles = (nextProfiles: SupplierProfileMap) => {
     onChange(
@@ -222,7 +208,7 @@ export default function IngredientSupplierVariantsEditor({
           {variantEntries.map(([profileKey, profile]) => {
             const supplier = profile.supplier_name || profileKey
             const isExpanded = expandedSuppliers.has(profileKey)
-            const isAssessed = profile?.assessment_status === 'assessed'
+            const isAssessed = profile?.assessment_status === 'assessed' && isAllergenAssessmentComplete(profile.allergen_warnings)
 
             return (
               <section
@@ -290,8 +276,8 @@ export default function IngredientSupplierVariantsEditor({
                         value={profile?.allergen_warnings || fallbackAllergens}
                         onChange={(allergen_warnings) => updateProfile(profileKey, {
                           allergen_warnings,
-                          assessment_status: 'assessed',
-                          last_reviewed_at: new Date().toISOString(),
+                          assessment_status: 'needs_review',
+                          last_reviewed_at: null,
                         })}
                       />
                     </div>
@@ -309,8 +295,8 @@ export default function IngredientSupplierVariantsEditor({
                                 const current = profile?.certifications || []
                                 updateProfile(profileKey, {
                                   certifications: selected ? current.filter((item) => item !== name) : [...current, name],
-                                  assessment_status: 'assessed',
-                                  last_reviewed_at: new Date().toISOString(),
+                                  assessment_status: 'needs_review',
+                                  last_reviewed_at: null,
                                 })
                               }}
                               className={`flex min-h-11 items-center gap-2 rounded-lg border-2 px-3 py-2 text-left text-xs font-semibold transition ${selected ? 'shadow-sm' : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300'}`}
@@ -341,6 +327,7 @@ export default function IngredientSupplierVariantsEditor({
                     <div className="flex justify-end">
                       <Button
                         type="button"
+                        disabled={!isAllergenAssessmentComplete(profile?.allergen_warnings)}
                         variant={isAssessed ? 'outline' : 'primary'}
                         icon={<CheckCircle2 className="h-4 w-4" />}
                         onClick={() => updateProfile(profileKey, {

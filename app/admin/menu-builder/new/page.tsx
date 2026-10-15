@@ -1,11 +1,15 @@
 // app/admin/menu-builder/new/page.tsx
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { MenuDietaryFields } from '@/components/admin/MenuDietaryFields'
+import { RegularFormActions } from '@/components/admin/RegularFormActions'
+import { useListReturnPath } from '@/lib/hooks/useListReturnPath'
+import { AttachmentUploadError, RegularItemSaveError, createRegularItemSaver } from '@/lib/regular-item-save'
 import { useTranslation } from '@/lib/hooks/useTranslation'
-import { ArrowLeft, Save, X, Plus, CheckCircle } from 'lucide-react'
+import { ArrowLeft, Save, X, Plus, CheckCircle, AlertTriangle } from 'lucide-react'
 
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
@@ -17,7 +21,7 @@ import DatasheetUploader from '@/components/admin/DatasheetUploader'
 import { MenuItemSupplyFields, type MenuItemType, type SupplierOption } from '@/components/admin/MenuItemSupplyFields'
 import { ReviewFrequencySelector } from '@/components/admin/ReviewFrequencySelector'
 import type { AllergenWarnings } from '@/types/allergen'
-import { computeWorstCaseAllergens } from '@/types/allergen'
+import { mergeAllergenAssessments, isIngredientAssessmentComplete, isAllergenAssessmentComplete } from '@/lib/allergen-assessment'
 
 interface MenuItem {
   name: string
@@ -76,9 +80,12 @@ const isImageIcon = (icon?: string) => Boolean(icon && /^https?:\/\//.test(icon)
 export default function NewMenuItemPage() {
   const { t } = useTranslation()
   const router = useRouter()
-  const [returnTo, setReturnTo] = useState('/admin/menu-builder')
+  const { returnTo } = useListReturnPath('/admin/menu-builder')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const saveLock = useRef(false)
+  const [itemSaver] = useState(() => createRegularItemSaver('menu_item'))
+  const [uploadRetryNeeded, setUploadRetryNeeded] = useState(false)
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [sites, setSites] = useState<SiteOption[]>([])
   const [suppliers, setSuppliers] = useState<SupplierOption[]>([])
@@ -94,22 +101,7 @@ export default function NewMenuItemPage() {
     description: '',
     category: '',
     site_id: null,
-    allergen_warnings: {
-      cereals_gluten: 'none',
-      crustaceans: 'none',
-      eggs: 'none',
-      fish: 'none',
-      peanuts: 'none',
-      soybeans: 'none',
-      milk: 'none',
-      nuts: 'none',
-      celery: 'none',
-      mustard: 'none',
-      sesame: 'none',
-      sulphites: 'none',
-      lupin: 'none',
-      molluscs: 'none'
-    },
+    allergen_warnings: {} as AllergenWarnings,
     dietary: [],
     ingredients: [],
     preferred_review_months: 12,
@@ -125,12 +117,6 @@ export default function NewMenuItemPage() {
   ]
   const [categoryOptions, setCategoryOptions] = useState<string[]>(DEFAULT_MENU_CATEGORIES)
 
-  useEffect(() => {
-    const requestedPath = new URLSearchParams(window.location.search).get('returnTo')
-    if (requestedPath === '/admin/menu-builder' || requestedPath?.startsWith('/admin/menu-builder?')) {
-      setReturnTo(requestedPath)
-    }
-  }, [])
 
   useEffect(() => {
     fetch('/api/menu-items/categories')
@@ -142,22 +128,7 @@ export default function NewMenuItemPage() {
       .catch(() => {})
   }, [])
 
-  const defaultWarnings: AllergenWarnings = {
-    cereals_gluten: 'none',
-    crustaceans: 'none',
-    eggs: 'none',
-    fish: 'none',
-    peanuts: 'none',
-    soybeans: 'none',
-    milk: 'none',
-    nuts: 'none',
-    celery: 'none',
-    mustard: 'none',
-    sesame: 'none',
-    sulphites: 'none',
-    lupin: 'none',
-    molluscs: 'none'
-  }
+  const defaultWarnings = {} as AllergenWarnings
 
   // Load ingredients and sites
   useEffect(() => {
@@ -175,7 +146,7 @@ export default function NewMenuItemPage() {
           const mappedIngredients = (ingredientData.ingredients || []).map((ingredient: any) => ({
             id: ingredient.id,
             name: ingredient.name,
-            allergen_warnings: ingredient.allergen_warnings || { ...defaultWarnings },
+            allergen_warnings: { ...(ingredient.allergen_warnings || {}), assessment_incomplete: (ingredient.status && ingredient.status !== 'active') || !isIngredientAssessmentComplete(ingredient.allergen_warnings, ingredient.supplier_profiles) },
             suppliers: ingredient.suppliers || [],
             certifications: ingredient.certifications || []
           }))
@@ -221,7 +192,7 @@ export default function NewMenuItemPage() {
       ...menuItem,
       ingredients: updatedIngredients,
       allergen_warnings: profiles.length > 0
-        ? computeWorstCaseAllergens(profiles)
+        ? mergeAllergenAssessments(profiles)
         : { ...defaultWarnings },
       dietary: mergedCertifications,
     })
@@ -259,60 +230,40 @@ export default function NewMenuItemPage() {
     }
   }
 
-  const handleSave = async () => {
-    if (!menuItem.name || !menuItem.description) {
+  const handleSave = async (activate = false) => {
+    if (saveLock.current) return
+    if (!menuItem.name.trim() || (activate && !menuItem.description.trim())) {
       setSaveStatus('error')
-      setSaveMessage('Please fill in all required fields')
+      setSaveMessage(t('regularItemSave.requiredFields'))
       return
     }
-
-    try {
-      setSaving(true)
-      setSaveStatus('saving')
-      setSaveMessage(t('admin.savingMenuItem'))
-
-      const response = await fetch('/api/menu-items', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...menuItem,
-          status: 'active'
-        })
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-          throw new Error(data.error || t('admin.failedToDownload'))
-      }
-
-      if (datasheets.length > 0) {
-        setSaveMessage('Uploading product evidence...')
-        await Promise.all(datasheets.filter(sheet => sheet.file).map(async sheet => {
-          const formData = new FormData()
-          formData.append('file', sheet.file)
-          formData.append('menu_item_id', data.menuItem.id)
-          if (sheet.supplier_name) formData.append('supplier_name', sheet.supplier_name)
-          if (sheet.version) formData.append('version', sheet.version)
-          if (sheet.next_review_date) formData.append('next_review_date', sheet.next_review_date)
-          if (sheet.notes) formData.append('notes', sheet.notes)
-          const uploadResponse = await fetch('/api/upload/datasheet', { method: 'POST', body: formData })
-          const uploadData = await uploadResponse.json()
-          if (!uploadResponse.ok) throw new Error(uploadData.error || 'The item was created, but its datasheet could not be uploaded')
-        }))
-      }
-
-      setSaveStatus('success')
-      setSaveMessage('Menu item saved successfully!')
-      
-      // Redirect after a short delay
-      setTimeout(() => {
-        router.push(returnTo)
-      }, 1000)
-    } catch (error: any) {
-      console.error('Error saving menu item:', error)
+    const ready = isAllergenAssessmentComplete(menuItem.allergen_warnings) && (menuItem.item_type === 'prepared'
+      ? menuItem.ingredients.length > 0
+      : Boolean(menuItem.supplier_id && menuItem.ingredient_declaration.trim() && menuItem.label_verified_at))
+    if (activate && !ready) {
       setSaveStatus('error')
-      setSaveMessage(error?.message || t('admin.failedToDownload'))
+      setSaveMessage(t('regularAssessment.completeMenu'))
+      return
+    }
+    saveLock.current = true
+    setSaving(true)
+    setSaveStatus('saving')
+    setSaveMessage(t('admin.savingMenuItem'))
+    try {
+      await itemSaver.save({ ...menuItem, status: activate ? 'active' : 'draft' }, datasheets, t('regularItemSave.saveFailed'))
+      setUploadRetryNeeded(false)
+      setSaveStatus('success')
+      setSaveMessage(t('regularItemSave.saved'))
+      router.push(returnTo)
+    } catch (error: unknown) {
+      setSaveStatus('error')
+      if (error instanceof AttachmentUploadError) {
+        setUploadRetryNeeded(true)
+        setSaveMessage(t('regularItemSave.documentsPending'))
+      } else {
+        setSaveMessage(error instanceof RegularItemSaveError && ['completeIngredient', 'completeMenu'].includes(error.code || '') ? t(`regularAssessment.${error.code}`) : error instanceof Error ? error.message : t('regularItemSave.saveFailed'))
+      }
+      saveLock.current = false
     } finally {
       setSaving(false)
     }
@@ -337,7 +288,7 @@ export default function NewMenuItemPage() {
         {/* Header */}
         <div className="mb-8">
           <Link
-            href="/admin/menu-builder"
+            href={returnTo}
             className="inline-flex items-center gap-2 text-[#42b8ac] hover:text-[#003842] dark:hover:text-[#42b8ac] font-medium mb-4"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -355,17 +306,6 @@ export default function NewMenuItemPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form Section */}
           <div className="lg:col-span-2 space-y-6">
-            <Card className="p-6">
-              <MenuItemSupplyFields
-                value={menuItem}
-                suppliers={suppliers}
-                onChange={(changes) => setMenuItem(current => ({
-                  ...current,
-                  ...changes,
-                  ...(changes.item_type === 'packaged_product' ? { ingredients: [] } : {}),
-                }))}
-              />
-            </Card>
             {/* Menu Item Name */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -378,28 +318,6 @@ export default function NewMenuItemPage() {
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 placeholder={t('admin.menuItemName')}
               />
-            </Card>
-
-            {/* Site Scope */}
-            <Card className="p-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('admin.siteScope')}
-              </label>
-              <select
-                value={menuItem.site_id ?? 'global'}
-                onChange={(e) => setMenuItem({ 
-                  ...menuItem, 
-                  site_id: e.target.value === 'global' ? null : e.target.value 
-                })}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              >
-                <option value="global">{t('admin.globalAllSites')}</option>
-                {sites.map((site) => (
-                  <option key={site.id} value={site.id}>
-                    {site.name}
-                  </option>
-                ))}
-              </select>
             </Card>
 
             {/* Category */}
@@ -425,7 +343,8 @@ export default function NewMenuItemPage() {
             {/* Description */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('admin.itemDescription')} *
+                {t('admin.itemDescription')}
+                <span className="mt-1 block text-xs font-normal text-gray-500 dark:text-gray-400">{t('regularAssessment.descriptionHelp')}</span>
               </label>
               <textarea
                 value={menuItem.description}
@@ -436,112 +355,17 @@ export default function NewMenuItemPage() {
               />
             </Card>
 
-            {/* Tile Colour */}
             <Card className="p-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('admin.tileColour')} <span className="text-gray-400 font-normal">({t('admin.optional')})</span>
-              </label>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                {t('admin.tileColourDesc')}
-              </p>
-              <div className="flex items-center gap-4">
-                <input
-                  type="color"
-                  value={menuItem.color || '#ffffff'}
-                  onChange={(e) => setMenuItem({ ...menuItem, color: e.target.value === '#ffffff' ? '' : e.target.value })}
-                  className="h-10 w-16 rounded border border-gray-300 cursor-pointer"
-                />
-                <div
-                  className="flex-1 h-10 rounded-lg border border-gray-200 flex items-center px-3 text-sm font-medium transition-colors"
-                  style={{ backgroundColor: menuItem.color || '#ffffff', color: menuItem.color ? '#fff' : '#374151', border: menuItem.color ? 'none' : undefined }}
-                >
-                  {menuItem.color ? menuItem.color : t('admin.noColorSelected')}
-                </div>
-                {menuItem.color && (
-                  <button
-                    type="button"
-                    onClick={() => setMenuItem({ ...menuItem, color: '' })}
-                    className="text-xs text-gray-500 hover:text-red-600 underline whitespace-nowrap"
-                  >
-                    {t('admin.clear')}
-                  </button>
-                )}
-              </div>
+              <MenuItemSupplyFields
+                value={menuItem}
+                suppliers={suppliers}
+                onChange={(changes) => setMenuItem(current => ({
+                  ...current,
+                  ...changes,
+                  ...(changes.item_type && changes.item_type !== current.item_type ? { ingredients: [], allergen_warnings: {} as AllergenWarnings, dietary: [], label_verified_at: null } : {}),
+                }))}
+              />
             </Card>
-
-            {/* Menu Item Icon/Image */}
-            <Card className="p-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                {t('admin.iconOrPicture')} <span className="text-gray-400 font-normal">({t('admin.optional')})</span>
-              </label>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                {t('admin.iconPictureHelp')}
-              </p>
-              
-              {/* Upload Custom Image */}
-              <div className="mb-5 pb-5 border-b border-gray-200 dark:border-gray-600">
-                <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{t('admin.uploadCustomImage')}</p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    handleIconUpload(e.target.files?.[0] || null)
-                    e.currentTarget.value = ''
-                  }}
-                  disabled={uploadingIcon}
-                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#42b8ac] file:text-white hover:file:bg-[#3aa89e]"
-                />
-                {uploadingIcon && (
-                  <p className="mt-2 text-xs text-[#0f766e] font-medium">{t('admin.uploadingImage')}</p>
-                )}
-              </div>
-
-              {menuItem.icon && (
-                <div className="mb-5 flex items-center justify-between gap-4 rounded-lg border border-[#42b8ac]/40 bg-[#42b8ac]/10 p-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-white border border-gray-200 text-3xl shrink-0">
-                      {isImageIcon(menuItem.icon) ? (
-                        <img src={menuItem.icon} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        <span>{menuItem.icon}</span>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-[#003842]">{t('admin.selectedIcon')}</p>
-                      <p className="truncate text-xs text-gray-500">{isImageIcon(menuItem.icon) ? t('admin.customUploadedImage') : t('admin.presetIcon')}</p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setMenuItem({ ...menuItem, icon: '' })}
-                    className="text-xs text-gray-500 hover:text-red-600 underline whitespace-nowrap"
-                  >
-                    {t('admin.clear')}
-                  </button>
-                </div>
-              )}
-
-              {/* Preset Icons */}
-              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-3">{t('admin.choosePresetIcons')}</p>
-              <div className="grid grid-cols-4 gap-3">
-                {PRESET_MENU_ICONS.map(preset => (
-                  <button
-                    key={preset.name}
-                    type="button"
-                    onClick={() => setMenuItem({ ...menuItem, icon: preset.icon })}
-                    className={`p-3 rounded-lg border-2 transition-all text-3xl ${
-                      menuItem.icon === preset.icon
-                        ? 'border-[#42b8ac] bg-[#42b8ac]/10'
-                        : 'border-gray-200 dark:border-gray-600 hover:border-[#42b8ac] hover:bg-[#42b8ac]/10'
-                    }`}
-                    title={preset.name}
-                  >
-                    {preset.icon}
-                  </button>
-                ))}
-              </div>
-            </Card>
-
             {menuItem.item_type === 'prepared' && <>
             {/* Selected Ingredients */}
             <Card className="p-6">
@@ -617,67 +441,35 @@ export default function NewMenuItemPage() {
               )}
             </Card>
 
-            {menuItem.item_type === 'packaged_product' && (
-              <Card className="p-6 space-y-5">
-                <div>
-                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{t('admin.dietaryClaims')}</h2>
-                  <p className="mt-1 text-xs text-gray-500">{t('admin.dietaryClaimsHelp')}</p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {['Vegan', 'Vegetarian', 'Gluten-Free', 'Dairy Free', 'Halal', 'Kosher', 'Organic', 'Fair Trade', 'Lactose-Free', 'Coeliac-Friendly'].map(claim => (
-                    <button key={claim} type="button" onClick={() => setMenuItem(current => ({ ...current, dietary: current.dietary.includes(claim) ? current.dietary.filter(value => value !== claim) : [...current.dietary, claim] }))} className={`rounded-full border px-3 py-1.5 text-sm ${menuItem.dietary.includes(claim) ? 'border-[#42b8ac] bg-[#42b8ac]/10 text-[#0f766e]' : 'border-gray-300 text-gray-600'}`}>{claim}</button>
-                  ))}
-                </div>
-                <DatasheetUploader entityType="menu_item" onFilesChange={setDatasheets} />
-              </Card>
-            )}
+            <Card className="p-6">
+              <MenuDietaryFields prepared={menuItem.item_type === 'prepared'} value={menuItem.dietary} onChange={dietary => setMenuItem(current => ({ ...current, dietary }))} />
+            </Card>
+            <Card className="p-6">
+              <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">{t('admin.menuItemSpecificDatasheets')}</h2>
+              <DatasheetUploader entityType="menu_item" onFilesChange={setDatasheets} />
+            </Card>
 
-            {/* Save Status */}
-            {saveStatus !== 'idle' && (
-              <Card className={`p-4 border-2 ${
-                saveStatus === 'success'
-                  ? 'border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20'
-                  : saveStatus === 'error'
-                    ? 'border-red-200 bg-red-50 dark:bg-red-900/20'
-                    : 'border-blue-200 bg-blue-50 dark:bg-blue-900/20'
-              }`}>
-                <p className={`text-sm font-medium ${
-                  saveStatus === 'success'
-                    ? 'text-emerald-800 dark:text-emerald-200'
-                    : saveStatus === 'error'
-                      ? 'text-red-800 dark:text-red-200'
-                      : 'text-blue-800 dark:text-blue-200'
-                }`}>
-                  {saveMessage}
-                </p>
-              </Card>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Save Button */}
-            <Card className="p-6 sticky top-6">
-              <Button
-                onClick={handleSave}
-                variant="primary"
-                icon={<Save className="h-4 w-4" />}
-                fullWidth
-                size="lg"
-                disabled={saving || !menuItem.name || !menuItem.description}
+            <p className="text-sm text-gray-600 dark:text-gray-300">{t('regularAssessment.draftHelp')}</p>
+            {/* Site Scope */}
+            <Card className="p-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('admin.siteScope')}
+              </label>
+              <select
+                value={menuItem.site_id ?? 'global'}
+                onChange={(e) => setMenuItem({
+                  ...menuItem,
+                  site_id: e.target.value === 'global' ? null : e.target.value
+                })}
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               >
-                {saving ? t('admin.savingMenuItem') : t('admin.saveMenuItem')}
-              </Button>
-              <Link href={returnTo}>
-                <Button
-                  variant="outline"
-                  fullWidth
-                  size="lg"
-                  className="mt-3"
-                >
-                  {t('admin.cancel')}
-                </Button>
-              </Link>
+                <option value="global">{t('admin.globalAllSites')}</option>
+                {sites.map((site) => (
+                  <option key={site.id} value={site.id}>
+                    {site.name}
+                  </option>
+                ))}
+              </select>
             </Card>
 
             {/* Review Frequency */}
@@ -692,13 +484,124 @@ export default function NewMenuItemPage() {
               />
             </Card>
 
-            {/* Final Allergen Summary */}
-            <Card className="p-6 border-2 border-emerald-300 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20">
-              <div className="flex items-center gap-2 mb-4">
-                <div className="p-2 bg-emerald-600 rounded-lg">
-                  <CheckCircle className="h-5 w-5 text-white" />
+            {/* Tile Colour */}
+            <Card className="p-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('admin.tileColour')} <span className="text-gray-400 font-normal">({t('admin.optional')})</span>
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                {t('admin.tileColourDesc')}
+              </p>
+              <div className="flex items-center gap-4">
+                <input
+                  type="color"
+                  value={menuItem.color || '#ffffff'}
+                  onChange={(e) => setMenuItem({ ...menuItem, color: e.target.value === '#ffffff' ? '' : e.target.value })}
+                  className="h-10 w-16 rounded border border-gray-300 cursor-pointer"
+                />
+                <div
+                  className="flex-1 h-10 rounded-lg border border-gray-200 flex items-center px-3 text-sm font-medium transition-colors"
+                  style={{ backgroundColor: menuItem.color || '#ffffff', color: menuItem.color ? '#fff' : '#374151', border: menuItem.color ? 'none' : undefined }}
+                >
+                  {menuItem.color ? menuItem.color : t('admin.noColorSelected')}
                 </div>
-                <h3 className="font-semibold text-emerald-900 dark:text-emerald-200">{t('admin.allergenSummary')}</h3>
+                {menuItem.color && (
+                  <button
+                    type="button"
+                    onClick={() => setMenuItem({ ...menuItem, color: '' })}
+                    className="text-xs text-gray-500 hover:text-red-600 underline whitespace-nowrap"
+                  >
+                    {t('admin.clear')}
+                  </button>
+                )}
+              </div>
+            </Card>
+
+            {/* Menu Item Icon/Image */}
+            <Card className="p-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                {t('admin.iconOrPicture')} <span className="text-gray-400 font-normal">({t('admin.optional')})</span>
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                {t('admin.iconPictureHelp')}
+              </p>
+
+              {/* Upload Custom Image */}
+              <div className="mb-5 pb-5 border-b border-gray-200 dark:border-gray-600">
+                <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{t('admin.uploadCustomImage')}</p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    handleIconUpload(e.target.files?.[0] || null)
+                    e.currentTarget.value = ''
+                  }}
+                  disabled={uploadingIcon}
+                  className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#42b8ac] file:text-white hover:file:bg-[#3aa89e]"
+                />
+                {uploadingIcon && (
+                  <p className="mt-2 text-xs text-[#0f766e] font-medium">{t('admin.uploadingImage')}</p>
+                )}
+              </div>
+
+              {menuItem.icon && (
+                <div className="mb-5 flex items-center justify-between gap-4 rounded-lg border border-[#42b8ac]/40 bg-[#42b8ac]/10 p-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-white border border-gray-200 text-3xl shrink-0">
+                      {isImageIcon(menuItem.icon) ? (
+                        <img src={menuItem.icon} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <span>{menuItem.icon}</span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-[#003842]">{t('admin.selectedIcon')}</p>
+                      <p className="truncate text-xs text-gray-500">{isImageIcon(menuItem.icon) ? t('admin.customUploadedImage') : t('admin.presetIcon')}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setMenuItem({ ...menuItem, icon: '' })}
+                    className="text-xs text-gray-500 hover:text-red-600 underline whitespace-nowrap"
+                  >
+                    {t('admin.clear')}
+                  </button>
+                </div>
+              )}
+
+              {/* Preset Icons */}
+              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-3">{t('admin.choosePresetIcons')}</p>
+              <div className="grid grid-cols-4 gap-3">
+                {PRESET_MENU_ICONS.map(preset => (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    onClick={() => setMenuItem({ ...menuItem, icon: preset.icon })}
+                    className={`p-3 rounded-lg border-2 transition-all text-3xl ${
+                      menuItem.icon === preset.icon
+                        ? 'border-[#42b8ac] bg-[#42b8ac]/10'
+                        : 'border-gray-200 dark:border-gray-600 hover:border-[#42b8ac] hover:bg-[#42b8ac]/10'
+                    }`}
+                    title={preset.name}
+                  >
+                    {preset.icon}
+                  </button>
+                ))}
+              </div>
+            </Card>
+
+
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Final Allergen Summary */}
+            <Card className={`p-6 border-2 ${isAllergenAssessmentComplete(menuItem.allergen_warnings) ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-900/20' : 'border-amber-300 bg-amber-50 dark:bg-amber-900/20'}`}>
+              <div className="flex items-center gap-2 mb-4">
+                <div className={`shrink-0 p-2 rounded-lg ${isAllergenAssessmentComplete(menuItem.allergen_warnings) ? 'bg-emerald-600' : 'bg-amber-600'}`}>
+                  {isAllergenAssessmentComplete(menuItem.allergen_warnings) ? <CheckCircle className="h-5 w-5 text-white" /> : <AlertTriangle className="h-5 w-5 text-white" />}
+                </div>
+                <h3 className="min-w-0 break-words font-semibold text-gray-900 dark:text-gray-100">{t('admin.allergenSummary')}</h3>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
                 <AllergenWarningDisplay
@@ -710,6 +613,8 @@ export default function NewMenuItemPage() {
             </Card>
           </div>
         </div>
+
+        <RegularFormActions feedback={saveStatus === 'idle' ? undefined : { text: saveMessage, error: saveStatus === 'error' }} onSave={() => handleSave(false)} onCancel={() => router.push(returnTo)} saveLabel={saving ? t('admin.savingMenuItem') : uploadRetryNeeded ? t('regularItemSave.saveAndRetry') : t('regularAssessment.saveDraft')} disabled={!menuItem.name.trim()} busy={saving || uploadingIcon} secondary={{ label: t('regularAssessment.makeActive'), onClick: () => handleSave(true) }} />
       </Container>
 
       {/* Ingredient Selector Modal */}

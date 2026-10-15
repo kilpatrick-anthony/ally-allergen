@@ -1,4 +1,5 @@
-import { computeWorstCaseAllergens, type AllergenWarnings } from '@/types/allergen'
+import { mergeAllergenAssessments } from '@/lib/allergen-assessment'
+import { type AllergenWarnings } from '@/types/allergen'
 
 export type SupplierAssessmentStatus = 'needs_review' | 'assessed'
 
@@ -88,7 +89,7 @@ export function deriveEffectiveIngredientSafety(profiles: SupplierProfileMap) {
 
   return {
     allergen_warnings: allergenProfiles.length > 0
-      ? computeWorstCaseAllergens(allergenProfiles)
+      ? mergeAllergenAssessments(allergenProfiles)
       : ({} as AllergenWarnings),
     certifications: certificationProfiles.length > 0
       ? certificationProfiles.reduce((common, certifications) =>

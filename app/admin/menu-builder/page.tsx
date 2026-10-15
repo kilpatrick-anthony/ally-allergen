@@ -1,8 +1,10 @@
 // app/admin/menu-builder/page.tsx - List View Only
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { ManagementListHeader } from '@/components/admin/ManagementListHeader'
+import { listContextHref } from '@/lib/list-navigation'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { Plus, Search, Trash2, Edit, ChefHat, FilterIcon, ChevronDown, SortAsc, SortDesc, Grid, List, Package, MapPin, Eye, Building, Copy } from 'lucide-react'
@@ -13,11 +15,13 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay'
 import type { AllergenWarnings } from '@/types/allergen'
+import { compareDateAdded } from '@/lib/regular-list-actions'
 import { useContentPermissions } from '@/lib/hooks/useContentPermissions'
 
 // Types
 interface MenuItem {
   id: string
+  createdAt: string | null
   name: string
   description: string
   category: string
@@ -35,21 +39,17 @@ interface SiteOption {
   name: string
 }
 
-const DEFAULT_WARNINGS: AllergenWarnings = {
-  cereals_gluten: 'none',
-  crustaceans: 'none',
-  eggs: 'none',
-  fish: 'none',
-  peanuts: 'none',
-  soybeans: 'none',
-  milk: 'none',
-  nuts: 'none',
-  celery: 'none',
-  mustard: 'none',
-  sesame: 'none',
-  sulphites: 'none',
-  lupin: 'none',
-  molluscs: 'none'
+function normalizeMenuItem(item: any): MenuItem {
+  return {
+    id: item.id, createdAt: item.created_at || null, name: item.name,
+    description: item.description || '', category: item.category || '',
+    site_id: item.site_id ?? null, icon: item.icon || '',
+    allergen_warnings: item.allergen_warnings || {} as AllergenWarnings,
+    dietary: Array.isArray(item.dietary) ? item.dietary : [],
+    ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
+    status: item.status || (item.is_active ? 'active' : 'draft'),
+    item_type: item.item_type || 'prepared',
+  }
 }
 
 const isImageIcon = (icon?: string) => Boolean(icon && /^https?:\/\//.test(icon))
@@ -75,9 +75,10 @@ function MenuItemIcon({ icon, size = 'md' }: { icon?: string; size?: 'sm' | 'md'
 
 export default function MenuBuilderPage() {
   const { canDeleteContent } = useContentPermissions()
-    const { t } = useTranslation()
+  const { t } = useTranslation()
   const { showNotification } = useNotification()
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [sites, setSites] = useState<SiteOption[]>([])
   const [ingredientCount, setIngredientCount] = useState(0)
@@ -86,83 +87,67 @@ export default function MenuBuilderPage() {
   const [sortBy, setSortBy] = useState<'name' | 'date'>('name')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [scopeFilter, setScopeFilter] = useState<'all' | 'global' | string>('all')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [showFilters, setShowFilters] = useState(false)
+  const [listReady, setListReady] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     setSearchTerm(params.get('q') || '')
+    if (['active', 'draft'].includes(params.get('status') || '')) setStatusFilter(params.get('status')!)
+    if (['prepared', 'packaged_product'].includes(params.get('type') || '')) setTypeFilter(params.get('type')!)
     if (params.get('scope')) setScopeFilter(params.get('scope')!)
     if (params.get('category')) setCategoryFilter(params.get('category')!)
     if (params.get('view') === 'list') setViewMode('list')
     if (params.get('sort') === 'date') setSortBy('date')
     if (params.get('direction') === 'desc') setSortDir('desc')
+    setShowFilters(params.get('filters') === '1')
+    setListReady(true)
   }, [])
 
   const listStateParams = new URLSearchParams()
+  if (showFilters) listStateParams.set('filters', '1')
   if (searchTerm) listStateParams.set('q', searchTerm)
+  if (statusFilter !== 'all') listStateParams.set('status', statusFilter)
+  if (typeFilter !== 'all') listStateParams.set('type', typeFilter)
   if (scopeFilter !== 'all') listStateParams.set('scope', scopeFilter)
   if (categoryFilter !== 'all') listStateParams.set('category', categoryFilter)
   if (viewMode !== 'grid') listStateParams.set('view', viewMode)
   if (sortBy !== 'name') listStateParams.set('sort', sortBy)
   if (sortDir !== 'asc') listStateParams.set('direction', sortDir)
   const menuListReturnPath = `/admin/menu-builder${listStateParams.size ? `?${listStateParams}` : ''}`
+  useEffect(() => {
+    if (listReady) window.history.replaceState(window.history.state, '', menuListReturnPath)
+  }, [listReady, menuListReturnPath])
   const newMenuItemHref = `/admin/menu-builder/new?returnTo=${encodeURIComponent(menuListReturnPath)}`
 
-  // Load menu items, sites, and ingredients
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      try {
-        const [menuResponse, sitesResponse, ingredientsResponse] = await Promise.all([
-          fetch('/api/menu-items'),
-          fetch('/api/sites'),
-          fetch('/api/ingredients?count_only=true')
-        ])
-
-        const menuData = await menuResponse.json()
-        if (menuResponse.ok) {
-          const mappedMenuItems = (menuData.menuItems || []).map((item: any) => ({
-            id: item.id,
-            name: item.name,
-            description: item.description || '',
-            category: item.category || '',
-            site_id: item.site_id ?? null,
-            icon: item.icon || '',
-            allergen_warnings: item.allergen_warnings || { ...DEFAULT_WARNINGS },
-            dietary: Array.isArray(item.dietary) ? item.dietary : [],
-            ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
-            status: item.status || (item.is_active ? 'active' : 'draft'),
-            item_type: item.item_type || 'prepared'
-          }))
-          setMenuItems(mappedMenuItems)
-        }
-
-        const sitesData = await sitesResponse.json()
-        if (sitesResponse.ok) {
-          const mappedSites = (sitesData.sites || []).map((site: any) => ({
-            id: site.id,
-            name: site.name
-          }))
-          setSites(mappedSites)
-        }
-
-        const ingredientsData = await ingredientsResponse.json()
-        if (ingredientsResponse.ok) {
-          setIngredientCount(ingredientsData.count || 0)
-        }
-      } catch (error: any) {
-        console.error('Error loading menu builder data:', error)
-        setMenuItems([])
-        setSites([])
-        setIngredientCount(0)
-      } finally {
-        setLoading(false)
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    setLoadError(false)
+    try {
+      const responses = await Promise.all([
+        fetch('/api/menu-items', { cache: 'no-store' }),
+        fetch('/api/sites', { cache: 'no-store' }),
+        fetch('/api/ingredients?count_only=true', { cache: 'no-store' }),
+      ])
+      if (responses.some(response => !response.ok)) throw new Error('Could not load menu data')
+      const [menuData, sitesData, ingredientsData] = await Promise.all(responses.map(response => response.json()))
+      if (!Array.isArray(menuData.menuItems) || !Array.isArray(sitesData.sites) || typeof ingredientsData.count !== 'number') {
+        throw new Error('Unexpected menu data')
       }
+      setMenuItems(menuData.menuItems.map(normalizeMenuItem))
+      setSites(sitesData.sites.map((site: any) => ({ id: site.id, name: site.name })))
+      setIngredientCount(ingredientsData.count)
+    } catch {
+      setLoadError(true)
+    } finally {
+      setLoading(false)
     }
-
-    fetchData()
   }, [])
+
+  useEffect(() => { void fetchData() }, [fetchData])
 
   // Filter and sort
   const filteredItems = menuItems
@@ -174,18 +159,22 @@ export default function MenuBuilderPage() {
         (scopeFilter !== 'all' && item.site_id === scopeFilter)
       const matchesCategory = categoryFilter === 'all' ||
         (categoryFilter === 'uncategorized' ? !item.category : item.category === categoryFilter)
-      return matchesSearch && matchesScope && matchesCategory
+      return matchesSearch && matchesScope && matchesCategory &&
+        (statusFilter === 'all' || item.status === statusFilter) &&
+        (typeFilter === 'all' || item.item_type === typeFilter)
     })
     .sort((a, b) => {
       let cmp = 0
       if (sortBy === 'name') {
         cmp = a.name.localeCompare(b.name)
       } else if (sortBy === 'date') {
-        // For date, compare by ID as a proxy (assuming newer items have later IDs)
-        cmp = a.id.localeCompare(b.id)
+        return compareDateAdded(a.createdAt, b.createdAt, sortDir) || a.name.localeCompare(b.name)
       }
       return sortDir === 'asc' ? cmp : -cmp
     })
+
+  const hasFilters = Boolean(searchTerm || scopeFilter !== 'all' || categoryFilter !== 'all' || statusFilter !== 'all' || typeFilter !== 'all')
+  const clearFilters = () => { setSearchTerm(''); setScopeFilter('all'); setCategoryFilter('all'); setStatusFilter('all'); setTypeFilter('all') }
 
   const stats = {
     total: menuItems.length,
@@ -200,7 +189,7 @@ export default function MenuBuilderPage() {
 
   // Group filtered items by category
   const groupedMenuItems = filteredItems.reduce((acc, item) => {
-    const cat = item.category || t('admin.uncategorized')
+    const cat = sortBy === 'date' ? t('allItems') : item.category || t('admin.uncategorized')
     if (!acc[cat]) acc[cat] = []
     acc[cat].push(item)
     return acc
@@ -231,22 +220,11 @@ export default function MenuBuilderPage() {
       const refreshResponse = await fetch('/api/menu-items', { cache: 'no-store' })
       const refreshData = await refreshResponse.json()
       if (!refreshResponse.ok) {
+        setLoadError(true)
         throw new Error(refreshData.error || 'Menu item duplicated, but the list could not be refreshed')
       }
 
-      setMenuItems((refreshData.menuItems || []).map((menuItem: any) => ({
-        id: menuItem.id,
-        name: menuItem.name,
-        description: menuItem.description || '',
-        category: menuItem.category || '',
-        site_id: menuItem.site_id ?? null,
-        icon: menuItem.icon || '',
-        allergen_warnings: menuItem.allergen_warnings || { ...DEFAULT_WARNINGS },
-        dietary: Array.isArray(menuItem.dietary) ? menuItem.dietary : [],
-        ingredients: Array.isArray(menuItem.ingredients) ? menuItem.ingredients : [],
-        status: menuItem.status || (menuItem.is_active ? 'active' : 'draft'),
-        item_type: menuItem.item_type || 'prepared'
-      })))
+      setMenuItems((refreshData.menuItems || []).map(normalizeMenuItem))
       showNotification(t('menuBuilderPortal.duplicated'), 'success')
     } catch (error: any) {
       showNotification(error?.message || t('menuBuilderPortal.duplicateFailed'), 'error')
@@ -282,96 +260,29 @@ export default function MenuBuilderPage() {
     )
   }
 
+  if (loadError && menuItems.length === 0) return (
+    <Container><h1 className="mb-6 text-3xl font-bold">{t('admin.menuBuilder')}</h1>
+      <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-6 text-amber-950">
+        <p>{t('regularLists.loadFailed')}</p><Button className="mt-3" onClick={() => fetchData()}>{t('regularLists.retry')}</Button>
+      </div>
+    </Container>
+  )
+
   return (
     <Container>
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-gradient-to-br from-teal-400 to-teal-600 dark:from-teal-500 dark:to-gray-700 rounded-lg">
-            <ChefHat className="h-6 w-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('admin.menuBuilder')}</h1>
-            <p className="text-gray-600 dark:text-gray-300">{t('admin.menuBuilderDesc')}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Link href={newMenuItemHref} className="block">
-          <Card className="hover:shadow-lg transition-all hover:border-emerald-500 hover:bg-gradient-to-br hover:from-emerald-500 hover:to-emerald-600 group cursor-pointer p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">{t('admin.addNew')}</p>
-                <p className="text-2xl font-bold text-[#003842] dark:text-[#42b8ac] mt-1 group-hover:text-white transition-colors">+</p>
-              </div>
-              <div className="p-3 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-emerald-600 transition-all">
-                <Plus className="h-6 w-6 text-white transition-colors" />
-              </div>
-            </div>
-            <div className="mt-4">
-                <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.createMenu')}</div>
-            </div>
-          </Card>
-        </Link>
-
-        <Card className="hover:shadow-lg transition-all hover:border-[#42b8ac] hover:bg-gradient-to-br hover:from-[#42b8ac] hover:to-[#36948a] group cursor-pointer p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">{t('admin.menuItemsStat')}</p>
-              <p className="text-2xl font-bold text-[#003842] dark:text-[#42b8ac] mt-1 group-hover:text-white transition-colors">{stats.total}</p>
-            </div>
-            <div className="p-3 bg-gradient-to-br from-[#42b8ac] to-[#36948a] rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-[#42b8ac] transition-all">
-              <ChefHat className="h-6 w-6 text-white transition-colors" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.totalManagedItems')}</div>
-          </div>
-        </Card>
-
-        <Card className="hover:shadow-lg transition-all hover:border-amber-500 hover:bg-gradient-to-br hover:from-amber-500 hover:to-amber-600 group cursor-pointer p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">{t('admin.ingredients')}</p>
-              <p className="text-2xl font-bold text-[#003842] dark:text-[#42b8ac] mt-1 group-hover:text-white transition-colors">{stats.ingredients}</p>
-            </div>
-            <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-amber-600 transition-all">
-              <Package className="h-6 w-6 text-white transition-colors" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.availableIngredients')}</div>
-          </div>
-        </Card>
-
-        <Link href="/admin/sites" className="block">
-          <Card className="hover:shadow-lg transition-all hover:border-blue-500 hover:bg-gradient-to-br hover:from-blue-500 hover:to-blue-600 group cursor-pointer p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-white transition-colors">{t('admin.sites')}</p>
-              <p className="text-2xl font-bold text-[#003842] dark:text-[#42b8ac] mt-1 group-hover:text-white transition-colors">{stats.sites}</p>
-            </div>
-            <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-blue-600 transition-all">
-              <Building className="h-6 w-6 text-white transition-colors" />
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.managedSites')}</div>
-          </div>
-        </Card>
-        </Link>
-      </div>
-
+      <ManagementListHeader title={t('admin.menuBuilder')} description={t('admin.menuBuilderDesc')} icon={ChefHat} addHref={newMenuItemHref} addLabel={t('regularLists.addMenuItem')} stats={[{ label: t('admin.menuItemsStat'), value: stats.total }, { label: t('admin.ingredients'), value: stats.ingredients }, { label: t('admin.sites'), value: stats.sites, href: '/admin/sites' }]} />
+      {loadError && <div role="alert" className="mb-4 rounded-lg border border-amber-300 p-4">
+        <p>{t('regularLists.loadFailed')}</p><Button onClick={() => fetchData()}>{t('regularLists.retry')}</Button>
+      </div>}
       {/* Search and Filters */}
       <Card className="mb-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4 flex-1">
-            <div className="relative flex-1">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3">
+            <div className="relative w-full min-w-0 basis-full md:w-auto md:flex-1 md:basis-auto">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
+                aria-label={t('admin.searchMenuItems')}
                 placeholder={t('admin.searchMenuItems')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -391,12 +302,16 @@ export default function MenuBuilderPage() {
 
             <div className="flex items-center border-l pl-4">
               <button
+                aria-label={t('regularLists.gridView')}
+                aria-pressed={viewMode === 'grid'}
                 onClick={() => setViewMode('grid')}
                 className={`p-2 rounded-l-lg ${viewMode === 'grid' ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
               >
                 <Grid className="h-4 w-4" />
               </button>
               <button
+                aria-label={t('regularLists.listView')}
+                aria-pressed={viewMode === 'list'}
                 onClick={() => setViewMode('list')}
                 className={`p-2 rounded-r-lg ${viewMode === 'list' ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300' : 'text-gray-400 hover:text-gray-600'}`}
               >
@@ -406,6 +321,7 @@ export default function MenuBuilderPage() {
 
             <div className="flex items-center gap-1 border-l pl-4">
               <select
+                aria-label={t('regularLists.sortBy')}
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                 className="text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-2 py-1.5 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
@@ -429,10 +345,27 @@ export default function MenuBuilderPage() {
           <div className="mt-6 pt-6 border-t dark:border-gray-700">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
+                <label htmlFor="menu-status" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('admin.status')}</label>
+                <select id="menu-status" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                  <option value="all">{t('admin.allStatus')}</option>
+                  <option value="active">{t('admin.active')}</option>
+                  <option value="draft">{t('admin.draft')}</option>
+                </select>
+              </div>
+              <div>
+                <label htmlFor="menu-type" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">{t('regularLists.itemType')}</label>
+                <select id="menu-type" value={typeFilter} onChange={e => setTypeFilter(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                  <option value="all">{t('regularLists.allTypes')}</option>
+                  <option value="prepared">{t('regularLists.preparedFilter')}</option>
+                  <option value="packaged_product">{t('regularLists.boughtInFilter')}</option>
+                </select>
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   {t('admin.scope')}
                 </label>
                 <select
+                  aria-label={t('admin.scope')}
                   value={scopeFilter}
                   onChange={(e) => setScopeFilter(e.target.value)}
                   className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
@@ -452,6 +385,7 @@ export default function MenuBuilderPage() {
                   {t('admin.category')}
                 </label>
                 <select
+                  aria-label={t('admin.category')}
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
                   className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
@@ -468,6 +402,10 @@ export default function MenuBuilderPage() {
         )}
       </Card>
 
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm text-gray-600 dark:text-gray-300">
+        <p role="status">{t('regularLists.showing').replace('{visible}', String(filteredItems.length)).replace('{total}', String(menuItems.length))}</p>
+        {hasFilters && <Button variant="ghost" size="sm" onClick={clearFilters}>{t('admin.clearFilters')}</Button>}
+      </div>
       {/* Menu Items */}
       <Card>
         {filteredItems.length === 0 ? (
@@ -477,11 +415,12 @@ export default function MenuBuilderPage() {
             </div>
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">{t('admin.noMenuItemsFound')}</h3>
             <p className="text-gray-500 dark:text-gray-400 mb-6">
-              {searchTerm || scopeFilter !== 'all' ? t('tryAdjustingFilters') : t('admin.createFirstMenuItemDesc')}
+              {hasFilters ? t('tryAdjustingFilters') : t('admin.createFirstMenuItemDesc')}
             </p>
+
             <Link href={newMenuItemHref}>
               <Button variant="primary" icon={<Plus className="h-4 w-4" />}>
-                {t('admin.createFirstMenuItem')}
+                {menuItems.length ? t('admin.createNewMenuItem') : t('admin.createFirstMenuItem')}
               </Button>
             </Link>
           </div>
@@ -544,10 +483,10 @@ export default function MenuBuilderPage() {
                     {item.ingredients.length} {t('admin.ingredientCountLabel')}
                   </span>
                   <div className="flex items-center gap-1">
-                    <Link href={`/admin/menu-builder/${item.id}`}>
+                    <Link href={listContextHref(`/admin/menu-builder/${item.id}`, menuListReturnPath)}>
                       <Button variant="ghost" size="sm" icon={<Eye className="h-4 w-4" />} title={t('admin.view')} />
                     </Link>
-                    <Link href={`/admin/menu-builder/${item.id}/edit`}>
+                    <Link href={listContextHref(`/admin/menu-builder/${item.id}/edit`, menuListReturnPath)}>
                       <Button variant="ghost" size="sm" icon={<Edit className="h-4 w-4" />} title={t('admin.edit')} />
                     </Link>
                     <Button
@@ -625,10 +564,10 @@ export default function MenuBuilderPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Link href={`/admin/menu-builder/${item.id}`}>
+                        <Link href={listContextHref(`/admin/menu-builder/${item.id}`, menuListReturnPath)}>
                           <Button variant="ghost" size="sm" icon={<Eye className="h-4 w-4" />} title={t('admin.view')} />
                         </Link>
-                        <Link href={`/admin/menu-builder/${item.id}/edit`}>
+                        <Link href={listContextHref(`/admin/menu-builder/${item.id}/edit`, menuListReturnPath)}>
                           <Button variant="ghost" size="sm" icon={<Edit className="h-4 w-4" />} title={t('admin.edit')} />
                         </Link>
                         <Button

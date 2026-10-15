@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
 
-    if (!body?.name || typeof body.name !== 'string') {
+    if (typeof body?.name !== 'string' || !body.name.trim()) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
@@ -168,6 +168,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validationError.message }, { status: 400 })
     }
 
+    const activating = body.status ? body.status === 'active' : body.is_active === true
+    const activationComplete = typeof body.description === 'string' && Boolean(body.description.trim()) && safety.assessmentComplete && (productFields.item_type === 'prepared'
+      ? ingredients.length > 0
+      : Boolean(productFields.supplier_id && productFields.ingredient_declaration && productFields.label_verified_at))
+    if (activating && !activationComplete) {
+      return NextResponse.json({ error: 'Complete the allergen assessment and source details before making this menu item active.', errorCode: 'completeMenu' }, { status: 400 })
+    }
+
     const insertPayload = {
       business_id: businessId,
       name: body.name,
@@ -180,7 +188,7 @@ export async function POST(request: NextRequest) {
       dietary: safety.dietary,
       color: typeof body.color === 'string' && body.color.trim() !== '' ? body.color : null,
       icon: typeof body.icon === 'string' && body.icon.trim() !== '' ? body.icon : null,
-      is_active: body.status ? body.status === 'active' : body.is_active ?? true,
+      is_active: activating,
       price: typeof body.price === 'number' ? body.price : 0,
       display_order: typeof body.display_order === 'number' ? body.display_order : 0,
       preferred_review_months: typeof body.preferred_review_months === 'number' ? body.preferred_review_months : 12,

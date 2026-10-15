@@ -1,3 +1,4 @@
+import { isIngredientAssessmentComplete } from '@/lib/allergen-assessment'
 import { getJwtSecret } from '@/lib/auth'
 // app/api/ingredients/route.ts
 import { createServiceClient } from '@/lib/supabase/server'
@@ -131,7 +132,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { name, description, category, allergen_warnings, suppliers, certifications, preferred_review_months, supplier_profiles } = body
 
-    if (!name) {
+    if (typeof name !== 'string' || !name.trim()) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
@@ -149,25 +150,29 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedSuppliers = normalizeSupplierNames(Array.isArray(suppliers) ? suppliers : [])
-    const supplierRecords = await ensureSupplierRecords(
-      supabase,
-      userBusiness.business_id,
-      normalizedSuppliers,
-      userId
-    )
     const completeProfiles = buildCompleteSupplierProfiles(
       normalizedSuppliers,
       supplier_profiles as SupplierProfileMap | undefined,
       allergen_warnings || {},
       Array.isArray(certifications) ? certifications : []
     )
+    const derivedSafety = deriveEffectiveIngredientSafety(completeProfiles)
+    const effectiveAllergens = derivedSafety?.allergen_warnings || allergen_warnings || {}
+    const effectiveCertifications = derivedSafety?.certifications || certifications || []
+    if (!isIngredientAssessmentComplete(effectiveAllergens, completeProfiles)) {
+      return NextResponse.json({ error: 'Complete every allergen assessment and review each supplier profile before saving this ingredient.', errorCode: 'completeIngredient' }, { status: 400 })
+    }
+
+    const supplierRecords = await ensureSupplierRecords(
+      supabase,
+      userBusiness.business_id,
+      normalizedSuppliers,
+      userId
+    )
     for (const [profileKey, profile] of Object.entries(completeProfiles)) {
       const supplier = supplierRecords.get(profile.supplier_name || profileKey)
       if (supplier) profile.supplier_id = supplier.id
     }
-    const derivedSafety = deriveEffectiveIngredientSafety(completeProfiles)
-    const effectiveAllergens = derivedSafety?.allergen_warnings || allergen_warnings || {}
-    const effectiveCertifications = derivedSafety?.certifications || certifications || []
 
     // Create ingredient
     const insertPayload = {

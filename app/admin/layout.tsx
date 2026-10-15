@@ -296,7 +296,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             )}
             {children}
           </main>
-          {pathname !== '/admin/quick-add/new' && <>
+          {pathname !== '/admin/quick-add/new' && !/^\/admin\/(ingredients|menu-builder)\/(new|[^/]+\/edit)$/.test(pathname) && <>
           {/* Food safety news ticker — fixed to the bottom of the screen (desktop only) */}
           <div className="hidden lg:block fixed bottom-0 left-[224px] right-0 z-40">
             <FsaiNewsTicker />

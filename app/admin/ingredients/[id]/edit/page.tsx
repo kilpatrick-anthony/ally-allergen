@@ -4,8 +4,10 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import { RegularFormActions } from '@/components/admin/RegularFormActions'
+import { useListReturnPath } from '@/lib/hooks/useListReturnPath'
 import { useNotification } from '@/lib/hooks/useNotification'
-import { 
+import {
   Package, ArrowLeft, Save, X, AlertCircle, Plus, Trash2,
   Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, MilkOff, ShieldCheck,
 } from 'lucide-react'
@@ -25,6 +27,7 @@ import {
   deriveEffectiveIngredientSafety,
   type SupplierProfileMap,
 } from '@/lib/ingredient-supplier-profiles'
+import { isIngredientAssessmentComplete } from '@/lib/allergen-assessment'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { translateComplianceReason } from '@/lib/compliance-documents-translations'
 
@@ -33,9 +36,10 @@ export default function EditIngredientPage() {
   const { t, language } = useTranslation()
   const { canDeleteContent } = useContentPermissions()
   const router = useRouter()
+  const { returnTo } = useListReturnPath('/admin/ingredients')
   const params = useParams()
   const ingredientId = params.id as string
-  
+
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -45,29 +49,14 @@ export default function EditIngredientPage() {
   const [compliance, setCompliance] = useState<any>(null)
   const [loadingCompliance, setLoadingCompliance] = useState(false)
   const [datasheetsTouched, setDatasheetsTouched] = useState(false)
-  
+
   const [ingredient, setIngredient] = useState({
     name: '',
     description: '',
     category: '',
     status: 'active' as 'active' | 'review' | 'archived',
     preferred_review_months: 12,
-    allergen_warnings: {
-      cereals_gluten: 'none',
-      crustaceans: 'none',
-      eggs: 'none',
-      fish: 'none',
-      peanuts: 'none',
-      soybeans: 'none',
-      milk: 'none',
-      nuts: 'none',
-      celery: 'none',
-      mustard: 'none',
-      sesame: 'none',
-      sulphites: 'none',
-      lupin: 'none',
-      molluscs: 'none'
-    } as AllergenWarnings,
+    allergen_warnings: {} as AllergenWarnings,
     suppliers: [] as string[],
     certifications: [] as string[]
   })
@@ -161,14 +150,14 @@ export default function EditIngredientPage() {
         setLoading(true)
         const response = await fetch(`/api/ingredients/${ingredientId}`)
         const data = await parseJsonSafely(response)
-        
+
         if (!response.ok) {
           throw new Error(data.error || 'Failed to fetch ingredient')
         }
-        
+
         console.log('Edit page - Ingredient data:', data.ingredient)
         console.log('Edit page - Allergen warnings:', data.ingredient.allergen_warnings)
-        
+
         setIngredient({
           name: data.ingredient.name,
           description: data.ingredient.description || '',
@@ -196,7 +185,7 @@ export default function EditIngredientPage() {
         setLoading(false)
       }
     }
-    
+
     fetchIngredient()
   }, [ingredientId, t])
 
@@ -209,7 +198,7 @@ export default function EditIngredientPage() {
         const data = await parseJsonSafely(response)
         throw new Error(data.error || 'Failed to delete ingredient')
       }
-      router.push('/admin/ingredients')
+      router.push(returnTo)
     } catch (error: any) {
       console.error('Error deleting ingredient:', error)
       showNotification(t('ingredientsPortal.deleteIngredientFailed', { error: error.message || '' }), 'error')
@@ -274,6 +263,10 @@ export default function EditIngredientPage() {
       return
     }
 
+    if (!isIngredientAssessmentComplete(ingredient.allergen_warnings, supplierProfiles)) {
+      showNotification(t('regularAssessment.completeIngredient'), 'error')
+      return
+    }
     setSaving(true)
     try {
       const response = await fetch(`/api/ingredients/${ingredientId}`, {
@@ -283,7 +276,7 @@ export default function EditIngredientPage() {
       })
       const data = await parseJsonSafely(response)
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to update ingredient')
+        throw new Error(data.errorCode === 'completeIngredient' ? t('regularAssessment.completeIngredient') : data.error || 'Failed to update ingredient')
       }
 
       const currentDatasheets = datasheetsTouched ? datasheets : existingDatasheets
@@ -314,10 +307,10 @@ export default function EditIngredientPage() {
       // Upload only new datasheets that include a File object
       if (currentDatasheets.length > 0) {
         console.log('📤 Uploading', currentDatasheets.length, 'datasheets...')
-        
+
         const uploadPromises = currentDatasheets.map(async (datasheet) => {
           if (!datasheet.file) return
-          
+
           const fileName = datasheet.file_name || datasheet.file?.name || 'datasheet'
           const formData = new FormData()
           formData.append('file', datasheet.file)
@@ -345,7 +338,7 @@ export default function EditIngredientPage() {
         console.log('✅ All datasheets uploaded successfully')
       }
 
-      router.push('/admin/ingredients')
+      router.push(returnTo)
     } catch (error: any) {
       console.error('Error updating ingredient:', error)
       showNotification(t('ingredientsPortal.updateIngredientFailed', { error: error.message || '' }), 'error')
@@ -368,7 +361,7 @@ export default function EditIngredientPage() {
       ...(derived ? {
         allergen_warnings: derived.allergen_warnings,
         certifications: derived.certifications,
-      } : {}),
+      } : { allergen_warnings: {} as AllergenWarnings, certifications: [] }),
     }))
   }
 
@@ -420,7 +413,7 @@ export default function EditIngredientPage() {
     <>
       <Container>
         <div className="mb-6">
-        <Link href="/admin/ingredients">
+        <Link href={returnTo}>
           <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />}>
             {t('ingredientsPortal.backToIngredients')}
           </Button>
@@ -445,7 +438,7 @@ export default function EditIngredientPage() {
           {/* Basic Information */}
           <Card>
             <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('ingredientsPortal.basicInformation')}</h2>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -507,6 +500,104 @@ export default function EditIngredientPage() {
             />
           </Card>
 
+          {/* Datasheets Section */}
+          <Card>
+            <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('admin.productDatasheets')}</h2>
+            <DatasheetUploader
+              existingDatasheets={existingDatasheets}
+              onFilesChange={handleDatasheetsChange}
+              entityType="ingredient"
+            />
+          </Card>
+          {/* Dietary Attributes */}
+          {ingredient.suppliers.length === 0 && (
+          <Card>
+            <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('admin.dietaryAttributes')}</h2>
+
+            <div className="space-y-3">
+              {certificationOptions.map((cert) => {
+                const Icon = cert.icon
+                const isSelected = ingredient.certifications.includes(cert.name)
+
+                return (
+                  <button
+                    key={cert.name}
+                    onClick={() => toggleCertification(cert.name)}
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
+                      isSelected
+                        ? 'border-current shadow-sm'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    style={{
+                      borderColor: isSelected ? cert.color : undefined,
+                      backgroundColor: isSelected ? `${cert.color}15` : undefined,
+                      color: isSelected ? cert.color : '#6b7280'
+                    }}
+                  >
+                    {typeof Icon === 'function' && React.createElement(Icon as React.ComponentType<{className: string}>, { className: 'h-5 w-5' })}
+                    <span className="font-medium">{cert.name}</span>
+                  </button>
+                )
+              })}
+
+              {/* Custom Certification */}
+              {!showCustomCertInput && (
+                <button
+                  onClick={() => setShowCustomCertInput(true)}
+                  className="w-full flex items-center gap-3 p-3 rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-700 transition-all"
+                >
+                  <Plus className="h-5 w-5" />
+                  <span className="font-medium">{t('ingredientsPortal.addCustom')}</span>
+                </button>
+              )}
+
+              {showCustomCertInput && (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customCertInput}
+                    onChange={(e) => setCustomCertInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && addCustomCertification()}
+                    placeholder={t('ingredientsPortal.customCertification')}
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
+                    autoFocus
+                  />
+                  <Button size="sm" onClick={addCustomCertification}>
+                    {t('admin.add')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setShowCustomCertInput(false)
+                      setCustomCertInput('')
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+
+              {/* Display custom certifications */}
+              {ingredient.certifications.filter(cert =>
+                !certificationOptions.some(opt => opt.name === cert)
+              ).map((cert, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 rounded-lg border-2 border-gray-300 bg-gray-50"
+                >
+                  <span className="font-medium text-gray-700">{cert}</span>
+                  <button
+                    onClick={() => removeCertification(cert)}
+                    className="text-gray-400 hover:text-red-600 transition-colors"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </Card>
+          )}
           {/* Allergen Information */}
           <Card>
             <h2 className="text-xl font-semibold text-[#003842] mb-2">
@@ -529,6 +620,7 @@ export default function EditIngredientPage() {
             )}
           </Card>
 
+          {!isIngredientAssessmentComplete(ingredient.allergen_warnings, supplierProfiles) && <p className="text-sm font-medium text-amber-900 dark:text-amber-200">{t('regularAssessment.completeIngredient')}</p>}
           {/* Status Toggle */}
           <Card>
             <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('admin.visibilityStatus')}</h2>
@@ -569,6 +661,15 @@ export default function EditIngredientPage() {
             </div>
           </Card>
 
+          {/* Review Frequency */}
+          <Card>
+            <ReviewFrequencySelector
+              value={ingredient.preferred_review_months || 12}
+              onChange={(months) => setIngredient(prev => ({ ...prev, preferred_review_months: months }))}
+              label={t('ingredientsPortal.reviewFrequency')}
+            />
+          </Card>
+
           {/* Compliance Status */}
           <Card>
             <div className="flex items-center justify-between mb-4">
@@ -581,7 +682,7 @@ export default function EditIngredientPage() {
                 {marking ? t('admin.marking') : t('admin.markAsReviewed')}
               </Button>
             </div>
-            
+
             {loadingCompliance ? (
               <div className="text-gray-500 text-sm">{t('admin.loadingComplianceStatus')}</div>
             ) : compliance ? (
@@ -589,21 +690,21 @@ export default function EditIngredientPage() {
                 <div
                   className="p-3 rounded-lg border-2"
                   style={{
-                    backgroundColor: compliance.status === 'compliant' ? '#dcfce7' : 
+                    backgroundColor: compliance.status === 'compliant' ? '#dcfce7' :
                                     compliance.status === 'warning' ? '#fef3c7' : '#fee2e2',
-                    borderColor: compliance.status === 'compliant' ? '#16a34a' : 
+                    borderColor: compliance.status === 'compliant' ? '#16a34a' :
                                 compliance.status === 'warning' ? '#f59e0b' : '#dc2626'
                   }}
                 >
                   <div className="font-semibold" style={{
-                    color: compliance.status === 'compliant' ? '#16a34a' : 
+                    color: compliance.status === 'compliant' ? '#16a34a' :
                           compliance.status === 'warning' ? '#f59e0b' : '#dc2626'
                   }}>
                     {compliance.status === 'compliant' ? t('ingredientsPortal.compliantStatus') :
                      compliance.status === 'warning' ? t('ingredientsPortal.reviewDueSoonStatus') : t('ingredientsPortal.notCompliantStatus')}
                   </div>
                 </div>
-                
+
                 {compliance.reasons.length > 0 && (
                   <div className="space-y-1">
                     {compliance.reasons.map((reason: string, idx: number) => (
@@ -614,7 +715,7 @@ export default function EditIngredientPage() {
                     ))}
                   </div>
                 )}
-                
+
                 {compliance.lastReviewedAt && (
                   <div className="text-xs text-gray-500 pt-2 border-t">
                     {t('corePortal.lastReviewed')} {new Date(compliance.lastReviewedAt).toLocaleDateString(language)}
@@ -626,38 +727,12 @@ export default function EditIngredientPage() {
             )}
           </Card>
 
-          {/* Datasheets Section */}
-          <Card>
-            <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('admin.productDatasheets')}</h2>
-            <DatasheetUploader 
-              existingDatasheets={existingDatasheets}
-              onFilesChange={handleDatasheetsChange}
-              entityType="ingredient"
-            />
-          </Card>
+
         </div>
 
         {/* Sidebar */}
         <div className="space-y-6 lg:col-span-1">
-          {/* Save Button */}
           <Card className="p-6">
-            <Button
-              onClick={handleSave}
-              variant="primary"
-              icon={<Save className="h-4 w-4" />}
-              fullWidth
-              size="lg"
-              disabled={saving || !ingredient.name}
-            >
-              {saving ? t('admin.savingMenuItem') : t('admin.saveChanges')}
-            </Button>
-            <button
-              type="button"
-              onClick={() => router.push('/admin/ingredients')}
-              className="w-full mt-3 px-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 text-sm font-semibold hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors"
-            >
-              {t('accessPoints.cancel')}
-            </button>
             {canDeleteContent && (
               <button type="button" onClick={handleDelete} disabled={deleting} className="w-full mt-3 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-red-300 text-red-600 text-sm font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
                 <Trash2 className="h-4 w-4" />
@@ -666,106 +741,11 @@ export default function EditIngredientPage() {
             )}
           </Card>
 
-          {/* Review Frequency */}
-          <Card>
-            <ReviewFrequencySelector 
-              value={ingredient.preferred_review_months || 12}
-              onChange={(months) => setIngredient(prev => ({ ...prev, preferred_review_months: months }))}
-              label={t('ingredientsPortal.reviewFrequency')}
-            />
-          </Card>
 
-          {/* Dietary Attributes */}
-          {ingredient.suppliers.length === 0 && (
-          <Card>
-            <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('admin.dietaryAttributes')}</h2>
-            
-            <div className="space-y-3">
-              {certificationOptions.map((cert) => {
-                const Icon = cert.icon
-                const isSelected = ingredient.certifications.includes(cert.name)
-                
-                return (
-                  <button
-                    key={cert.name}
-                    onClick={() => toggleCertification(cert.name)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${
-                      isSelected 
-                        ? 'border-current shadow-sm' 
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    style={{
-                      borderColor: isSelected ? cert.color : undefined,
-                      backgroundColor: isSelected ? `${cert.color}15` : undefined,
-                      color: isSelected ? cert.color : '#6b7280'
-                    }}
-                  >
-                    {typeof Icon === 'function' && React.createElement(Icon as React.ComponentType<{className: string}>, { className: 'h-5 w-5' })}
-                    <span className="font-medium">{cert.name}</span>
-                  </button>
-                )
-              })}
-
-              {/* Custom Certification */}
-              {!showCustomCertInput && (
-                <button
-                  onClick={() => setShowCustomCertInput(true)}
-                  className="w-full flex items-center gap-3 p-3 rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400 text-gray-600 hover:text-gray-700 transition-all"
-                >
-                  <Plus className="h-5 w-5" />
-                  <span className="font-medium">{t('ingredientsPortal.addCustom')}</span>
-                </button>
-              )}
-
-              {showCustomCertInput && (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={customCertInput}
-                    onChange={(e) => setCustomCertInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addCustomCertification()}
-                    placeholder={t('ingredientsPortal.customCertification')}
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                    autoFocus
-                  />
-                  <Button size="sm" onClick={addCustomCertification}>
-                    {t('admin.add')}
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost"
-                    onClick={() => {
-                      setShowCustomCertInput(false)
-                      setCustomCertInput('')
-                    }}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-
-              {/* Display custom certifications */}
-              {ingredient.certifications.filter(cert => 
-                !certificationOptions.some(opt => opt.name === cert)
-              ).map((cert, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-3 rounded-lg border-2 border-gray-300 bg-gray-50"
-                >
-                  <span className="font-medium text-gray-700">{cert}</span>
-                  <button
-                    onClick={() => removeCertification(cert)}
-                    className="text-gray-400 hover:text-red-600 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </Card>
-          )}
         </div>
       </div>
+
+        <RegularFormActions onSave={handleSave} onCancel={() => router.push(returnTo)} saveLabel={saving ? t('admin.savingMenuItem') : t('admin.saveChanges')} disabled={!ingredient.name.trim()} busy={saving || deleting} />
     </Container>
 
     </>

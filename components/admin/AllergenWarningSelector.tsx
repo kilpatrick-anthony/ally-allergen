@@ -19,6 +19,7 @@ import {
   getAllergenSeverity,
   formatSubtypes
 } from '@/types/allergen';
+import { unansweredAllergenCount } from '@/lib/allergen-assessment';
 import { useTranslation } from '@/lib/hooks/useTranslation';
 
 interface AllergenWarningSelectorProps {
@@ -51,6 +52,7 @@ export default function AllergenWarningSelector({
       [allergenId]: level
     };
 
+    delete newValue.assessment_incomplete;
     if (allergenId === 'cereals_gluten' || allergenId === 'nuts') {
       const levelsKey = allergenId === 'cereals_gluten' ? 'cereals_gluten_levels' : 'nuts_levels';
       const legacyTypesKey = allergenId === 'cereals_gluten' ? 'cereals_gluten_types' : 'nuts_types';
@@ -70,6 +72,11 @@ export default function AllergenWarningSelector({
       }
     }
 
+    if (!level) {
+      delete (newValue as Partial<AllergenWarnings>)[allergenId];
+      if (allergenId === 'cereals_gluten') { delete newValue.cereals_gluten_levels; delete newValue.cereals_gluten_types; }
+      if (allergenId === 'nuts') { delete newValue.nuts_levels; delete newValue.nuts_types; }
+    }
     onChange(newValue);
   };
 
@@ -160,6 +167,9 @@ export default function AllergenWarningSelector({
 
   return (
     <div className="space-y-4">
+      <p role="status" className="text-sm font-medium text-amber-900 dark:text-amber-200">
+        {t('regularAssessment.remaining', { count: unansweredAllergenCount(value) })}
+      </p>
       <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
         <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
         <div className="text-xs text-blue-900">
@@ -170,9 +180,9 @@ export default function AllergenWarningSelector({
 
       <div className="space-y-3">
         {ALLERGEN_LIST.map((allergen) => {
-          const currentLevel = value[allergen.id] || 'none';
-          const severity = getAllergenSeverity(currentLevel);
-          const showSubtypes = 'hasSubtypes' in allergen && allergen.hasSubtypes && currentLevel !== 'none';
+          const currentLevel = value[allergen.id] || '';
+          const severity = getAllergenSeverity(currentLevel || 'none');
+          const showSubtypes = 'hasSubtypes' in allergen && allergen.hasSubtypes && Boolean(currentLevel) && currentLevel !== 'none';
           const IconComponent = getIconComponent(allergen.icon);
           const darkerColor = allergen.color.replace(/\d+/g, (match) => Math.max(0, parseInt(match) - 20).toString());
 
@@ -212,6 +222,7 @@ export default function AllergenWarningSelector({
                 {/* Warning Level Selector */}
                 <div className="w-full sm:w-56 sm:flex-shrink-0">
                   <select
+                    aria-label={t(`allergenNames.${allergen.id}`)}
                     value={currentLevel}
                     onChange={(e) => handleLevelChange(allergen.id, e.target.value as AllergenLevel)}
                     disabled={disabled}
@@ -222,6 +233,7 @@ export default function AllergenWarningSelector({
                       'border-gray-300 bg-white text-gray-700'
                     } focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent`}
                   >
+                    <option value="">{t('regularAssessment.unassessed')}</option>
                     {ALLERGEN_LEVEL_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
                         {t(option.labelKey)}

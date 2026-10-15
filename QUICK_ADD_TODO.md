@@ -7,6 +7,199 @@ Start with the existing mobile website. An App Store release is a separate futur
 project. The sessions below are a suggested sequence for the next few days, not
 a promise that each phase will take one day. Re-estimate after the initial review.
 
+## Current priority — regular Ingredients and Menu Builder routes (15 October 2026)
+
+Complete these improvements before the remaining physical-device, accessibility
+and delivery trials below. Scope: the Ingredients and Menu Builder navigation
+pages and their regular add, view and edit routes. Quick Add remains outside this
+work. Existing completed Quick Add checks do not establish that these regular
+routes have passed the same checks.
+
+The review covered the regular list/add/edit code and local list/new-form browser
+checks at 390px and 1440px using sample data and simulated API responses. It did
+not verify production writes or physical devices. Implementation progress and
+release status are recorded below; unchecked work remains outstanding.
+
+### Priority 1 — assessment, saving and functional correctness
+
+- [x] Start new allergen assessments as not yet assessed; distinguish unanswered values from explicitly confirmed not present, including supplier profiles and the menu summary. Implemented locally; release pending.
+- [x] Separate saving an incomplete menu item as a draft from making it active. Explain draft visibility and enforce assessment/source requirements on the server as well as in the interface. Implemented locally; release pending.
+- [x] Require complete regular ingredient assessments and explicit supplier-profile review before saving an ingredient for use. Implemented locally; release pending.
+- [ ] Support incomplete drafts through the regular ingredient route, with clear activation controls and verified exclusion from recipe selectors, calculations, reports and customer menus. Until that coordinated work is complete, regular ingredient saves require a complete assessment.
+- [x] Retain the created item ID after partial document-upload failure; retry only failed attachments without creating another item or duplicating successful uploads. Implemented locally for both regular new-item forms; release pending.
+- [x] Implement persistent ingredient bulk Archive/Delete with appropriate permissions, confirmation and failure feedback; implement or remove the unfinished bulk View/Duplicate actions. Implemented locally; release pending.
+- [x] Fix the ingredient allergen filter to match stable allergen identifiers rather than mismatched display names. Implemented locally; release pending.
+- [x] Use actual timestamps for date sorting and make Date added/Last updated labels match the field being sorted. Implemented locally; release pending.
+- [x] Distinguish loading failures from empty lists and offer Retry without implying the business has no records. Implemented locally; release pending.
+
+### Priority 2 — consistent list pages and forms
+
+- [x] Replace the large stacked phone summary cards with a compact summary and a clear Add ingredient/Add menu item action; bring search and records higher up the page. Implemented locally; release pending.
+- [x] Give phone search its own full-width row and wrap filter, sort and view controls without horizontal overflow. Implemented locally; release pending.
+- [x] Align list status information and add useful Menu Builder filters for status and prepared/bought-in type; distinguish filtered empty results and offer Clear filters. Implemented locally; release pending.
+- [x] Preserve search, filters, sorting and view mode through regular view/edit/save/cancel/back journeys. Implemented locally; release pending.
+- [x] Align add/edit section order: details; supplier variants or recipe ingredients; evidence and assessment; availability and review; optional menu appearance. Implemented locally; release pending.
+- [x] Establish ingredient supplier variants before dietary/allergen entry, so adding a supplier does not unexpectedly replace the visible assessment controls. Implemented locally; release pending.
+- [x] Move optional menu colour/image controls below ingredients and assessment, with consistent dietary controls and explanations for calculated values in creation and editing. Implemented locally; release pending.
+- [x] Keep Save and Cancel accessible on long forms at phone and desktop widths using a consistent action area. Implemented locally; release pending.
+- [ ] Warn before leaving unsaved changes; retain entered details on errors and align save progress, success and partial-failure feedback.
+- [ ] Associate labels with fields, name icon-only actions, show inline validation with useful focus behaviour, and explain incomplete requirements consistently across supported languages and themes.
+
+### Priority 3 — verify the changes, then resume the existing trials
+
+- [ ] Verify regular ingredient and prepared/bought-in menu journeys, assessment/activation rules, supplier variants, list actions and save/upload retry behaviour with focused regression coverage.
+- [ ] Check the revised pages in the browser at phone/desktop widths, including keyboard use, focus, supported languages/themes and no horizontal overflow; run TypeScript and the production build.
+- [ ] Record release status and verify the deployed regular routes before resuming the broader real-phone, offline/reconnect, assistive-technology and delivery trials below.
+
+### First implementation — save and document-upload recovery (15 October 2026)
+
+- Both regular new-item forms retain the created record ID while the form stays
+  open. Saving again updates that record and uploads only files that have not
+  received a successful upload response. Repeated Save taps share one attempt;
+  all in-flight uploads settle before retry becomes available.
+- Partial failure explicitly says the item was saved and offers Save and retry
+  documents. Recovery messages are translated into all six supported languages.
+  Menu saves return directly to the preserved list context after success.
+- Verification passed: nine focused save/retry and translation tests, TypeScript,
+  the production build, and eight browser journeys covering both forms at 390px
+  and 1440px in English and German. Browser checks use simulated APIs and verify
+  one creation, an update of the same item, and no re-upload of a successful file.
+- Retry bookkeeping is local to the open form; reload/reopening recovery and
+  server idempotency for responses lost after a successful write remain separate
+  work. No database changes, production writes or deployment were performed.
+- The next implementation note records assessment/activation progress; the other
+  unchecked list/form improvements above remain outstanding.
+
+### Second implementation — assessment defaults and menu activation (15 October 2026)
+
+- Regular ingredient forms and new supplier profiles start with unanswered
+  allergens. Selectors show the remaining field count and accessible parent
+  allergen labels. Changing allergen/dietary values invalidates supplier review;
+  users must explicitly mark a complete profile reviewed. Removing the last
+  supplier clears the derived assessment instead of retaining inferred defaults.
+- Ingredient POST/PUT validate all fourteen warning levels and supplier review
+  before writes. Contradictory supplied subtype levels are rejected. Complete
+  legacy broad declarations remain supported; historical stored 'none' values
+  are preserved, without claiming proof of past human review.
+- New menu items offer Save draft and Make active. A named incomplete draft can
+  be saved without a description; activation requires a description and a complete
+  assessment. Prepared recipes require assessed, active ingredient inputs;
+  bought-in products require a supplier, ingredient declaration and label check.
+  Both menu POST/PUT enforce these rules, including direct is_active requests.
+  Omitted status creates a draft; edits preserve the existing activation state.
+- Derived previews retain known warnings alongside an incomplete marker when
+  source assessments are missing. List/shared summaries and the separate regular
+  view pages show incomplete information rather than a false no-allergens claim.
+- Regular ingredient draft storage remains outstanding: incomplete ingredient
+  saves are blocked while the consumers of ingredient records still assume usable
+  inventory. No schema migration, production write or deployment is included.
+- Verification passed: 20 assessment/API tests, nine save/retry tests and 35
+  existing Quick Add API/photo/database approval checks (64 total); production
+  build and TypeScript; and 28 local browser journeys at 390px/1440px in English
+  and German. Browser coverage includes supplier addition/removal and explicit
+  review, incomplete menu drafts, prepared/bought-in activation, incomplete view
+  pages and editing a draft without a description. Inspected the updated phone
+  summary: incomplete assessments use an amber warning rather than a green tick.
+- Browser checks use simulated API responses; route checks use isolated database
+  fixtures, including the existing PostgreSQL-compatible approval harness. They
+  do not establish authenticated production behaviour or physical-phone support.
+  The final normal build passed after one transient font-loading failure.
+- Reproduce the new checks with `node --test tests/regular-assessments.cjs` and
+  `node scripts/verify-regular-assessments-browser.cjs` against a local server on
+  port 3111 (or set `BASE_URL`). The browser script uses `PLAYWRIGHT_MODULE` if
+  Playwright is installed outside the project, and `REVIEW_LANGUAGES` can override
+  its default English/German language list.
+
+### Third implementation — list actions, filtering and date sorting (15 October 2026)
+
+- Ingredient bulk Archive/Delete now send real requests with confirmation,
+  guarded repeated taps, bounded concurrency and progress/result feedback.
+  Confirmed successes update the list; failed items remain selected for retry.
+  Removed the unfinished bulk View/Duplicate controls; individual actions remain.
+- Added a status-only archive PATCH restricted to live owner/manager membership
+  and the record's business. It preserves assessment/evidence fields, records the
+  status change and supports idempotent archive retries. Delete also rejects
+  unknown roles and reports missing/cross-business records rather than success.
+- Ingredient filters use stable allergen IDs, with compatibility for old numbered
+  filter links. Parent warnings remain filterable even with an empty subtype map;
+  only known parent allergen keys enter the list's warning model.
+- Both Date added controls sort raw created_at timestamps, including within-day
+  differences, rather than formatted update dates or random IDs. Missing/invalid
+  dates stay last in both directions. Date sorting presents one All items group
+  so category grouping cannot override chronological order.
+- Both pages show loading errors with Retry and retain previously loaded rows on
+  refresh failures. Invalid payloads are not treated as empty lists. Filtered
+  empty states offer Clear filters and avoid misleading Add first wording.
+- Phone search occupies its own row; filter/view/sort controls wrap without page
+  overflow. View toggles and sorting/selection controls have accessible labels.
+  Clear selection has a distinct translated label, avoiding its former ambiguity
+  with Delete in German. New messages are included in all six language catalogs.
+- Verification passed: 16 new list tests plus the 29 existing assessment/save
+  tests (45 total), TypeScript and the production build. Four browser runs cover
+  both pages at 390px/1440px in English/German: load failure/retry, allergen filters,
+  date order across categories, confirmation cancellation, mixed archive/delete
+  results, failed-item retry, fixture reload persistence and staff controls.
+  Checked page width with selected items as well as normal list states, and
+  inspected the German phone toolbar screenshot.
+- API tests use isolated query fixtures; browser requests use simulated API data.
+  Authenticated production and physical-device checks remain outstanding. No
+  schema change, production data write or deployment was performed.
+
+### Fourth implementation — compact lists and return navigation (15 October 2026)
+
+- Both management pages share a compact three-column summary and a labelled Add
+  ingredient/Add menu item link. Non-interactive totals no longer look clickable;
+  the Sites total retains its link. Search appears much higher on phones.
+- Menu Builder adds Active/Draft and Prepared/Bought-in filters alongside scope
+  and category, a visible result count and a single Clear filters action. The
+  filters combine with search and sorting, including filtered empty results.
+  New copy is included in all six supported languages.
+- Search, filters, filter-panel visibility, sort direction and view mode are kept
+  in the list URL. View/edit/new links carry a validated return destination;
+  Back, Cancel, successful Save and Delete return to that list context. Browser
+  Back also retains the list URL. External/unrelated return paths are rejected.
+- Verification: 49 focused tests, TypeScript and the production build passed.
+  Browser checks use simulated APIs at 390px/1440px in English/German, covering
+  combined filters, empty/clear results, view/edit/new return journeys, browser
+  Back, an additional phone Cancel check, and successful saves with preserved
+  query parameters. Existing assessment
+  and bulk-action regression checks remain included.
+- These changes are local only. No migrations, production writes or deployment
+  were performed. Remaining form ordering, persistent actions and unsaved-change
+  warnings stay on the checklist.
+
+### Fifth implementation — form order and persistent actions (15 October 2026)
+
+- Regular ingredient creation and editing now put details and supplier variants
+  ahead of dietary/allergen assessment, with evidence and review controls in the
+  same reading order. Dietary controls on creation no longer precede suppliers;
+  editing no longer separates dietary and review settings into the sidebar.
+- Both menu forms place source/recipe, assessment and evidence before availability,
+  review and optional colour/image settings. Prepared and bought-in creation both
+  offer menu-specific document uploads.
+- Menu creation/editing share dietary controls. Prepared claims are read-only and
+  come from the intersection of recipe ingredient certifications, including when
+  loading an existing recipe. Removing ingredients recalculates/clears the claims;
+  stale manual claims are no longer carried into the calculated display. Bought-in
+  products retain selectable verified claims and support additional verified claims.
+  The explanation and new field labels are translated into all six languages.
+  Long translated allergen-summary headings can wrap beside their icons.
+- All four forms share one persistent Save/Cancel area, with Make active also
+  available on new menu items. Actions wrap on phones, respect the safe area and
+  disable while saving; menu save feedback stays alongside the buttons. The bar
+  measures its height and reserves document/focus scroll space. Delete remains
+  separate. The floating Quick Add launcher and news ticker are hidden on these
+  four form routes to avoid overlapping the actions; other routes retain them.
+- Verification: 49 focused tests, TypeScript and the final production build passed.
+  Fixture browser checks cover nine journeys at 390px/1440px in English/German,
+  including all four form action areas at the top/bottom of the page, no page
+  overflow, regular ingredient create/edit saves, menu draft/active saves, supplier
+  review, retained list context and dietary recalculation. The English phone list
+  regression also passed, including view/edit/new Back and Cancel journeys.
+- Local implementation only: no migrations, production writes or deployment.
+  Unsaved-change warnings, broader inline validation/focus improvements and physical
+  device/deployed-route checks remain outstanding.
+
 ## Session 1 — Review the current system and agree the first version
 
 - [ ] Walk through ingredient and bought-in product creation on a phone.

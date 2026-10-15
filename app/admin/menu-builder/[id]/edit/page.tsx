@@ -4,11 +4,14 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import { MenuDietaryFields } from '@/components/admin/MenuDietaryFields'
+import { RegularFormActions } from '@/components/admin/RegularFormActions'
+import { useListReturnPath } from '@/lib/hooks/useListReturnPath'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import {
   ArrowLeft, Save, X, Plus, Trash2,
-  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, MilkOff, ShieldCheck, FileText, CheckCircle
+  Leaf, Apple, WheatOff, Moon, Star, Sprout, Globe, Droplets, MilkOff, ShieldCheck, FileText, CheckCircle, AlertTriangle
 } from 'lucide-react'
 
 import { Container } from '@/components/layout/Container'
@@ -21,7 +24,7 @@ import DatasheetUploader from '@/components/admin/DatasheetUploader'
 import { ReviewFrequencySelector } from '@/components/admin/ReviewFrequencySelector'
 import { MenuItemSupplyFields, type MenuItemType, type SupplierOption } from '@/components/admin/MenuItemSupplyFields'
 import type { AllergenWarnings } from '@/types/allergen'
-import { computeWorstCaseAllergens } from '@/types/allergen'
+import { mergeAllergenAssessments, isIngredientAssessmentComplete, isAllergenAssessmentComplete } from '@/lib/allergen-assessment'
 import { useContentPermissions } from '@/lib/hooks/useContentPermissions'
 import { translateComplianceReason } from '@/lib/compliance-documents-translations'
 
@@ -86,9 +89,10 @@ export default function EditMenuItemPage() {
   const { t } = useTranslation()
   const { showNotification } = useNotification()
   const router = useRouter()
+  const { returnTo } = useListReturnPath('/admin/menu-builder')
   const params = useParams()
   const itemId = params.id as string
-  
+
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -101,8 +105,6 @@ export default function EditMenuItemPage() {
   const [datasheets, setDatasheets] = useState<any[]>([])
   const [existingDatasheets, setExistingDatasheets] = useState<any[]>([])
   const [datasheetsTouched, setDatasheetsTouched] = useState(false)
-  const [customDietaryInput, setCustomDietaryInput] = useState('')
-  const [showCustomDietaryInput, setShowCustomDietaryInput] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
   const [saveMessage, setSaveMessage] = useState('')
   const [ingredientSearch, setIngredientSearch] = useState('')
@@ -110,19 +112,6 @@ export default function EditMenuItemPage() {
   const [compliance, setCompliance] = useState<any>(null)
   const [loadingCompliance, setLoadingCompliance] = useState(false)
   const [uploadingIcon, setUploadingIcon] = useState(false)
-
-  const dietaryOptions = [
-    { name: 'Vegan', color: '#16a34a', icon: Leaf },
-    { name: 'Vegetarian', color: '#84cc16', icon: Apple },
-    { name: 'Gluten-Free', color: '#f59e0b', icon: WheatOff },
-    { name: 'Halal', color: '#10b981', icon: Moon },
-    { name: 'Kosher', color: '#3b82f6', icon: Star },
-    { name: 'Organic', color: '#22c55e', icon: Sprout },
-    { name: 'Fair Trade', color: '#8b5cf6', icon: Globe },
-    { name: 'Lactose-Free', color: '#06b6d4', icon: Droplets },
-    { name: 'Dairy Free', color: '#0ea5e9', icon: MilkOff },
-    { name: 'Coeliac-Friendly', color: '#ec4899', icon: ShieldCheck }
-  ]
 
   const DEFAULT_MENU_CATEGORIES = [
     'Breakfast', 'Desserts', 'Drinks', 'Lunch', 'Mains',
@@ -140,22 +129,7 @@ export default function EditMenuItemPage() {
       .catch(() => {})
   }, [])
 
-  const defaultWarnings: AllergenWarnings = {
-    cereals_gluten: 'none',
-    crustaceans: 'none',
-    eggs: 'none',
-    fish: 'none',
-    peanuts: 'none',
-    soybeans: 'none',
-    milk: 'none',
-    nuts: 'none',
-    celery: 'none',
-    mustard: 'none',
-    sesame: 'none',
-    sulphites: 'none',
-    lupin: 'none',
-    molluscs: 'none'
-  }
+  const defaultWarnings = {} as AllergenWarnings
 
   // Load menu item, ingredients and sites
   useEffect(() => {
@@ -182,7 +156,7 @@ export default function EditMenuItemPage() {
           ? (ingredientData.ingredients || []).map((ingredient: any) => ({
               id: ingredient.id,
               name: ingredient.name,
-              allergen_warnings: ingredient.allergen_warnings || { ...defaultWarnings },
+              allergen_warnings: { ...(ingredient.allergen_warnings || {}), assessment_incomplete: (ingredient.status && ingredient.status !== 'active') || !isIngredientAssessmentComplete(ingredient.allergen_warnings, ingredient.supplier_profiles) },
               suppliers: ingredient.suppliers || [],
               certifications: ingredient.certifications || []
             }))
@@ -199,7 +173,7 @@ export default function EditMenuItemPage() {
         const mergedCerts: string[] = ingredientCerts.length === 0
           ? []
           : ingredientCerts.reduce((acc: string[], certs: string[]) => acc.filter((c: string) => certs.includes(c)))
-        const combinedDietary = Array.from(new Set([...existingDietary, ...mergedCerts]))
+        const combinedDietary = item.item_type === 'packaged_product' ? existingDietary : mergedCerts
 
         setMenuItem({
           id: item.id,
@@ -258,7 +232,7 @@ export default function EditMenuItemPage() {
         console.error('Error fetching existing datasheets:', error)
       }
     }
-    
+
     if (itemId) {
       fetchExistingDatasheets()
     }
@@ -280,7 +254,7 @@ export default function EditMenuItemPage() {
         const data = await response.json()
 
         if (!response.ok) {
-          throw new Error(data.error || 'Failed to fetch datasheets')
+          throw new Error((data.errorCode === 'completeMenu' ? t('regularAssessment.completeMenu') : data.error) || 'Failed to fetch datasheets')
         }
       } catch (error: any) {
         console.error('Error loading ingredient datasheets:', error)
@@ -292,30 +266,9 @@ export default function EditMenuItemPage() {
     fetchIngredientDatasheets()
   }, [menuItem?.ingredients])
 
-  const addCustomDietary = () => {
-    if (!menuItem || !customDietaryInput.trim() || menuItem.dietary.includes(customDietaryInput.trim())) return
-    
-    const newDietary = [...menuItem.dietary, customDietaryInput.trim()]
-    setMenuItem({ ...menuItem, dietary: newDietary })
-    setCustomDietaryInput('')
-    setShowCustomDietaryInput(false)
-  }
-
-  const removeCustomDietary = (dietary: string) => {
-    if (!menuItem) return
-    setMenuItem({
-      ...menuItem,
-      dietary: menuItem.dietary.filter(d => d !== dietary)
-    })
-  }
-
-  const isCustomDietary = (dietary: string) => {
-    return !dietaryOptions.some(opt => opt.name === dietary)
-  }
-
   const handleIngredientSelect = (ingredientId: string) => {
     if (!menuItem) return
-    
+
     const updatedIngredients = menuItem.ingredients.includes(ingredientId)
       ? menuItem.ingredients.filter(id => id !== ingredientId)
       : [...menuItem.ingredients, ingredientId]
@@ -330,16 +283,15 @@ export default function EditMenuItemPage() {
     const mergedCertifications = ingredientCerts.length === 0
       ? []
       : ingredientCerts.reduce((acc, certs) => acc.filter(c => certs.includes(c)))
-    const manualDietary = menuItem.dietary.filter(d => !dietaryOptions.some(opt => opt.name === d) || mergedCertifications.includes(d))
-    const combinedDietary = Array.from(new Set([...manualDietary, ...mergedCertifications]))
+
 
     setMenuItem({
       ...menuItem,
       ingredients: updatedIngredients,
       allergen_warnings: profiles.length > 0
-        ? computeWorstCaseAllergens(profiles)
-        : menuItem.allergen_warnings,
-      dietary: combinedDietary,
+        ? mergeAllergenAssessments(profiles)
+        : {} as AllergenWarnings,
+      dietary: mergedCertifications,
     })
   }
 
@@ -360,10 +312,10 @@ export default function EditMenuItemPage() {
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || t('menuBuilderPortal.deleteFailed'))
+        throw new Error((data.errorCode === 'completeMenu' ? t('regularAssessment.completeMenu') : data.error) || t('menuBuilderPortal.deleteFailed'))
       }
 
-      router.push('/admin/menu-builder')
+      router.push(returnTo)
     } catch (error: any) {
       console.error('Error deleting menu item:', error)
       showNotification(error.message || t('menuBuilderPortal.deleteFailed'), 'error')
@@ -403,7 +355,7 @@ export default function EditMenuItemPage() {
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error(data.error || t('menuBuilderPortal.reviewFailed'))
+        throw new Error((data.errorCode === 'completeMenu' ? t('regularAssessment.completeMenu') : data.error) || t('menuBuilderPortal.reviewFailed'))
       }
 
       // Refresh compliance status
@@ -425,9 +377,9 @@ export default function EditMenuItemPage() {
   }, [itemId, menuItem])
 
   const handleSave = async () => {
-    if (!menuItem || !menuItem.name || !menuItem.description) {
+    if (!menuItem || !menuItem.name.trim() || (menuItem.status === 'active' && !menuItem.description.trim())) {
       setSaveStatus('error')
-      setSaveMessage('Please fill in all required fields')
+      setSaveMessage(t('regularItemSave.requiredFields'))
       return
     }
 
@@ -445,7 +397,7 @@ export default function EditMenuItemPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to save menu item')
+        throw new Error((data.errorCode === 'completeMenu' ? t('regularAssessment.completeMenu') : data.error) || 'Failed to save menu item')
       }
 
       const currentDatasheets = datasheetsTouched ? datasheets : existingDatasheets
@@ -495,7 +447,7 @@ export default function EditMenuItemPage() {
 
               const uploadData = await uploadResponse.json()
               if (!uploadResponse.ok) {
-                const errorMsg = uploadData.details 
+                const errorMsg = uploadData.details
                   ? `${uploadData.error}: ${uploadData.details}`
                   : uploadData.error || `Failed to upload ${fileName}`
                 throw new Error(errorMsg)
@@ -516,10 +468,10 @@ export default function EditMenuItemPage() {
 
       setSaveStatus('success')
       setSaveMessage('Menu item updated successfully!')
-      
+
       // Redirect after a short delay
       setTimeout(() => {
-        router.push('/admin/menu-builder')
+        router.push(returnTo)
       }, 1000)
     } catch (error: any) {
       console.error('Error saving menu item:', error)
@@ -550,7 +502,7 @@ export default function EditMenuItemPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to upload icon')
+        throw new Error((data.errorCode === 'completeMenu' ? t('regularAssessment.completeMenu') : data.error) || 'Failed to upload icon')
       }
 
       setMenuItem(current => current ? ({ ...current, icon: data.iconUrl }) : current)
@@ -582,7 +534,7 @@ export default function EditMenuItemPage() {
         {/* Header */}
         <div className="mb-8">
           <Link
-            href="/admin/menu-builder"
+            href={returnTo}
             className="inline-flex items-center gap-2 text-[#42b8ac] hover:text-[#003842] dark:hover:text-[#42b8ac] font-medium mb-4"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -600,17 +552,6 @@ export default function EditMenuItemPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form Section */}
           <div className="lg:col-span-2 space-y-6">
-            <Card className="p-6">
-              <MenuItemSupplyFields
-                value={menuItem}
-                suppliers={suppliers}
-                onChange={(changes) => setMenuItem(current => current ? ({
-                  ...current,
-                  ...changes,
-                  ...(changes.item_type === 'packaged_product' ? { ingredients: [] } : {}),
-                }) : current)}
-              />
-            </Card>
             {/* Menu Item Name */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -624,26 +565,148 @@ export default function EditMenuItemPage() {
               />
             </Card>
 
-            {/* Site Scope */}
+            {/* Category */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('admin.siteScope')}
+                {t('admin.category')}
               </label>
-              <select
-                value={menuItem.site_id ?? 'global'}
-                onChange={(e) => setMenuItem({ 
-                  ...menuItem, 
-                  site_id: e.target.value === 'global' ? null : e.target.value 
-                })}
+              <input
+                type="text"
+                list="menu-item-categories"
+                value={menuItem.category}
+                onChange={(e) => setMenuItem({ ...menuItem, category: e.target.value })}
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              >
-                <option value="global">{t('admin.globalAllSites')}</option>
-                {sites.map((site) => (
-                  <option key={site.id} value={site.id}>
-                    {site.name}
-                  </option>
+                placeholder={t('admin.categoryPlaceholder')}
+              />
+              <datalist id="menu-item-categories">
+                {categoryOptions.map(opt => (
+                  <option key={opt} value={opt} />
                 ))}
-              </select>
+              </datalist>
+            </Card>
+
+            {/* Description */}
+            <Card className="p-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t('admin.itemDescription')} {menuItem.status === 'active' ? '*' : `(${t('admin.optional')})`}
+              </label>
+              <textarea
+                value={menuItem.description}
+                onChange={(e) => setMenuItem({ ...menuItem, description: e.target.value })}
+                rows={4}
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              />
+            </Card>
+
+            <Card className="p-6">
+              <MenuItemSupplyFields
+                value={menuItem}
+                suppliers={suppliers}
+                onChange={(changes) => setMenuItem(current => current ? ({
+                  ...current,
+                  ...changes,
+                  ...(changes.item_type && changes.item_type !== current.item_type ? { ingredients: [], allergen_warnings: {} as AllergenWarnings, dietary: [], label_verified_at: null } : {}),
+                }) : current)}
+              />
+            </Card>
+            {menuItem.item_type === 'prepared' && (
+            /* Selected Ingredients */
+            <Card className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {t('admin.selectedIngredients')}
+                </label>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  {menuItem.ingredients.length} {t('admin.selected')}
+                </span>
+              </div>
+
+              <div className="min-h-[100px] border border-gray-300 dark:border-gray-600 rounded-lg p-4 mb-4 bg-gray-50 dark:bg-gray-800">
+                {menuItem.ingredients.length === 0 ? (
+                  <div className="text-center text-gray-500 dark:text-gray-400 py-4">
+                    {t('admin.noIngredientsSelected')}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {menuItem.ingredients.map(ingredientId => {
+                      const ingredient = ingredients.find(i => i.id === ingredientId)
+                      return ingredient ? (
+                        <div
+                          key={ingredient.id}
+                          className="flex items-center gap-2 bg-white dark:bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600"
+                        >
+                          <span className="text-sm text-gray-800 dark:text-gray-200">{ingredient.name}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleIngredientSelect(ingredient.id)}
+                            className="text-gray-500 dark:text-gray-400 hover:text-red-600"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : null
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <Button
+                onClick={() => setShowIngredientSelector(true)}
+                variant="outline"
+                icon={<Plus className="h-4 w-4" />}
+                fullWidth
+              >
+                {menuItem.ingredients.length === 0 ? t('admin.addIngredients') : t('admin.addMoreIngredients')}
+              </Button>
+            </Card>
+            )}
+
+            {/* Allergen Information */}
+            <Card className="p-6">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('admin.allergenInformation')}
+              </label>
+              {menuItem.item_type === 'prepared' ? (
+                <>
+                  <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+                    {t('admin.preparedAllergenHelp')}
+                  </p>
+                  <div className="rounded-xl border border-[#42b8ac]/30 bg-[#42b8ac]/5 p-4">
+                    <AllergenWarningDisplay warnings={menuItem.allergen_warnings} showNone={true} />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+                    {t('admin.directAllergenHelp')}
+                  </p>
+                  <AllergenWarningSelector
+                    value={menuItem.allergen_warnings}
+                    onChange={(warnings) => setMenuItem({ ...menuItem, allergen_warnings: warnings })}
+                  />
+                </>
+              )}
+            </Card>
+
+            <Card className="p-6">
+              <MenuDietaryFields prepared={menuItem.item_type === 'prepared'} value={menuItem.dietary} onChange={dietary => setMenuItem(current => current ? ({ ...current, dietary }) : current)} />
+            </Card>
+
+            {/* Datasheets */}
+            <Card className="p-6">
+              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                {t('admin.menuItemSpecificDatasheets')}
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                {t('admin.menuItemDatasheetsDesc')}
+              </p>
+              <DatasheetUploader
+                entityType="menu_item"
+                existingDatasheets={existingDatasheets}
+                onFilesChange={handleDatasheetsChange}
+                maxFiles={5}
+                compact={false}
+              />
             </Card>
 
             {/* Status Toggle */}
@@ -690,7 +753,7 @@ export default function EditMenuItemPage() {
                   {marking ? t('admin.marking') : t('admin.markAsReviewed')}
                 </Button>
               </div>
-              
+
               {loadingCompliance ? (
                 <div className="text-gray-500 text-sm">{t('admin.loadingComplianceStatus')}</div>
               ) : compliance ? (
@@ -698,21 +761,21 @@ export default function EditMenuItemPage() {
                   <div
                     className="p-3 rounded-lg border-2"
                     style={{
-                      backgroundColor: compliance.status === 'compliant' ? '#dcfce7' : 
+                      backgroundColor: compliance.status === 'compliant' ? '#dcfce7' :
                                       compliance.status === 'warning' ? '#fef3c7' : '#fee2e2',
-                      borderColor: compliance.status === 'compliant' ? '#16a34a' : 
+                      borderColor: compliance.status === 'compliant' ? '#16a34a' :
                                   compliance.status === 'warning' ? '#f59e0b' : '#dc2626'
                     }}
                   >
                     <div className="font-semibold" style={{
-                      color: compliance.status === 'compliant' ? '#16a34a' : 
+                      color: compliance.status === 'compliant' ? '#16a34a' :
                             compliance.status === 'warning' ? '#f59e0b' : '#dc2626'
                     }}>
-                      {compliance.status === 'compliant' ? `✓ ${t('admin.compliant')}` : 
+                      {compliance.status === 'compliant' ? `✓ ${t('admin.compliant')}` :
                        compliance.status === 'warning' ? `⚠ ${t('admin.reviewDueSoon')}` : `✕ ${t('admin.notCompliant')}`}
                     </div>
                   </div>
-                  
+
                   {compliance.reasons.length > 0 && (
                     <div className="space-y-1">
                       {compliance.reasons.map((reason: string, idx: number) => (
@@ -723,7 +786,7 @@ export default function EditMenuItemPage() {
                       ))}
                     </div>
                   )}
-                  
+
                   {compliance.lastReviewedAt && (
                     <div className="text-xs text-gray-500 pt-2 border-t">
                       {t('admin.lastSeenLabel')}: {new Date(compliance.lastReviewedAt).toLocaleDateString()}
@@ -735,36 +798,34 @@ export default function EditMenuItemPage() {
               )}
             </Card>
 
-            {/* Category */}
+            {/* Site Scope */}
             <Card className="p-6">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('admin.category')}
+                {t('admin.siteScope')}
               </label>
-              <input
-                type="text"
-                list="menu-item-categories"
-                value={menuItem.category}
-                onChange={(e) => setMenuItem({ ...menuItem, category: e.target.value })}
+              <select
+                value={menuItem.site_id ?? 'global'}
+                onChange={(e) => setMenuItem({
+                  ...menuItem,
+                  site_id: e.target.value === 'global' ? null : e.target.value
+                })}
                 className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                placeholder={t('admin.categoryPlaceholder')}
-              />
-              <datalist id="menu-item-categories">
-                {categoryOptions.map(opt => (
-                  <option key={opt} value={opt} />
+              >
+                <option value="global">{t('admin.globalAllSites')}</option>
+                {sites.map((site) => (
+                  <option key={site.id} value={site.id}>
+                    {site.name}
+                  </option>
                 ))}
-              </datalist>
+              </select>
             </Card>
 
-            {/* Description */}
-            <Card className="p-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('admin.itemDescription')} *
-              </label>
-              <textarea
-                value={menuItem.description}
-                onChange={(e) => setMenuItem({ ...menuItem, description: e.target.value })}
-                rows={4}
-                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            {/* Review Frequency */}
+            <Card>
+              <ReviewFrequencySelector
+                value={menuItem?.preferred_review_months || 12}
+                onChange={(months) => setMenuItem(prev => prev ? { ...prev, preferred_review_months: months } : prev)}
+                label={t('admin.reviewFrequency')}
               />
             </Card>
 
@@ -809,7 +870,7 @@ export default function EditMenuItemPage() {
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
                 {t('admin.iconPictureHelp')}
               </p>
-              
+
               {/* Upload Custom Image */}
               <div className="mb-5 pb-5 border-b border-gray-200 dark:border-gray-600">
                 <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">{t('admin.uploadCustomImage')}</p>
@@ -874,289 +935,26 @@ export default function EditMenuItemPage() {
               </div>
             </Card>
 
-            {menuItem.item_type === 'prepared' && (
-            /* Selected Ingredients */
-            <Card className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t('admin.selectedIngredients')}
-                </label>
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  {menuItem.ingredients.length} {t('admin.selected')}
-                </span>
-              </div>
 
-              <div className="min-h-[100px] border border-gray-300 dark:border-gray-600 rounded-lg p-4 mb-4 bg-gray-50 dark:bg-gray-800">
-                {menuItem.ingredients.length === 0 ? (
-                  <div className="text-center text-gray-500 dark:text-gray-400 py-4">
-                    {t('admin.noIngredientsSelected')}
-                  </div>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {menuItem.ingredients.map(ingredientId => {
-                      const ingredient = ingredients.find(i => i.id === ingredientId)
-                      return ingredient ? (
-                        <div
-                          key={ingredient.id}
-                          className="flex items-center gap-2 bg-white dark:bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600"
-                        >
-                          <span className="text-sm text-gray-800 dark:text-gray-200">{ingredient.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleIngredientSelect(ingredient.id)}
-                            className="text-gray-500 dark:text-gray-400 hover:text-red-600"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ) : null
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <Button
-                onClick={() => setShowIngredientSelector(true)}
-                variant="outline"
-                icon={<Plus className="h-4 w-4" />}
-                fullWidth
-              >
-                {menuItem.ingredients.length === 0 ? t('admin.addIngredients') : t('admin.addMoreIngredients')}
-              </Button>
-            </Card>
-            )}
-
-            {/* Dietary Attributes */}
-            <Card className="p-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
-                {t('admin.dietaryAttributesCertifications')}
-              </label>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
-                {dietaryOptions.map(dietary => {
-                  const isSelected = menuItem.dietary.includes(dietary.name)
-                  
-                  return (
-                    <button
-                      key={dietary.name}
-                      type="button"
-                      onClick={() => {
-                        const newDietary = isSelected
-                          ? menuItem.dietary.filter(d => d !== dietary.name)
-                          : [...menuItem.dietary, dietary.name]
-                        setMenuItem({ ...menuItem, dietary: newDietary })
-                      }}
-                      className={`
-                        relative flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all
-                        ${isSelected
-                          ? 'border-opacity-100 shadow-md'
-                          : 'border-gray-200 hover:border-gray-300 hover:shadow-lg'
-                        }
-                        group cursor-pointer
-                      `}
-                      style={{
-                        borderColor: isSelected ? dietary.color : undefined,
-                        backgroundColor: isSelected ? `${dietary.color}15` : '#fff'
-                      }}
-                    >
-                      <div 
-                        className={`
-                          flex items-center justify-center w-10 h-10 rounded-lg transition-all
-                          ${isSelected ? 'scale-100' : 'group-hover:scale-110'}
-                          group-hover:shadow-lg
-                        `}
-                        style={{ backgroundColor: dietary.color }}
-                      >
-                        {typeof dietary.icon === 'function' && React.createElement(dietary.icon as React.ComponentType<{className: string}>, { className: 'h-6 w-6 text-white' })}
-                      </div>
-                      <span
-                        className={`text-xs font-semibold text-center transition-colors ${
-                          isSelected ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'
-                        }`}
-                      >
-                        {dietary.name}
-                      </span>
-                      {isSelected && (
-                        <div 
-                          className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center"
-                          style={{ backgroundColor: dietary.color }}
-                        >
-                          <svg className="w-3 h-3 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
-                            <path d="M5 13l4 4L19 7"></path>
-                          </svg>
-                        </div>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-
-              {/* Custom Dietary Input */}
-              <button
-                type="button"
-                onClick={() => setShowCustomDietaryInput(!showCustomDietaryInput)}
-                className="w-full text-left px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                + {t('admin.addCustomAttribute')}
-              </button>
-
-              {showCustomDietaryInput && (
-                <div className="mt-4 flex gap-2">
-                  <input
-                    type="text"
-                    value={customDietaryInput}
-                    onChange={(e) => setCustomDietaryInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && addCustomDietary()}
-                    placeholder={t('admin.enterCustomAttribute')}
-                    className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white"
-                  />
-                  <Button
-                    variant="primary"
-                    onClick={addCustomDietary}
-                    disabled={!customDietaryInput.trim()}
-                  >
-                    {t('admin.add')}
-                  </Button>
-                </div>
-              )}
-
-              {menuItem.dietary.filter(d => isCustomDietary(d)).length > 0 && (
-                <div className="mt-4">
-                  <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('admin.customAttributes')}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {menuItem.dietary.filter(d => isCustomDietary(d)).map(dietary => (
-                      <span
-                        key={dietary}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium"
-                      >
-                        {dietary}
-                        <button
-                          type="button"
-                          onClick={() => removeCustomDietary(dietary)}
-                          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </Card>
-
-            {/* Allergen Information */}
-            <Card className="p-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('admin.allergenInformation')}
-              </label>
-              {menuItem.ingredients.length > 0 ? (
-                <>
-                  <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
-                    {t('admin.preparedAllergenHelp')}
-                  </p>
-                  <div className="rounded-xl border border-[#42b8ac]/30 bg-[#42b8ac]/5 p-4">
-                    <AllergenWarningDisplay warnings={menuItem.allergen_warnings} showNone={true} />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
-                    {t('admin.directAllergenHelp')}
-                  </p>
-                  <AllergenWarningSelector
-                    value={menuItem.allergen_warnings}
-                    onChange={(warnings) => setMenuItem({ ...menuItem, allergen_warnings: warnings })}
-                  />
-                </>
-              )}
-            </Card>
-
-            {/* Datasheets */}
-            <Card className="p-6">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                {t('admin.menuItemSpecificDatasheets')}
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                {t('admin.menuItemDatasheetsDesc')}
-              </p>
-              <DatasheetUploader
-                entityType="menu_item"
-                existingDatasheets={existingDatasheets}
-                onFilesChange={handleDatasheetsChange}
-                maxFiles={5}
-                compact={false}
-              />
-            </Card>
-
-            {/* Save Status */}
-            {saveStatus !== 'idle' && (
-              <Card className={`p-4 border-2 ${
-                saveStatus === 'success'
-                  ? 'border-emerald-200 bg-emerald-50 dark:bg-emerald-900/20'
-                  : saveStatus === 'error'
-                    ? 'border-red-200 bg-red-50 dark:bg-red-900/20'
-                    : 'border-blue-200 bg-blue-50 dark:bg-blue-900/20'
-              }`}>
-                <p className={`text-sm font-medium ${
-                  saveStatus === 'success'
-                    ? 'text-emerald-800 dark:text-emerald-200'
-                    : saveStatus === 'error'
-                      ? 'text-red-800 dark:text-red-200'
-                      : 'text-blue-800 dark:text-blue-200'
-                }`}>
-                  {saveMessage}
-                </p>
-              </Card>
-            )}
           </div>
 
           {/* Sidebar */}
           <div className="space-y-6">
-            {/* Save Button */}
-            <Card className="p-6">
-              <Button
-                onClick={handleSave}
-                variant="primary"
-                icon={<Save className="h-4 w-4" />}
-                fullWidth
-                size="lg"
-                disabled={saving || !menuItem.name || !menuItem.description}
-              >
-                {saving ? t('admin.savingMenuItem') : t('admin.saveMenuItem')}
-              </Button>
-              <Link href="/admin/menu-builder">
-                <Button
-                  variant="outline"
-                  fullWidth
-                  size="lg"
-                  className="mt-3"
-                >
-                  {t('admin.cancel')}
-                </Button>
-              </Link>
-              {canDeleteContent && (
+          <Card className="p-6">
+            {canDeleteContent && (
                 <button type="button" onClick={handleDelete} disabled={deleting} className="w-full mt-3 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-red-300 text-red-600 text-sm font-semibold hover:bg-red-50 disabled:opacity-50 transition-colors">
                   <Trash2 className="h-4 w-4" />
                   {deleting ? t('admin.deletingMenuItem') : t('admin.delete') + ' ' + t('admin.menuItemsStat')}
                 </button>
               )}
-            </Card>
-
-            {/* Review Frequency */}
-            <Card>
-              <ReviewFrequencySelector 
-                value={menuItem?.preferred_review_months || 12}
-                onChange={(months) => setMenuItem(prev => prev ? { ...prev, preferred_review_months: months } : prev)}
-                label={t('admin.reviewFrequency')}
-              />
-            </Card>
-
+          </Card>
             {/* Final Allergen Summary */}
-            <Card className="p-6 border-2 border-emerald-300 bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20">
+            <Card className={`p-6 border-2 ${isAllergenAssessmentComplete(menuItem.allergen_warnings) ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-900/20' : 'border-amber-300 bg-amber-50 dark:bg-amber-900/20'}`}>
               <div className="flex items-center gap-2 mb-4">
-                <div className="p-2 bg-emerald-600 rounded-lg">
-                  <CheckCircle className="h-5 w-5 text-white" />
+                <div className={`shrink-0 p-2 rounded-lg ${isAllergenAssessmentComplete(menuItem.allergen_warnings) ? 'bg-emerald-600' : 'bg-amber-600'}`}>
+                  {isAllergenAssessmentComplete(menuItem.allergen_warnings) ? <CheckCircle className="h-5 w-5 text-white" /> : <AlertTriangle className="h-5 w-5 text-white" />}
                 </div>
-                <h3 className="font-semibold text-emerald-900 dark:text-emerald-200">{t('admin.allergenSummary')}</h3>
+                <h3 className="min-w-0 break-words font-semibold text-gray-900 dark:text-gray-100">{t('admin.allergenSummary')}</h3>
               </div>
               <div className="bg-white dark:bg-gray-800 rounded-lg p-4">
                 <AllergenWarningDisplay
@@ -1168,6 +966,8 @@ export default function EditMenuItemPage() {
             </Card>
           </div>
         </div>
+
+        <RegularFormActions feedback={saveStatus === 'idle' ? undefined : { text: saveMessage, error: saveStatus === 'error' }} onSave={handleSave} onCancel={() => router.push(returnTo)} saveLabel={saving ? t('admin.savingMenuItem') : t('admin.saveMenuItem')} disabled={!menuItem.name.trim() || (menuItem.status === 'active' && !menuItem.description.trim())} busy={saving || uploadingIcon || deleting} />
       </Container>
 
       {/* Ingredient Selector Modal */}
