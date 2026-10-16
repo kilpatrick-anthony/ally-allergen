@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { ManagementListHeader } from '@/components/admin/ManagementListHeader'
+import { IngredientDraftList } from '@/components/admin/IngredientDraftList'
 import { listContextHref } from '@/lib/list-navigation'
 import React from 'react'
 import { useNotification } from '@/lib/hooks/useNotification'
@@ -404,6 +405,7 @@ export default function IngredientsPage() {
       <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-6 text-amber-950">
         <p>{t('regularLists.loadFailed')}</p><Button className="mt-3" onClick={() => fetchIngredients()}>{t('regularLists.retry')}</Button>
       </div>
+      <IngredientDraftList returnTo={ingredientListReturnPath} />
     </Container>
   )
 
@@ -413,6 +415,7 @@ export default function IngredientsPage() {
       {loadError && <div role="alert" className="mb-4 rounded-lg border border-amber-300 p-4">
         <p>{t('regularLists.loadFailed')}</p><Button onClick={() => fetchIngredients()}>{t('regularLists.retry')}</Button>
       </div>}
+      <IngredientDraftList returnTo={ingredientListReturnPath} />
       {/* Actions Bar */}
       <Card className="mb-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

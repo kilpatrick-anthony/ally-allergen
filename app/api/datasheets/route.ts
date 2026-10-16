@@ -1,3 +1,4 @@
+import { withDatasheetSuppliers } from '@/lib/server/datasheet-suppliers'
 import { getJwtSecret } from '@/lib/auth'
 // app/api/datasheets/route.ts
 import { createServiceClient } from '@/lib/supabase/server'
@@ -130,7 +131,8 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ datasheets: mappedDatasheets })
+    const displayedDatasheets = await withDatasheetSuppliers(supabase, userBusiness.business_id, mappedDatasheets)
+    return NextResponse.json({ datasheets: displayedDatasheets })
 
   } catch (error: any) {
     console.error('Unexpected error:', error)

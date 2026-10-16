@@ -42,7 +42,8 @@ const catalog = require('../tests/helpers/translation-catalog.cjs')
           else if (request.method() === 'POST' && ['/api/ingredients', '/api/menu-items'].includes(pathname)) {
             posts.push(request.postDataJSON())
             data = { [pathname === '/api/ingredients' ? 'ingredient' : 'menuItem']: { id: 'saved' } }
-          } else if (pathname === '/api/ingredients') data = { count: 1, ingredients: [{ id: 'sample-ingredient', name: 'Natural yoghurt', category: 'Dairy', suppliers: ['Sample supplier'], allergen_warnings: warnings, certifications: ['Vegetarian'], status: 'active' }] }
+          } else if (pathname === '/api/ingredient-drafts') data = { drafts: [] }
+          else if (pathname === '/api/ingredients') data = { count: 1, ingredients: [{ id: 'sample-ingredient', name: 'Natural yoghurt', category: 'Dairy', suppliers: ['Sample supplier'], allergen_warnings: warnings, certifications: ['Vegetarian'], status: 'active' }] }
           else if (pathname === '/api/menu-items') data = { menuItems: [] }
           else if (pathname === '/api/sites') data = { sites: [{ id: 'sample-site', name: 'Main kitchen' }] }
           else if (pathname === '/api/suppliers') data = { suppliers: [{ id: 'sample-supplier', name: 'Sample supplier' }] }
@@ -280,7 +281,7 @@ const catalog = require('../tests/helpers/translation-catalog.cjs')
         await checkCustomCertification(false)
         await checkCertificationToggle()
         assert.equal(await page.getByLabel(labels.allergenNames.milk, { exact: true }).inputValue(), '')
-        await page.getByRole('button', { name: labels.ingredientsPortal.saveIngredient, exact: true }).click()
+        await page.getByRole('button', { name: labels.regularAssessment.makeActive, exact: true }).click()
         assert.equal(posts.length, 0)
         const supplier = page.locator('select').filter({ has: page.locator('option', { hasText: labels.ingredientsPortal.chooseExistingSupplier }) })
         await supplier.selectOption({ label: 'Sample supplier' })
@@ -293,10 +294,10 @@ const catalog = require('../tests/helpers/translation-catalog.cjs')
         await checkCertificationToggle()
         await assess()
         assert.equal(await page.getByRole('button', { name: labels.ingredientsPortal.markProfileReviewed, exact: true }).isEnabled(), true)
-        await page.getByRole('button', { name: labels.ingredientsPortal.saveIngredient, exact: true }).click()
+        await page.getByRole('button', { name: labels.regularAssessment.makeActive, exact: true }).click()
         assert.equal(posts.length, 0)
         await page.getByRole('button', { name: labels.ingredientsPortal.markProfileReviewed, exact: true }).click()
-        await page.getByRole('button', { name: labels.ingredientsPortal.saveIngredient, exact: true }).click()
+        await page.getByRole('button', { name: labels.regularAssessment.makeActive, exact: true }).click()
         await page.waitForURL(url => url.pathname + url.search === ingredientReturn)
         assert.equal(leaveDialogs, expectedLeaveDialogs, 'successful saves do not prompt to discard changes')
         assert.equal(posts.length, 1)

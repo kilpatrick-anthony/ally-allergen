@@ -7,7 +7,7 @@ Start with the existing mobile website. An App Store release is a separate futur
 project. The sessions below are a suggested sequence for the next few days, not
 a promise that each phase will take one day. Re-estimate after the initial review.
 
-## Current priority — regular Ingredients and Menu Builder routes (15 October 2026)
+## Current priority — regular Ingredients and Menu Builder routes (16 October 2026)
 
 Complete these improvements before the remaining physical-device, accessibility
 and delivery trials below. Scope: the Ingredients and Menu Builder navigation
@@ -37,7 +37,7 @@ and twelve browser fixture runs across all six languages at phone/desktop widths
 including picker keyboard checks in both themes. These checks do not establish
 authenticated production-data, physical-device or screen-reader acceptance.
 
-This release adds batches nine and ten: labelled custom certification and
+Production release `c7b5650` (15 October 2026) adds batches nine and ten: labelled custom certification and
 review controls, expanded allergen/supplier accessibility, improved contrast and
 focus after removing or clearing controls. Verification passed: 69 regression
 tests, the production build and targeted phone/desktop checks in all six
@@ -45,12 +45,23 @@ languages. The local-only notes below describe the original implementation
 state; physical-device, screen-reader and authenticated production-data
 acceptance remain open.
 
+Release package prepared (16 October 2026): batches eleven and twelve add
+regular ingredient drafts and consistent supplier information on datasheet view
+pages. The draft migration was applied to the production Supabase project as
+`20261016083316` before publishing the application. Both draft tables have RLS,
+no anonymous/authenticated browser grants, and a private document bucket.
+Release checks passed: 89 regression tests, the production build and twelve
+browser fixture runs for each new workflow across six languages at phone/desktop
+widths. Application deployment and live verification are tracked in Vercel; the
+historical batch notes below retain their original local-only/release-pending
+state. Authenticated production-data and physical-device acceptance remain open.
+
 ### Priority 1 — assessment, saving and functional correctness
 
 - [x] Start new allergen assessments as not yet assessed; distinguish unanswered values from explicitly confirmed not present, including supplier profiles and the menu summary. Released; production acceptance checks pending.
 - [x] Separate saving an incomplete menu item as a draft from making it active. Explain draft visibility and enforce assessment/source requirements on the server as well as in the interface. Released; production acceptance checks pending.
 - [x] Require complete regular ingredient assessments and explicit supplier-profile review before saving an ingredient for use. Released; production acceptance checks pending.
-- [ ] Support incomplete drafts through the regular ingredient route, with clear activation controls and verified exclusion from recipe selectors, calculations, reports and customer menus. Until that coordinated work is complete, regular ingredient saves require a complete assessment.
+- [x] Support incomplete drafts through the regular ingredient route, with clear activation controls and verified exclusion from recipe selectors, calculations, reports and customer menus. Implemented locally in batch eleven; database migration, deployment and authenticated production acceptance pending. Existing active-ingredient edits still require a complete assessment.
 - [x] Retain the created item ID after partial document-upload failure; retry only failed attachments without creating another item or duplicating successful uploads. Released; production-data acceptance pending.
 - [x] Implement persistent ingredient bulk Archive/Delete with appropriate permissions, confirmation and failure feedback; implement or remove the unfinished bulk View/Duplicate actions. Released; production acceptance checks pending.
 - [x] Fix the ingredient allergen filter to match stable allergen identifiers rather than mismatched display names. Released; production acceptance checks pending.
@@ -71,8 +82,9 @@ acceptance remain open.
 - [x] Retain entered details on validation/server errors; show linked error summaries, inline name/description errors and persistent save-error feedback with useful focus. Released in `ba2c953`; production-data acceptance pending.
 - [x] Finish edit-form document partial-failure recovery: distinguish the saved record from failed document operations, retain confirmed uploads/deletions/metadata updates and retry only outstanding work while the editor stays open. Released in `ba2c953`; production-data acceptance pending.
 - [x] Give both regular menu ingredient pickers accessible dialog/search names, keyboard focus containment, Escape handling and focus return; expose certification and prepared/bought-in selection states. Released in `ba2c953`; production-data acceptance pending.
-- [x] Label custom certification entry and close/remove actions; retain keyboard focus through add/close/remove; use named native radio choices for review frequency; label supplier/site fields and fix declaration validation focus. Implemented locally in batch nine; release pending.
-- [x] Audit expanded allergen details, supplier disclosures, disappearing actions, menu appearance controls and selected edit statuses; connect captions/groups, respect disabled assessments and restore useful focus. Implemented locally in batch ten; release pending.
+- [x] Label custom certification entry and close/remove actions; retain keyboard focus through add/close/remove; use named native radio choices for review frequency; label supplier/site fields and fix declaration validation focus. Released in `c7b5650`; production acceptance pending.
+- [x] Audit expanded allergen details, supplier disclosures, disappearing actions, menu appearance controls and selected edit statuses; connect captions/groups, respect disabled assessments and restore useful focus. Released in `c7b5650`; production acceptance pending.
+- [x] Show consistent supplier information beside datasheet sizes on ingredient/menu views, including linked ingredient documents. Preserve recorded names, resolve unambiguous missing associations and explicitly identify unassigned documents. Implemented locally in batch twelve; release pending.
 - [ ] Complete manual accessibility acceptance, including screen readers, zoom/text sizing, physical devices and states beyond the automated language/theme fixtures.
 
 ### Priority 3 — verify the changes, then resume the existing trials
@@ -80,6 +92,76 @@ acceptance remain open.
 - [ ] Verify regular ingredient and prepared/bought-in menu journeys, assessment/activation rules, supplier variants, list actions and save/upload retry behaviour with focused regression coverage.
 - [ ] Check the revised pages in the browser at phone/desktop widths, including keyboard use, focus, supported languages/themes and no horizontal overflow; run TypeScript and the production build.
 - [ ] Record release status and verify the deployed regular routes before resuming the broader real-phone, offline/reconnect, assistive-technology and delivery trials below.
+
+### Eleventh implementation — regular ingredient drafts (16 October 2026)
+
+- The regular new ingredient page now follows Menu Builder's action pattern:
+  Save draft for incomplete work and Make active for a finished assessment.
+  A name is required for a draft; unanswered allergens remain unanswered.
+  The Ingredients list has a compact, collapsible draft section with links to
+  continue editing, preserving the originating list search and filters.
+- Incomplete records live in `ingredient_drafts`, outside the inventory tables
+  read by recipe selectors, calculations, reports and customer menus. Draft
+  evidence stays in a separate table and a private storage bucket. Activation
+  creates the ingredient, supplier variants, normal evidence references and audit
+  record in one transaction. The live inventory is untouched if activation fails.
+- Activation validates all fourteen allergens, subtype consistency and review of
+  every selected supplier profile. Supplier IDs and the effective assessment are
+  resolved on the server from the saved draft and current business membership.
+  Optimistic versions reject stale edits; stable draft/upload IDs and repeatable
+  activation recover retries without creating another ingredient. Browser roles
+  cannot access the draft tables, storage objects or database functions directly.
+- Saved drafts reopen with their documents. Failed document changes remain
+  retryable; successful uploads are retained. Draft attachments are limited to
+  five files, each up to 3 MB. The layout recognises the nested draft editor and
+  hides the news ticker/floating entry there, as on the other regular forms, so
+  desktop save controls remain usable. New translated labels avoid a second pass
+  through the legacy portal translator.
+- Verification passed: 81 regression tests, including isolated PostgreSQL tests
+  for isolation, stale writes, role/business boundaries, supplier variants,
+  evidence promotion, rollback and idempotency; the production build; twelve
+  fixture browser runs across six languages at 390px/1440px, including attachment
+  retries, reopening, incomplete activation, activation retries, themes and no
+  horizontal overflow. Existing English assessment journeys and four-form
+  navigation/unsaved-change checks also passed. Unauthenticated local draft and
+  evidence reads return 401.
+- Release pending: apply `20261016083316_add_regular_ingredient_drafts.sql` before
+  deploying this application change. No production migration, writes, commit,
+  push or deployment was performed in this batch. Browser APIs were simulated;
+  PostgreSQL verification used an isolated local database. Authenticated live-data,
+  screen-reader, physical-device and delivery acceptance remain outstanding.
+- Scope: creation/resumption of regular ingredient drafts. Active ingredient
+  editing retains its existing complete-assessment rule. Removed draft documents
+  are unlinked; private storage objects are retained for safe upload recovery.
+  A retention/cleanup policy for unreferenced private objects remains follow-up
+  work, alongside the existing real-device and delivery trials.
+
+### Twelfth implementation — datasheet suppliers on view pages (16 October 2026)
+
+- Ingredient and menu item views share the same file metadata presentation,
+  including documents inherited from recipe ingredients. File size, supplier and
+  version wrap on small screens; filenames and supplier names bypass the legacy
+  portal translator so their original spelling/capitalisation is retained.
+- A document's recorded supplier always wins. Where that field is blank, the
+  authenticated datasheet API resolves a sole linked ingredient supplier or the
+  selected supplier of a bought-in menu item, using business-scoped, batched
+  lookups. The display fallback is separate from stored document metadata.
+  Regular uploads now persist an unambiguous supplier default when none is given.
+- If a file has no recorded supplier and its association cannot identify exactly
+  one supplier, it shows Supplier not recorded in the current language. Assign
+  that file through Edit → its Edit Info controls; multiple ingredient suppliers
+  are never treated as evidence that one particular supplier issued the file.
+- Verification passed: 32 focused tests for display precedence, missing/ambiguous
+  sources, business boundaries, upload defaults, metadata and save/retry behaviour;
+  the production build; twelve simulated browser runs covering both view pages
+  and linked ingredient documents at 390px/1440px in all six languages and both
+  themes, including long supplier names and no horizontal overflow.
+- Read-only checks against the linked Supabase project confirmed missing file
+  supplier metadata and that the ingredient-drafts migration is still unapplied.
+  No production records were changed or migration applied. This display fix
+  requires no additional migration. The batch-eleven draft migration must still
+  be applied before the next application release; it can be handled through the
+  connected Supabase tools. No commit, push or deployment was performed.
 
 ### First implementation — save and document-upload recovery (15 October 2026)
 

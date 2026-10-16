@@ -22,6 +22,7 @@ import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { ALLERGEN_LIST } from '@/types/allergen'
+import { DatasheetFileMetadata } from '@/components/admin/DatasheetFileMetadata'
 import { EditHistory } from '@/components/admin/EditHistory'
 import { useContentPermissions } from '@/lib/hooks/useContentPermissions'
 
@@ -487,24 +488,10 @@ export default function ViewMenuItemPage() {
                         <FileText className="h-5 w-5 text-blue-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">
+                        <p data-no-translate className="font-medium text-gray-900 truncate">
                           {datasheet.file_name}
                         </p>
-                        <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
-                          <span>{(datasheet.file_size / 1024 / 1024).toFixed(2)} MB</span>
-                          {datasheet.supplier_name && (
-                            <>
-                              <span>•</span>
-                              <span>{datasheet.supplier_name}</span>
-                            </>
-                          )}
-                          {datasheet.version && (
-                            <>
-                              <span>•</span>
-                              <span>v{datasheet.version}</span>
-                            </>
-                          )}
-                        </div>
+                        <DatasheetFileMetadata sheet={datasheet} />
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -540,20 +527,10 @@ export default function ViewMenuItemPage() {
                             <FileText className="h-5 w-5 text-purple-600" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-gray-900 truncate">
+                            <p data-no-translate className="font-medium text-gray-900 truncate">
                               {datasheet.file_name}
                             </p>
-                            <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
-                              {ingredient && <span className="text-purple-600">{ingredient.name}</span>}
-                              {ingredient && <span>•</span>}
-                              <span>{(datasheet.file_size / 1024 / 1024).toFixed(2)} MB</span>
-                              {datasheet.supplier_name && (
-                                <>
-                                  <span>•</span>
-                                  <span>{datasheet.supplier_name}</span>
-                                </>
-                              )}
-                            </div>
+                            <DatasheetFileMetadata sheet={datasheet} ingredientName={ingredient?.name} />
                           </div>
                         </div>
                         <div className="flex items-center gap-2">

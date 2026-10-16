@@ -38,7 +38,8 @@ const catalog = require('../tests/helpers/translation-catalog.cjs')
           else if (request.method() === 'POST' && ['/api/ingredients', '/api/menu-items'].includes(pathname)) {
             posts.push(request.postDataJSON())
             data = { [pathname === '/api/ingredients' ? 'ingredient' : 'menuItem']: { id: 'saved' } }
-          } else if (pathname === '/api/ingredients') data = { count: 1, ingredients: [{ id: 'sample-ingredient', name: 'Natural yoghurt', category: 'Dairy', suppliers: ['Sample supplier'], allergen_warnings: warnings, certifications: ['Vegetarian'], status: 'active' }] }
+          } else if (pathname === '/api/ingredient-drafts') data = { drafts: [] }
+          else if (pathname === '/api/ingredients') data = { count: 1, ingredients: [{ id: 'sample-ingredient', name: 'Natural yoghurt', category: 'Dairy', suppliers: ['Sample supplier'], allergen_warnings: warnings, certifications: ['Vegetarian'], status: 'active' }] }
           else if (pathname === '/api/menu-items') data = { menuItems: [] }
           else if (pathname === '/api/sites') data = { sites: [{ id: 'sample-site', name: 'Main kitchen' }] }
           else if (pathname === '/api/suppliers') data = { suppliers: [{ id: 'sample-supplier', name: 'Sample supplier' }] }
@@ -76,7 +77,7 @@ const catalog = require('../tests/helpers/translation-catalog.cjs')
         })
         const origin = process.env.BASE_URL || 'http://localhost:3111'
         const routes = [
-          ['/admin/ingredients', '/admin/ingredients/new', labels.ingredientsPortal.saveIngredient],
+          ['/admin/ingredients', '/admin/ingredients/new', labels.regularAssessment.makeActive],
           ['/admin/ingredients', '/admin/ingredients/review-ingredient/edit', labels.admin.saveChanges],
           ['/admin/menu-builder', '/admin/menu-builder/new', labels.regularAssessment.saveDraft],
           ['/admin/menu-builder', '/admin/menu-builder/review-menu/edit', labels.admin.saveMenuItem],

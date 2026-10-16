@@ -1,3 +1,4 @@
+import { ingredientDraftTranslations } from '@/lib/ingredient-draft-translations'
 import { adminAccessTranslations } from '@/lib/admin-access-translations'
 import { kioskPortalTranslations } from '@/lib/kiosk-portal-translations'
 import { corePortalTranslations } from '@/lib/core-portal-translations'
@@ -16,6 +17,7 @@ import { liveDashboardTranslations } from '@/lib/live-dashboard-translations'
 
 export const recentUiTranslations = {
   en: {
+    ingredientDrafts: ingredientDraftTranslations.en,
     ...adminAccessTranslations.en,
     ...kioskPortalTranslations.en,
     ...corePortalTranslations.en,
@@ -40,6 +42,7 @@ export const recentUiTranslations = {
     },
   },
   ga: {
+    ingredientDrafts: ingredientDraftTranslations.ga,
     ...adminAccessTranslations.ga,
     ...kioskPortalTranslations.ga,
     ...corePortalTranslations.ga,
@@ -64,6 +67,7 @@ export const recentUiTranslations = {
     },
   },
   pt: {
+    ingredientDrafts: ingredientDraftTranslations.pt,
     ...adminAccessTranslations.pt,
     ...kioskPortalTranslations.pt,
     ...corePortalTranslations.pt,
@@ -88,6 +92,7 @@ export const recentUiTranslations = {
     },
   },
   fr: {
+    ingredientDrafts: ingredientDraftTranslations.fr,
     ...adminAccessTranslations.fr,
     ...kioskPortalTranslations.fr,
     ...corePortalTranslations.fr,
@@ -112,6 +117,7 @@ export const recentUiTranslations = {
     },
   },
   es: {
+    ingredientDrafts: ingredientDraftTranslations.es,
     ...adminAccessTranslations.es,
     ...kioskPortalTranslations.es,
     ...corePortalTranslations.es,
@@ -136,6 +142,7 @@ export const recentUiTranslations = {
     },
   },
   de: {
+    ingredientDrafts: ingredientDraftTranslations.de,
     ...adminAccessTranslations.de,
     ...kioskPortalTranslations.de,
     ...corePortalTranslations.de,

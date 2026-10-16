@@ -19,12 +19,14 @@ export class EditDocumentSaveError extends AttachmentUploadError {
 }
 
 /** Recovery is scoped to one open editor; never repeat confirmed document writes. */
-export function createRegularEditSaver(entity: 'ingredient' | 'menu_item') {
+export function createRegularEditSaver(entity: 'ingredient' | 'menu_item' | 'ingredient_draft', onSaved?: (data: any) => void) {
   let pending: Promise<void> | null = null
   const records = new Map<string, string>()
   const uploaded = new Map<File, { id?: string; signature: string }>()
   const deleted = new Set<string>()
-  const collection = entity === 'ingredient' ? '/api/ingredients' : '/api/menu-items'
+  const collection = entity === 'ingredient_draft' ? '/api/ingredient-drafts' : entity === 'ingredient' ? '/api/ingredients' : '/api/menu-items'
+  const documents = entity === 'ingredient_draft' ? '/api/ingredient-draft-documents' : '/api/datasheets'
+  const uploadIds = new WeakMap<File, string>()
 
   async function run(id: string, payload: object, sheets: Sheet[], original: Sheet[], fallback: string) {
     // Capture this attempt. Edits made while it runs belong to the next attempt.
@@ -34,6 +36,7 @@ export function createRegularEditSaver(entity: 'ingredient' | 'menu_item') {
     })
     const data = await response.json().catch(() => null)
     if (!response.ok) throw new RegularItemSaveError(data?.error || fallback, data?.errorCode)
+    onSaved?.(data)
     for (const sheet of original) if (sheet.id && !records.has(sheet.id) && !deleted.has(sheet.id)) records.set(sheet.id, signature(sheet))
 
     const desired = new Set<string>()
@@ -51,7 +54,7 @@ export function createRegularEditSaver(entity: 'ingredient' | 'menu_item') {
         desired.add(documentId)
         if (deleted.has(documentId)) { needsReload = true; continue }
         if (records.get(documentId) !== signature(sheet)) jobs.push(async () => {
-          const update = await fetch(`/api/datasheets/${encodeURIComponent(documentId)}`, {
+          const update = await fetch(`${documents}/${encodeURIComponent(documentId)}`, {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(metadata(sheet)),
           })
           if (!update.ok) throw new Error(fallback)
@@ -64,7 +67,11 @@ export function createRegularEditSaver(entity: 'ingredient' | 'menu_item') {
           const body = new FormData()
           body.append('file', file); body.append(`${entity}_id`, id)
           for (const [key, value] of Object.entries(metadata(sheet))) if (value) body.append(key, value)
-          const upload = await fetch('/api/upload/datasheet', { method: 'POST', body })
+          if (entity === 'ingredient_draft') {
+            if (!uploadIds.has(file)) uploadIds.set(file, crypto.randomUUID())
+            body.append('upload_id', uploadIds.get(file)!)
+          }
+          const upload = await fetch(entity === 'ingredient_draft' ? `${collection}/${encodeURIComponent(id)}/documents` : '/api/upload/datasheet', { method: 'POST', body })
           if (!upload.ok) throw new Error(fallback)
           // An acknowledged upload is never repeated, even if its JSON is lost.
           const result = await upload.json().catch(() => null)
@@ -76,7 +83,7 @@ export function createRegularEditSaver(entity: 'ingredient' | 'menu_item') {
     }
     if (needsReload) throw new EditDocumentSaveError(true)
     for (const documentId of records.keys()) if (!desired.has(documentId) && !deleted.has(documentId)) jobs.push(async () => {
-      const removal = await fetch(`/api/datasheets/${encodeURIComponent(documentId)}`, { method: 'DELETE' })
+      const removal = await fetch(`${documents}/${encodeURIComponent(documentId)}`, { method: 'DELETE' })
       if (!removal.ok) throw new Error(fallback)
       deleted.add(documentId)
     })

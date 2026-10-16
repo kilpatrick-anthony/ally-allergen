@@ -1,3 +1,5 @@
+import { withDatasheetSuppliers } from '@/lib/server/datasheet-suppliers'
+import { recordedDatasheetSupplier } from '@/lib/datasheet-supplier'
 import { getJwtSecret } from '@/lib/auth'
 // app/api/upload/datasheet/route.ts
 import { createServiceClient } from '@/lib/supabase/server'
@@ -69,6 +71,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Ingredient or menu item not found' }, { status: 404 })
     }
 
+    const supplier = recordedDatasheetSupplier(supplierName) || (await withDatasheetSuppliers(supabase, userBusiness.business_id, [{ ingredient_id: ingredientId, menu_item_id: menuItemId }]))[0].display_supplier_name
+
     // Generate unique file path
     const timestamp = Date.now()
     const sanitizedFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
@@ -116,8 +120,8 @@ export async function POST(request: NextRequest) {
     if (menuItemId) {
       insertObject.menu_item_id = menuItemId
     }
-    if (supplierName) {
-      insertObject.supplier_name = supplierName
+    if (supplier) {
+      insertObject.supplier_name = supplier
     }
     if (version) {
       insertObject.version = version

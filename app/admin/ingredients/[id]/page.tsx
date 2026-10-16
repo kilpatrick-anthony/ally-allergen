@@ -18,6 +18,7 @@ import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { ALLERGEN_LIST } from '@/types/allergen'
+import { DatasheetFileMetadata } from '@/components/admin/DatasheetFileMetadata'
 import { EditHistory } from '@/components/admin/EditHistory'
 import { useContentPermissions } from '@/lib/hooks/useContentPermissions'
 import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay'
@@ -445,24 +446,10 @@ export default function ViewIngredientPage() {
                         <FileText className="h-5 w-5 text-blue-600" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">
+                        <p data-no-translate className="font-medium text-gray-900 truncate">
                           {datasheet.file_name}
                         </p>
-                        <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
-                          <span>{t('ingredientsPortal.fileSizeMb', { size: (datasheet.file_size / 1024 / 1024).toFixed(2) })}</span>
-                          {datasheet.supplier_name && (
-                            <>
-                              <span>•</span>
-                              <span>{datasheet.supplier_name}</span>
-                            </>
-                          )}
-                          {datasheet.version && (
-                            <>
-                              <span>•</span>
-                              <span>{t('ingredientsPortal.versionPrefix', { version: datasheet.version })}</span>
-                            </>
-                          )}
-                        </div>
+                        <DatasheetFileMetadata sheet={datasheet} />
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
