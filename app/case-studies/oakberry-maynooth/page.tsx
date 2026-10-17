@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, Globe, Mail, QrCode, Tablet } from 'lucide-react'
 import { Container } from '@/components/layout/Container'
@@ -7,7 +8,7 @@ import { PublicFooter } from '@/components/marketing/PublicFooter'
 import { oakberryCaseStudy as story } from '@/lib/oakberry-case-study'
 
 const url = `https://allyjen.ie${story.href}`
-const socialImage = { url: '/AllyJen Logo (1200 x 630 px).png', width: 1200, height: 630, alt: 'AllyJen — Serving Confidence' }
+const socialImage = { url: '/oakberry-22-copy.jpg', width: 1080, height: 1080, alt: 'The OAKBERRY Maynooth storefront' }
 
 export const metadata: Metadata = {
   title: 'OAKBERRY Maynooth Case Study',
@@ -40,14 +41,23 @@ export default function OakberryCaseStudyPage() {
                 </li>
               </ol>
             </nav>
-            <div className="max-w-4xl">
-              <p className="mb-5 text-xs font-bold uppercase tracking-[0.2em] text-[#8dd8d2]">Customer case study</p>
-              <h1 className="mb-6 text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">{story.title}</h1>
-              <p className="max-w-3xl text-lg leading-relaxed text-white/85 sm:text-xl">{story.introduction}</p>
+            <div className="grid items-center gap-10 lg:grid-cols-[1.3fr_1fr] lg:gap-14">
+              <div className="min-w-0">
+                <div className="mb-6 flex items-center gap-5">
+                  <Image src="/Logo_Primario_Arara.ai.png" alt="OAKBERRY logo" width={2000} height={2000} sizes="112px" className="h-28 w-28 shrink-0 rounded-2xl bg-white object-contain" />
+                  <p className="text-xs font-bold uppercase leading-relaxed tracking-[0.2em] text-[#8dd8d2]">Customer case study</p>
+                </div>
+                <h1 className="mb-6 text-3xl font-bold leading-tight tracking-tight sm:text-4xl lg:text-5xl">{story.title}</h1>
+                <p className="text-lg leading-relaxed text-white/85 sm:text-xl">{story.introduction}</p>
+                <ul aria-label="Ways to access AllyJen at OAKBERRY Maynooth" className="mt-9 flex flex-wrap gap-3 text-sm">
+                  {[{ icon: Tablet, label: 'In-store tablet' }, { icon: QrCode, label: 'QR code' }, { icon: Mail, label: 'Email' }, { icon: Globe, label: 'Website' }].map(({ icon: Icon, label }) => <li key={label} className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2"><Icon className="h-4 w-4 text-[#8dd8d2]" aria-hidden="true" />{label}</li>)}
+                </ul>
+              </div>
+              <figure className="min-w-0">
+                <Image src="/oakberry-22-copy.jpg" alt="OAKBERRY Maynooth storefront with its OAKBERRY AÇAÍ sign and entrance" width={1080} height={1080} sizes="(min-width: 1280px) 480px, (min-width: 1024px) 40vw, (min-width: 640px) 608px, calc(100vw - 48px)" preload className="h-auto w-full rounded-3xl" />
+                <figcaption className="mt-3 text-sm text-white/75">OAKBERRY Maynooth, Co. Kildare.</figcaption>
+              </figure>
             </div>
-            <ul aria-label="Ways to access AllyJen at OAKBERRY Maynooth" className="mt-9 flex flex-wrap gap-3 text-sm">
-              {[{ icon: Tablet, label: 'In-store tablet' }, { icon: QrCode, label: 'QR code' }, { icon: Mail, label: 'Email' }, { icon: Globe, label: 'Website' }].map(({ icon: Icon, label }) => <li key={label} className="inline-flex items-center gap-2 rounded-full border border-white/20 px-4 py-2"><Icon className="h-4 w-4 text-[#8dd8d2]" aria-hidden="true" />{label}</li>)}
-            </ul>
           </Container>
         </header>
         <Container>
@@ -66,6 +76,10 @@ export default function OakberryCaseStudyPage() {
                 <h2 id={`${section.id}-heading`} className="mb-5 text-2xl font-bold leading-tight text-[#003842] sm:text-3xl">{section.heading}</h2>
                 <div className="space-y-5 text-lg leading-relaxed">
                   {section.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+                  {section.id === 'from-paper-to-digital' && <figure className="mx-auto max-w-md overflow-hidden rounded-2xl border border-[#003842]/10 bg-[#f0f9f8]">
+                    <Image src="/unnamed.webp" alt="A tablet displaying the AllyJen interactive allergen guide on the counter at OAKBERRY Maynooth" width={765} height={1020} sizes="(min-width: 640px) 448px, calc(100vw - 48px)" className="h-auto w-full" />
+                    <figcaption className="p-5 text-base leading-relaxed text-[#165c62]">AllyJen on the in-store tablet at OAKBERRY Maynooth, ready for customers and staff to use.</figcaption>
+                  </figure>}
                   {section.id === 'customer-access' && <ul className="my-7 space-y-4">
                     {story.accessOptions.map((option, index) => {
                       const Icon = accessIcons[index]
