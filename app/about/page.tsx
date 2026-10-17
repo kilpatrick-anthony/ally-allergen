@@ -68,11 +68,12 @@ export default function AboutPage() {
             </div>
 
             {/* Desktop nav */}
-            <nav className="hidden lg:flex items-center gap-8 h-10">
+            <nav className="hidden lg:flex items-center gap-4 xl:gap-6 h-10">
               <Link href="/" className={navItemClass}>Home</Link>
               <Link href="/#features" className={navItemClass}>Features</Link>
               <Link href="/#how-it-works" className={navItemClass}>How It Works</Link>
               <Link href="/#pricing" className={navItemClass}>Pricing</Link>
+              <Link href="/#case-studies" className={navItemClass}>Case studies</Link>
               <Link href="/#contact-form" className={navItemClass}>Contact</Link>
               <Link href="/about" className="inline-flex h-10 items-center text-[#42b8ac] font-semibold text-sm leading-none">About</Link>
               <Link href="/careers" className={navItemClass}>Careers</Link>
@@ -111,6 +112,7 @@ export default function AboutPage() {
               { label: 'Features', href: '/#features' },
               { label: 'How It Works', href: '/#how-it-works' },
               { label: 'Pricing', href: '/#pricing' },
+              { label: 'Case studies', href: '/#case-studies' },
               { label: 'Contact', href: '/#contact-form' },
             ].map(({ label, href }) => (
               <Link

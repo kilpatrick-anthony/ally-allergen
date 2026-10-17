@@ -13,6 +13,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
+      url: `${BASE_URL}/case-studies/oakberry-maynooth`,
+      lastModified: new Date('2026-10-17'),
+      changeFrequency: 'monthly',
+      priority: 0.7,
+    },
+    {
       url: `${BASE_URL}/signup`,
       lastModified: now,
       changeFrequency: 'monthly',

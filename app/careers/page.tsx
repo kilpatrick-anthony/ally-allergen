@@ -110,11 +110,12 @@ export default function CareersPage() {
             </div>
 
             {/* Desktop nav */}
-            <nav className="hidden lg:flex items-center gap-8">
+            <nav className="hidden lg:flex items-center gap-4 xl:gap-6">
               <Link href="/" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Home</Link>
               <Link href="/#features" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Features</Link>
               <Link href="/#how-it-works" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">How It Works</Link>
               <Link href="/#pricing" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Pricing</Link>
+              <Link href="/#case-studies" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Case studies</Link>
               <Link href="/#contact-form" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">Contact</Link>
               <Link href="/about" className="inline-flex items-center text-white hover:text-[#42b8ac] transition-colors font-medium text-sm">About</Link>
               <Link href="/careers" className="inline-flex items-center text-[#42b8ac] font-semibold text-sm">Careers</Link>
@@ -133,7 +134,7 @@ export default function CareersPage() {
             </div>
 
             {/* CTAs */}
-            <div className="flex-shrink-0 flex items-center gap-2">
+            <div className="hidden flex-shrink-0 items-center gap-2 lg:flex">
               <Link href="/auth/signin">
                 <span className="inline-flex items-center gap-2 px-3 lg:px-5 py-2 rounded-full bg-white text-[#003842] font-semibold text-sm hover:bg-[#42b8ac] hover:text-white transition-colors">
                   Sign In <ArrowRight className="h-4 w-4" />
@@ -153,6 +154,7 @@ export default function CareersPage() {
               { label: 'Features', href: '/#features' },
               { label: 'How It Works', href: '/#how-it-works' },
               { label: 'Pricing', href: '/#pricing' },
+              { label: 'Case studies', href: '/#case-studies' },
               { label: 'Contact', href: '/#contact-form' },
             ].map(({ label, href }) => (
               <Link
