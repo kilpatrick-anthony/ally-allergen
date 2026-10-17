@@ -27,10 +27,18 @@ export default function OakberryCaseStudyPage() {
       <article>
         <header className="overflow-hidden bg-[#003842] pb-16 pt-8 text-white sm:pb-20 sm:pt-10">
           <Container>
-            <nav aria-label="Breadcrumb" className="mb-10 flex flex-wrap items-center gap-2 text-sm text-white/80 sm:mb-14">
-              <Link href="/" className="rounded-sm underline-offset-4 hover:underline">Home</Link><span aria-hidden="true">/</span>
-              <Link href="/#case-studies" className="rounded-sm underline-offset-4 hover:underline">Case studies</Link><span aria-hidden="true">/</span>
-              <span aria-current="page">OAKBERRY Maynooth</span>
+            <nav aria-label="Breadcrumb" className="mb-10 text-sm text-white/80 sm:mb-14">
+              <ol className="flex flex-wrap items-center gap-x-2">
+                <li className="inline-flex items-center"><Link href="/" className="inline-flex min-h-11 items-center rounded-sm underline-offset-4 hover:underline">Home</Link></li>
+                <li className="inline-flex items-center gap-2 whitespace-nowrap">
+                  <span aria-hidden="true">/</span>
+                  <Link href="/#case-studies" className="inline-flex min-h-11 items-center rounded-sm underline-offset-4 hover:underline">Case studies</Link>
+                </li>
+                <li className="inline-flex min-h-11 items-center gap-2 whitespace-nowrap">
+                  <span aria-hidden="true">/</span>
+                  <span aria-current="page">OAKBERRY Maynooth</span>
+                </li>
+              </ol>
             </nav>
             <div className="max-w-4xl">
               <p className="mb-5 text-xs font-bold uppercase tracking-[0.2em] text-[#8dd8d2]">Customer case study</p>
@@ -68,7 +76,7 @@ export default function OakberryCaseStudyPage() {
                     })}
                     <li className="flex gap-4 rounded-2xl border border-[#003842]/10 p-5">
                       <Globe aria-hidden="true" className="mt-1 h-6 w-6 shrink-0 text-[#18756e]" />
-                      <p><strong className="font-bold text-[#003842]">Through the OAKBERRY website:</strong> Access AllyJen at <a href="https://oakberry.ie/allergens" className="break-words font-bold text-[#165c62] underline underline-offset-4">oakberry.ie/allergens</a>, including before visiting the store.</p>
+                      <p><strong className="font-bold text-[#003842]">Through the OAKBERRY website:</strong> Access AllyJen at <a href="https://oakberry.ie" className="break-words font-bold text-[#165c62] underline underline-offset-4">oakberry.ie</a>, including before visiting the store.</p>
                     </li>
                   </ul>}
                   {'closing' in section && <p>{section.closing}</p>}
