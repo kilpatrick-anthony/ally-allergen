@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
     ])
 
     // Check for errors
-    if (businessResult.error) {
+    if (businessResult.error || suppliersResult.error) {
       console.error('❌ Business query error:', businessResult.error)
       return NextResponse.json(
         { error: 'Failed to load business data' },
@@ -77,7 +77,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       business: businessResult.data,
       sites: sitesResult.data || [],
-      menuItems: menuItemsResult.data || [],
+      menuItems: (menuItemsResult.data || []).map(item => ({
+        ...item,
+        supplier_name: (suppliersResult.data || []).find(supplier => supplier.id === item.supplier_id)?.name || null,
+      })),
       ingredients: ingredientsResult.data || [],
       suppliers: suppliersResult.data || []
     })

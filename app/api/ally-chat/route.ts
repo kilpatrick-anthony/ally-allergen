@@ -276,7 +276,7 @@ ALLYJEN ADMIN PORTAL GUIDE:
 - Devices: /admin/devices — pair and manage kiosk devices. Use the setup code to link a tablet or screen.
 - Analytics: /admin/analytics — view kiosk usage, search trends, and filter activity.
 - Downloads: /admin/downloads — generate and download allergen PDF reports and site overview reports.
-- Compliance: /admin/compliance — track EU allergen compliance status and documentation.
+- Items go live upon save for every team member. Use the floating + button to create ingredients, menu items, suppliers and locations. Drafts, approval workflows and item reviews are unavailable. Optional 3/6/9/12-month reminders appear on the dashboard; no confirmation is required.
 - Settings: /admin/settings — change business name, branding colours, language, and notification preferences. To change the kiosk language, go to Settings → General and select a language from the dropdown.
 - Help: /admin/help — documentation and support resources.
 - To add a menu item: go to Menu Builder → click "Add Item" → fill in the name, category, description, and toggle the allergens it contains → click Save.

@@ -193,22 +193,7 @@ export default function SitesPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6 mb-8">
-        <Link href="/admin/sites/new" className="block">
-          <Card className="hover:shadow-lg transition-all hover:border-amber-500 hover:bg-gradient-to-br hover:from-amber-500 hover:to-amber-600 group cursor-pointer">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.addNewSite')}</p>
-                <p className="text-2xl font-bold text-[#003842] dark:text-white mt-1 group-hover:text-white transition-colors">+</p>
-              </div>
-              <div className="p-3 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg group-hover:shadow-lg group-hover:ring-2 group-hover:ring-amber-600 transition-all">
-                <Plus className="h-6 w-6 text-white transition-colors" />
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 group-hover:text-white transition-colors">{t('admin.createNewLocation')} →</div>
-            </div>
-          </Card>
-        </Link>
+
 
         <Card className="hover:shadow-lg transition-all hover:border-[#42b8ac] hover:bg-gradient-to-br hover:from-[#42b8ac] hover:to-[#36948a] group cursor-pointer">
           <div className="flex items-center justify-between">
@@ -369,11 +354,7 @@ export default function SitesPage() {
               ? t('admin.tryAdjustingSearchOrFilters')
               : t('admin.getStartedFirstSite')}
           </p>
-          <Link href="/admin/sites/new">
-            <Button variant="primary" icon={<Plus className="h-4 w-4" />}>
-              {t('admin.addFirstSite')}
-            </Button>
-          </Link>
+
         </Card>
       )}
 
@@ -390,12 +371,7 @@ export default function SitesPage() {
                 {t('admin.addFirstSiteDesc')}
               </p>
               
-              <Link href="/admin/sites/new">
-                <Button variant="primary">
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t('admin.addFirstSite')}
-                </Button>
-              </Link>
+
             </div>
           </div>
         </Card>

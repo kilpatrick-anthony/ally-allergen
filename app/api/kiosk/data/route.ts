@@ -93,8 +93,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    const { data: suppliers, error: suppliersError } = await supabase
+      .from('suppliers').select('id, name').eq('business_id', business.id)
+    if (suppliersError) throw suppliersError
+    const supplierNames = new Map((suppliers || []).map(supplier => [supplier.id, supplier.name]))
+
     const menuItemsWithIngredients = (menuItems || []).map((item: any) => ({
       ...item,
+      supplier_name: supplierNames.get(item.supplier_id) || null,
       ingredient_names: ingredientNamesByMenuItem.get(String(item.id)) || [],
     }))
 

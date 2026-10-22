@@ -34,5 +34,5 @@ export function isIngredientAssessmentComplete(warnings: unknown, profiles: unkn
   if (!profiles) return true
   if (typeof profiles !== 'object' || Array.isArray(profiles)) return false
   return Object.values(profiles).every(profile => profile &&
-    profile.assessment_status === 'assessed' && isAllergenAssessmentComplete(profile.allergen_warnings))
+    isAllergenAssessmentComplete(profile.allergen_warnings))
 }

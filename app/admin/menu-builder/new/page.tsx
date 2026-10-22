@@ -1,8 +1,8 @@
 // app/admin/menu-builder/new/page.tsx
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState, useEffect, useRef } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useRegularFormValidation } from '@/lib/hooks/useRegularFormValidation'
 import { FormValidationSummary, FormFieldError } from '@/components/admin/FormValidationSummary'
@@ -81,9 +81,10 @@ const PRESET_MENU_ICONS = [
 
 const isImageIcon = (icon?: string) => Boolean(icon && /^https?:\/\//.test(icon))
 
-export default function NewMenuItemPage() {
+function NewMenuItemForm() {
   const { t } = useTranslation()
   const router = useRouter()
+  const params = useSearchParams()
   const { returnTo } = useListReturnPath('/admin/menu-builder')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -103,14 +104,14 @@ export default function NewMenuItemPage() {
     name: '',
     description: '',
     category: '',
-    site_id: null,
+    site_id: params.get('site') || null,
     allergen_warnings: {} as AllergenWarnings,
     dietary: [],
     ingredients: [],
     preferred_review_months: 12,
     color: '',
     icon: '',
-    item_type: 'prepared', supplier_id: null, manufacturer: '', product_code: '',
+    item_type: (params.get('type') === 'packaged_product' ? 'packaged_product' : 'prepared') as MenuItemType, supplier_id: null, manufacturer: '', product_code: '',
     barcode: '', ingredient_declaration: '', label_verified_at: null,
   })
 
@@ -233,24 +234,24 @@ export default function NewMenuItemPage() {
 
   const { issues, reportIssues, fieldProps } = useRegularFormValidation(menuItem)
 
-  const handleSave = async (activate = false) => {
+  const handleSave = async (activate = true) => {
     if (saveLock.current) return
     if (!menuItem) return
-    const active = activate
+    const active = true
     const ready = isAllergenAssessmentComplete(menuItem.allergen_warnings) && (menuItem.item_type === 'prepared'
       ? menuItem.ingredients.length > 0
-      : Boolean(menuItem.supplier_id && menuItem.ingredient_declaration.trim() && menuItem.label_verified_at))
+      : Boolean(menuItem.supplier_id && menuItem.ingredient_declaration.trim()))
     if (reportIssues([
       ...(!menuItem.name.trim() ? [{ field: 'regular-name', message: t('regularForms.nameRequired') }] : []),
       ...(active && !menuItem.description.trim() ? [{ field: 'regular-description', message: t('regularForms.descriptionRequired') }] : []),
-      ...(active && !ready ? [{ field: menuItem.item_type === 'prepared' ? 'regular-recipe' : !menuItem.supplier_id ? 'regular-supplier' : !menuItem.ingredient_declaration.trim() ? 'regular-declaration' : !menuItem.label_verified_at ? 'regular-label-check' : 'regular-assessment', message: t('regularAssessment.completeMenu') }] : []),
+      ...(active && !ready ? [{ field: menuItem.item_type === 'prepared' ? 'regular-recipe' : !menuItem.supplier_id ? 'regular-supplier' : !menuItem.ingredient_declaration.trim() ? 'regular-declaration' : 'regular-assessment', message: t('reminders.completeMenu') }] : []),
     ])) return
     saveLock.current = true
     setSaving(true)
     setSaveStatus('saving')
     setSaveMessage(t('admin.savingMenuItem'))
     try {
-      await itemSaver.save({ ...menuItem, status: activate ? 'active' : 'draft' }, datasheets, t('regularItemSave.saveFailed'))
+      await itemSaver.save({ ...menuItem, status: 'active' }, datasheets, t('regularItemSave.saveFailed'))
       setUploadRetryNeeded(false)
       setSaveStatus('success')
       setSaveMessage(t('regularItemSave.saved'))
@@ -261,7 +262,7 @@ export default function NewMenuItemPage() {
         setUploadRetryNeeded(true)
         setSaveMessage(t('regularItemSave.documentsPending'))
       } else {
-        setSaveMessage(error instanceof RegularItemSaveError && ['completeIngredient', 'completeMenu'].includes(error.code || '') ? t(`regularAssessment.${error.code}`) : error instanceof Error ? error.message : t('regularItemSave.saveFailed'))
+        setSaveMessage(error instanceof RegularItemSaveError && ['completeIngredient', 'completeMenu'].includes(error.code || '') ? t(`reminders.${error.code}`) : error instanceof Error ? error.message : t('regularItemSave.saveFailed'))
       }
       saveLock.current = false
     } finally {
@@ -348,7 +349,7 @@ export default function NewMenuItemPage() {
             <Card className="p-6">
               <label htmlFor="regular-description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 {t('admin.itemDescription')}
-                <span className="mt-1 block text-xs font-normal text-gray-500 dark:text-gray-400">{t('regularAssessment.descriptionHelp')}</span>
+                <span className="mt-1 block text-xs font-normal text-gray-500 dark:text-gray-400">{t('reminders.descriptionHelp')}</span>
               </label>
               <textarea
                 {...fieldProps('regular-description')}
@@ -458,7 +459,7 @@ export default function NewMenuItemPage() {
               <DatasheetUploader entityType="menu_item" onFilesChange={setDatasheets} />
             </Card>
 
-            <p className="text-sm text-gray-600 dark:text-gray-300">{t('regularAssessment.draftHelp')}</p>
+
             {/* Site Scope */}
             <Card className="p-6">
               <label htmlFor="regular-site-scope" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -633,7 +634,7 @@ export default function NewMenuItemPage() {
           </div>
         </div>
 
-        <RegularFormActions feedback={saveStatus === 'idle' ? undefined : { text: saveMessage, error: saveStatus === 'error' }} onSave={() => handleSave(false)} onCancel={() => { if (confirmLeave()) router.push(returnTo) }} saveLabel={saving ? t('admin.savingMenuItem') : uploadRetryNeeded ? t('regularItemSave.saveAndRetry') : t('regularAssessment.saveDraft')} disabled={false} busy={saving || uploadingIcon} secondary={{ label: t('regularAssessment.makeActive'), onClick: () => handleSave(true) }} />
+        <RegularFormActions feedback={saveStatus === 'idle' ? undefined : { text: saveMessage, error: saveStatus === 'error' }} onSave={() => handleSave(true)} onCancel={() => { if (confirmLeave()) router.push(returnTo) }} saveLabel={saving ? t('admin.savingMenuItem') : uploadRetryNeeded ? t('regularItemSave.saveAndRetry') : t('admin.saveChanges')} disabled={false} busy={saving || uploadingIcon} />
       </Container>
 
       <IngredientPicker open={showIngredientSelector} onOpenChange={setShowIngredientSelector}
@@ -641,4 +642,8 @@ export default function NewMenuItemPage() {
 
     </>
   )
+}
+
+export default function NewMenuItemPage() {
+  return <Suspense><NewMenuItemForm /></Suspense>
 }

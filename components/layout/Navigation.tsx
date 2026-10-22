@@ -35,7 +35,6 @@ export function Navigation() {
   const pathname = usePathname()
   const { t } = useTranslation()
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
-  const [reviewNotifications, setReviewNotifications] = useState(0)
 
   useEffect(() => {
     fetch('/api/auth/session')
@@ -51,27 +50,8 @@ export function Navigation() {
       .catch(() => {})
   }, [])
 
-  useEffect(() => {
-    let active = true
-    const load = () => fetch('/api/quick-add-notifications', { cache: 'no-store' })
-      .then(response => response.ok ? response.json() : null)
-      .then(data => { if (active && data) setReviewNotifications(data.unread || 0) })
-      .catch(() => {})
-    void load()
-    const interval = window.setInterval(load, 60_000)
-    window.addEventListener('quick-add-submitted', load)
-    return () => { active = false; window.clearInterval(interval); window.removeEventListener('quick-add-submitted', load) }
-  }, [])
-
-  const openReviewNotifications = () => {
-    if (!reviewNotifications) return
-    setReviewNotifications(0)
-    void fetch('/api/quick-add-notifications', { method: 'PATCH', keepalive: true }).catch(() => {})
-  }
-
   const navItems: NavItem[] = [
     { name: t('admin.dashboard'),   href: '/admin',              icon: Home },
-    { name: t('liveDashboard.savedDrafts'), href: '/admin/quick-add', icon: ClipboardList },
     { name: t('admin.ingredients'), href: '/admin/ingredients',  icon: Package },
     { name: t('admin.menuBuilder'), href: '/admin/menu-builder', icon: ChefHat },
     { name: t('admin.sites'),       href: '/admin/sites',        icon: Building },
@@ -79,7 +59,6 @@ export function Navigation() {
     { name: t('admin.analytics'),   href: '/admin/analytics',    icon: BarChart },
     { name: t('admin.downloads'),   href: '/admin/downloads',    icon: Download },
     { name: t('adminPortal.accessPoints'), href: '/admin/qr-codes', icon: Monitor },
-    { name: t('adminPortal.compliance'), href: '/admin/compliance', icon: CheckCircle2 },
     { name: t('adminPortal.foodSafety'), href: '/admin/food-safety', icon: AlertTriangle },
     { name: t('admin.settings'),    href: '/admin/settings',     icon: Settings },
     { name: t('admin.help'),        href: '/admin/help',         icon: HelpCircle },
@@ -98,7 +77,6 @@ export function Navigation() {
           <Link
             key={item.name}
             href={item.href}
-            onClick={item.href === '/admin/quick-add' ? openReviewNotifications : undefined}
             className={`
               group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200
               ${isActive
@@ -113,11 +91,7 @@ export function Navigation() {
               }`}
             />
             <span className="truncate">{item.name}</span>
-            {item.href === '/admin/quick-add' && reviewNotifications > 0 && (
-              <span aria-label={`${reviewNotifications} ${t('liveDashboard.reviewLabel')}`} className="ml-auto min-w-5 rounded-full bg-amber-400 px-1.5 py-0.5 text-center text-xs font-bold text-[#003842]">
-                {reviewNotifications > 99 ? '99+' : reviewNotifications}
-              </span>
-            )}
+
           </Link>
         )
       })}

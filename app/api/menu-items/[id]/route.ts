@@ -72,7 +72,7 @@ export async function GET(
       menuItem: {
         ...menuItem,
         // Transform is_active to status for consistent UI display
-        status: menuItem.is_active ? 'active' : 'draft',
+        status: menuItem.is_active ? 'active' : 'inactive',
         ingredients
       }
     })
@@ -152,10 +152,10 @@ export async function PUT(
       return NextResponse.json({ error: validationError.message }, { status: 400 })
     }
 
-    const activating = body.status ? body.status === 'active' : typeof body.is_active === 'boolean' ? body.is_active : previousMenuItem?.is_active === true
+    const activating = true
     const activationComplete = typeof body.description === 'string' && Boolean(body.description.trim()) && safety.assessmentComplete && (productFields.item_type === 'prepared'
       ? ingredients.length > 0
-      : Boolean(productFields.supplier_id && productFields.ingredient_declaration && productFields.label_verified_at))
+      : Boolean(productFields.supplier_id && productFields.ingredient_declaration))
     if (activating && !activationComplete) {
       return NextResponse.json({ error: 'Complete the allergen assessment and source details before making this menu item active.', errorCode: 'completeMenu' }, { status: 400 })
     }

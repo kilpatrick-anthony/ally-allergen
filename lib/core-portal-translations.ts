@@ -15,7 +15,7 @@ const rows = [
   ['lastReviewed', 'Last reviewed:', 'Athbhreithniú deireanach:', 'Última revisão:', 'Dernière vérification :', 'Última revisión:', 'Zuletzt geprüft:'],
   ['review', 'Review', 'Athbhreithnigh', 'Rever', 'Vérifier', 'Revisar', 'Prüfen'],
   ['backToDownloads', 'Back to Downloads', 'Ar ais chuig Íoslódálacha', 'Voltar aos downloads', 'Retour aux téléchargements', 'Volver a Descargas', 'Zurück zu Downloads'],
-  ['datasheetDescription', 'View and manage all product specification sheets and compliance documents', 'Féach ar gach bileog sonraíochta táirge agus doiciméad comhlíonta agus bainistigh iad', 'Consulte e gira todas as fichas de especificações e documentos de conformidade', 'Consultez et gérez toutes les fiches techniques et tous les documents de conformité', 'Consulta y gestiona todas las fichas técnicas y documentos de cumplimiento', 'Alle Produktspezifikationen und Compliance-Dokumente anzeigen und verwalten'],
+  ['datasheetDescription', 'View and manage product specification sheets', 'Féach ar bhileoga sonraíochta táirge agus bainistigh iad', 'Consulte e gira fichas de especificações de produtos', 'Consultez et gérez les fiches techniques des produits', 'Consulta y gestiona las fichas técnicas de productos', 'Produktspezifikationen anzeigen und verwalten'],
   ['datasheets', 'datasheets', 'bileoga sonraí', 'fichas técnicas', 'fiches techniques', 'fichas técnicas', 'Datenblätter'],
   ['total', 'Total', 'Iomlán', 'Total', 'Total', 'Total', 'Gesamt'],
   ['dueSoon', 'Due Soon', 'Le Teacht Go Luath', 'Próximo do prazo', 'Bientôt à échéance', 'Próximo a vencer', 'Bald fällig'],

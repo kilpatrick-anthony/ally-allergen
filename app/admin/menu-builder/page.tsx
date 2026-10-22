@@ -30,7 +30,7 @@ interface MenuItem {
   allergen_warnings: AllergenWarnings
   dietary: string[]
   ingredients: string[]
-  status: 'active' | 'draft' | 'archived'
+  status: 'active' | 'inactive' | 'archived'
   item_type?: 'prepared' | 'packaged_product'
 }
 
@@ -47,7 +47,7 @@ function normalizeMenuItem(item: any): MenuItem {
     allergen_warnings: item.allergen_warnings || {} as AllergenWarnings,
     dietary: Array.isArray(item.dietary) ? item.dietary : [],
     ingredients: Array.isArray(item.ingredients) ? item.ingredients : [],
-    status: item.status || (item.is_active ? 'active' : 'draft'),
+    status: item.status || (item.is_active ? 'active' : 'inactive'),
     item_type: item.item_type || 'prepared',
   }
 }
@@ -96,7 +96,7 @@ export default function MenuBuilderPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     setSearchTerm(params.get('q') || '')
-    if (['active', 'draft'].includes(params.get('status') || '')) setStatusFilter(params.get('status')!)
+    if (['active', 'inactive'].includes(params.get('status') || '')) setStatusFilter(params.get('status')!)
     if (['prepared', 'packaged_product'].includes(params.get('type') || '')) setTypeFilter(params.get('type')!)
     if (params.get('scope')) setScopeFilter(params.get('scope')!)
     if (params.get('category')) setCategoryFilter(params.get('category')!)
@@ -204,14 +204,19 @@ export default function MenuBuilderPage() {
 
   const handleDuplicate = async (item: MenuItem) => {
     try {
+      const sourceResponse = await fetch(`/api/menu-items/${item.id}`)
+      const sourceData = await sourceResponse.json()
+      if (!sourceResponse.ok) throw new Error(sourceData.error || t('menuBuilderPortal.duplicateFailed'))
+      const original = sourceData.menuItem
       const response = await fetch('/api/menu-items', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...item,
+          ...original,
           id: undefined,
+          duplicate_from_id: item.id,
           name: `${t('menuBuilderPortal.copyOf')} ${item.name}`,
-          status: 'draft',
+          status: 'active',
         })
       })
       const data = await response.json()
@@ -270,7 +275,7 @@ export default function MenuBuilderPage() {
 
   return (
     <Container>
-      <ManagementListHeader title={t('admin.menuBuilder')} description={t('admin.menuBuilderDesc')} icon={ChefHat} addHref={newMenuItemHref} addLabel={t('regularLists.addMenuItem')} stats={[{ label: t('admin.menuItemsStat'), value: stats.total }, { label: t('admin.ingredients'), value: stats.ingredients }, { label: t('admin.sites'), value: stats.sites, href: '/admin/sites' }]} />
+      <ManagementListHeader title={t('admin.menuBuilder')} description={t('admin.menuBuilderDesc')} icon={ChefHat} stats={[{ label: t('admin.menuItemsStat'), value: stats.total }, { label: t('admin.ingredients'), value: stats.ingredients }, { label: t('admin.sites'), value: stats.sites, href: '/admin/sites' }]} />
       {loadError && <div role="alert" className="mb-4 rounded-lg border border-amber-300 p-4">
         <p>{t('regularLists.loadFailed')}</p><Button onClick={() => fetchData()}>{t('regularLists.retry')}</Button>
       </div>}
@@ -349,7 +354,7 @@ export default function MenuBuilderPage() {
                 <select id="menu-status" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-[#42b8ac] dark:border-gray-600 dark:bg-gray-700 dark:text-white">
                   <option value="all">{t('admin.allStatus')}</option>
                   <option value="active">{t('admin.active')}</option>
-                  <option value="draft">{t('admin.draft')}</option>
+
                 </select>
               </div>
               <div>
@@ -418,11 +423,7 @@ export default function MenuBuilderPage() {
               {hasFilters ? t('tryAdjustingFilters') : t('admin.createFirstMenuItemDesc')}
             </p>
 
-            <Link href={newMenuItemHref}>
-              <Button variant="primary" icon={<Plus className="h-4 w-4" />}>
-                {menuItems.length ? t('admin.createNewMenuItem') : t('admin.createFirstMenuItem')}
-              </Button>
-            </Link>
+
           </div>
         ) : viewMode === 'grid' ? (
           <div className="p-6 space-y-8" data-no-translate>

@@ -42,7 +42,6 @@ export default function HelpPage() {
     { id: 'ingredients', name: 'Ingredients', icon: Package },
     { id: 'menu', name: 'Menu builder', icon: ChefHat },
     { id: 'sites', name: 'Sites and kiosks', icon: Building },
-    { id: 'compliance', name: 'Compliance', icon: Shield },
     { id: 'downloads', name: 'Reports and downloads', icon: Download }
   ]
 
@@ -393,7 +392,6 @@ export default function HelpPage() {
         'Upload the current manufacturer datasheet, specification or clear label evidence directly to the menu item.',
         'Tick Label details checked only after comparing the saved details with the current label or specification.',
         'Packaged-product compliance requires label evidence, an ingredient declaration and label verification. Linking a supplier is also strongly recommended.',
-        'If the manufacturer reformulates or relabels the product, update the record, replace its evidence and mark it reviewed again.',
       ],
       7: [
         'Contains — The allergen is a deliberate, listed ingredient in the recipe.',
@@ -440,8 +438,6 @@ export default function HelpPage() {
         'Ingredients and menu items default to an annual review frequency. Choose a shorter interval when the product, supplier or business process requires it.',
         'When uploading a datasheet, record its next review date where one is known.',
         'AllyJen flags datasheets approaching their review date in your Notifications panel.',
-        'Click Review on a flagged datasheet to confirm it is still current, or upload a replacement document.',
-        'Reviewed datasheets reset their review countdown from the date of review.',
         'Prepared menu-item compliance follows its linked ingredients. Bought-in packaged products are checked against their own label evidence and verification.',
         'Maintaining up-to-date datasheets provides a clear, dated audit trail for compliance inspections.',
       ],
@@ -660,7 +656,15 @@ export default function HelpPage() {
   const topicDetails: Record<number, string[]> = {
     ...topicDetailsByLang['en'],
     ...localizedTopicDetails,
-    18: (quickAddHelp[language] || quickAddHelp.en).steps,
+    1: [t('reminders.saveHelp'), t('reminders.ingredientsHelp'), t('reminders.help')],
+    2: [t('reminders.ingredientsHelp'), t('reminders.downloadsHelp'), t('reminders.saveHelp')],
+    3: [t('reminders.completeIngredient'), t('reminders.saveHelp'), t('reminders.help')],
+    4: [t('admin.menuItemDatasheetsDesc')],
+    5: [t('reminders.ingredientsHelp')],
+    6: [t('admin.preparedAllergenHelp'), t('reminders.saveHelp')],
+    17: [t('admin.manufacturerLabelHelp'), t('reminders.completeMenu'), t('reminders.saveHelp')],
+    13: [t('reminders.downloadsHelp')],
+    14: [t('admin.menuItemDatasheetsDesc')],
   }
 
   const localizedCategories = categories.map((category) => ({
@@ -668,7 +672,7 @@ export default function HelpPage() {
     name: categoryNamesByLanguage[language]?.[category.id] || category.name,
   }))
 
-  const localizedTopics = HELP_TOPIC_JOURNEY.map((topicId) => {
+  const localizedTopics = HELP_TOPIC_JOURNEY.filter(id => ![11, 12, 18].includes(id)).map((topicId) => {
     const topic = helpTopics.find((candidate) => candidate.id === topicId)!
     if (topicId === 18) return { ...topic, ...(quickAddHelp[language] || quickAddHelp.en) }
     const localized = revisedTopicCards[language]?.[topic.id] || topicTranslations[language]?.[topic.id]
@@ -680,6 +684,7 @@ export default function HelpPage() {
   })
 
   const filteredTopics = localizedTopics.filter(topic => {
+    if (topic.category === 'compliance') return false
     const matchesCategory = activeCategory === 'all' || topic.category === activeCategory
     const matchesSearch = topic.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          topic.description.toLowerCase().includes(searchTerm.toLowerCase()) ||

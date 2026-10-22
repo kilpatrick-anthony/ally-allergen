@@ -1,4 +1,4 @@
-// Regular creation and saved-draft editor share the same assessment controls.
+// Ingredient creation publishes directly when saved.
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
@@ -29,13 +29,11 @@ import {
   type SupplierProfileMap,
 } from '@/lib/ingredient-supplier-profiles'
 import { AttachmentUploadError, RegularItemSaveError, createRegularItemSaver } from '@/lib/regular-item-save'
-import type { IngredientDraftPayload } from '@/lib/ingredient-draft-schema'
-import { ActivatedIngredientDraft, createIngredientDraftSaver } from '@/lib/ingredient-draft-save'
-import { EditDocumentSaveError } from '@/lib/regular-edit-save'
+
 import { isIngredientAssessmentComplete } from '@/lib/allergen-assessment'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 
-export default function RegularIngredientForm({ draft, initialDatasheets = [] }: { draft?: { id: string; version: number; payload: IngredientDraftPayload }; initialDatasheets?: any[] }) {
+export default function RegularIngredientForm() {
   const { showNotification } = useNotification()
   const { t } = useTranslation()
   const router = useRouter()
@@ -45,9 +43,9 @@ export default function RegularIngredientForm({ draft, initialDatasheets = [] }:
   const saveLock = useRef(false)
   const [itemSaver] = useState(() => createRegularItemSaver('ingredient'))
   const [uploadRetryNeeded, setUploadRetryNeeded] = useState(false)
-  const [datasheets, setDatasheets] = useState<any[]>(initialDatasheets)
-  const [draftSaver] = useState(() => createIngredientDraftSaver(draft?.id, draft?.version))
-  const draftMode = useRef(Boolean(draft))
+  const [datasheets, setDatasheets] = useState<any[]>([])
+
+
 
   const [ingredient, setIngredient] = useState({
     name: '',
@@ -57,7 +55,6 @@ export default function RegularIngredientForm({ draft, initialDatasheets = [] }:
     suppliers: [] as string[],
     certifications: [] as string[],
     preferred_review_months: 12,
-    ...draft?.payload,
   })
 
   const [availableSuppliers, setAvailableSuppliers] = useState<string[]>([])
@@ -66,7 +63,7 @@ export default function RegularIngredientForm({ draft, initialDatasheets = [] }:
   const [showCustomCertInput, setShowCustomCertInput] = useState(false)
 
   // Per-supplier profiles
-  const [supplierProfiles, setSupplierProfiles] = useState<SupplierProfileMap>(draft?.payload.supplier_profiles || {})
+  const [supplierProfiles, setSupplierProfiles] = useState<SupplierProfileMap>({})
 
 
   const applyDefaultSupplierToDatasheets = (files: any[], suppliers: string[]) => {
@@ -173,41 +170,31 @@ export default function RegularIngredientForm({ draft, initialDatasheets = [] }:
 
   const { issues, reportIssues, fieldProps } = useRegularFormValidation({ ingredient, supplierProfiles })
 
-  const handleSave = async (activate = true) => {
+  const handleSave = async () => {
     if (saveLock.current) return
     setFormError('')
     if (reportIssues([
-      ...((!activate || draftMode.current) && datasheets.some(sheet => sheet.file && sheet.file.size > 3 * 1024 * 1024) ? [{ field: 'regular-documents', message: t('ingredientDrafts.fileLimit') }] : []),
+
       ...(!ingredient.name.trim() ? [{ field: 'regular-name', message: t('ingredientsPortal.nameRequired') }] : []),
-      ...(activate && !isIngredientAssessmentComplete(ingredient.allergen_warnings, supplierProfiles) ? [{ field: 'regular-assessment', message: t('regularAssessment.completeIngredient') }] : []),
+      ...(!isIngredientAssessmentComplete(ingredient.allergen_warnings, supplierProfiles) ? [{ field: 'regular-assessment', message: t('reminders.completeIngredient') }] : []),
     ])) return
     saveLock.current = true
     setSaving(true)
     try {
-      const payload = { ...ingredient, supplier_profiles: supplierProfiles }
-      if (!activate || draftMode.current) {
-        draftMode.current = true
-        await draftSaver.save(payload, datasheets, initialDatasheets, t('regularItemSave.saveFailed'))
-        if (activate) await draftSaver.activate(t('regularItemSave.saveFailed'))
-      } else await itemSaver.save(
+      await itemSaver.save(
         { ...ingredient, supplier_profiles: supplierProfiles },
         datasheets,
         t('regularItemSave.saveFailed'),
       )
       setUploadRetryNeeded(false)
-      showNotification(t(activate ? 'ingredientsPortal.ingredientSaved' : 'ingredientDrafts.saved'), 'success')
+      showNotification(t('ingredientsPortal.ingredientSaved'), 'success')
       markSaved(); router.push(returnTo)
     } catch (error: unknown) {
-      if (error instanceof ActivatedIngredientDraft) {
-        showNotification(t('ingredientDrafts.alreadyActive'), 'success')
-        markSaved(); router.push(returnTo)
-        return
-      }
+
       if (error instanceof AttachmentUploadError) {
         setUploadRetryNeeded(true)
-        if (error instanceof EditDocumentSaveError && error.needsReload) setFormError(t('ingredientDrafts.reloadDocuments'))
       } else {
-        const message = error instanceof RegularItemSaveError && ['draftConflict', 'draftNotFound', 'draftForbidden'].includes(error.code || '') ? t(`ingredientDrafts.${error.code}`) : error instanceof RegularItemSaveError && ['completeIngredient', 'completeMenu'].includes(error.code || '') ? t(`regularAssessment.${error.code}`) : error instanceof Error ? error.message : t('regularItemSave.saveFailed')
+        const message = error instanceof RegularItemSaveError && ['completeIngredient', 'completeMenu'].includes(error.code || '') ? t(`reminders.${error.code}`) : error instanceof Error ? error.message : t('regularItemSave.saveFailed')
         setFormError(message)
         showNotification(message, 'error')
       }
@@ -289,7 +276,7 @@ export default function RegularIngredientForm({ draft, initialDatasheets = [] }:
                   <Package className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-3xl font-bold text-[#003842] dark:text-white">{t(draft ? 'ingredientDrafts.edit' : 'ingredientsPortal.addNewIngredient')}</h1>
+                  <h1 className="text-3xl font-bold text-[#003842] dark:text-white">{t('ingredientsPortal.addNewIngredient')}</h1>
                   <p className="text-gray-600">
                     {t('ingredientsPortal.newIngredientDescription')}
                   </p>
@@ -299,7 +286,7 @@ export default function RegularIngredientForm({ draft, initialDatasheets = [] }:
           </div>
         </div>
 
-        <p data-no-translate className="mb-6 rounded-lg bg-teal-50 p-4 text-sm text-teal-950 dark:bg-teal-950 dark:text-teal-100">{t('ingredientDrafts.help')}</p>
+
         <div data-no-translate><FormValidationSummary issues={issues} /></div>
         <fieldset disabled={saving} className="min-w-0">
         {/* Basic Information */}
@@ -610,13 +597,13 @@ export default function RegularIngredientForm({ draft, initialDatasheets = [] }:
         </fieldset>
         {uploadRetryNeeded && (
           <div role="alert" className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
-            {t(draftMode.current ? 'ingredientDrafts.documentsPending' : 'regularItemSave.documentsPending')}
+            {t('regularItemSave.documentsPending')}
           </div>
         )}
         {!isIngredientAssessmentComplete(ingredient.allergen_warnings, supplierProfiles) && (
-          <p data-no-translate className="mb-4 text-sm font-medium text-amber-900 dark:text-amber-200">{t('regularAssessment.completeIngredient')}</p>
+          <p data-no-translate className="mb-4 text-sm font-medium text-amber-900 dark:text-amber-200">{t('reminders.completeIngredient')}</p>
         )}
-        <RegularFormActions feedback={formError || (uploadRetryNeeded ? t(draftMode.current ? 'ingredientDrafts.documentsPending' : 'regularItemSave.documentsPending') : '') ? { text: formError || (uploadRetryNeeded ? t(draftMode.current ? 'ingredientDrafts.documentsPending' : 'regularItemSave.documentsPending') : ''), error: true } : undefined} onSave={() => handleSave(uploadRetryNeeded && !draftMode.current)} onCancel={() => { if (confirmLeave()) router.push(returnTo) }} saveLabel={saving ? t('admin.savingMenuItem') : uploadRetryNeeded ? t('regularItemSave.saveAndRetry') : t('regularAssessment.saveDraft')} disabled={false} busy={saving} secondary={!uploadRetryNeeded || draftMode.current ? { label: t('regularAssessment.makeActive'), onClick: () => handleSave(true) } : undefined} />
+        <RegularFormActions feedback={formError || (uploadRetryNeeded ? t('regularItemSave.documentsPending') : '') ? { text: formError || (uploadRetryNeeded ? t('regularItemSave.documentsPending') : ''), error: true } : undefined} onSave={() => handleSave()} onCancel={() => { if (confirmLeave()) router.push(returnTo) }} saveLabel={saving ? t('admin.savingMenuItem') : uploadRetryNeeded ? t('regularItemSave.saveAndRetry') : t('admin.saveChanges')} disabled={false} busy={saving} />
       </div>
     </Container>
 

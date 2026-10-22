@@ -92,13 +92,12 @@ export async function generateIngredientsReportPDF(options: IngredientsReportOpt
     const tableData = grouped[cat].map((ingredient: any) => [
       ingredient.name || 'N/A',
       ingredient.description || 'N/A',
-      ingredient.status || 'N/A',
-      ingredient.compliance || 'N/A',
+      ingredient.status === 'review' ? 'Inactive' : ingredient.status || 'N/A',
       ingredient.suppliers?.length || 0
     ])
 
     autoTable(doc, {
-      head: [['Name', 'Description', 'Status', 'Compliance', 'Suppliers']],
+      head: [['Name', 'Description', 'Status', 'Suppliers']],
       body: tableData,
       startY: y,
       margin: { bottom: 22 },
@@ -107,10 +106,9 @@ export async function generateIngredientsReportPDF(options: IngredientsReportOpt
       alternateRowStyles: { fillColor: [248, 250, 252] },
       columnStyles: {
         0: { cellWidth: 45 },
-        1: { cellWidth: 70 },
+        1: { cellWidth: 95 },
         2: { cellWidth: 25 },
         3: { cellWidth: 25 },
-        4: { cellWidth: 25 },
       },
     })
 

@@ -67,7 +67,7 @@ export default function ViewIngredientPage() {
         
         console.log('Ingredient data:', data.ingredient)
         console.log('Allergen warnings:', data.ingredient.allergen_warnings)
-        setIngredient(data.ingredient)
+        setIngredient({ ...data.ingredient, status: data.ingredient.status === 'review' ? 'inactive' : data.ingredient.status })
         
         // Fetch datasheets
         setLoadingDatasheets(true)
@@ -248,11 +248,11 @@ export default function ViewIngredientPage() {
                     <Badge
                       variant={
                         ingredient.status === 'active' ? 'success' :
-                        ingredient.status === 'review' ? 'warning' :
+                        ingredient.status === 'inactive' ? 'warning' :
                         'default'
                       }
                     >
-                      {t(ingredient.status === 'review' ? 'admin.inReview' : ingredient.status === 'archived' ? 'admin.archived' : 'admin.active')}
+                      {t(ingredient.status === 'inactive' ? 'admin.inactive' : ingredient.status === 'archived' ? 'admin.archived' : 'admin.active')}
                     </Badge>
                   </div>
                 </div>
@@ -392,9 +392,7 @@ export default function ViewIngredientPage() {
                             {header}
                           </Link>
                         ) : header}
-                        <Badge variant={isAssessed ? 'success' : 'warning'}>
-                          {isAssessed ? t('ingredientsPortal.reviewed') : t('ingredientsPortal.needsReview')}
-                        </Badge>
+
                       </div>
                       {profile?.brand && (
                         <p className="mt-2 text-sm font-medium text-gray-700">{profile.brand}</p>

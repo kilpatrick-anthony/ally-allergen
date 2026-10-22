@@ -1,19 +1,9 @@
-'use client'
+import { redirect } from 'next/navigation'
 
-import { Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import QuickAddDialog from '@/components/admin/QuickAddDialog'
-import type { QuickAddKind } from '@/lib/quick-add'
-
-function NewQuickAddPage() {
-  const router = useRouter()
-  const params = useSearchParams()
-  const requestedKind = params.get('kind')
-  const kind: QuickAddKind = requestedKind === 'packaged_product' || requestedKind === 'prepared_item' ? requestedKind : 'ingredient'
-  const siteId = params.get('site')
-  return <QuickAddDialog page initialKind={kind} siteId={siteId} onClose={() => router.push('/admin/quick-add')} />
-}
-
-export default function Page() {
-  return <Suspense><NewQuickAddPage /></Suspense>
+export default async function Page({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
+  const params = await searchParams
+  const query = new URLSearchParams()
+  if (params.site) query.set('site', params.site)
+  if (params.kind === 'packaged_product') query.set('type', 'packaged_product')
+  redirect(`${params.kind === 'ingredient' || !params.kind ? '/admin/ingredients/new' : '/admin/menu-builder/new'}?${query}`)
 }

@@ -1,3 +1,4 @@
+import { menuItemSourceLines } from './menuItemSource'
 // lib/pdf/menuItemsReportPDF.ts - Generate PDF report for menu items list
 
 import jsPDF from 'jspdf'
@@ -90,7 +91,7 @@ export async function generateMenuItemsReportPDF(options: MenuItemsReportOptions
     y += 3
 
     const tableData = grouped[cat].map((item: any) => [
-      item.name || 'N/A',
+      [item.name || 'N/A', ...menuItemSourceLines(item)].join('\n'),
       item.description || 'N/A',
       item.is_active ? 'Active' : 'Inactive',
     ])

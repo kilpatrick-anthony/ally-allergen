@@ -29,6 +29,9 @@ export interface MenuItem {
   business_id: string;
   is_active: boolean;
   ingredient_names?: string[];
+  item_type?: 'prepared' | 'packaged_product';
+  supplier_name?: string | null;
+  manufacturer?: string | null;
   // New allergen warnings system
   allergen_warnings?: AllergenWarnings;
   // Legacy fields (for backward compatibility during migration)

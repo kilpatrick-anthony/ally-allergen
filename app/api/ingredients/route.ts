@@ -1,3 +1,4 @@
+import { sourceDatasheets, copyDatasheets } from '@/lib/server/duplicate-datasheets'
 import { isIngredientAssessmentComplete } from '@/lib/allergen-assessment'
 import { getJwtSecret } from '@/lib/auth'
 // app/api/ingredients/route.ts
@@ -149,6 +150,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
+    let copiedSheets
+    try { copiedSheets = await sourceDatasheets(supabase, userBusiness.business_id, 'ingredient', body.duplicate_from_id) }
+    catch (error: any) { return NextResponse.json({ error: error.message }, { status: 400 }) }
+
     const normalizedSuppliers = normalizeSupplierNames(Array.isArray(suppliers) ? suppliers : [])
     const completeProfiles = buildCompleteSupplierProfiles(
       normalizedSuppliers,
@@ -160,7 +165,7 @@ export async function POST(request: NextRequest) {
     const effectiveAllergens = derivedSafety?.allergen_warnings || allergen_warnings || {}
     const effectiveCertifications = derivedSafety?.certifications || certifications || []
     if (!isIngredientAssessmentComplete(effectiveAllergens, completeProfiles)) {
-      return NextResponse.json({ error: 'Complete every allergen assessment and review each supplier profile before saving this ingredient.', errorCode: 'completeIngredient' }, { status: 400 })
+      return NextResponse.json({ error: 'Complete every allergen field before saving this ingredient.', errorCode: 'completeIngredient' }, { status: 400 })
     }
 
     const supplierRecords = await ensureSupplierRecords(
@@ -213,6 +218,13 @@ export async function POST(request: NextRequest) {
     } catch (variantError) {
       await supabase.from('ingredients').delete().eq('id', ingredient.id)
       throw variantError
+    }
+
+    try {
+      await copyDatasheets(supabase, userBusiness.business_id, 'ingredient', ingredient.id, userId, copiedSheets)
+    } catch (error) {
+      await supabase.from('ingredients').delete().eq('id', ingredient.id).eq('business_id', userBusiness.business_id)
+      throw error
     }
 
     await recordAuditLog(supabase, {

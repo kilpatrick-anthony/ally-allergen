@@ -42,7 +42,6 @@ export default function DatasheetsPage() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedEntityType, setSelectedEntityType] = useState<'all' | 'ingredient' | 'menu_item'>('all')
-  const [selectedReviewStatus, setSelectedReviewStatus] = useState<'all' | 'up_to_date' | 'due_soon' | 'overdue'>('all')
   const [selectedSupplier, setSelectedSupplier] = useState('all')
   const [datasheets, setDatasheets] = useState<DatasheetWithEntity[]>([])
   const [showFilters, setShowFilters] = useState(false)
@@ -100,16 +99,6 @@ export default function DatasheetsPage() {
           menuItemMap.set(menuItem.id, menuItem.name)
         })
 
-        const computeReviewStatus = (nextReviewDate?: string | null) => {
-          if (!nextReviewDate) return 'up_to_date' as const
-          const today = new Date()
-          const reviewDate = new Date(nextReviewDate)
-          const diffDays = Math.floor((reviewDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-
-          if (diffDays < 0) return 'overdue' as const
-          if (diffDays <= 7) return 'due_soon' as const
-          return 'up_to_date' as const
-        }
 
         const mapped = rawDatasheets.map((sheet: any) => {
           let entityType: 'ingredient' | 'menu_item' = 'ingredient';
@@ -145,7 +134,6 @@ export default function DatasheetsPage() {
             next_review_date: sheet.next_review_date || undefined,
             status: sheet.status || 'active',
             notes: sheet.notes || undefined,
-            review_status: computeReviewStatus(sheet.next_review_date)
           } as DatasheetWithEntity
         })
 
@@ -182,10 +170,9 @@ export default function DatasheetsPage() {
     const matchesSearch = datasheet.file_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          datasheet.entity_name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesEntityType = selectedEntityType === 'all' || datasheet.entity_type === selectedEntityType
-    const matchesReviewStatus = selectedReviewStatus === 'all' || datasheet.review_status === selectedReviewStatus
     const matchesSupplier = selectedSupplier === 'all' || datasheet.supplier_name === selectedSupplier
     
-    return matchesSearch && matchesEntityType && matchesReviewStatus && matchesSupplier
+    return matchesSearch && matchesEntityType && matchesSupplier
   })
 
   // Stats
@@ -193,9 +180,6 @@ export default function DatasheetsPage() {
     total: datasheets.length,
     ingredients: datasheets.filter(d => d.entity_type === 'ingredient').length,
     menuItems: datasheets.filter(d => d.entity_type === 'menu_item').length,
-    overdue: datasheets.filter(d => d.review_status === 'overdue').length,
-    dueSoon: datasheets.filter(d => d.review_status === 'due_soon').length,
-    upToDate: datasheets.filter(d => d.review_status === 'up_to_date').length
   }
 
   const handleDownload = (datasheet: DatasheetWithEntity) => {
@@ -208,15 +192,6 @@ export default function DatasheetsPage() {
     // In production, open preview modal or new tab
   }
 
-  const handleMarkReviewed = (datasheet: DatasheetWithEntity) => {
-    console.log('Mark reviewed:', datasheet.file_name)
-    // In production, update database
-    setDatasheets(current => current.map(d =>
-      d.id === datasheet.id 
-        ? { ...d, last_reviewed_at: new Date().toISOString(), review_status: 'up_to_date' as const }
-        : d
-    ))
-  }
 
   if (loading && !loadError) {
     return (
@@ -273,7 +248,7 @@ export default function DatasheetsPage() {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <Card className="hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
@@ -304,25 +279,9 @@ export default function DatasheetsPage() {
           </div>
         </Card>
 
-        <Card className="hover:shadow-lg transition-shadow border-amber-200 bg-amber-50">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-amber-700">{t('corePortal.dueSoon')}</p>
-              <p className="text-2xl font-bold text-amber-800 mt-1">{stats.dueSoon}</p>
-            </div>
-            <AlertTriangle className="h-8 w-8 text-amber-500" />
-          </div>
-        </Card>
 
-        <Card className="hover:shadow-lg transition-shadow border-red-200 bg-red-50">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-red-700">{t('corePortal.overdue')}</p>
-              <p className="text-2xl font-bold text-red-800 mt-1">{stats.overdue}</p>
-            </div>
-            <AlertCircle className="h-8 w-8 text-red-500" />
-          </div>
-        </Card>
+
+
       </div>
 
       {/* Filters & Search */}
@@ -382,22 +341,7 @@ export default function DatasheetsPage() {
                 </select>
               </div>
 
-              <div>
-                <label htmlFor="datasheet-review-status" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('corePortal.reviewStatus')}
-                </label>
-                <select
-                  id="datasheet-review-status"
-                  value={selectedReviewStatus}
-                  onChange={(e) => setSelectedReviewStatus(e.target.value as any)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                >
-                  <option value="all">{t('corePortal.allStatuses')}</option>
-                  <option value="up_to_date">{t('corePortal.upToDate')}</option>
-                  <option value="due_soon">{t('corePortal.dueSoon')}</option>
-                  <option value="overdue">{t('corePortal.overdue')}</option>
-                </select>
-              </div>
+
 
               <div>
                 <label htmlFor="datasheet-supplier" className="block text-sm font-medium text-gray-700 mb-2">
@@ -456,15 +400,9 @@ export default function DatasheetsPage() {
                       <h3 className="text-lg font-semibold text-gray-900">
                         {datasheet.file_name}
                       </h3>
-                      {datasheet.review_status === 'overdue' && (
-                        <Badge variant="error">{t('corePortal.overdue')}</Badge>
-                      )}
-                      {datasheet.review_status === 'due_soon' && (
-                        <Badge variant="warning">{t('corePortal.dueSoon')}</Badge>
-                      )}
-                      {datasheet.review_status === 'up_to_date' && (
-                        <Badge variant="success">{t('corePortal.upToDate')}</Badge>
-                      )}
+
+
+
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-3">
@@ -500,14 +438,7 @@ export default function DatasheetsPage() {
                         </div>
                       )}
 
-                      {datasheet.next_review_date && (
-                        <div>
-                          <p className="text-xs text-gray-500">{t('corePortal.nextReview')}</p>
-                          <p className="text-sm font-medium text-gray-900 mt-1">
-                            {new Date(datasheet.next_review_date).toLocaleDateString()}
-                          </p>
-                        </div>
-                      )}
+
                     </div>
                   </div>
                 </div>
@@ -529,16 +460,7 @@ export default function DatasheetsPage() {
                   >
                     {t('corePortal.download')}
                   </Button>
-                  {datasheet.review_status !== 'up_to_date' && (
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      icon={<CheckCircle className="h-4 w-4" />}
-                      onClick={() => handleMarkReviewed(datasheet)}
-                    >
-                      {t('corePortal.markReviewed')}
-                    </Button>
-                  )}
+
                 </div>
               </div>
             </Card>

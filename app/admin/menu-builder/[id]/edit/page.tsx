@@ -33,7 +33,6 @@ import { MenuItemSupplyFields, type MenuItemType, type SupplierOption } from '@/
 import type { AllergenWarnings } from '@/types/allergen'
 import { mergeAllergenAssessments, isIngredientAssessmentComplete, isAllergenAssessmentComplete } from '@/lib/allergen-assessment'
 import { useContentPermissions } from '@/lib/hooks/useContentPermissions'
-import { translateComplianceReason } from '@/lib/compliance-documents-translations'
 
 interface MenuItem {
   id: string
@@ -44,7 +43,7 @@ interface MenuItem {
   allergen_warnings: AllergenWarnings
   dietary: string[]
   ingredients: string[]
-  status: 'active' | 'draft' | 'archived'
+  status: 'active' | 'inactive' | 'archived'
   preferred_review_months?: number
   color?: string
   icon?: string
@@ -106,7 +105,6 @@ export default function EditMenuItemPage() {
   const [documentRetry, setDocumentRetry] = useState(false)
   const [editSaver] = useState(() => createRegularEditSaver('menu_item'))
   const [deleting, setDeleting] = useState(false)
-  const [marking, setMarking] = useState(false)
   const [menuItem, setMenuItem] = useState<MenuItem | null>(null)
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [sites, setSites] = useState<SiteOption[]>([])
@@ -118,8 +116,6 @@ export default function EditMenuItemPage() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
   const [saveMessage, setSaveMessage] = useState('')
   const [loadingIngredientDatasheets, setLoadingIngredientDatasheets] = useState(false)
-  const [compliance, setCompliance] = useState<any>(null)
-  const [loadingCompliance, setLoadingCompliance] = useState(false)
   const [uploadingIcon, setUploadingIcon] = useState(false)
 
   const DEFAULT_MENU_CATEGORIES = [
@@ -193,7 +189,7 @@ export default function EditMenuItemPage() {
           allergen_warnings: item.allergen_warnings || { ...defaultWarnings },
           dietary: combinedDietary,
           ingredients: itemIngredientIds,
-          status: item.status || (item.is_active ? 'active' : 'draft'),
+          status: item.status || (item.is_active ? 'active' : 'inactive'),
           preferred_review_months: item.preferred_review_months || 12,
           color: item.color || '',
           icon: item.icon || '',
@@ -263,7 +259,7 @@ export default function EditMenuItemPage() {
         const data = await response.json()
 
         if (!response.ok) {
-          throw new Error((data.errorCode === 'completeMenu' ? t('regularAssessment.completeMenu') : data.error) || 'Failed to fetch datasheets')
+          throw new Error((data.errorCode === 'completeMenu' ? t('reminders.completeMenu') : data.error) || 'Failed to fetch datasheets')
         }
       } catch (error: any) {
         console.error('Error loading ingredient datasheets:', error)
@@ -317,7 +313,7 @@ export default function EditMenuItemPage() {
 
       if (!response.ok) {
         const data = await response.json()
-        throw new Error((data.errorCode === 'completeMenu' ? t('regularAssessment.completeMenu') : data.error) || t('menuBuilderPortal.deleteFailed'))
+        throw new Error((data.errorCode === 'completeMenu' ? t('reminders.completeMenu') : data.error) || t('menuBuilderPortal.deleteFailed'))
       }
 
       markSaved(); router.push(returnTo)
@@ -329,58 +325,6 @@ export default function EditMenuItemPage() {
     }
   }
 
-  const fetchCompliance = async () => {
-    try {
-      setLoadingCompliance(true)
-      const response = await fetch(`/api/compliance/status?itemId=${itemId}&itemType=menu_item`)
-      const data = await response.json()
-      if (response.ok && data.compliance) {
-        setCompliance(data.compliance)
-      } else {
-        console.error('Error fetching compliance:', data.error || 'Unknown error')
-      }
-    } catch (error: any) {
-      console.error('Error fetching compliance:', error)
-    } finally {
-      setLoadingCompliance(false)
-    }
-  }
-
-  const handleMarkReviewed = async () => {
-    try {
-      setMarking(true)
-      const response = await fetch('/api/compliance/mark-reviewed', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          itemId: itemId,
-          itemType: 'menu_item'
-        })
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error((data.errorCode === 'completeMenu' ? t('regularAssessment.completeMenu') : data.error) || t('menuBuilderPortal.reviewFailed'))
-      }
-
-      // Refresh compliance status
-      await fetchCompliance()
-      showNotification(t('menuBuilderPortal.reviewSuccess'), 'success')
-    } catch (error: any) {
-      console.error('Error marking as reviewed:', error)
-      showNotification(error.message || t('menuBuilderPortal.reviewFailed'), 'error')
-    } finally {
-      setMarking(false)
-    }
-  }
-
-  // Fetch compliance status on load
-  useEffect(() => {
-    if (itemId && menuItem) {
-      fetchCompliance()
-    }
-  }, [itemId, menuItem])
-
   const { confirmLeave, markSaved } = useUnsavedChanges({ menuItem, datasheets: datasheetsTouched ? changedAttachments(datasheets, existingDatasheets) : null }, !loading && Boolean(menuItem))
 
   const { issues, reportIssues, fieldProps } = useRegularFormValidation(menuItem)
@@ -388,14 +332,14 @@ export default function EditMenuItemPage() {
   const handleSave = async () => {
     if (saveLock.current) return
     if (!menuItem) return
-    const active = menuItem?.status === 'active'
+    const active = true
     const ready = isAllergenAssessmentComplete(menuItem.allergen_warnings) && (menuItem.item_type === 'prepared'
       ? menuItem.ingredients.length > 0
-      : Boolean(menuItem.supplier_id && menuItem.ingredient_declaration.trim() && menuItem.label_verified_at))
+      : Boolean(menuItem.supplier_id && menuItem.ingredient_declaration.trim()))
     if (reportIssues([
       ...(!menuItem.name.trim() ? [{ field: 'regular-name', message: t('regularForms.nameRequired') }] : []),
       ...(active && !menuItem.description.trim() ? [{ field: 'regular-description', message: t('regularForms.descriptionRequired') }] : []),
-      ...(active && !ready ? [{ field: menuItem.item_type === 'prepared' ? 'regular-recipe' : !menuItem.supplier_id ? 'regular-supplier' : !menuItem.ingredient_declaration.trim() ? 'regular-declaration' : !menuItem.label_verified_at ? 'regular-label-check' : 'regular-assessment', message: t('regularAssessment.completeMenu') }] : []),
+      ...(active && !ready ? [{ field: menuItem.item_type === 'prepared' ? 'regular-recipe' : !menuItem.supplier_id ? 'regular-supplier' : !menuItem.ingredient_declaration.trim() ? 'regular-declaration' : 'regular-assessment', message: t('reminders.completeMenu') }] : []),
     ])) return
 
     saveLock.current = true
@@ -403,7 +347,7 @@ export default function EditMenuItemPage() {
     setSaveStatus('saving')
     setSaveMessage(t('admin.savingMenuItem'))
     try {
-      await editSaver.save(menuItem.id, menuItem, datasheetsTouched ? datasheets : existingDatasheets, existingDatasheets, t('regularItemSave.saveFailed'))
+      await editSaver.save(menuItem.id, { ...menuItem, status: 'active' }, datasheetsTouched ? datasheets : existingDatasheets, existingDatasheets, t('regularItemSave.saveFailed'))
       setDocumentRetry(false)
       setSaveStatus('success')
       setSaveMessage(t('regularItemSave.saved'))
@@ -414,7 +358,7 @@ export default function EditMenuItemPage() {
       setSaveMessage(error instanceof EditDocumentSaveError
         ? t(error.needsReload ? 'regularForms.documentsNeedRefresh' : 'regularForms.editDocumentsPending')
         : error instanceof RegularItemSaveError && error.code === 'completeMenu'
-          ? t('regularAssessment.completeMenu') : error instanceof Error ? error.message : t('regularItemSave.saveFailed'))
+          ? t('reminders.completeMenu') : error instanceof Error ? error.message : t('regularItemSave.saveFailed'))
     } finally {
       saveLock.current = false
       setSaving(false)
@@ -441,7 +385,7 @@ export default function EditMenuItemPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error((data.errorCode === 'completeMenu' ? t('regularAssessment.completeMenu') : data.error) || 'Failed to upload icon')
+        throw new Error((data.errorCode === 'completeMenu' ? t('reminders.completeMenu') : data.error) || 'Failed to upload icon')
       }
 
       setMenuItem(current => current ? ({ ...current, icon: data.iconUrl }) : current)
@@ -532,7 +476,7 @@ export default function EditMenuItemPage() {
             {/* Description */}
             <Card className="p-6">
               <label htmlFor="regular-description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t('admin.itemDescription')} {menuItem.status === 'active' ? '*' : `(${t('admin.optional')})`}
+                {t('admin.itemDescription')} *
               </label>
               <textarea
                 {...fieldProps('regular-description')}
@@ -660,97 +604,10 @@ export default function EditMenuItemPage() {
             </Card>
 
             {/* Status Toggle */}
-            <Card className="p-6">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                {t('admin.visibilityStatus')}
-              </label>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                {t('admin.visibilityStatusDesc')}
-              </p>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  aria-pressed={menuItem.status === 'active'}
-                  onClick={() => setMenuItem({ ...menuItem, status: 'active' })}
-                  className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all ${
-                    menuItem.status === 'active'
-                      ? 'bg-emerald-700 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  {t('admin.active')}
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={menuItem.status === 'draft'}
-                  onClick={() => setMenuItem({ ...menuItem, status: 'draft' })}
-                  className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all ${
-                    menuItem.status === 'draft'
-                      ? 'bg-amber-100 text-amber-950 shadow-md'
-                      : 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  }`}
-                >
-                  {t('admin.draft')}
-                </button>
-              </div>
-            </Card>
+
 
             {/* Compliance Status */}
-            <Card className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-[#003842]">{t('admin.complianceStatus')}</h2>
-                <Button
-                  onClick={handleMarkReviewed}
-                  disabled={marking || loadingCompliance}
-                  className="bg-emerald-500 text-white hover:bg-emerald-600 text-sm"
-                >
-                  {marking ? t('admin.marking') : t('admin.markAsReviewed')}
-                </Button>
-              </div>
 
-              {loadingCompliance ? (
-                <div className="text-gray-500 text-sm">{t('admin.loadingComplianceStatus')}</div>
-              ) : compliance ? (
-                <div className="space-y-3">
-                  <div
-                    className="p-3 rounded-lg border-2"
-                    style={{
-                      backgroundColor: compliance.status === 'compliant' ? '#dcfce7' :
-                                      compliance.status === 'warning' ? '#fef3c7' : '#fee2e2',
-                      borderColor: compliance.status === 'compliant' ? '#16a34a' :
-                                  compliance.status === 'warning' ? '#f59e0b' : '#dc2626'
-                    }}
-                  >
-                    <div className="font-semibold" style={{
-                      color: compliance.status === 'compliant' ? '#16a34a' :
-                            compliance.status === 'warning' ? '#f59e0b' : '#dc2626'
-                    }}>
-                      {compliance.status === 'compliant' ? `✓ ${t('admin.compliant')}` :
-                       compliance.status === 'warning' ? `⚠ ${t('admin.reviewDueSoon')}` : `✕ ${t('admin.notCompliant')}`}
-                    </div>
-                  </div>
-
-                  {compliance.reasons.length > 0 && (
-                    <div className="space-y-1">
-                      {compliance.reasons.map((reason: string, idx: number) => (
-                        <div key={idx} className="text-sm text-gray-600 flex items-start gap-2">
-                          <span className="text-gray-400 mt-0.5">•</span>
-                          <span>{translateComplianceReason(reason, t)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {compliance.lastReviewedAt && (
-                    <div className="text-xs text-gray-500 pt-2 border-t">
-                      {t('admin.lastSeenLabel')}: {new Date(compliance.lastReviewedAt).toLocaleDateString()}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-gray-500 text-sm">{t('admin.unableLoadComplianceStatus')}</div>
-              )}
-            </Card>
 
             {/* Site Scope */}
             <Card className="p-6">

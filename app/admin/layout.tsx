@@ -14,7 +14,6 @@ import { trackAdminPageVisit } from '@/lib/hooks/useFrequentPages'
 import { FsaiNewsTicker } from '@/components/admin/FsaiNewsTicker'
 import PortalLocalizationBridge from '@/components/shared/PortalLocalizationBridge'
 import QuickAddEntry from '@/components/admin/QuickAddEntry'
-import QuickAddOfflineSync from '@/components/admin/QuickAddOfflineSync'
 
 interface AdminLayoutProps {
   children: ReactNode
@@ -305,9 +304,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <div className="lg:hidden">
             <FsaiNewsTicker />
           </div>
-          <QuickAddEntry floating />
+          <QuickAddEntry />
           </>}
-          <QuickAddOfflineSync />
+
         </div>
           </div>
         </ProtectedRoute>

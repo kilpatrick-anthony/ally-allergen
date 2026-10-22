@@ -1,3 +1,4 @@
+import { menuItemSourceLines } from './menuItemSource'
 // lib/pdf/allergenTablePDF.ts
 // FSAI-style allergen table PDF:
 //   • 14 allergen columns with tick marks (✓ / (✓)) — no sub-type columns
@@ -576,7 +577,10 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
     }
 
     // ── Split items into sections ─────────────────────────────────────────────
-    const menuSectionItems  = items.filter(i => (i as any).itemType !== 'ingredient').sort(sortItemsByName)
+    const menuSectionItems = items.filter(i => (i as any).itemType !== 'ingredient').map(item => {
+      const source = menuItemSourceLines(item)
+      return source.length ? { ...item, name: [item.name, ...source].join('\n') } : item
+    }).sort(sortItemsByName)
     const ingredientItems   = items.filter(i => (i as any).itemType === 'ingredient').sort(sortItemsByName)
 
     // ── Expand ingredients per product variant (including repeated suppliers) ──

@@ -32,7 +32,6 @@ interface DatasheetViewerProps {
   entityName?: string
   onDownload?: (datasheet: Datasheet) => void
   onPreview?: (datasheet: Datasheet) => void
-  onMarkReviewed?: (datasheet: Datasheet) => void
   compact?: boolean
 }
 
@@ -42,7 +41,6 @@ export default function DatasheetViewer({
   entityName,
   onDownload,
   onPreview,
-  onMarkReviewed,
   compact = false
 }: DatasheetViewerProps) {
   const { t, language } = useTranslation()
@@ -65,18 +63,6 @@ export default function DatasheetViewer({
     })
   }
 
-  const getReviewStatus = (datasheet: Datasheet) => {
-    if (!datasheet.next_review_date) return null
-    
-    const nextReview = new Date(datasheet.next_review_date)
-    const today = new Date()
-    const daysUntil = Math.floor((nextReview.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
-    
-    if (daysUntil < 0) return { status: 'overdue', label: t('liveDashboard.overdue'), color: 'red' }
-    if (daysUntil <= 7) return { status: 'due_soon', label: t('liveDashboard.dueSoon'), color: 'yellow' }
-    return { status: 'up_to_date', label: t('liveDashboard.upToDate'), color: 'green' }
-  }
-
   const getFileIcon = (fileType: string) => {
     if (fileType.includes('pdf')) return '📄'
     if (fileType.includes('excel') || fileType.includes('sheet')) return '📊'
@@ -95,7 +81,6 @@ export default function DatasheetViewer({
           </div>
         ) : (
           datasheets.map((datasheet) => {
-            const reviewStatus = getReviewStatus(datasheet)
             return (
               <div
                 key={datasheet.id}
@@ -108,14 +93,7 @@ export default function DatasheetViewer({
                       <p className="text-sm font-medium text-gray-900 truncate">
                         {datasheet.file_name}
                       </p>
-                      {reviewStatus && (
-                        <Badge 
-                          variant={reviewStatus.color as any} 
-                          size="sm"
-                        >
-                          {reviewStatus.label}
-                        </Badge>
-                      )}
+
                     </div>
                     <div className="flex items-center space-x-2 mt-1">
                       <span className="text-xs text-gray-500">
@@ -179,7 +157,6 @@ export default function DatasheetViewer({
       ) : (
         <div className="grid grid-cols-1 gap-4">
           {datasheets.map((datasheet) => {
-            const reviewStatus = getReviewStatus(datasheet)
             return (
               <Card key={datasheet.id}>
                 <div className="flex items-start justify-between">
@@ -192,14 +169,7 @@ export default function DatasheetViewer({
                         <h4 className="text-lg font-semibold text-gray-900 truncate">
                           {datasheet.file_name}
                         </h4>
-                        {reviewStatus && (
-                          <Badge 
-                            variant={reviewStatus.color as any} 
-                            size="md"
-                          >
-                            {reviewStatus.label}
-                          </Badge>
-                        )}
+
                         {datasheet.status === 'archived' && (
                           <Badge variant="default" size="md">
                             <Archive className="h-3 w-3 mr-1" />
@@ -239,26 +209,7 @@ export default function DatasheetViewer({
                         </div>
                       </div>
 
-                      {datasheet.next_review_date && (
-                        <div className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                          <div className="flex items-center space-x-2">
-                            <Calendar className="h-4 w-4 text-gray-600" />
-                            <div>
-                              <p className="text-xs text-gray-500">{t('liveDashboard.nextReviewDate')}</p>
-                              <p className="text-sm font-medium text-gray-900">
-                                {formatDate(datasheet.next_review_date)}
-                              </p>
-                            </div>
-                          </div>
-                          {datasheet.last_reviewed_at && (
-                            <div className="mt-2 pt-2 border-t border-gray-200">
-                              <p className="text-xs text-gray-500">
-                                {t('liveDashboard.lastReviewed', { date: formatDate(datasheet.last_reviewed_at) })}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      )}
+
 
                       {datasheet.notes && (
                         <div className="mb-3">
@@ -292,17 +243,7 @@ export default function DatasheetViewer({
                         {t('liveDashboard.download')}
                       </Button>
                     )}
-                    {onMarkReviewed && reviewStatus?.status !== 'up_to_date' && (
-                      <Button
-                        type="button"
-                        variant="primary"
-                        size="md"
-                        onClick={() => onMarkReviewed(datasheet)}
-                      >
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                        {t('liveDashboard.markReviewed')}
-                      </Button>
-                    )}
+
                   </div>
                 </div>
               </Card>

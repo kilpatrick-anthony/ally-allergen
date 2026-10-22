@@ -33,6 +33,10 @@ async function isDisabledUser(token: string): Promise<boolean> {
  * authorization remain enforced by the Internal API, not by the hostname.
  */
 export async function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname
+  if (path === '/api/datasheets/review' || /^\/api\/(?:compliance|ingredient-drafts|ingredient-draft-documents|quick-add-drafts|quick-add-notifications)(?:\/|$)/.test(path)) {
+    return NextResponse.json({ error: 'This feature is currently unavailable' }, { status: 410 })
+  }
   if (request.nextUrl.pathname.startsWith('/api/') && !['/api/signin', '/api/signout'].includes(request.nextUrl.pathname)) {
     const token = request.cookies.get(AUTH_COOKIE_NAME)?.value
     if (token) {

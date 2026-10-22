@@ -61,7 +61,7 @@ export const ALL_ADMIN_PAGES: AdminPage[] = [
   {
     href: '/admin/downloads',
     label: 'Downloads',
-    description: 'Download compliance reports',
+    description: 'Download allergen guides and reports',
     icon: Download,
     colorClass: 'bg-orange-100 dark:bg-orange-900/20',
     iconClass: 'text-orange-600 dark:text-orange-400',

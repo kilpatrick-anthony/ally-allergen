@@ -8,7 +8,7 @@ export function focusFormField(field: string) {
   let target = document.getElementById(field)
   if (field === 'regular-assessment') {
     target = Array.from(document.querySelectorAll<HTMLSelectElement>('select[data-allergen-input]')).find(input => !input.value)
-      || document.querySelector<HTMLElement>('[data-review-profile]') || target
+      || target
   }
   if (!target || !target.getBoundingClientRect().height) target = document.getElementById('regular-validation')
   target?.focus()

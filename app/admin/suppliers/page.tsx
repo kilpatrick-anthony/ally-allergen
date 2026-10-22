@@ -126,11 +126,7 @@ export default function SuppliersPage() {
             <p className="text-2xl font-bold text-[#003842] dark:text-white">{stats.total}</p>
           </div>
         </div>
-        <Link href="/admin/suppliers/new">
-          <Button variant="primary" icon={<Plus className="h-4 w-4" />}>
-            {t('admin.addSupplier')}
-          </Button>
-        </Link>
+
       </div>
 
       <Card className="mb-8">
@@ -245,11 +241,7 @@ export default function SuppliersPage() {
               ? 'Try adjusting your search or filters'
               : t('admin.getStartedFirstSupplier')}
           </p>
-          <Link href="/admin/suppliers/new">
-            <Button variant="primary" icon={<Plus className="h-4 w-4" />}>
-              {t('admin.addFirstSupplier')}
-            </Button>
-          </Link>
+
         </Card>
       )}
 

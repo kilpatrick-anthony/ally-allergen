@@ -76,7 +76,6 @@ export default function IngredientSupplierVariantsEditor({
     : buildCompleteSupplierProfiles(suppliers, profiles, fallbackAllergens, fallbackCertifications)
   const variantEntries = Object.entries(displayedProfiles)
 
-  const reviewCount = variantEntries.filter(([, profile]) => profile.assessment_status !== 'assessed' || !isAllergenAssessmentComplete(profile.allergen_warnings)).length
 
   const emitProfiles = (nextProfiles: SupplierProfileMap) => {
     onChange(
@@ -151,12 +150,7 @@ export default function IngredientSupplierVariantsEditor({
             {t('ingredientsPortal.supplierVariantsHelp')}
           </p>
         </div>
-        {variantEntries.length > 0 && (
-          <div className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold ${reviewCount > 0 ? 'bg-amber-100 text-amber-900' : 'bg-emerald-100 text-emerald-900'}`}>
-            {reviewCount > 0 ? <AlertTriangle className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-            {reviewCount > 0 ? t('ingredientsPortal.profilesNeedReview', { count: reviewCount }) : t('ingredientsPortal.allProfilesReviewed')}
-          </div>
-        )}
+
       </div>
 
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
@@ -214,7 +208,6 @@ export default function IngredientSupplierVariantsEditor({
             const panelId = `${instanceId}-supplier-${index}`
             const supplier = profile.supplier_name || profileKey
             const isExpanded = expandedSuppliers.has(profileKey)
-            const isAssessed = profile?.assessment_status === 'assessed' && isAllergenAssessmentComplete(profile.allergen_warnings)
 
             return (
               <section
@@ -237,9 +230,7 @@ export default function IngredientSupplierVariantsEditor({
                   >
                     {isExpanded ? <ChevronDown className="h-5 w-5 shrink-0 text-gray-500" /> : <ChevronRight className="h-5 w-5 shrink-0 text-gray-500" />}
                     <span className="min-w-0 flex-1 truncate font-semibold text-gray-900 dark:text-white">{supplier}</span>
-                    <span className={`hidden rounded-full px-2.5 py-1 text-xs font-semibold sm:inline ${isAssessed ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'}`}>
-                      {isAssessed ? t('ingredientsPortal.reviewed') : t('ingredientsPortal.needsReview')}
-                    </span>
+
                   </button>
                   <button
                     type="button"
@@ -253,13 +244,6 @@ export default function IngredientSupplierVariantsEditor({
 
                 {isExpanded && (
                   <div id={panelId} role="region" aria-labelledby={`${panelId}-toggle`} className="space-y-6 border-t border-gray-200 bg-gray-50/70 p-4 sm:p-5 dark:border-gray-700 dark:bg-gray-900/30">
-                    {!isAssessed && (
-                      <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                        <p>{t('ingredientsPortal.inheritedSafetyHelp')}</p>
-                      </div>
-                    )}
-
                     <div>
                       <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor={`supplier-brand-${profileKey}`}>
                         {t('ingredientsPortal.variantBrand')}
@@ -334,19 +318,7 @@ export default function IngredientSupplierVariantsEditor({
                     </div>
 
                     <div className="flex justify-end">
-                      <Button
-                        type="button"
-                        data-review-profile={!isAssessed || undefined}
-                        disabled={!isAllergenAssessmentComplete(profile?.allergen_warnings)}
-                        variant={isAssessed ? 'outline' : 'primary'}
-                        icon={<CheckCircle2 className="h-4 w-4" />}
-                        onClick={() => updateProfile(profileKey, {
-                          assessment_status: 'assessed',
-                          last_reviewed_at: new Date().toISOString(),
-                        })}
-                      >
-                        {isAssessed ? t('ingredientsPortal.reviewed') : t('ingredientsPortal.markProfileReviewed')}
-                      </Button>
+
                     </div>
                   </div>
                 )}

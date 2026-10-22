@@ -102,7 +102,7 @@ export default function SupplierDetailPage() {
         <Card className="mt-6">
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3"><div className="rounded-lg bg-amber-100 p-2.5"><Package className="h-5 w-5 text-amber-700" /></div><div><h2 className="text-xl font-bold text-gray-900 dark:text-white">{t('supplierPortal.linkedIngredientsTitle')}</h2><p className="text-sm text-gray-600 dark:text-gray-300">{t('supplierPortal.allergenDataDescription')}</p></div></div>
-            <Link href="/admin/ingredients/new"><Button variant="outline">{t('supplierPortal.addIngredient')}</Button></Link>
+
           </div>
           {ingredients.length === 0 ? (
             <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 py-10 text-center"><Package className="mx-auto mb-3 h-9 w-9 text-gray-300" /><p className="text-sm font-medium text-gray-700">{t('supplierPortal.noLinkedIngredients')}</p></div>

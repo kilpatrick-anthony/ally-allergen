@@ -163,7 +163,7 @@ export async function PUT(
     const effectiveAllergens = derivedSafety?.allergen_warnings || allergen_warnings || {}
     const effectiveCertifications = derivedSafety?.certifications || certifications || []
     if (!isIngredientAssessmentComplete(effectiveAllergens, completeProfiles)) {
-      return NextResponse.json({ error: 'Complete every allergen assessment and review each supplier profile before saving this ingredient.', errorCode: 'completeIngredient' }, { status: 400 })
+      return NextResponse.json({ error: 'Complete every allergen field before saving this ingredient.', errorCode: 'completeIngredient' }, { status: 400 })
     }
 
     const supplierRecords = await ensureSupplierRecords(
@@ -179,7 +179,7 @@ export async function PUT(
 
     // Update ingredient
     const updatePayload = {
-      status: ['active', 'review', 'archived'].includes(body.status) ? body.status : previousIngredient.status,
+      status: 'active',
       name,
       description: description || '',
       category: category || '',

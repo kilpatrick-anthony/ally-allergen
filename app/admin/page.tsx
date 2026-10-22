@@ -1,7 +1,8 @@
 // app/admin/page.tsx - Production-ready dashboard with onboarding
 'use client'
 
-import DashboardDraftSummary from '@/components/admin/DashboardDraftSummary'
+import ItemReminders from '@/components/admin/ItemReminders'
+
 
 import React from 'react'
 import { useState, useEffect } from 'react'
@@ -15,7 +16,6 @@ import {
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
 import { Badge } from '@/components/ui/Badge'
-import { NotificationsPanel } from '@/components/admin/NotificationsPanel'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { getFrequentPages, type AdminPage } from '@/lib/hooks/useFrequentPages'
 
@@ -202,7 +202,7 @@ export default function AdminDashboard() {
           {languagePrompt}
         </div>
         <div className="flex flex-col">
-        <div className="order-1 mb-5 lg:order-2"><DashboardDraftSummary /></div>
+        <div className="order-1 mb-5 lg:order-2"><ItemReminders /></div>
         {/* At-a-glance stats */}
         <div className="order-4 grid grid-cols-2 gap-3 lg:grid-cols-4 mb-6 lg:order-1">
           {statCards.map((stat) => {
@@ -264,10 +264,6 @@ export default function AdminDashboard() {
           </p>
         </div>
 
-        {/* Notifications Panel */}
-        <div className="order-2 mb-5 lg:order-4">
-          <NotificationsPanel settings={settings} compactMobile />
-        </div>
 
         </div>
         {/* Business Responsibility Disclaimer */}
@@ -325,7 +321,7 @@ export default function AdminDashboard() {
       </div>
 
       <div className="mb-6 flex flex-wrap items-center justify-end gap-2">{languagePrompt}</div>
-      <div className="mb-6"><DashboardDraftSummary /></div>
+      <ItemReminders />
 
       {/* Quick Start Guide */}
       <Card className="mb-8 bg-gradient-to-br from-[#42b8ac]/5 to-[#003842]/5">
@@ -334,30 +330,9 @@ export default function AdminDashboard() {
           <p className="text-gray-600 dark:text-gray-300">{t('admin.gettingStartedDesc')}</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Step 1 */}
-          <Link href="/admin/sites/new">
-            <Card className="h-full hover:shadow-xl transition-all hover:scale-105 cursor-pointer border-2 border-transparent hover:border-[#42b8ac]">
-              <div className="text-center h-full flex flex-col">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full mb-4 mx-auto">
-                  <Building className="h-8 w-8 text-white" />
-                </div>
-                <div className="mb-4">
-                  <Badge variant="info" size="sm">{t('liveDashboard.step', { count: 1 })}</Badge>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  {t('admin.addFirstLocation')}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 flex-grow">
-                  {t('admin.addFirstLocationDesc')}
-                </p>
-                <div className="flex items-center justify-center text-[#42b8ac] font-medium mt-auto">
-                  {t('admin.addLocation')}
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </div>
-              </div>
-            </Card>
-          </Link>
+
 
           {/* Step 2 */}
           <Link href="/admin/devices">
@@ -367,7 +342,7 @@ export default function AdminDashboard() {
                   <Monitor className="h-8 w-8 text-white" />
                 </div>
                 <div className="mb-4">
-                  <Badge variant="info" size="sm">{t('liveDashboard.step', { count: 2 })}</Badge>
+                  <Badge variant="info" size="sm">{t('liveDashboard.step', { count: 1 })}</Badge>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                   {t('admin.pairFirstDevice')}
@@ -391,7 +366,7 @@ export default function AdminDashboard() {
                   <ChefHat className="h-8 w-8 text-white" />
                 </div>
                 <div className="mb-4">
-                  <Badge variant="info" size="sm">{t('liveDashboard.step', { count: 3 })}</Badge>
+                  <Badge variant="info" size="sm">{t('liveDashboard.step', { count: 2 })}</Badge>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
                   {t('admin.buildYourMenu')}

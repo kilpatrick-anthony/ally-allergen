@@ -35,7 +35,6 @@ import {
 } from '@/lib/ingredient-supplier-profiles'
 import { isIngredientAssessmentComplete } from '@/lib/allergen-assessment'
 import { useTranslation } from '@/lib/hooks/useTranslation'
-import { translateComplianceReason } from '@/lib/compliance-documents-translations'
 
 export default function EditIngredientPage() {
   const { showNotification } = useNotification()
@@ -53,11 +52,8 @@ export default function EditIngredientPage() {
   const [editSaver] = useState(() => createRegularEditSaver('ingredient'))
   const [formError, setFormError] = useState('')
   const [deleting, setDeleting] = useState(false)
-  const [marking, setMarking] = useState(false)
   const [datasheets, setDatasheets] = useState<any[]>([])
   const [existingDatasheets, setExistingDatasheets] = useState<any[]>([])
-  const [compliance, setCompliance] = useState<any>(null)
-  const [loadingCompliance, setLoadingCompliance] = useState(false)
   const [datasheetsTouched, setDatasheetsTouched] = useState(false)
 
   const [ingredient, setIngredient] = useState({
@@ -217,56 +213,6 @@ export default function EditIngredientPage() {
     }
   }
 
-  const fetchCompliance = async () => {
-    try {
-      setLoadingCompliance(true)
-      const response = await fetch(`/api/compliance/status?itemId=${ingredientId}&itemType=ingredient`)
-      const data = await parseJsonSafely(response)
-      if (response.ok) {
-        setCompliance(data.compliance)
-      }
-    } catch (error: any) {
-      console.error('Error fetching compliance:', error)
-    } finally {
-      setLoadingCompliance(false)
-    }
-  }
-
-  const handleMarkReviewed = async () => {
-    try {
-      setMarking(true)
-      const response = await fetch('/api/compliance/mark-reviewed', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          itemId: ingredientId,
-          itemType: 'ingredient'
-        })
-      })
-
-      if (!response.ok) {
-        const data = await parseJsonSafely(response)
-        throw new Error(data.error || 'Failed to mark as reviewed')
-      }
-
-      // Refresh compliance status
-      await fetchCompliance()
-      showNotification(t('ingredientsPortal.ingredientMarkedReviewed'), 'success')
-    } catch (error: any) {
-      console.error('Error marking as reviewed:', error)
-      showNotification(t('ingredientsPortal.markReviewedFailed', { error: error.message || '' }), 'error')
-    } finally {
-      setMarking(false)
-    }
-  }
-
-  // Fetch compliance status on load
-  useEffect(() => {
-    if (ingredientId && !loading) {
-      fetchCompliance()
-    }
-  }, [ingredientId, loading])
-
   const { confirmLeave, markSaved } = useUnsavedChanges({ ingredient, supplierProfiles, datasheets: datasheetsTouched ? changedAttachments(datasheets, existingDatasheets) : null, customCertInput }, !loading)
 
   const { issues, reportIssues, fieldProps } = useRegularFormValidation({ ingredient, supplierProfiles })
@@ -276,7 +222,7 @@ export default function EditIngredientPage() {
     setFormError('')
     if (reportIssues([
       ...(!ingredient.name.trim() ? [{ field: 'regular-name', message: t('ingredientsPortal.nameRequired') }] : []),
-      ...(!isIngredientAssessmentComplete(ingredient.allergen_warnings, supplierProfiles) ? [{ field: 'regular-assessment', message: t('regularAssessment.completeIngredient') }] : []),
+      ...(!isIngredientAssessmentComplete(ingredient.allergen_warnings, supplierProfiles) ? [{ field: 'regular-assessment', message: t('reminders.completeIngredient') }] : []),
     ])) return
     saveLock.current = true
     setSaving(true)
@@ -289,7 +235,7 @@ export default function EditIngredientPage() {
       const message = error instanceof EditDocumentSaveError
         ? t(error.needsReload ? 'regularForms.documentsNeedRefresh' : 'regularForms.editDocumentsPending')
         : error instanceof RegularItemSaveError && error.code === 'completeIngredient'
-          ? t('regularAssessment.completeIngredient') : error instanceof Error ? error.message : t('regularItemSave.saveFailed')
+          ? t('reminders.completeIngredient') : error instanceof Error ? error.message : t('regularItemSave.saveFailed')
       setFormError(message)
     } finally {
       saveLock.current = false
@@ -595,52 +541,9 @@ export default function EditIngredientPage() {
             )}
           </Card>
 
-          {!isIngredientAssessmentComplete(ingredient.allergen_warnings, supplierProfiles) && <p className="text-sm font-medium text-amber-900 dark:text-amber-200">{t('regularAssessment.completeIngredient')}</p>}
+          {!isIngredientAssessmentComplete(ingredient.allergen_warnings, supplierProfiles) && <p className="text-sm font-medium text-amber-900 dark:text-amber-200">{t('reminders.completeIngredient')}</p>}
           {/* Status Toggle */}
-          <Card>
-            <h2 className="text-xl font-semibold text-[#003842] mb-4">{t('admin.visibilityStatus')}</h2>
-            <p className="text-sm text-gray-600 mb-3">
-              {t('ingredientsPortal.visibilityStatusHelp')}
-            </p>
-            <div className="flex gap-3">
-              <button
-                type="button"
-                aria-pressed={ingredient.status === 'active'}
-                onClick={() => setIngredient({ ...ingredient, status: 'active' })}
-                className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all ${
-                  ingredient.status === 'active'
-                    ? 'bg-emerald-700 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {t('admin.active')}
-              </button>
-              <button
-                type="button"
-                aria-pressed={ingredient.status === 'review'}
-                onClick={() => setIngredient({ ...ingredient, status: 'review' })}
-                className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all ${
-                  ingredient.status === 'review'
-                    ? 'bg-amber-100 text-amber-950 shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {t('admin.draft')}
-              </button>
-              <button
-                type="button"
-                aria-pressed={ingredient.status === 'archived'}
-                onClick={() => setIngredient({ ...ingredient, status: 'archived' })}
-                className={`flex-1 px-4 py-2.5 rounded-lg font-medium transition-all ${
-                  ingredient.status === 'archived'
-                    ? 'bg-red-700 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {t('admin.archived')}
-              </button>
-            </div>
-          </Card>
+
 
           {/* Review Frequency */}
           <Card>
@@ -652,61 +555,7 @@ export default function EditIngredientPage() {
           </Card>
 
           {/* Compliance Status */}
-          <Card>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-[#003842]">{t('admin.complianceStatus')}</h2>
-              <Button
-                onClick={handleMarkReviewed}
-                disabled={marking || loadingCompliance}
-                className="bg-emerald-500 text-white hover:bg-emerald-600 text-sm"
-              >
-                {marking ? t('admin.marking') : t('admin.markAsReviewed')}
-              </Button>
-            </div>
 
-            {loadingCompliance ? (
-              <div className="text-gray-500 text-sm">{t('admin.loadingComplianceStatus')}</div>
-            ) : compliance ? (
-              <div className="space-y-3">
-                <div
-                  className="p-3 rounded-lg border-2"
-                  style={{
-                    backgroundColor: compliance.status === 'compliant' ? '#dcfce7' :
-                                    compliance.status === 'warning' ? '#fef3c7' : '#fee2e2',
-                    borderColor: compliance.status === 'compliant' ? '#16a34a' :
-                                compliance.status === 'warning' ? '#f59e0b' : '#dc2626'
-                  }}
-                >
-                  <div className="font-semibold" style={{
-                    color: compliance.status === 'compliant' ? '#16a34a' :
-                          compliance.status === 'warning' ? '#f59e0b' : '#dc2626'
-                  }}>
-                    {compliance.status === 'compliant' ? t('ingredientsPortal.compliantStatus') :
-                     compliance.status === 'warning' ? t('ingredientsPortal.reviewDueSoonStatus') : t('ingredientsPortal.notCompliantStatus')}
-                  </div>
-                </div>
-
-                {compliance.reasons.length > 0 && (
-                  <div className="space-y-1">
-                    {compliance.reasons.map((reason: string, idx: number) => (
-                      <div key={idx} className="text-sm text-gray-600 flex items-start gap-2">
-                        <span className="text-gray-400 mt-0.5">•</span>
-                        <span>{translateComplianceReason(reason, t)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {compliance.lastReviewedAt && (
-                  <div className="text-xs text-gray-500 pt-2 border-t">
-                    {t('corePortal.lastReviewed')} {new Date(compliance.lastReviewedAt).toLocaleDateString(language)}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-gray-500 text-sm">{t('admin.unableLoadComplianceStatus')}</div>
-            )}
-          </Card>
 
 
         </div>

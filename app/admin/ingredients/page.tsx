@@ -4,7 +4,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { ManagementListHeader } from '@/components/admin/ManagementListHeader'
-import { IngredientDraftList } from '@/components/admin/IngredientDraftList'
 import { listContextHref } from '@/lib/list-navigation'
 import React from 'react'
 import { useNotification } from '@/lib/hooks/useNotification'
@@ -30,7 +29,7 @@ import { ALLERGEN_LIST } from '@/types/allergen'
 import DatasheetViewer from '@/components/admin/DatasheetViewer'
 import { isIngredientAssessmentComplete } from '@/lib/allergen-assessment'
 import { useTranslation } from '@/lib/hooks/useTranslation'
-import { checkIngredientCompliance } from '@/lib/compliance'
+
 import { useContentPermissions } from '@/lib/hooks/useContentPermissions'
 
 // No mock data - production ready
@@ -55,12 +54,11 @@ interface Ingredient {
   suppliers: string[]
   allergens: Allergen[]
   certifications: string[]
-  status: 'active' | 'review' | 'archived'
+  status: 'active' | 'inactive' | 'archived'
   createdAt: string | null
   lastUpdated: string
   assessmentComplete: boolean
   createdBy: string
-  compliance: 'compliant' | 'warning' | 'error'
 }
 
 
@@ -123,7 +121,7 @@ export default function IngredientsPage() {
   const [selectedStatus, setSelectedStatus] = useState('all')
   const [selectedCategory, setSelectedCategory] = useState('all')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [sortBy, setSortBy] = useState<'name' | 'date' | 'status' | 'compliance'>('name')
+  const [sortBy, setSortBy] = useState<'name' | 'date' | 'status'>('name')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>([])
   const [showFilters, setShowFilters] = useState(false)
@@ -141,7 +139,7 @@ export default function IngredientsPage() {
     if (params.get('status')) setSelectedStatus(params.get('status')!)
     if (params.get('category')) setSelectedCategory(params.get('category')!)
     if (params.get('view') === 'list') setViewMode('list')
-    if (['name', 'date', 'status', 'compliance'].includes(params.get('sort') || '')) {
+    if (['name', 'date', 'status'].includes(params.get('sort') || '')) {
       setSortBy(params.get('sort') as typeof sortBy)
     }
     if (params.get('direction') === 'desc') setSortDir('desc')
@@ -182,27 +180,6 @@ export default function IngredientsPage() {
         
         // Map the data to match the component's expected format
         const mappedIngredients = (data.ingredients || []).map((ing: any) => {
-          // Calculate compliance dynamically
-          // Handle datasheets - Supabase count returns an object or array
-          const datasheetCount = ((ing.datasheets && typeof ing.datasheets === 'object')
-            ? (Array.isArray(ing.datasheets) ? ing.datasheets[0]?.count : ing.datasheets?.count)
-            : 0) || 0
-          
-          const complianceResult = checkIngredientCompliance(
-            {
-              id: ing.id,
-              name: ing.name,
-              status: ing.status || 'active',
-              last_reviewed_at: ing.last_reviewed_at,
-              preferred_review_months: ing.preferred_review_months || 12,
-              suppliers: ing.suppliers || [],
-              has_datasheets: datasheetCount > 0
-            },
-            {
-              compliance_review_days: 90 // Default, will be updated from business settings
-            }
-          )
-          
           return {
             id: ing.id,
             name: ing.name,
@@ -220,7 +197,7 @@ export default function IngredientsPage() {
             }),
             assessmentComplete: isIngredientAssessmentComplete(ing.allergen_warnings, ing.supplier_profiles),
             certifications: ing.certifications || [],
-            status: ing.status || 'active',
+            status: ing.status === 'review' ? 'inactive' : ing.status || 'active',
             createdAt: ing.created_at || null,
             lastUpdated: (() => {
               try {
@@ -233,7 +210,6 @@ export default function IngredientsPage() {
               }
             })(),
             createdBy: ing.created_by || 'system',
-            compliance: complianceResult.status
           }
         })
         
@@ -273,9 +249,6 @@ export default function IngredientsPage() {
       return compareDateAdded(a.createdAt, b.createdAt, sortDir) || a.name.localeCompare(b.name)
     } else if (sortBy === 'status') {
       cmp = a.status.localeCompare(b.status)
-    } else if (sortBy === 'compliance') {
-      const order = { compliant: 0, warning: 1, error: 2 }
-      cmp = (order[a.compliance] ?? 0) - (order[b.compliance] ?? 0)
     }
     return sortDir === 'asc' ? cmp : -cmp
   })
@@ -322,8 +295,6 @@ export default function IngredientsPage() {
       })
       return uniqueSuppliers.length
     })(),
-    inReview: ingredients.filter(i => i.status === 'review').length,
-    compliant: ingredients.filter(i => i.compliance === 'compliant').length,
   }
 
   // Handle delete
@@ -337,7 +308,7 @@ export default function IngredientsPage() {
       const response = await fetch('/api/ingredients', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...orig, id: undefined, name: t('ingredientsPortal.copyOfIngredient', { name }), status: 'active' })
+        body: JSON.stringify({ ...orig, id: undefined, duplicate_from_id: id, name: t('ingredientsPortal.copyOfIngredient', { name }), status: 'active' })
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error || 'Failed to duplicate')
@@ -405,17 +376,17 @@ export default function IngredientsPage() {
       <div role="alert" className="rounded-lg border border-amber-300 bg-amber-50 p-6 text-amber-950">
         <p>{t('regularLists.loadFailed')}</p><Button className="mt-3" onClick={() => fetchIngredients()}>{t('regularLists.retry')}</Button>
       </div>
-      <IngredientDraftList returnTo={ingredientListReturnPath} />
+
     </Container>
   )
 
   return (
     <Container>
-      <ManagementListHeader title={t('admin.ingredientsManagement')} description={t('admin.manageAllergenIngredients')} icon={Package} addHref={newIngredientHref} addLabel={t('regularLists.addIngredient')} stats={[{ label: t('admin.ingredients'), value: stats.total }, { label: t('admin.withAllergens'), value: stats.withAllergens }, { label: t('admin.suppliers'), value: stats.suppliers }]} />
+      <ManagementListHeader title={t('admin.ingredientsManagement')} description={t('reminders.ingredientsHelp')} icon={Package} stats={[{ label: t('admin.ingredients'), value: stats.total }, { label: t('admin.withAllergens'), value: stats.withAllergens }, { label: t('admin.suppliers'), value: stats.suppliers }]} />
       {loadError && <div role="alert" className="mb-4 rounded-lg border border-amber-300 p-4">
         <p>{t('regularLists.loadFailed')}</p><Button onClick={() => fetchIngredients()}>{t('regularLists.retry')}</Button>
       </div>}
-      <IngredientDraftList returnTo={ingredientListReturnPath} />
+
       {/* Actions Bar */}
       <Card className="mb-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -548,7 +519,7 @@ export default function IngredientsPage() {
                 >
                   <option value="all">{t('admin.allStatus')}</option>
                   <option value="active">{t('admin.active')}</option>
-                  <option value="review">{t('admin.inReview')}</option>
+
                   <option value="archived">{t('admin.archived')}</option>
                 </select>
               </div>
@@ -700,17 +671,7 @@ export default function IngredientsPage() {
                   </td>
                   <td className="w-1/4 py-3 px-4">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${
-                        ingredient.compliance === 'compliant' ? 'bg-emerald-100 dark:bg-emerald-900/20' :
-                        ingredient.compliance === 'warning' ? 'bg-amber-100 dark:bg-amber-900/20' :
-                        'bg-red-100 dark:bg-red-900/20'
-                      }`}>
-                        <Package className={`h-5 w-5 ${
-                          ingredient.compliance === 'compliant' ? 'text-emerald-600' :
-                          ingredient.compliance === 'warning' ? 'text-amber-600' :
-                          'text-red-600'
-                        }`} />
-                      </div>
+                      <div className="p-2 rounded-lg bg-teal-100 dark:bg-teal-900/20"><Package className="h-5 w-5 text-teal-700 dark:text-teal-300" /></div>
                       <div>
                         <div className="font-medium text-gray-900 dark:text-white">{ingredient.name}</div>
                         <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -924,7 +885,7 @@ export default function IngredientsPage() {
                     <Badge
                       variant={
                         ingredient.status === 'active' ? 'success' :
-                        ingredient.status === 'review' ? 'warning' :
+                        ingredient.status === 'inactive' ? 'warning' :
                         'default'
                       }
                     >
@@ -1061,11 +1022,7 @@ export default function IngredientsPage() {
           {(searchTerm || selectedAllergen !== 'all' || selectedCertification !== 'all' || selectedStatus !== 'all' || selectedCategory !== 'all') && (
             <Button className="mr-3" variant="outline" onClick={() => { setSearchTerm(''); setSelectedAllergen('all'); setSelectedCertification('all'); setSelectedStatus('all'); setSelectedCategory('all') }}>{t('admin.clearFilters')}</Button>
           )}
-          <Link href={newIngredientHref}>
-            <Button variant="primary" icon={Plus}>
-              {ingredients.length ? t('admin.createNewIngredient') : t('admin.addFirstIngredient')}
-            </Button>
-          </Link>
+
         </div>
       )}
     </Card>
@@ -1136,7 +1093,6 @@ export default function IngredientsPage() {
                       window.open(datasheet.file_path, '_blank')
                     }
                   }}
-                  onMarkReviewed={(datasheet) => console.log('Mark reviewed:', datasheet)}
                 />
               )}
             </div>

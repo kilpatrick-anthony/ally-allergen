@@ -2,23 +2,22 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import * as Dialog from '@radix-ui/react-dialog'
 import { ChefHat, MapPin, Package, Plus, ShoppingBasket, Truck, X } from 'lucide-react'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import type { QuickAddKind } from '@/lib/quick-add'
 
-export default function QuickAddEntry({ initialKind = 'ingredient', siteId, floating = false, showDrafts = true }: { initialKind?: QuickAddKind; siteId?: string | null; onSaved?: () => void; floating?: boolean; showDrafts?: boolean }) {
+export default function QuickAddEntry({ siteId }: { siteId?: string | null }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [mounted, setMounted] = useState(false)
   const trigger = useRef<HTMLButtonElement>(null)
   const { t } = useTranslation()
   const router = useRouter()
   useEffect(() => setMounted(true), [])
-  const openCapture = (kind: QuickAddKind) => openPage(`/admin/quick-add/new?${new URLSearchParams({ kind, ...(siteId ? { site: siteId } : {}) })}`)
+  const openCapture = (kind: QuickAddKind) => openPage(`${kind === 'ingredient' ? '/admin/ingredients/new' : '/admin/menu-builder/new'}?${new URLSearchParams({ ...(kind === 'packaged_product' ? { type: 'packaged_product' } : {}), ...(siteId ? { site: siteId } : {}) })}`)
   const openPage = (href: string) => { setMenuOpen(false); router.push(href) }
-  if (floating) return mounted ? createPortal(<>
+  return mounted ? createPortal(<>
     <Dialog.Root open={menuOpen} onOpenChange={setMenuOpen}>
       <Dialog.Trigger asChild>
         <button ref={trigger} type="button" aria-label={t('quickAdd.addMenuTitle')} title={t('quickAdd.addMenuTitle')}
@@ -44,10 +43,6 @@ export default function QuickAddEntry({ initialKind = 'ingredient', siteId, floa
       </Dialog.Portal>
     </Dialog.Root>
   </>, document.body) : null
-  return <div className="flex flex-wrap items-center gap-3">
-    <Link href={`/admin/quick-add/new?${new URLSearchParams({ kind: initialKind, ...(siteId ? { site: siteId } : {}) })}`} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-teal-700 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-teal-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600"><Plus className="h-5 w-5" aria-hidden="true" />{t('quickAdd.title')}</Link>
-    {showDrafts && <Link className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-[#003842] underline dark:text-[#42b8ac]" href="/admin/quick-add">{t('quickAdd.drafts')}</Link>}
-  </div>
 }
 
 function LauncherAction({ icon: Icon, label, onClick }: { icon: typeof Package; label: string; onClick: () => void }) {

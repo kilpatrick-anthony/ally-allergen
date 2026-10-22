@@ -278,11 +278,11 @@ export default function ViewMenuItemPage() {
                     <Badge
                       variant={
                         menuItem.status === 'active' ? 'success' :
-                        menuItem.status === 'draft' ? 'warning' :
+                        menuItem.status === 'inactive' ? 'warning' :
                         'default'
                       }
                     >
-                      {t(`admin.${menuItem.status || 'draft'}`)}
+                      {t(`admin.${menuItem.status || 'inactive'}`)}
                     </Badge>
                   </div>
                 </div>

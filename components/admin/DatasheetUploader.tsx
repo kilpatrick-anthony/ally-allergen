@@ -421,19 +421,7 @@ export default function DatasheetUploader({
                               />
                             </div>
                           </div>
-                          <div>
-                            <label htmlFor={`${uploaderId}-${index}-review`} className="block text-xs font-medium text-gray-700 mb-1">
-                              <Calendar className="inline h-3 w-3 mr-1" />
-                              {t('ingredientsPortal.nextReviewDate')}
-                            </label>
-                            <input
-                              type="date"
-                              id={`${uploaderId}-${index}-review`}
-                                value={file.next_review_date || ''}
-                              onChange={(e) => updateFileMetadata(index, { next_review_date: e.target.value })}
-                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                            />
-                          </div>
+
                           <div>
                             <label htmlFor={`${uploaderId}-${index}-notes`} className="block text-xs font-medium text-gray-700 mb-1">
                               {t('ingredientsPortal.notes')}

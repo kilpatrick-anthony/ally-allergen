@@ -23,7 +23,6 @@ import { generateAllergenTablePDF } from '@/lib/pdf/allergenTablePDF'
 import { generateIngredientsReportPDF } from '@/lib/pdf/ingredientsReportPDF'
 import { generateMenuItemsReportPDF } from '@/lib/pdf/menuItemsReportPDF'
 import { generateSuppliersReportPDF } from '@/lib/pdf/suppliersReportPDF'
-import { generateComplianceReportPDF } from '@/lib/pdf/complianceReportPDF'
 import { generateSiteOverviewReportPDF } from '@/lib/pdf/siteOverviewReportPDF'
 import { generateAuditLogReportPDF } from '@/lib/pdf/auditLogReportPDF'
 
@@ -46,7 +45,6 @@ export default function DownloadsPage() {
   const [ingredientsReportLoading, setIngredientsReportLoading] = useState(false)
   const [menuItemsReportLoading, setMenuItemsReportLoading] = useState(false)
   const [suppliersReportLoading, setSuppliersReportLoading] = useState(false)
-  const [complianceReportLoading, setComplianceReportLoading] = useState(false)
   const [siteOverviewReportLoading, setSiteOverviewReportLoading] = useState(false)
   const [auditReportLoading, setAuditReportLoading] = useState(false)
 
@@ -361,54 +359,6 @@ export default function DownloadsPage() {
     }
   }
 
-  const handleGenerateComplianceReport = async () => {
-    if (!dataLoaded) {
-      setGuideError(t('admin.loadingBusinessData'))
-      return
-    }
-
-    if (!business) {
-      setGuideError(t('admin.noBusinessFoundSupport'))
-      return
-    }
-
-    if (ingredients.length === 0) {
-      setGuideError(t('admin.noIngredientsCompliance'))
-      return
-    }
-
-    try {
-      setComplianceReportLoading(true)
-      setGuideError(null)
-
-      const response = await fetch('/api/pdf/track-download', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          downloadType: 'compliance_report',
-          siteId: null
-        })
-      })
-
-      const result = await response.json()
-
-      if (!response.ok || !result.allowed) {
-        throw new Error(result.error || t('admin.pdfDownloadLimitReached'))
-      }
-
-      // Generate compliance report PDF
-      await generateComplianceReportPDF({
-        business,
-        ingredients
-      })
-
-    } catch (err: any) {
-      setGuideError(err?.message || t('admin.failedGenerateComplianceReport'))
-    } finally {
-      setComplianceReportLoading(false)
-    }
-  }
-
   const handleGenerateSiteOverviewReport = async () => {
     if (!dataLoaded) {
       setGuideError(t('admin.loadingBusinessData'))
@@ -539,7 +489,7 @@ export default function DownloadsPage() {
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t('admin.downloadsReports')}</h1>
                 <p className="text-gray-600 dark:text-gray-300">
-                  {t('admin.downloadsReportsDesc')}
+                  {t('reminders.downloadsHelp')}
                 </p>
               </div>
             </div>
@@ -767,7 +717,7 @@ export default function DownloadsPage() {
           </div>
         </Card>
 
-        {/* Compliance & Analytics */}
+        {/* Reports & Analytics */}
         <Card>
           <div className="p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-3">
@@ -775,32 +725,13 @@ export default function DownloadsPage() {
                 <Shield className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('admin.complianceAnalytics')}</h2>
-                <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.complianceAnalyticsDesc')}</p>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">{t('admin.downloadsReports')}</h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">{t('reminders.downloadsHelp')}</p>
               </div>
             </div>
           </div>
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="flex flex-col justify-between space-y-3 min-h-[120px]">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-purple-500" />
-                    <h3 className="font-medium text-gray-900 dark:text-white">{t('admin.complianceReportTitle')}</h3>
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">{t('admin.complianceReportDesc')}</p>
-                </div>
-                <Button
-                  variant="secondary"
-                  icon={<Shield className="h-4 w-4" />}
-                  size="md"
-                  fullWidth
-                  onClick={handleGenerateComplianceReport}
-                  disabled={complianceReportLoading}
-                >
-                  {complianceReportLoading ? t('admin.generating') : t('admin.generateReport')}
-                </Button>
-              </div>
 
               <div className="flex flex-col justify-between space-y-3 min-h-[120px]">
                 <div className="space-y-3">

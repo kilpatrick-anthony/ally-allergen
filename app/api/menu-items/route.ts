@@ -1,3 +1,4 @@
+import { sourceDatasheets, copyDatasheets } from '@/lib/server/duplicate-datasheets'
 import { getJwtSecret } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
@@ -102,7 +103,7 @@ export async function GET(request: NextRequest) {
     const mappedItems = (menuItems || []).map((item) => ({
       ...item,
       // Transform is_active to status for consistent UI display
-      status: item.is_active ? 'active' : 'draft',
+      status: item.is_active ? 'active' : 'inactive',
       ingredients: ingredientsByMenuItem.get(item.id) || []
     }))
 
@@ -168,13 +169,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validationError.message }, { status: 400 })
     }
 
-    const activating = body.status ? body.status === 'active' : body.is_active === true
+    const activating = true
     const activationComplete = typeof body.description === 'string' && Boolean(body.description.trim()) && safety.assessmentComplete && (productFields.item_type === 'prepared'
       ? ingredients.length > 0
-      : Boolean(productFields.supplier_id && productFields.ingredient_declaration && productFields.label_verified_at))
+      : Boolean(productFields.supplier_id && productFields.ingredient_declaration))
     if (activating && !activationComplete) {
       return NextResponse.json({ error: 'Complete the allergen assessment and source details before making this menu item active.', errorCode: 'completeMenu' }, { status: 400 })
     }
+
+    let copiedSheets
+    try { copiedSheets = await sourceDatasheets(supabase, businessId, 'menu_item', body.duplicate_from_id) }
+    catch (error: any) { return NextResponse.json({ error: error.message }, { status: 400 }) }
 
     const insertPayload = {
       business_id: businessId,
@@ -238,6 +243,13 @@ export async function POST(request: NextRequest) {
       await supabase.from('menu_items').delete().eq('id', menuItem.id).eq('business_id', businessId)
       console.error('Error linking menu item ingredients:', ingredientError)
       return NextResponse.json({ error: ingredientError.message }, { status: 500 })
+    }
+
+    try {
+      await copyDatasheets(supabase, businessId, 'menu_item', menuItem.id, userId, copiedSheets)
+    } catch (error) {
+      await supabase.from('menu_items').delete().eq('id', menuItem.id).eq('business_id', businessId)
+      throw error
     }
 
     await recordAuditLog(supabase, {
