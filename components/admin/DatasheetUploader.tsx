@@ -7,7 +7,7 @@ import { Button } from '../ui/Button'
 import { Badge } from '../ui/Badge'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 
-interface DatasheetFile {
+export interface DatasheetFile {
   id?: string
   file?: File
   file_name: string
@@ -22,6 +22,8 @@ interface DatasheetFile {
 }
 
 interface DatasheetUploaderProps {
+  uploadDescription?: string
+  emptyMessage?: string
   disabled?: boolean
   entityType: 'ingredient' | 'menu_item'
   entityId?: string
@@ -33,6 +35,8 @@ interface DatasheetUploaderProps {
 }
 
 export default function DatasheetUploader({
+  uploadDescription,
+  emptyMessage,
   entityType,
   disabled = false,
   entityId,
@@ -267,7 +271,7 @@ export default function DatasheetUploader({
 
         {files.length === 0 && (
           <p className="text-sm text-gray-500 italic">
-            {t('ingredientsPortal.noDatasheetsYet')}
+            {emptyMessage ?? t('ingredientsPortal.noDatasheetsYet')}
           </p>
         )}
       </div>
@@ -305,7 +309,7 @@ export default function DatasheetUploader({
             {t('ingredientsPortal.dropFiles')}
           </p>
           <p className="text-sm text-gray-500 mb-4">
-            {t('ingredientsPortal.uploadDocumentsHelp')}
+            {uploadDescription ?? t('ingredientsPortal.uploadDocumentsHelp')}
           </p>
           <Button
             type="button"
@@ -485,7 +489,7 @@ export default function DatasheetUploader({
         <div className="text-center py-4">
           <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
           <p className="text-sm text-gray-500">
-            {t('ingredientsPortal.noDatasheetsYet')}
+            {emptyMessage ?? t('ingredientsPortal.noDatasheetsYet')}
           </p>
         </div>
       )}

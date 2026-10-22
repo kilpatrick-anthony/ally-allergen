@@ -27,7 +27,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import AllergenWarningSelector from '@/components/admin/AllergenWarningSelector'
 import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay'
-import DatasheetUploader from '@/components/admin/DatasheetUploader'
+import MenuItemDatasheets from '@/components/admin/MenuItemDatasheets'
 import { ReviewFrequencySelector } from '@/components/admin/ReviewFrequencySelector'
 import { MenuItemSupplyFields, type MenuItemType, type SupplierOption } from '@/components/admin/MenuItemSupplyFields'
 import type { AllergenWarnings } from '@/types/allergen'
@@ -115,7 +115,6 @@ export default function EditMenuItemPage() {
   const [datasheetsTouched, setDatasheetsTouched] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success' | 'error'>('idle')
   const [saveMessage, setSaveMessage] = useState('')
-  const [loadingIngredientDatasheets, setLoadingIngredientDatasheets] = useState(false)
   const [uploadingIcon, setUploadingIcon] = useState(false)
 
   const DEFAULT_MENU_CATEGORIES = [
@@ -242,34 +241,6 @@ export default function EditMenuItemPage() {
       fetchExistingDatasheets()
     }
   }, [itemId])
-
-  // Load ingredient datasheets
-  useEffect(() => {
-    if (!menuItem || menuItem.ingredients.length === 0) {
-      return
-    }
-
-    const fetchIngredientDatasheets = async () => {
-      try {
-        setLoadingIngredientDatasheets(true)
-        const params = new URLSearchParams({
-          ingredientIds: menuItem.ingredients.join(',')
-        })
-        const response = await fetch(`/api/datasheets?${params.toString()}`)
-        const data = await response.json()
-
-        if (!response.ok) {
-          throw new Error((data.errorCode === 'completeMenu' ? t('reminders.completeMenu') : data.error) || 'Failed to fetch datasheets')
-        }
-      } catch (error: any) {
-        console.error('Error loading ingredient datasheets:', error)
-      } finally {
-        setLoadingIngredientDatasheets(false)
-      }
-    }
-
-    fetchIngredientDatasheets()
-  }, [menuItem?.ingredients])
 
   const handleIngredientSelect = (ingredientId: string) => {
     if (!menuItem) return
@@ -587,20 +558,10 @@ export default function EditMenuItemPage() {
 
             {/* Datasheets */}
             <Card className="p-6">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                {t('admin.menuItemSpecificDatasheets')}
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                {t('admin.menuItemDatasheetsDesc')}
-              </p>
-              <DatasheetUploader
-              disabled={saving || deleting}
-                entityType="menu_item"
-                existingDatasheets={existingDatasheets}
-                onFilesChange={handleDatasheetsChange}
-                maxFiles={5}
-                compact={false}
-              />
+              <MenuItemDatasheets itemType={menuItem.item_type}
+                ingredients={menuItem.ingredients.map(id => ({ id, name: ingredients.find(ingredient => ingredient.id === id)?.name || t('complianceDocuments.ingredient') }))}
+                existingDatasheets={existingDatasheets} onFilesChange={handleDatasheetsChange}
+                disabled={saving || deleting} maxFiles={5} />
             </Card>
 
             {/* Status Toggle */}

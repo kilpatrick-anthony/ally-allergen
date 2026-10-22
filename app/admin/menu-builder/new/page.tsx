@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import AllergenWarningDisplay from '@/components/kiosk/AllergenWarningDisplay'
 import AllergenWarningSelector from '@/components/admin/AllergenWarningSelector'
-import DatasheetUploader from '@/components/admin/DatasheetUploader'
+import MenuItemDatasheets from '@/components/admin/MenuItemDatasheets'
 import { MenuItemSupplyFields, type MenuItemType, type SupplierOption } from '@/components/admin/MenuItemSupplyFields'
 import { ReviewFrequencySelector } from '@/components/admin/ReviewFrequencySelector'
 import type { AllergenWarnings } from '@/types/allergen'
@@ -455,8 +455,9 @@ function NewMenuItemForm() {
               <MenuDietaryFields prepared={menuItem.item_type === 'prepared'} value={menuItem.dietary} onChange={dietary => setMenuItem(current => ({ ...current, dietary }))} />
             </Card>
             <Card className="p-6">
-              <h2 className="mb-4 text-sm font-semibold text-gray-900 dark:text-white">{t('admin.menuItemSpecificDatasheets')}</h2>
-              <DatasheetUploader entityType="menu_item" onFilesChange={setDatasheets} />
+              <MenuItemDatasheets itemType={menuItem.item_type}
+                ingredients={menuItem.ingredients.map(id => ({ id, name: ingredients.find(ingredient => ingredient.id === id)?.name || t('complianceDocuments.ingredient') }))}
+                onFilesChange={setDatasheets} disabled={saving} />
             </Card>
 
 
