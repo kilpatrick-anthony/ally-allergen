@@ -155,7 +155,11 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
   const renderToCanvas = (deployment: QRDeployment) => new Promise<HTMLCanvasElement>((resolve, reject) => {
     const svg = document.getElementById(`managed-qr-${deployment.id}`)
     if (!(svg instanceof SVGElement)) return reject(new Error(t('accessPoints.previewUnavailable')))
-    const source = new XMLSerializer().serializeToString(svg)
+    // Rasterize the SVG at export resolution instead of enlarging its 112px preview.
+    const exportSvg = svg.cloneNode(true) as SVGElement
+    exportSvg.setAttribute('width', '1024')
+    exportSvg.setAttribute('height', '1024')
+    const source = new XMLSerializer().serializeToString(exportSvg)
     const image = new Image()
     const objectUrl = URL.createObjectURL(new Blob([source], { type: 'image/svg+xml;charset=utf-8' }))
     image.onload = () => {
@@ -195,21 +199,22 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
 
   const downloadPDF = async (deployment: QRDeployment) => {
     try {
-      const [{ default: jsPDF }, canvas] = await Promise.all([
-        import('jspdf'),
+      setError(null)
+      const [{ createQrSignPDF, QR_SIGN_TEMPLATE_URL }, canvas] = await Promise.all([
+        import('@/lib/pdf/qrSignPDF'),
         renderToCanvas(deployment),
       ])
-      const pdf = new jsPDF({ unit: 'mm', format: 'a4' })
-      pdf.setTextColor('#003842')
-      pdf.setFontSize(24)
-      pdf.text(t('accessPoints.signTitle'), 105, 35, { align: 'center' })
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 45, 55, 120, 120)
-      pdf.setFontSize(16)
-      pdf.text(deployment.site?.name || siteName || '', 105, 190, { align: 'center' })
-      pdf.setFontSize(11)
-      pdf.setTextColor('#4b5563')
-      pdf.text(t('accessPoints.signDescription'), 105, 202, { align: 'center' })
-      pdf.save(`${deployment.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'allergen-menu'}-sign.pdf`)
+      const response = await fetch(QR_SIGN_TEMPLATE_URL)
+      if (!response.ok) throw new Error(t('accessPoints.signError'))
+      const bytes = await createQrSignPDF(await response.arrayBuffer(), canvas.toDataURL('image/png'))
+      const blob = new Blob([new Uint8Array(bytes)], { type: 'application/pdf' })
+      const objectUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = objectUrl
+      link.download = `${deployment.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'allergen-menu'}-sign.pdf`
+      link.click()
+      // Let the browser begin the download before releasing the PDF data.
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
     } catch (downloadError: any) {
       setError(downloadError.message || t('accessPoints.signError'))
     }
@@ -263,7 +268,7 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
             return (
               <Card key={deployment.id}>
                 <div className="flex gap-4">
-                  <div className="shrink-0 rounded-xl border border-gray-200 bg-white p-2"><QRCodeSVG id={`managed-qr-${deployment.id}`} value={url} size={112} level="H" fgColor="#003842" /></div>
+                  <div className="shrink-0 rounded-xl border border-gray-200 bg-white p-2"><QRCodeSVG id={`managed-qr-${deployment.id}`} value={url} size={112} marginSize={4} level="H" fgColor="#003842" /></div>
                   <div className="min-w-0 flex-1"><div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><h3 className="truncate font-semibold text-gray-900">{deployment.name}</h3><p className="text-xs text-gray-500">{deployment.site?.name || siteName}{deployment.placement ? ` · ${deployment.placement}` : ''}</p></div><Badge variant={deployment.status === 'active' ? 'success' : 'default'}>{deployment.status === 'active' ? t('accessPoints.active') : t('accessPoints.inactive')}</Badge></div><p className="mt-3 break-all text-xs text-gray-500">{url}</p><div className="mt-3 flex gap-4 text-xs text-gray-600"><span><strong>{deployment.scan_count}</strong> {t('accessPoints.scans')}</span><span>{deployment.last_scanned_at ? t('accessPoints.lastScanned', { date: new Date(deployment.last_scanned_at).toLocaleDateString(language) }) : t('accessPoints.notScanned')}</span></div></div>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
