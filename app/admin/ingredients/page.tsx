@@ -1,6 +1,8 @@
 // app/admin/ingredients/page.tsx - Enhanced with Design System
 'use client'
 
+import { orderSubcategories, startsSubcategory } from '@/lib/item-category-tree'
+import { CategoryRenameButton } from '@/components/admin/CategoryRenameButton'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { ManagementListHeader } from '@/components/admin/ManagementListHeader'
@@ -50,6 +52,7 @@ interface Allergen {
 interface Ingredient {
   id: string
   name: string
+  subcategory?: string | null
   category: string
   suppliers: string[]
   allergens: Allergen[]
@@ -184,6 +187,7 @@ export default function IngredientsPage() {
             id: ing.id,
             name: ing.name,
             category: ing.category || '',
+            subcategory: ing.subcategory || '',
             suppliers: ing.suppliers || [],
             allergens: ALLERGEN_LIST.flatMap(({ id }) => {
               const value = ing.allergen_warnings?.[id]
@@ -264,7 +268,9 @@ export default function IngredientsPage() {
     if (!acc[cat]) acc[cat] = []
     acc[cat].push(item)
     return acc
-  }, {} as Record<string, typeof sortedIngredients>)
+  }, Object.create(null) as Record<string, typeof sortedIngredients>)
+
+  if (sortBy !== 'date') for (const key of Object.keys(groupedIngredients)) groupedIngredients[key] = orderSubcategories(groupedIngredients[key])
 
   const categoryOrder = Object.keys(groupedIngredients).sort((a, b) => {
     if (a === 'Uncategorized') return 1
@@ -645,11 +651,11 @@ export default function IngredientsPage() {
                       <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                         {cat}
                         <span className="ml-2 text-gray-400 font-normal normal-case tracking-normal">({groupedIngredients[cat].length})</span>
-                      </span>
+                      </span>{sortBy !== 'date' && <CategoryRenameButton kind="ingredients" category={groupedIngredients[cat][0].category || ''} onSaved={() => { setSelectedCategory('all'); return fetchIngredients(false) }} />}
                     </td>
                   </tr>
-                  {groupedIngredients[cat].map((ingredient) => (
-                <tr
+                  {groupedIngredients[cat].map((ingredient, categoryIndex) => (
+                <React.Fragment key={ingredient.id}>{sortBy !== 'date' && startsSubcategory(groupedIngredients[cat], categoryIndex) && <tr><td colSpan={7} className="py-2 pl-8 bg-gray-50 dark:bg-gray-700/30"><span className="font-semibold text-sm">{ingredient.subcategory}</span><CategoryRenameButton kind="ingredients" category={ingredient.category || ''} subcategory={ingredient.subcategory || ''} onSaved={() => { setSelectedCategory('all'); return fetchIngredients(false) }} /></td></tr>}<tr
                   key={ingredient.id}
                   className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
                 >
@@ -922,7 +928,7 @@ export default function IngredientsPage() {
                       )}
                     </div>
                   </td>
-                </tr>
+                </tr></React.Fragment>
                   ))}
                 </React.Fragment>
               ))}
@@ -934,13 +940,13 @@ export default function IngredientsPage() {
           {categoryOrder.map(cat => (
             <div key={cat}>
               <div className="flex items-center gap-2 mb-4">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{cat}</h3>
+                <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{cat}</h3>{sortBy !== 'date' && <CategoryRenameButton kind="ingredients" category={groupedIngredients[cat][0].category || ''} onSaved={() => { setSelectedCategory('all'); return fetchIngredients(false) }} />}
                 <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-full px-2 py-0.5">{groupedIngredients[cat].length}</span>
                 <div className="flex-1 border-t border-gray-200 dark:border-gray-700 ml-1" />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {groupedIngredients[cat].map((ingredient) => (
-            <div
+          {groupedIngredients[cat].map((ingredient, categoryIndex) => (
+            <React.Fragment key={ingredient.id}>{sortBy !== 'date' && startsSubcategory(groupedIngredients[cat], categoryIndex) && <div className="col-span-full flex items-center gap-2 pl-4 border-l-2 border-[#42b8ac]"><span className="font-semibold text-sm">{ingredient.subcategory}</span><CategoryRenameButton kind="ingredients" category={ingredient.category || ''} subcategory={ingredient.subcategory || ''} onSaved={() => { setSelectedCategory('all'); return fetchIngredients(false) }} /></div>}<div
               key={ingredient.id}
               className="border border-gray-200 dark:border-gray-700 rounded-lg p-5 hover:shadow-lg transition-shadow bg-white dark:bg-gray-800 flex flex-col h-full"
             >
@@ -999,7 +1005,7 @@ export default function IngredientsPage() {
                   <Button variant="ghost" size="sm" icon={Trash2} onClick={() => handleDelete(ingredient.id)} title={t('admin.delete')} />
                 )}
               </div>
-            </div>
+            </div></React.Fragment>
           ))}
               </div>
             </div>

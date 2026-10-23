@@ -1,3 +1,4 @@
+import { categoryFields } from '@/lib/item-category-tree'
 import { isIngredientAssessmentComplete } from '@/lib/allergen-assessment'
 import { getJwtSecret } from '@/lib/auth'
 // app/api/ingredients/[id]/route.ts
@@ -152,6 +153,8 @@ export async function PUT(
 
     if (!previousIngredient) return NextResponse.json({ error: 'Ingredient not found' }, { status: 404 })
 
+    let itemCategories
+    try { itemCategories = categoryFields(body, previousIngredient) } catch (error: any) { return NextResponse.json({ error: error.message }, { status: 400 }) }
     const normalizedSuppliers = normalizeSupplierNames(Array.isArray(suppliers) ? suppliers : [])
     const completeProfiles = buildCompleteSupplierProfiles(
       normalizedSuppliers,
@@ -182,7 +185,7 @@ export async function PUT(
       status: 'active',
       name,
       description: description || '',
-      category: category || '',
+      ...itemCategories,
       allergen_warnings: effectiveAllergens,
       suppliers: normalizedSuppliers,
       certifications: effectiveCertifications,
@@ -222,6 +225,7 @@ export async function PUT(
             name: previousIngredient.name,
             description: previousIngredient.description,
             category: previousIngredient.category,
+            subcategory: previousIngredient.subcategory,
             allergen_warnings: previousIngredient.allergen_warnings,
             suppliers: previousIngredient.suppliers,
             certifications: previousIngredient.certifications,

@@ -249,7 +249,7 @@ export default function ViewIngredientPage() {
               {ingredient.category && (
                 <div>
                   <label className="text-sm font-medium text-gray-500">{t('admin.category')}</label>
-                  <p className="text-gray-900 mt-1">{ingredient.category}</p>
+                  <p className="text-gray-900 mt-1">{ingredient.category}{ingredient.subcategory ? ` / ${ingredient.subcategory}` : ''}</p>
                 </div>
               )}
 

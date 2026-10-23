@@ -1,3 +1,4 @@
+import { categoryFields } from '@/lib/item-category-tree'
 import { sourceDatasheets, copyDatasheets } from '@/lib/server/duplicate-datasheets'
 import { getJwtSecret } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase/server'
@@ -135,6 +136,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    let itemCategories
+    try { itemCategories = categoryFields(body) } catch (error: any) { return NextResponse.json({ error: error.message }, { status: 400 }) }
 
     if (typeof body?.name !== 'string' || !body.name.trim()) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
@@ -185,7 +188,7 @@ export async function POST(request: NextRequest) {
       business_id: businessId,
       name: body.name,
       description: body.description || '',
-      category: body.category || '',
+      ...itemCategories,
       site_id: typeof body.site_id === 'string' && body.site_id.trim() !== ''
         ? body.site_id
         : null,

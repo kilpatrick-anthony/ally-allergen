@@ -1,3 +1,4 @@
+import { categorySections } from '@/lib/item-category-tree'
 import { menuItemSourceLines } from './menuItemSource'
 // lib/pdf/menuItemsReportPDF.ts - Generate PDF report for menu items list
 
@@ -61,22 +62,10 @@ export async function generateMenuItemsReportPDF(options: MenuItemsReportOptions
   doc.text(`Generated: ${new Date().toLocaleDateString()}  •  Total Menu Items: ${menuItems.length}`, pageWidth / 2, y, { align: 'center' })
   y += 10
 
-  // Group menu items by category
-  const grouped = menuItems.reduce((acc: Record<string, any[]>, item) => {
-    const cat = item.category || 'Uncategorized'
-    if (!acc[cat]) acc[cat] = []
-    acc[cat].push(item)
-    return acc
-  }, {})
-
-  const categoryOrder = Object.keys(grouped).sort((a, b) => {
-    if (a === 'Uncategorized') return 1
-    if (b === 'Uncategorized') return -1
-    return a.localeCompare(b)
-  })
-
-  for (let catIndex = 0; catIndex < categoryOrder.length; catIndex++) {
-    const cat = categoryOrder[catIndex]
+  const sections = categorySections(menuItems)
+  for (let catIndex = 0; catIndex < sections.length; catIndex++) {
+    const section = sections[catIndex]
+    const cat = section.title
     // Each category starts on a new page (except the first, which follows the header)
     if (catIndex > 0) {
       doc.addPage()
@@ -90,7 +79,7 @@ export async function generateMenuItemsReportPDF(options: MenuItemsReportOptions
     doc.text(cat, 14, y)
     y += 3
 
-    const tableData = grouped[cat].map((item: any) => [
+    const tableData = section.items.map((item: any) => [
       [item.name || 'N/A', ...menuItemSourceLines(item)].join('\n'),
       item.description || 'N/A',
       item.is_active ? 'Active' : 'Inactive',

@@ -1,3 +1,4 @@
+import { categoryFields } from '@/lib/item-category-tree'
 import { sourceDatasheets, copyDatasheets } from '@/lib/server/duplicate-datasheets'
 import { isIngredientAssessmentComplete } from '@/lib/allergen-assessment'
 import { getJwtSecret } from '@/lib/auth'
@@ -131,6 +132,8 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    let itemCategories
+    try { itemCategories = categoryFields(body) } catch (error: any) { return NextResponse.json({ error: error.message }, { status: 400 }) }
     const { name, description, category, allergen_warnings, suppliers, certifications, preferred_review_months, supplier_profiles } = body
 
     if (typeof name !== 'string' || !name.trim()) {
@@ -184,7 +187,7 @@ export async function POST(request: NextRequest) {
       business_id: userBusiness.business_id,
       name,
       description: description || '',
-      category: category || '',
+      ...itemCategories,
       allergen_warnings: effectiveAllergens,
       suppliers: normalizedSuppliers,
       certifications: effectiveCertifications,

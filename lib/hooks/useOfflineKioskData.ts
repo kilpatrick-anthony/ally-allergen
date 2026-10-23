@@ -24,6 +24,7 @@ export interface MenuItem {
   name: string;
   description: string | null;
   price: number;
+  subcategory?: string | null
   category: string;
   display_order: number;
   business_id: string;
@@ -59,6 +60,7 @@ export interface Ingredient {
   business_id: string;
   name: string;
   description?: string | null;
+  subcategory?: string | null
   category?: string | null;
   allergen_warnings?: AllergenWarnings;
   suppliers?: string[];

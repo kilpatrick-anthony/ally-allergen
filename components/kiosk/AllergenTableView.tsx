@@ -1,6 +1,7 @@
 // components/kiosk/AllergenTableView.tsx
 'use client'
 
+import { orderSubcategories, startsSubcategory } from '@/lib/item-category-tree'
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import { Check, AlertCircle, AlertTriangle, Info } from 'lucide-react'
 import { ALLERGENS, getAllergensForItem, type AllergenInfo } from '@/lib/allergens'
@@ -195,6 +196,8 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
     acc[key].push(item)
     return acc
   }, {})
+
+  if (groupByCategory) for (const key of Object.keys(groupedItems)) groupedItems[key] = orderSubcategories(groupedItems[key])
 
   const orderedGroups = (Object.entries(groupedItems) as Array<[string, typeof sortedItems]>)
     .sort((a, b) => a[0].localeCompare(b[0]))
@@ -405,7 +408,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                 const stickyLeftBg = isEven ? '#f9fafb' : '#ffffff'
 
                 return (
-                  <tr key={`${item.id}-${(item as any).supplier || 'default'}`} className={rowBg}>
+                  <React.Fragment key={`${item.id}-${(item as any).supplier || 'default'}`}>{groupByCategory && startsSubcategory(groupItems, index) && <tr><td colSpan={totalColumns} className="px-6 py-2 border border-gray-300 bg-slate-50 font-semibold">{item.subcategory}</td></tr>}<tr key={`${item.id}-${(item as any).supplier || 'default'}`} className={rowBg}>
                     <td className="p-2 border border-gray-300 font-medium text-gray-900 sticky left-0 z-20" style={{ backgroundColor: stickyLeftBg }}>
                       <div>
                         <div className="font-semibold text-sm">{(item as any).displayName || item.name}</div>
@@ -528,7 +531,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                 // For other allergens, just render the main column
                 return renderCell(allergen.id, content)
                     })}
-                  </tr>
+                  </tr></React.Fragment>
                 )
               })}
             </React.Fragment>

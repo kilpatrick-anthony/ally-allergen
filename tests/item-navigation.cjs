@@ -54,3 +54,9 @@ test('navigation messages exist in all supported languages',()=>{
  const catalog=require('./helpers/translation-catalog.cjs')
  for(const language of ['en','ga','pt','fr','es','de'])assert.deepEqual(Object.keys(catalog[language].itemNavigation),Object.keys(catalog.en.itemNavigation))
 })
+
+for (const collection of ['ingredients','menu-builder']) test(`${collection}: navigation keeps direct category items before subcategory groups`,()=>{
+ const nested=[{id:'s',name:'A syrup',category:'Drinks',subcategory:'Syrups'},{id:'m',name:'A milk',category:'Drinks',subcategory:'Milks'},{id:'c',name:'Coffee',category:'Drinks'}]
+ assert.deepEqual(ids(order(collection,nested,'')),['c','m','s'])
+ assert.deepEqual(ids(order(collection,nested,'?direction=desc')),['c','m','s'])
+})

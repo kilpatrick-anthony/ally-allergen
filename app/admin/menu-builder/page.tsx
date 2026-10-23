@@ -1,6 +1,8 @@
 // app/admin/menu-builder/page.tsx - List View Only
 'use client'
 
+import { orderSubcategories, startsSubcategory } from '@/lib/item-category-tree'
+import { CategoryRenameButton } from '@/components/admin/CategoryRenameButton'
 import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { ManagementListHeader } from '@/components/admin/ManagementListHeader'
@@ -24,6 +26,7 @@ interface MenuItem {
   createdAt: string | null
   name: string
   description: string
+  subcategory?: string | null
   category: string
   site_id?: string | null
   icon?: string
@@ -42,7 +45,7 @@ interface SiteOption {
 function normalizeMenuItem(item: any): MenuItem {
   return {
     id: item.id, createdAt: item.created_at || null, name: item.name,
-    description: item.description || '', category: item.category || '',
+    description: item.description || '', category: item.category || '', subcategory: item.subcategory || '',
     site_id: item.site_id ?? null, icon: item.icon || '',
     allergen_warnings: item.allergen_warnings || {} as AllergenWarnings,
     dietary: Array.isArray(item.dietary) ? item.dietary : [],
@@ -193,7 +196,9 @@ export default function MenuBuilderPage() {
     if (!acc[cat]) acc[cat] = []
     acc[cat].push(item)
     return acc
-  }, {} as Record<string, typeof filteredItems>)
+  }, Object.create(null) as Record<string, typeof filteredItems>)
+
+  if (sortBy !== 'date') for (const key of Object.keys(groupedMenuItems)) groupedMenuItems[key] = orderSubcategories(groupedMenuItems[key])
 
   const menuCategoryOrder = Object.keys(groupedMenuItems).sort((a, b) => {
     const uncategorizedLabel = t('admin.uncategorized')
@@ -430,13 +435,13 @@ export default function MenuBuilderPage() {
             {menuCategoryOrder.map(cat => (
               <div key={cat}>
                 <div className="flex items-center gap-2 mb-4">
-                  <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{cat}</h3>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{cat}</h3>{sortBy !== 'date' && <CategoryRenameButton kind="menu-items" category={groupedMenuItems[cat][0].category || ''} onSaved={() => { setCategoryFilter('all'); return fetchData() }} />}
                   <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-full px-2 py-0.5">{groupedMenuItems[cat].length}</span>
                   <div className="flex-1 border-t border-gray-200 dark:border-gray-700 ml-1" />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {groupedMenuItems[cat].map((item) => (
-              <div
+            {groupedMenuItems[cat].map((item, categoryIndex) => (
+              <React.Fragment key={item.id}>{sortBy !== 'date' && startsSubcategory(groupedMenuItems[cat], categoryIndex) && <div className="col-span-full flex items-center gap-2 pl-4 border-l-2 border-[#42b8ac]"><span className="font-semibold text-sm">{item.subcategory}</span><CategoryRenameButton kind="menu-items" category={item.category || ''} subcategory={item.subcategory || ''} onSaved={() => { setCategoryFilter('all'); return fetchData() }} /></div>}<div
                 key={item.id}
                 className="border border-gray-200 dark:border-gray-700 rounded-xl hover:shadow-lg transition-shadow bg-white dark:bg-gray-800 flex flex-col [content-visibility:auto] [contain-intrinsic-size:auto_240px]"
               >
@@ -502,7 +507,7 @@ export default function MenuBuilderPage() {
                     )}
                   </div>
                 </div>
-              </div>
+              </div></React.Fragment>
             ))}
                 </div>
               </div>
@@ -529,11 +534,11 @@ export default function MenuBuilderPage() {
                         <span className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                           {cat}
                           <span className="ml-2 text-gray-400 font-normal normal-case tracking-normal">({groupedMenuItems[cat].length})</span>
-                        </span>
+                        </span>{sortBy !== 'date' && <CategoryRenameButton kind="menu-items" category={groupedMenuItems[cat][0].category || ''} onSaved={() => { setCategoryFilter('all'); return fetchData() }} />}
                       </td>
                     </tr>
                 {groupedMenuItems[cat].map((item, idx) => (
-                  <tr key={item.id} className="border-b border-gray-200 dark:border-gray-700">
+                  <React.Fragment key={item.id}>{sortBy !== 'date' && startsSubcategory(groupedMenuItems[cat], idx) && <tr><td colSpan={6} className="py-2 pl-8 bg-gray-50 dark:bg-gray-700/30"><span className="font-semibold text-sm">{item.subcategory}</span><CategoryRenameButton kind="menu-items" category={item.category || ''} subcategory={item.subcategory || ''} onSaved={() => { setCategoryFilter('all'); return fetchData() }} /></td></tr>}<tr key={item.id} className="border-b border-gray-200 dark:border-gray-700">
                     <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-white">
                       <div className="flex items-center gap-3 min-w-0">
                         <MenuItemIcon icon={item.icon} size="sm" />
@@ -583,7 +588,7 @@ export default function MenuBuilderPage() {
                         )}
                       </div>
                     </td>
-                  </tr>
+                  </tr></React.Fragment>
                 ))}
                   </React.Fragment>
                 ))}

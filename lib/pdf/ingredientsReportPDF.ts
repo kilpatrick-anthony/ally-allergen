@@ -1,3 +1,4 @@
+import { categorySections } from '@/lib/item-category-tree'
 // lib/pdf/ingredientsReportPDF.ts - Generate PDF report for ingredients list
 
 import jsPDF from 'jspdf'
@@ -60,22 +61,10 @@ export async function generateIngredientsReportPDF(options: IngredientsReportOpt
   doc.text(`Generated: ${new Date().toLocaleDateString()}  •  Total Ingredients: ${ingredients.length}`, pageWidth / 2, y, { align: 'center' })
   y += 10
 
-  // Group ingredients by category
-  const grouped = ingredients.reduce((acc: Record<string, any[]>, ing) => {
-    const cat = ing.category || 'Uncategorized'
-    if (!acc[cat]) acc[cat] = []
-    acc[cat].push(ing)
-    return acc
-  }, {})
-
-  const categoryOrder = Object.keys(grouped).sort((a, b) => {
-    if (a === 'Uncategorized') return 1
-    if (b === 'Uncategorized') return -1
-    return a.localeCompare(b)
-  })
-
-  for (let catIndex = 0; catIndex < categoryOrder.length; catIndex++) {
-    const cat = categoryOrder[catIndex]
+  const sections = categorySections(ingredients)
+  for (let catIndex = 0; catIndex < sections.length; catIndex++) {
+    const section = sections[catIndex]
+    const cat = section.title
     // Each category starts on a new page (except the first, which follows the header)
     if (catIndex > 0) {
       doc.addPage()
@@ -89,7 +78,7 @@ export async function generateIngredientsReportPDF(options: IngredientsReportOpt
     doc.text(cat, 14, y)
     y += 3
 
-    const tableData = grouped[cat].map((ingredient: any) => [
+    const tableData = section.items.map((ingredient: any) => [
       ingredient.name || 'N/A',
       ingredient.description || 'N/A',
       ingredient.status === 'review' ? 'Inactive' : ingredient.status || 'N/A',

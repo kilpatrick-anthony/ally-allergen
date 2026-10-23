@@ -1,6 +1,7 @@
 // app/kiosk/[slug]/page.tsx - FIXED VERSION
 'use client'
 
+import { orderSubcategories, startsSubcategory } from '@/lib/item-category-tree'
 import React, { useState, useEffect, useRef } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { 
@@ -390,9 +391,12 @@ export default function KioskPage() {
   const [sendingEmail, setSendingEmail] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
   const [emailError, setEmailError] = useState('')
-  const [currentLanguage, setCurrentLanguage] = useState<LanguageCode>(
-    (typeof window !== 'undefined' ? localStorage.getItem('defaultLanguage') as LanguageCode || 'en' : 'en') as LanguageCode
-  )
+  // Match the server render, then restore the saved language after hydration.
+  const [currentLanguage, setCurrentLanguage] = useState<LanguageCode>('en')
+  useEffect(() => {
+    const saved = localStorage.getItem('defaultLanguage')
+    if (saved && Object.hasOwn(translations, saved)) setCurrentLanguage(saved as LanguageCode)
+  }, [])
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [menuViewMode, setMenuViewMode] = useState<'cards' | 'table'>('table')
@@ -1249,6 +1253,7 @@ export default function KioskPage() {
     description: ingredient.description || null,
     price: 0,
     category: ingredient.category || 'ingredients',
+    subcategory: ingredient.subcategory || '',
     display_order: index,
     business_id: ingredient.business_id,
     is_active: true,
@@ -1893,7 +1898,7 @@ export default function KioskPage() {
               ) : (
                 <div className="space-y-6">
                   {categories.map(category => {
-                    const categoryItems = filteredItems.filter(item => item.category === category)
+                    const categoryItems = orderSubcategories(filteredItems.filter(item => item.category === category))
                     if (categoryItems.length === 0) return null
 
                     return (
@@ -1902,12 +1907,12 @@ export default function KioskPage() {
                           {getCategoryDisplayName(category)}
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {categoryItems.map(item => {
+                          {categoryItems.map((item, categoryIndex) => {
                             const itemAllergens = getAllergensForItem(item)
                             const allergenDetails = ALLERGENS.filter(allergen => item[allergen.id as keyof MenuItem] === true)
 
                             return (
-                              <Card key={item.id} className="h-full border border-slate-200 shadow-md hover:shadow-lg transition-shadow overflow-hidden" style={item.color ? { borderLeftColor: item.color, borderLeftWidth: '4px', backgroundColor: `${item.color}0d` } : undefined}>
+                              <React.Fragment key={item.id}>{startsSubcategory(categoryItems, categoryIndex) && <h4 className="col-span-full text-lg font-semibold text-[#003842] pl-4 border-l-2 border-[#42b8ac]">{item.subcategory}</h4>}<Card key={item.id} className="h-full border border-slate-200 shadow-md hover:shadow-lg transition-shadow overflow-hidden" style={item.color ? { borderLeftColor: item.color, borderLeftWidth: '4px', backgroundColor: `${item.color}0d` } : undefined}>
                                 <div className="p-6">
                                   <div className="flex items-start gap-3">
                                     {item.icon && (
@@ -1968,7 +1973,7 @@ export default function KioskPage() {
                                     </div>
                                   )}
                                 </div>
-                              </Card>
+                              </Card></React.Fragment>
                             )
                           })}
                         </div>
@@ -2067,7 +2072,7 @@ export default function KioskPage() {
                 /* Card View */
                 <div className="space-y-6">
                   {categories.map(category => {
-                    const categoryItems = filteredItems.filter(item => item.category === category)
+                    const categoryItems = orderSubcategories(filteredItems.filter(item => item.category === category))
                     if (categoryItems.length === 0) return null
 
                     return (
@@ -2076,12 +2081,12 @@ export default function KioskPage() {
                           {getCategoryDisplayName(category)}
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {categoryItems.map(item => {
+                          {categoryItems.map((item, categoryIndex) => {
                             const itemAllergens = getAllergensForItem(item)
                             const allergenDetails = ALLERGENS.filter(allergen => item[allergen.id as keyof MenuItem] === true)
 
                             return (
-                              <Card key={item.id} className="h-full border border-slate-200 shadow-md hover:shadow-lg transition-shadow overflow-hidden" style={item.color ? { borderLeftColor: item.color, borderLeftWidth: '4px', backgroundColor: `${item.color}0d` } : undefined}>
+                              <React.Fragment key={item.id}>{startsSubcategory(categoryItems, categoryIndex) && <h4 className="col-span-full text-lg font-semibold text-[#003842] pl-4 border-l-2 border-[#42b8ac]">{item.subcategory}</h4>}<Card key={item.id} className="h-full border border-slate-200 shadow-md hover:shadow-lg transition-shadow overflow-hidden" style={item.color ? { borderLeftColor: item.color, borderLeftWidth: '4px', backgroundColor: `${item.color}0d` } : undefined}>
                                 <div className="p-6">
                                   <div className="flex items-start gap-3">
                                     {item.icon && (
@@ -2142,7 +2147,7 @@ export default function KioskPage() {
                                     </div>
                                   )}
                                 </div>
-                              </Card>
+                              </Card></React.Fragment>
                             )
                           })}
                         </div>

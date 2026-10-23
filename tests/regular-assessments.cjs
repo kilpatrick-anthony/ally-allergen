@@ -174,3 +174,14 @@ for (const role of ['owner','manager','staff']) test(`${role}: live saves record
   assert.equal((await s.save('ingredient','POST',{name:'Saved',allergen_warnings:s.complete})).status,200)
   assert.equal(s.audit[0].userId,'actor');assert.equal(s.audit[0].action,'created')
 })
+
+for (const entity of ['ingredient','menu']) for (const method of ['POST','PUT']) test(`${method} ${entity}: saves retain parent and subcategory, reject a child without its parent`,async()=>{
+ const s=setup()
+ const body=entity==='ingredient'?{name:'Oat milk',allergen_warnings:s.complete}:{name:'Oat drink',description:'Example',ingredients:['ingredient']}
+ const response=await s.save(entity,method,{...body,category:' Drinks ',subcategory:' Milks '})
+ assert.equal(response.status,200)
+ const saved=s.writes.find(write=>write.table===(entity==='ingredient'?'ingredients':'menu_items')).payload
+ assert.equal(saved.category,'Drinks');assert.equal(saved.subcategory,'Milks')
+ const invalid=setup();const rejected=await invalid.save(entity,method,{...body,category:'',subcategory:'Milks'})
+ assert.equal(rejected.status,400);assert.equal(invalid.writes.length,0)
+})

@@ -34,6 +34,7 @@ import {
   type SupplierProfileMap,
 } from '@/lib/ingredient-supplier-profiles'
 import { isIngredientAssessmentComplete } from '@/lib/allergen-assessment'
+import { CategoryFields } from '@/components/admin/CategoryFields'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 
 export default function EditIngredientPage() {
@@ -60,6 +61,7 @@ export default function EditIngredientPage() {
     name: '',
     description: '',
     category: '',
+    subcategory: '',
     status: 'active' as 'active' | 'review' | 'archived',
     preferred_review_months: 12,
     allergen_warnings: {} as AllergenWarnings,
@@ -168,6 +170,7 @@ export default function EditIngredientPage() {
           name: data.ingredient.name,
           description: data.ingredient.description || '',
           category: data.ingredient.category || '',
+          subcategory: data.ingredient.subcategory || '',
           status: data.ingredient.status || 'active',
           preferred_review_months: data.ingredient.preferred_review_months || 12,
           allergen_warnings: data.ingredient.allergen_warnings || ingredient.allergen_warnings,
@@ -370,25 +373,7 @@ export default function EditIngredientPage() {
                 <FormFieldError field="regular-description" issues={issues} />
               </div>
 
-              <div>
-                <label htmlFor="regular-category" className="block text-sm font-medium text-gray-700 mb-2">
-                  {t('admin.category')}
-                </label>
-                <input
-                  type="text"
-                  list="ingredient-categories"
-                  {...fieldProps('regular-category')}
-                  value={ingredient.category}
-                  onChange={(e) => setIngredient({ ...ingredient, category: e.target.value })}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
-                  placeholder={t('ingredientsPortal.categoryPlaceholder')}
-                />
-                <datalist id="ingredient-categories">
-                  {categoryOptions.map(opt => (
-                    <option key={opt} value={opt} />
-                  ))}
-                </datalist>
-              </div>
+              <CategoryFields kind="ingredients" category={ingredient.category} subcategory={ingredient.subcategory} options={categoryOptions} onChange={fields => setIngredient({ ...ingredient, ...fields })} />
             </div>
           </Card>
 

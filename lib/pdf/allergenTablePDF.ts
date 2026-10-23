@@ -1,3 +1,4 @@
+import { categorySections } from '@/lib/item-category-tree'
 import { menuItemSourceLines } from './menuItemSource'
 // lib/pdf/allergenTablePDF.ts
 // FSAI-style allergen table PDF:
@@ -615,21 +616,6 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
       })
       .sort(sortItemsByName)
 
-    // ── Helper: group items by category, Uncategorized last ──────────────────
-    const groupByCategory = (arr: MenuItem[]): Record<string, MenuItem[]> => {
-      const groups: Record<string, MenuItem[]> = {}
-      arr.forEach(item => {
-        const cat = (item as any).category?.trim() || 'Uncategorized'
-        if (!groups[cat]) groups[cat] = []
-        groups[cat].push(item)
-      })
-      return groups
-    }
-    const sortCategoryKeys = (keys: string[]): string[] => {
-      const rest = keys.filter(k => k !== 'Uncategorized').sort()
-      return keys.includes('Uncategorized') ? [...rest, 'Uncategorized'] : rest
-    }
-
     // ── Render Menu Items section (categories first) ──────────────────────────
     const FIC_NOTE = 'Allergen information declared in accordance with EU Regulation No. 1169/2011 (FIC Regulation). Where multiple suppliers exist, the most conservative (worst-case) declaration is shown.'
     let finalY = currentY
@@ -643,11 +629,11 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
       doc.setFont('helvetica', 'normal')
       doc.setTextColor(0, 0, 0)
 
-      const menuGroups = groupByCategory(menuSectionItems)
-      const menuCategoryOrder = sortCategoryKeys(Object.keys(menuGroups))
-      for (let i = 0; i < menuCategoryOrder.length; i++) {
+      const menuSections = categorySections(menuSectionItems)
+      for (let i = 0; i < menuSections.length; i++) {
+        const section = menuSections[i]
         if (i > 0) { doc.addPage(); finalY = 12 }
-        finalY = renderSection(menuGroups[menuCategoryOrder[i]].sort(sortItemsByName), menuCategoryOrder[i], finalY, undefined, 'Item')
+        finalY = renderSection(section.items.sort(sortItemsByName), section.title, finalY, undefined, 'Item')
       }
       if (ingredientItems.length > 0) {
         doc.addPage()
@@ -667,11 +653,11 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
       doc.setFont('helvetica', 'normal')
       doc.setTextColor(0, 0, 0)
 
-      const ingredientGroups = groupByCategory(expandedIngredientItems)
-      const ingredientCategoryOrder = sortCategoryKeys(Object.keys(ingredientGroups))
-      for (let i = 0; i < ingredientCategoryOrder.length; i++) {
+      const ingredientSections = categorySections(expandedIngredientItems)
+      for (let i = 0; i < ingredientSections.length; i++) {
+        const section = ingredientSections[i]
         if (i > 0) { doc.addPage(); finalY = 12 }
-        finalY = renderSection(ingredientGroups[ingredientCategoryOrder[i]].sort(sortItemsByName), ingredientCategoryOrder[i], finalY, undefined, 'Ingredient')
+        finalY = renderSection(section.items.sort(sortItemsByName), section.title, finalY, undefined, 'Ingredient')
       }
     }
 

@@ -1,3 +1,4 @@
+import { orderSubcategories } from '@/lib/item-category-tree'
 import { compareDateAdded, normalizeAllergenFilter } from '@/lib/regular-list-actions'
 
 export type ItemCollection = 'ingredients' | 'menu-builder'
@@ -5,6 +6,7 @@ export interface NavigationItem {
   id: string
   name: string
   description?: string | null
+  subcategory?: string | null
   category?: string | null
   status?: string | null
   is_active?: boolean
@@ -62,7 +64,7 @@ export function orderedNavigationItems(collection: ItemCollection, rows: Navigat
     if (group) group.push(item)
     else groups.set(key, [item])
   }
-  return [...groups.keys()].sort((a, b) => a === emptyCategory ? 1 : b === emptyCategory ? -1 : a.localeCompare(b)).flatMap(key => groups.get(key)!)
+  return [...groups.keys()].sort((a, b) => a === emptyCategory ? 1 : b === emptyCategory ? -1 : a.localeCompare(b)).flatMap(key => orderSubcategories(groups.get(key)!))
 }
 
 export function adjacentItems(items: NavigationItem[], currentId: string) {

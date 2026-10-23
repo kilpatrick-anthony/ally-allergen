@@ -286,7 +286,7 @@ export default function ViewMenuItemPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
                 <div>
                   <label className="text-sm font-medium text-gray-500">{t('admin.category')}</label>
-                  <p className="text-gray-900 mt-1">{menuItem.category || t('menuBuilderPortal.notSpecified')}</p>
+                  <p className="text-gray-900 mt-1">{menuItem.category || t('menuBuilderPortal.notSpecified')}{menuItem.subcategory ? ` / ${menuItem.subcategory}` : ''}</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">{t('admin.status')}</label>

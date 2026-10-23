@@ -1,3 +1,4 @@
+import { categoryFields } from '@/lib/item-category-tree'
 import { getJwtSecret } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
@@ -130,6 +131,8 @@ export async function PUT(
 
     if (!previousMenuItem) return NextResponse.json({ error: 'Menu item not found' }, { status: 404 })
 
+    let itemCategories
+    try { itemCategories = categoryFields(body, previousMenuItem) } catch (error: any) { return NextResponse.json({ error: error.message }, { status: 400 }) }
     let productFields
     try {
       productFields = await buildProductFields(supabase, businessId, userId, body)
@@ -168,7 +171,7 @@ export async function PUT(
     const updatePayload = {
       name: body.name,
       description: body.description || '',
-      category: body.category || '',
+      ...itemCategories,
       site_id: typeof body.site_id === 'string' && body.site_id.trim() !== ''
         ? body.site_id
         : null,
