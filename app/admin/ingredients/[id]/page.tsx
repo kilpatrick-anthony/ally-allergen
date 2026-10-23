@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useListReturnPath } from '@/lib/hooks/useListReturnPath'
+import ItemViewNavigation from '@/components/admin/ItemViewNavigation'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { 
   Package, ArrowLeft, Edit, Trash2, AlertCircle, Check,
@@ -30,7 +31,7 @@ export default function ViewIngredientPage() {
   const { t, language } = useTranslation()
   const { canDeleteContent } = useContentPermissions()
   const router = useRouter()
-  const { returnTo, withReturnTo } = useListReturnPath('/admin/ingredients')
+  const { returnTo, withReturnTo, ready: listContextReady } = useListReturnPath('/admin/ingredients')
   const params = useParams()
   const ingredientId = params.id as string
   
@@ -53,13 +54,17 @@ export default function ViewIngredientPage() {
   ]
 
   useEffect(() => {
+    const controller = new AbortController()
     const fetchData = async () => {
       try {
         setLoading(true)
+        setIngredient(null)
+        setDatasheets([])
         
         // Fetch ingredient
-        const response = await fetch(`/api/ingredients/${ingredientId}`)
+        const response = await fetch(`/api/ingredients/${ingredientId}`, { signal: controller.signal })
         const data = await response.json()
+        if (controller.signal.aborted) return
         
         if (!response.ok) {
           throw new Error(data.error || 'Failed to fetch ingredient')
@@ -71,23 +76,27 @@ export default function ViewIngredientPage() {
         
         // Fetch datasheets
         setLoadingDatasheets(true)
-        const datasheetsResponse = await fetch(`/api/datasheets?ingredient_id=${ingredientId}`)
+        const datasheetsResponse = await fetch(`/api/datasheets?ingredient_id=${ingredientId}`, { signal: controller.signal })
         const datasheetsData = await datasheetsResponse.json()
+        if (controller.signal.aborted) return
         
         if (datasheetsResponse.ok) {
           setDatasheets(datasheetsData.datasheets || [])
         }
         
       } catch (error: any) {
+        if (controller.signal.aborted) return
         console.error('Error fetching ingredient:', error)
         showNotification(t('ingredientsPortal.failedToLoadIngredient'), 'error')
       } finally {
+        if (controller.signal.aborted) return
         setLoading(false)
         setLoadingDatasheets(false)
       }
     }
     
     fetchData()
+    return () => controller.abort()
   }, [ingredientId, t])
 
   const handleDelete = async () => {
@@ -122,6 +131,7 @@ export default function ViewIngredientPage() {
   if (loading) {
     return (
       <Container>
+        <ItemViewNavigation collection="ingredients" currentId={ingredientId} returnTo={returnTo} ready={listContextReady} />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="relative h-12 w-12 mx-auto mb-4">
@@ -138,6 +148,7 @@ export default function ViewIngredientPage() {
   if (!ingredient) {
     return (
       <Container>
+        <ItemViewNavigation collection="ingredients" currentId={ingredientId} returnTo={returnTo} ready={listContextReady} />
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
@@ -180,6 +191,7 @@ export default function ViewIngredientPage() {
 
   return (
     <Container>
+      <ItemViewNavigation collection="ingredients" currentId={ingredientId} returnTo={returnTo} ready={listContextReady} />
       <div className="mb-6">
         <Link href={returnTo}>
           <Button variant="ghost" icon={<ArrowLeft className="h-4 w-4" />}>

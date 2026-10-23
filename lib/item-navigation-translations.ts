@@ -1,0 +1,8 @@
+export const itemNavigationTranslations = {
+  en: { label: 'Browse items', previous: 'Previous item', next: 'Next item', position: 'Item {position} of {total}', loading: 'Loading item navigation…', failed: 'Item navigation could not be loaded.', outside: 'This item is outside the current list.' },
+  ga: { label: 'Brabhsáil míreanna', previous: 'An mhír roimhe', next: 'An chéad mhír eile', position: 'Mír {position} as {total}', loading: 'Nascleanúint míreanna á luchtú…', failed: 'Níorbh fhéidir nascleanúint míreanna a luchtú.', outside: 'Níl an mhír seo ar an liosta reatha.' },
+  pt: { label: 'Percorrer itens', previous: 'Item anterior', next: 'Próximo item', position: 'Item {position} de {total}', loading: 'A carregar navegação dos itens…', failed: 'Não foi possível carregar a navegação dos itens.', outside: 'Este item não pertence à lista atual.' },
+  fr: { label: 'Parcourir les articles', previous: 'Article précédent', next: 'Article suivant', position: 'Article {position} sur {total}', loading: 'Chargement de la navigation…', failed: 'Impossible de charger la navigation des articles.', outside: 'Cet article ne fait pas partie de la liste actuelle.' },
+  es: { label: 'Recorrer artículos', previous: 'Artículo anterior', next: 'Artículo siguiente', position: 'Artículo {position} de {total}', loading: 'Cargando navegación de artículos…', failed: 'No se pudo cargar la navegación de artículos.', outside: 'Este artículo no pertenece a la lista actual.' },
+  de: { label: 'Einträge durchblättern', previous: 'Vorheriger Eintrag', next: 'Nächster Eintrag', position: 'Eintrag {position} von {total}', loading: 'Navigation wird geladen…', failed: 'Die Navigation konnte nicht geladen werden.', outside: 'Dieser Eintrag gehört nicht zur aktuellen Liste.' },
+}

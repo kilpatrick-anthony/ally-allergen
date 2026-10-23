@@ -9,6 +9,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useListReturnPath } from '@/lib/hooks/useListReturnPath'
+import ItemViewNavigation from '@/components/admin/ItemViewNavigation'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { isAllergenAssessmentComplete } from '@/lib/allergen-assessment'
 import { useTranslation } from '@/lib/hooks/useTranslation'
@@ -33,7 +34,7 @@ export default function ViewMenuItemPage() {
   const { t } = useTranslation()
   const { canDeleteContent } = useContentPermissions()
   const router = useRouter()
-  const { returnTo, withReturnTo } = useListReturnPath('/admin/menu-builder')
+  const { returnTo, withReturnTo, ready: listContextReady } = useListReturnPath('/admin/menu-builder')
   const params = useParams()
   const menuItemId = params.id as string
   
@@ -58,13 +59,19 @@ export default function ViewMenuItemPage() {
   ]
 
   useEffect(() => {
+    const controller = new AbortController()
     const fetchData = async () => {
       try {
         setLoading(true)
+        setMenuItem(null)
+        setDatasheets([])
+        setIngredients([])
+        setIngredientDatasheets([])
         
         // Fetch menu item
-        const response = await fetch(`/api/menu-items/${menuItemId}`)
+        const response = await fetch(`/api/menu-items/${menuItemId}`, { signal: controller.signal })
         const data = await response.json()
+        if (controller.signal.aborted) return
         
         if (!response.ok) {
           throw new Error(data.error || t('menuBuilderPortal.loadFailed'))
@@ -75,8 +82,9 @@ export default function ViewMenuItemPage() {
         setMenuItem(data.menuItem)
         
         // Fetch ingredients
-        const ingredientsResponse = await fetch('/api/ingredients')
+        const ingredientsResponse = await fetch('/api/ingredients', { signal: controller.signal })
         const ingredientsData = await ingredientsResponse.json()
+        if (controller.signal.aborted) return
         
         if (ingredientsResponse.ok) {
           const selectedIngredients = (ingredientsData.ingredients || []).filter((ing: any) =>
@@ -87,8 +95,9 @@ export default function ViewMenuItemPage() {
         
         // Fetch datasheets
         setLoadingDatasheets(true)
-        const datasheetsResponse = await fetch(`/api/datasheets?menu_item_id=${menuItemId}`)
+        const datasheetsResponse = await fetch(`/api/datasheets?menu_item_id=${menuItemId}`, { signal: controller.signal })
         const datasheetsData = await datasheetsResponse.json()
+        if (controller.signal.aborted) return
         
         if (datasheetsResponse.ok) {
           setDatasheets(datasheetsData.datasheets || [])
@@ -96,23 +105,27 @@ export default function ViewMenuItemPage() {
 
         // Fetch ingredient datasheets
         if (data.menuItem.ingredients && data.menuItem.ingredients.length > 0) {
-          const ingDatasheetsResponse = await fetch(`/api/datasheets?ingredientIds=${data.menuItem.ingredients.join(',')}`)
+          const ingDatasheetsResponse = await fetch(`/api/datasheets?ingredientIds=${data.menuItem.ingredients.join(',')}`, { signal: controller.signal })
           const ingDatasheetsData = await ingDatasheetsResponse.json()
+          if (controller.signal.aborted) return
           if (ingDatasheetsResponse.ok) {
             setIngredientDatasheets(ingDatasheetsData.datasheets || [])
           }
         }
         
       } catch (error: any) {
+        if (controller.signal.aborted) return
         console.error('Error fetching menu item:', error)
         showNotification(t('menuBuilderPortal.loadFailed'), 'error')
       } finally {
+        if (controller.signal.aborted) return
         setLoading(false)
         setLoadingDatasheets(false)
       }
     }
     
     fetchData()
+    return () => controller.abort()
   }, [menuItemId, showNotification, t])
 
   const handleDelete = async () => {
@@ -147,6 +160,7 @@ export default function ViewMenuItemPage() {
   if (loading) {
     return (
       <Container>
+        <ItemViewNavigation collection="menu-builder" currentId={menuItemId} returnTo={returnTo} ready={listContextReady} />
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="relative h-12 w-12 mx-auto mb-4">
@@ -163,6 +177,7 @@ export default function ViewMenuItemPage() {
   if (!menuItem) {
     return (
       <Container>
+        <ItemViewNavigation collection="menu-builder" currentId={menuItemId} returnTo={returnTo} ready={listContextReady} />
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
@@ -205,6 +220,7 @@ export default function ViewMenuItemPage() {
 
   return (
     <Container>
+      <ItemViewNavigation collection="menu-builder" currentId={menuItemId} returnTo={returnTo} ready={listContextReady} />
       <div className="mb-6">
         <Link href={returnTo}>
           <Button variant="ghost" icon={<ArrowLeft />}>
