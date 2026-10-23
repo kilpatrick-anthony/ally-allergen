@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { QRCodeSVG } from 'qrcode.react'
 import { Check, Copy, Download, ExternalLink, Plus, QrCode, RefreshCw, Trash2, X } from 'lucide-react'
 import { Card } from '@/components/layout/Card'
@@ -26,10 +27,15 @@ type QRDeployment = {
 interface QRCodeManagementProps {
   siteId?: string
   siteName?: string
+  signDownloadOnly?: boolean
 }
 
-export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementProps) {
+export default function QRCodeManagement({ siteId, siteName, signDownloadOnly = false }: QRCodeManagementProps) {
   const { t, language } = useTranslation()
+  const signSelectId = useId()
+  const [selectedSignId, setSelectedSignId] = useState('')
+  const [downloadingId, setDownloadingId] = useState<string | null>(null)
+  const [loadFailed, setLoadFailed] = useState(false)
   const [qrCodes, setQrCodes] = useState<QRDeployment[]>([])
   const [sites, setSites] = useState<SiteOption[]>([])
   const [businessSlug, setBusinessSlug] = useState('')
@@ -46,10 +52,11 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
   const loadData = async () => {
     try {
       setLoading(true)
+      setLoadFailed(false)
       setError(null)
       const qrParams = siteId ? `?siteId=${encodeURIComponent(siteId)}` : ''
       const requests: Promise<Response>[] = [fetch(`/api/qr-codes${qrParams}`)]
-      if (!siteId) requests.push(fetch('/api/sites'))
+      if (!siteId && !signDownloadOnly) requests.push(fetch('/api/sites'))
       const responses = await Promise.all(requests)
       const qrData = await responses[0].json()
       if (!responses[0].ok) throw new Error(qrData.error || t('accessPoints.loadError'))
@@ -66,6 +73,7 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
         }
       }
     } catch (loadError: any) {
+      setLoadFailed(true)
       setError(loadError.message || t('accessPoints.loadError'))
     } finally {
       setLoading(false)
@@ -74,7 +82,7 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
 
   useEffect(() => {
     loadData()
-  }, [siteId])
+  }, [siteId, signDownloadOnly])
 
   const activeCount = useMemo(() => qrCodes.filter((code) => code.status === 'active').length, [qrCodes])
   const totalScans = useMemo(() => qrCodes.reduce((total, code) => total + code.scan_count, 0), [qrCodes])
@@ -198,6 +206,8 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
   }
 
   const downloadPDF = async (deployment: QRDeployment) => {
+    if (downloadingId) return
+    setDownloadingId(deployment.id)
     try {
       setError(null)
       const [{ createQrSignPDF, QR_SIGN_TEMPLATE_URL }, canvas] = await Promise.all([
@@ -217,7 +227,45 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
       setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
     } catch (downloadError: any) {
       setError(downloadError.message || t('accessPoints.signError'))
+    } finally {
+      setDownloadingId(null)
     }
+  }
+
+  if (signDownloadOnly) {
+    const activeCodes = qrCodes.filter(code => code.status === 'active')
+    const selected = activeCodes.find(code => code.id === selectedSignId) || activeCodes[0]
+    return (
+      <section data-no-translate aria-label={t('qrSign.title')} className="mb-8">
+        <Card className="border-2 border-[#42b8ac]/60 bg-teal-50/80 dark:bg-teal-950/30">
+          <div className="flex items-start gap-3">
+            <QrCode className="mt-1 h-7 w-7 shrink-0 text-[#003842] dark:text-teal-300" aria-hidden="true" />
+            <div className="min-w-0">
+              <h2 className="text-xl font-semibold text-[#003842] dark:text-white">{t('qrSign.title')}</h2>
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{t('qrSign.description')}</p>
+            </div>
+          </div>
+          {loading ? <p role="status" className="mt-4 text-sm text-gray-600 dark:text-gray-300">{t('accessPoints.loading')}</p> : loadFailed ? (
+            <Button className="mt-4" variant="outline" onClick={loadData}>{t('qrSign.retry')}</Button>
+          ) : selected ? (
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+              <div className="min-w-0 flex-1 text-sm font-medium text-gray-700 dark:text-gray-200">
+                <label htmlFor={signSelectId}>{t('qrSign.choose')}</label>
+                <select id={signSelectId} value={selected.id} disabled={Boolean(downloadingId)} onChange={event => setSelectedSignId(event.target.value)} className="mt-1 w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-2.5 dark:border-gray-600 dark:bg-gray-800">
+                  {activeCodes.map(code => <option key={code.id} value={code.id}>{code.name}{code.site?.name ? ` — ${code.site.name}` : ''}</option>)}
+                </select>
+              </div>
+              <Button variant="secondary" loading={Boolean(downloadingId)} onClick={() => downloadPDF(selected)} icon={Download} className="shrink-0 whitespace-normal">
+                {t(downloadingId ? 'qrSign.preparing' : 'qrSign.download')}
+              </Button>
+              <div hidden aria-hidden="true"><QRCodeSVG id={`managed-qr-${selected.id}`} value={getUrl(selected)} size={112} marginSize={4} level="H" fgColor="#003842" /></div>
+            </div>
+          ) : <p className="mt-4 text-sm text-gray-600 dark:text-gray-300">{t('qrSign.empty')}</p>}
+          {error && <p role="alert" className="mt-3 text-sm text-red-700 dark:text-red-300">{error}</p>}
+          <Link href="/admin/qr-codes" className="mt-4 inline-block text-sm font-medium text-[#003842] underline dark:text-teal-300">{t('qrSign.manage')}</Link>
+        </Card>
+      </section>
+    )
   }
 
   if (loading) {
@@ -262,20 +310,20 @@ export default function QRCodeManagement({ siteId, siteName }: QRCodeManagementP
       {qrCodes.length === 0 ? (
         <Card className="py-12 text-center"><QrCode className="mx-auto mb-3 h-12 w-12 text-gray-300" /><h3 className="font-semibold text-gray-900">{t('accessPoints.emptyTitle')}</h3><p className="mt-1 text-sm text-gray-500">{t('accessPoints.emptyDescription')}</p></Card>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {qrCodes.map((deployment) => {
             const url = getUrl(deployment)
             return (
-              <Card key={deployment.id}>
-                <div className="flex gap-4">
+              <Card key={deployment.id} className="min-w-0">
+                <div className="flex flex-wrap gap-4">
                   <div className="shrink-0 rounded-xl border border-gray-200 bg-white p-2"><QRCodeSVG id={`managed-qr-${deployment.id}`} value={url} size={112} marginSize={4} level="H" fgColor="#003842" /></div>
-                  <div className="min-w-0 flex-1"><div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><h3 className="truncate font-semibold text-gray-900">{deployment.name}</h3><p className="text-xs text-gray-500">{deployment.site?.name || siteName}{deployment.placement ? ` · ${deployment.placement}` : ''}</p></div><Badge variant={deployment.status === 'active' ? 'success' : 'default'}>{deployment.status === 'active' ? t('accessPoints.active') : t('accessPoints.inactive')}</Badge></div><p className="mt-3 break-all text-xs text-gray-500">{url}</p><div className="mt-3 flex gap-4 text-xs text-gray-600"><span><strong>{deployment.scan_count}</strong> {t('accessPoints.scans')}</span><span>{deployment.last_scanned_at ? t('accessPoints.lastScanned', { date: new Date(deployment.last_scanned_at).toLocaleDateString(language) }) : t('accessPoints.notScanned')}</span></div></div>
+                  <div className="min-w-0 flex-1 basis-44"><div className="flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><h3 className="truncate font-semibold text-gray-900">{deployment.name}</h3><p className="text-xs text-gray-500">{deployment.site?.name || siteName}{deployment.placement ? ` · ${deployment.placement}` : ''}</p></div><Badge variant={deployment.status === 'active' ? 'success' : 'default'}>{deployment.status === 'active' ? t('accessPoints.active') : t('accessPoints.inactive')}</Badge></div><p className="mt-3 break-all text-xs text-gray-500">{url}</p><div className="mt-3 flex gap-4 text-xs text-gray-600"><span><strong>{deployment.scan_count}</strong> {t('accessPoints.scans')}</span><span>{deployment.last_scanned_at ? t('accessPoints.lastScanned', { date: new Date(deployment.last_scanned_at).toLocaleDateString(language) }) : t('accessPoints.notScanned')}</span></div></div>
                 </div>
-                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+                <div data-qr-actions data-no-translate className="mt-4 flex flex-wrap gap-2 [&>button]:shrink-0 [&>button]:whitespace-nowrap">
                   <Button size="sm" variant="outline" onClick={() => copyUrl(deployment)}>{copiedId === deployment.id ? <Check className="mr-1 h-4 w-4 text-green-600" /> : <Copy className="mr-1 h-4 w-4" />}{copiedId === deployment.id ? t('accessPoints.copied') : t('accessPoints.copy')}</Button>
                   <Button size="sm" variant="outline" onClick={() => downloadSVG(deployment)}><Download className="mr-1 h-4 w-4" /><span data-no-translate>SVG</span></Button>
                   <Button size="sm" variant="outline" onClick={() => downloadPNG(deployment)}><Download className="mr-1 h-4 w-4" /><span data-no-translate>PNG</span></Button>
-                  <Button size="sm" variant="outline" onClick={() => downloadPDF(deployment)}><Download className="mr-1 h-4 w-4" /><span data-no-translate>PDF</span></Button>
+                  <Button size="sm" variant="outline" disabled={Boolean(downloadingId)} onClick={() => downloadPDF(deployment)}><Download className="mr-1 h-4 w-4" /><span data-no-translate>PDF</span></Button>
                   <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"><ExternalLink className="mr-1 h-4 w-4" />{t('accessPoints.open')}</a>
                   <Button size="sm" variant="ghost" onClick={() => toggleStatus(deployment)}>{deployment.status === 'active' ? t('accessPoints.deactivate') : t('accessPoints.activate')}</Button>
                 </div>
