@@ -2,11 +2,12 @@
 'use client'
 
 import { ReactNode, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
+import Link from 'next/link'
 import { Shield, LogOut } from 'lucide-react'
 
 export default function SuperAdminLayout({ children }: { children: ReactNode }) {
-  const router = useRouter()
+  const pathname = usePathname()
 
   const handleLogout = useCallback(async () => {
     try {
@@ -51,6 +52,12 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
           </div>
         </div>
       </header>
+
+      <nav data-no-translate aria-label="Super admin navigation" className="mx-auto flex max-w-7xl flex-wrap gap-2 border-b border-gray-200 px-4 py-3 sm:px-6 lg:px-8 dark:border-gray-800">
+        {[
+          ['/super-admin', 'Businesses'], ['/super-admin/insights', 'Search insights'], ['/super-admin/analytics', 'Platform analytics'],
+        ].map(([href, label]) => <Link key={href} href={href} aria-current={pathname === href ? 'page' : undefined} className={`rounded-lg px-3 py-2 text-sm font-medium ${pathname === href ? 'bg-teal-100 text-teal-900 dark:bg-teal-900 dark:text-white' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'}`}>{label}</Link>)}
+      </nav>
 
       {/* Main content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
