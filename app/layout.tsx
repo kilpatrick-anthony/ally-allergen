@@ -167,12 +167,6 @@ export default function RootLayout({
                   url: BASE_URL,
                   description:
                     'AllyJen is a digital allergen management platform enabling restaurants and food businesses to manage, display, and communicate allergen information in compliance with EU regulations.',
-                  offers: {
-                    '@type': 'Offer',
-                    price: '0',
-                    priceCurrency: 'EUR',
-                    description: 'Free trial available',
-                  },
                   publisher: { '@id': `${BASE_URL}/#organization` },
                 },
                 {

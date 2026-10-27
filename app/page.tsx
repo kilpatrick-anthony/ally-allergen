@@ -42,74 +42,82 @@ export default function LandingPage() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [selectedEnquiry, setSelectedEnquiry] = useState('')
   const publicPlans = [
     {
       ...getPlanDefinition('qr_lite'),
-      badge: 'Limited offer',
-      desc: 'AllyJen QR Lite for businesses joining early and helping shape what comes next.',
-      features: getPlanDefinition('qr_lite').adminFeatures.filter((feature) =>
-        feature !== 'AllyJen QR Lite access' && !feature.startsWith('First 10 new paying locations')
-      ),
-      cta: 'Ask about the offer',
+      title: 'QR Lite',
+      badge: 'Early Adopter Offer',
+      unit: '/year',
+      billingLabel: 'Per location · Paid annually',
+      desc: 'Customers access your allergen guide on their own phones. You manage your menu updates.',
+      features: [
+        'Customer access: scan your QR code to open your guide.',
+        'Menu updates: update your information as your menu changes.',
+        'Reporting: allergen reports and usage analytics.',
+        'Setup: QR signage and help setting up your existing allergen information.',
+        'Support: email support.',
+      ],
+      hardware: 'No tablet required.',
+      kioskNote: 'For in-store kiosk use, choose Self-Managed or Fully Managed.',
+      terms: 'Annual price protected for your first three years while your subscription remains active. No obligation to renew after each paid year.',
+      availability: 'Available to the next 10 locations to sign up.',
+      cta: 'Enquire about the offer',
+      enquiry: 'QR Lite — Early Adopter Offer',
       highlight: true,
-      priceFrom: false,
     },
     {
       ...getPlanDefinition('starter'),
       badge: null,
-      desc: 'Full access to the AllyJen platform. You keep your menu up to date; we power the technology.',
+      unit: '/month',
+      billingLabel: 'Per location',
+      desc: 'Customers use your QR guide or an in-store tablet. You keep your menu information up to date.',
       features: [
-        'Full AllyJen platform access',
-        'Customer-facing allergen kiosk &amp; QR code',
-        'All 14 EU-mandated allergens tracked',
-        'Sub-allergen detail tracking',
-        'Multilingual allergen display',
-        'Real-time menu updates (self-managed)',
-        'Unlimited menu items',
-        'Audit-ready compliance reports',
-        'Analytics &amp; usage dashboard',
-        'Email support',
+        'Customer access: QR guide or in-store tablet.',
+        'Kiosk software: included with your subscription.',
+        'Menu updates: managed by you.',
+        'Reporting: allergen reports and usage analytics.',
+        'Setup: help getting your system running.',
+        'Support: email support.',
       ],
-      cta: 'Get Started',
+      hardware: 'Kiosk tablet purchased separately.',
+      kioskNote: null,
+      terms: 'Monthly billing available. Minimum commitment, renewal and cancellation arrangements agreed in your quote.',
+      availability: null,
+      cta: 'Choose Self-Managed',
+      enquiry: 'Self-Managed',
       highlight: false,
-      priceFrom: true,
     },
     {
       ...getPlanDefinition('pro'),
       badge: null,
-      desc: 'Everything in Self-Managed, plus our team handles your menu and platform management for you.',
+      unit: '/month',
+      billingLabel: 'Per location',
+      desc: 'Your QR guide and in-store kiosk, with menu updates managed for you.',
       features: [
-        'Everything in Self-Managed',
-        'Menu management by our team',
-        'Regular menu &amp; ingredient updates on your behalf',
-        'Content accuracy guaranteed',
-        'Dedicated account manager',
-        'Priority email support',
-        'Proactive compliance monitoring',
-        'Seasonal menu change assistance',
+        'Customer access: QR guide or in-store tablet.',
+        'Kiosk software: included with your subscription.',
+        'Menu updates managed using the ingredient and supplier information you provide.',
+        'Reporting: allergen reports and usage analytics.',
+        'Setup: help getting your system running.',
+        'Support: priority email support.',
       ],
-      cta: 'Get Started',
+      hardware: 'Kiosk tablet purchased separately.',
+      kioskNote: null,
+      terms: 'Monthly billing available. Minimum commitment, renewal and cancellation arrangements agreed in your quote.',
+      availability: null,
+      cta: 'Discuss Fully Managed',
+      enquiry: 'Fully Managed',
       highlight: false,
-      priceFrom: true,
-    },
-    {
-      ...getPlanDefinition('enterprise'),
-      badge: null,
-      desc: 'For large chains and multi-site groups. Tailored pricing, dedicated support, and a rollout plan built around your business.',
-      features: [
-        'Everything in Fully Managed',
-        'Unlimited locations',
-        'Volume pricing for large chains',
-        'Dedicated account team',
-        'Custom onboarding &amp; rollout plan',
-        'SLA-backed support agreement',
-        'Flexible contract terms',
-      ],
-      cta: 'Contact Us',
-      highlight: false,
-      priceFrom: false,
     },
   ]
+
+  const enquireAbout = (enquiry: string) => {
+    setSelectedEnquiry(enquiry)
+    setSubmitted(false)
+    document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })
+    requestAnimationFrame(() => document.getElementById('enquiry-type')?.focus({ preventScroll: true }))
+  }
 
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -118,10 +126,14 @@ export default function LandingPage() {
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(contactForm),
+        body: JSON.stringify({
+          ...contactForm,
+          message: [selectedEnquiry ? `Enquiry: ${selectedEnquiry}` : '', contactForm.message].filter(Boolean).join('\n\n'),
+        }),
       })
       if (response.ok) {
         setSubmitted(true)
+        setSelectedEnquiry('')
         setContactForm({ name: '', email: '', company: '', phone: '', message: '', privacyAccepted: false })
       } else {
         alert('Failed to send message. Please try again.')
@@ -398,7 +410,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
               { step: '01', title: 'Get in Touch', desc: 'Fill out the contact form below and tell us about your business. We\'ll respond within one business day.' },
-              { step: '02', title: 'We Get You Running', desc: 'We configure your allergen system. If you order a kiosk device, we\'ll prepare and ship it ready to go — just connect to WiFi. Early Adopter customers get QR signage and help setting up their existing allergen information instead.' },
+              { step: '02', title: 'We Get You Running', desc: 'We help you set up your existing allergen information. QR Lite includes QR signage. For an in-store kiosk, choose Self-Managed or Fully Managed and add a tablet for €299. We configure it remotely and deliver it by courier, ready for plug and play.' },
               { step: '03', title: 'Go Live with Confidence', desc: 'Launch AllyJen, manage allergens, and show customers the information they need.' },
             ].map((s, i) => (
               <div key={i} className="relative pl-6 border-l-2 border-[#42b8ac]">
@@ -433,61 +445,83 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {publicPlans.map((plan, i) => (
-              <div
-                key={i}
-                className={`relative flex flex-col rounded-2xl border-2 p-7 ${
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-6">
+            {publicPlans.map((plan) => (
+              <article
+                key={plan.key}
+                aria-labelledby={`pricing-${plan.key}`}
+                className={`relative flex min-w-0 flex-col rounded-2xl border-2 p-6 sm:p-7 ${
                   plan.highlight
                     ? 'border-[#42b8ac] shadow-xl shadow-[#42b8ac]/10'
                     : 'border-gray-100 shadow-sm'
                 }`}
               >
-                {plan.badge && (
-                  <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                    <span className="inline-block px-3 py-1 bg-[#42b8ac] text-white text-xs font-bold rounded-full uppercase tracking-wide">
-                      {plan.badge}
-                    </span>
-                  </div>
-                )}
-                <div className="mb-5">
-                  <p className="text-sm font-bold text-[#42b8ac] uppercase tracking-widest mb-1">{plan.title}</p>
-                  <div className="flex items-end gap-1.5 mb-1 flex-wrap">
-                    {plan.priceFrom && <span className="text-gray-400 text-sm font-semibold mb-1.5">From</span>}
-                    <span className="text-4xl font-extrabold text-[#003842]">{plan.priceLabel.replace('EUR', '€')}</span>
-                    {plan.priceSuffix && <span className="text-gray-400 text-sm mb-1">{plan.priceSuffix}</span>}
-                  </div>
-                  <p className="text-gray-500 text-sm leading-relaxed mt-3">{plan.desc}</p>
+                <div className="mb-4 min-h-7">
+                  {plan.badge && <span className="inline-block rounded-full bg-[#42b8ac] px-3 py-1 text-xs font-bold text-[#003842]">{plan.badge}</span>}
                 </div>
-                <ul className="space-y-2.5 flex-1 mb-7">
-                  {plan.features.map((f, j) => (
-                    <li key={j} className="flex items-center gap-2.5 text-sm text-gray-700">
-                      <CheckCircle className={`h-4 w-4 flex-shrink-0 ${plan.highlight && j === 0 ? 'text-[#003842]' : 'text-[#42b8ac]'}`} />
-                      <span dangerouslySetInnerHTML={{ __html: f }} />
+                <h3 id={`pricing-${plan.key}`} className="mb-3 text-xl font-bold text-[#003842]">{plan.title}</h3>
+                <div className="mb-1 flex flex-wrap items-baseline gap-1">
+                  <span className="text-4xl font-extrabold tracking-tight text-[#003842]">{plan.priceLabel.replace('EUR ', '€')}</span>
+                  <span className="text-lg font-semibold text-gray-600">{plan.unit}</span>
+                </div>
+                <p className="text-sm font-semibold text-gray-600">{plan.billingLabel}</p>
+                <p className="mb-6 mt-4 text-sm leading-relaxed text-gray-600">{plan.desc}</p>
+                <ul className="mb-6 space-y-3">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2.5 text-sm leading-relaxed text-gray-700">
+                      <CheckCircle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-[#0e7066]" />
+                      <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
-                {plan.cta === 'Contact Us' ? (
-                  <button
-                    type="button"
-                    onClick={() => document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="block w-full py-3 rounded-full text-center font-semibold text-sm transition-colors border-2 border-[#003842] text-[#003842] hover:bg-[#003842] hover:text-white"
-                  >
-                    {plan.cta}
-                  </button>
-                ) : (
-                  <Link href={plan.key === 'qr_lite' ? 'mailto:info@allyjen.ie?subject=Early%20Adopter%20Offer' : '/book-demo'}>
-                    <span className={`block w-full py-3 rounded-full text-center font-semibold text-sm transition-colors ${
-                      plan.highlight
-                        ? 'bg-[#42b8ac] text-white hover:bg-[#3aa89e]'
-                        : 'bg-[#003842] text-white hover:bg-[#004d5e]'
-                    }`}>
-                      {plan.cta}
-                    </span>
-                  </Link>
-                )}
-              </div>
+                <div className="mt-auto border-t border-gray-100 pt-5">
+                  <p className="mb-3 text-sm font-bold text-[#003842]">{plan.hardware}</p>
+                  {plan.kioskNote && <p className="mb-3 text-sm leading-relaxed text-gray-600">{plan.kioskNote}</p>}
+                  <p className="text-sm leading-relaxed text-gray-600">{plan.terms}</p>
+                  {plan.availability && <p className="mt-3 text-sm font-semibold text-[#0e7066]">{plan.availability}</p>}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => enquireAbout(plan.enquiry)}
+                  className={`mt-6 min-h-12 w-full rounded-full px-4 py-3 text-center text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#003842] ${
+                    plan.highlight ? 'bg-[#42b8ac] text-[#003842] hover:bg-[#3aa89e]' : 'bg-[#003842] text-white hover:bg-[#004d5e]'
+                  }`}
+                >
+                  {plan.cta}
+                </button>
+              </article>
             ))}
+          </div>
+
+          <div className="mt-10 rounded-3xl border border-[#42b8ac]/30 bg-[#f0f9f8] p-6 sm:p-9" aria-labelledby="kiosk-hardware-heading">
+            <div className="flex flex-col gap-7 md:flex-row md:items-center">
+              <figure className="w-full shrink-0 md:w-64">
+                <Image src="/unnamed.webp" alt="AllyJen running on an in-store tablet at OAKBERRY Maynooth" width={765} height={1020} sizes="(min-width: 768px) 256px, calc(100vw - 96px)" className="aspect-[4/3] w-full rounded-2xl object-cover object-center md:aspect-square" />
+                <figcaption className="mt-2 text-xs leading-relaxed text-gray-600">AllyJen in use at OAKBERRY Maynooth.</figcaption>
+              </figure>
+              <div className="min-w-0 flex-1">
+                <h3 id="kiosk-hardware-heading" className="mb-3 text-2xl font-bold text-[#003842]">Want an in-store allergen kiosk?</h3>
+                <p className="text-xl font-bold text-[#003842]">Add a kiosk tablet for €299 — one-off purchase.</p>
+                <p className="mt-2 font-semibold text-gray-700">Subscription charged separately.</p>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gray-600">
+                  Kiosk software access is included with Self-Managed and Fully Managed.
+                </p>
+                <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gray-600">
+                  Includes the tablet and stand, remote configuration, and courier delivery to your location,
+                  ready for plug and play. You own the tablet and stand.
+                </p>
+                <button type="button" onClick={() => enquireAbout('Kiosk tablet — €299 one-off purchase')} className="mt-5 min-h-11 rounded-full border-2 border-[#003842] px-6 py-2.5 text-sm font-semibold text-[#003842] transition-colors hover:bg-[#003842] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#003842]">
+                  Enquire about a kiosk tablet
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-col items-start justify-between gap-5 rounded-2xl bg-[#003842] p-6 text-white sm:flex-row sm:items-center sm:p-7">
+            <p className="text-lg font-semibold">Multiple locations? Talk to us about group pricing.</p>
+            <button type="button" onClick={() => enquireAbout('Group pricing')} className="min-h-11 shrink-0 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#003842] transition-colors hover:bg-[#d4f0ed] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+              Discuss group pricing
+            </button>
           </div>
 
           <p className="text-center text-sm text-gray-400 mt-10">
@@ -605,6 +639,13 @@ export default function LandingPage() {
                   </div>
                 ) : (
                   <form onSubmit={handleContactSubmit} className="space-y-5">
+                    <div>
+                      <label htmlFor="enquiry-type" className="mb-1.5 block text-sm font-medium text-white/80">Enquiry type</label>
+                      <select id="enquiry-type" name="enquiryType" value={selectedEnquiry} onChange={(e) => setSelectedEnquiry(e.target.value)} className="w-full rounded-lg border border-white/20 bg-[#003842] px-4 py-3 text-sm text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#42b8ac]">
+                        <option value="">General enquiry</option>
+                        {['QR Lite — Early Adopter Offer', 'Self-Managed', 'Fully Managed', 'Kiosk tablet — €299 one-off purchase', 'Group pricing'].map((enquiry) => <option key={enquiry} value={enquiry}>{enquiry}</option>)}
+                      </select>
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div>
                         <label htmlFor="name" className="block text-sm font-medium text-white/80 mb-1.5">Full Name *</label>
