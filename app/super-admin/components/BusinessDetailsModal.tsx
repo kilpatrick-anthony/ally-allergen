@@ -1,6 +1,8 @@
 // app/super-admin/components/BusinessDetailsModal.tsx
 'use client'
 
+import { EARLY_ADOPTER_ADMIN_SUMMARY } from '@/lib/plans'
+
 import { useEffect, useState } from 'react'
 import {
   X,
@@ -316,7 +318,7 @@ export function BusinessDetailsModal({
               )}
               {business.plan === 'qr_lite' && (
                 <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-900">
-                  €365 + VAT is paid upfront for the full 12-month term and advertised as €1 per day.
+                  {EARLY_ADOPTER_ADMIN_SUMMARY}
                 </div>
               )}
               {business.discountReason && (

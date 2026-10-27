@@ -13,6 +13,10 @@ export interface PlanDefinition {
 export const SUPER_ADMIN_PLAN_ORDER: PlanKey[] = ['free', 'demo', 'qr_lite', 'starter', 'pro', 'enterprise']
 export const HOME_PAGE_PLAN_ORDER: PlanKey[] = ['qr_lite', 'starter', 'pro', 'enterprise']
 
+export const EARLY_ADOPTER_TERMS = 'Available to the first 10 new paying locations or until 30 November 2026, whichever comes first. Pay yearly, with no obligation to renew. Your annual price is protected for three years while your subscription remains active.'
+
+export const EARLY_ADOPTER_ADMIN_SUMMARY = '€99 per location per year, paid yearly. ' + EARLY_ADOPTER_TERMS
+
 export const PLAN_DEFINITIONS: Record<PlanKey, PlanDefinition> = {
   free: {
     key: 'free',
@@ -44,19 +48,21 @@ export const PLAN_DEFINITIONS: Record<PlanKey, PlanDefinition> = {
   },
   qr_lite: {
     key: 'qr_lite',
-    title: 'QR Lite',
-    monthlyPrice: 365 / 12,
-    priceLabel: 'EUR 1',
-    priceSuffix: '/day',
-    mrrValue: 365 / 12,
+    title: 'Early Adopter',
+    monthlyPrice: 99 / 12,
+    priceLabel: 'EUR 99',
+    priceSuffix: '/location per year',
+    mrrValue: 99 / 12,
     adminFeatures: [
-      'QR codes sent to your business',
-      'No hardware needed',
-      'Printed paper allergen guides still required on site',
-      '€365 + VAT paid upfront (advertised as €1 a day)',
-      'Self-managed',
-      '12 month contract',
-      'Everything in Self-Managed',
+      'AllyJen QR Lite access',
+      '€99 per location per year, paid yearly',
+      'Annual price protected for three years while your subscription remains active',
+      'No obligation to renew',
+      'QR signage and help setting up your existing allergen information',
+      'Customers access your allergen guide on their own phone',
+      'Update your information as your menu changes',
+      'No tablet or kiosk needed',
+      'First 10 new paying locations or until 30 November 2026, whichever comes first',
     ],
   },
   starter: {

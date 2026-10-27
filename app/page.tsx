@@ -15,7 +15,6 @@ import {
   Building,
   BarChart,
   Mail,
-  Phone,
   Send,
   ChevronDown,
   Menu,
@@ -46,24 +45,18 @@ export default function LandingPage() {
   const publicPlans = [
     {
       ...getPlanDefinition('qr_lite'),
-      badge: null,
-      desc: 'The lowest-cost way to get compliant. We send QR codes straight to your business — no device needed.',
-      features: [
-        'Full AllyJen platform access — all 14 EU-mandated allergens, sub-allergen &amp; multilingual tracking',
-        'Real-time menu updates, audit-ready reports, analytics &amp; email support',
-        'Ready to use QR code signage shipped to your business',
-        'No hardware needed',
-        'Printed allergen guide still required on-site — print your PDF directly from the AllyJen admin portal',
-        'Self-managed',
-        '12 month contract',
-      ],
-      cta: 'Get Started',
-      highlight: false,
-      priceFrom: true,
+      badge: 'Limited offer',
+      desc: 'AllyJen QR Lite for businesses joining early and helping shape what comes next.',
+      features: getPlanDefinition('qr_lite').adminFeatures.filter((feature) =>
+        feature !== 'AllyJen QR Lite access' && !feature.startsWith('First 10 new paying locations')
+      ),
+      cta: 'Ask about the offer',
+      highlight: true,
+      priceFrom: false,
     },
     {
       ...getPlanDefinition('starter'),
-      badge: 'Most Popular',
+      badge: null,
       desc: 'Full access to the AllyJen platform. You keep your menu up to date; we power the technology.',
       features: [
         'Full AllyJen platform access',
@@ -78,7 +71,7 @@ export default function LandingPage() {
         'Email support',
       ],
       cta: 'Get Started',
-      highlight: true,
+      highlight: false,
       priceFrom: true,
     },
     {
@@ -405,7 +398,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
               { step: '01', title: 'Get in Touch', desc: 'Fill out the contact form below and tell us about your business. We\'ll respond within one business day.' },
-              { step: '02', title: 'We Get You Running', desc: 'We configure your allergen system. If you order a kiosk device, we\'ll prepare and ship it ready to go — just connect to WiFi. QR Lite customers get their QR code signage shipped directly instead.' },
+              { step: '02', title: 'We Get You Running', desc: 'We configure your allergen system. If you order a kiosk device, we\'ll prepare and ship it ready to go — just connect to WiFi. Early Adopter customers get QR signage and help setting up their existing allergen information instead.' },
               { step: '03', title: 'Go Live with Confidence', desc: 'Launch AllyJen, manage allergens, and show customers the information they need.' },
             ].map((s, i) => (
               <div key={i} className="relative pl-6 border-l-2 border-[#42b8ac]">
@@ -463,9 +456,6 @@ export default function LandingPage() {
                     {plan.priceFrom && <span className="text-gray-400 text-sm font-semibold mb-1.5">From</span>}
                     <span className="text-4xl font-extrabold text-[#003842]">{plan.priceLabel.replace('EUR', '€')}</span>
                     {plan.priceSuffix && <span className="text-gray-400 text-sm mb-1">{plan.priceSuffix}</span>}
-                    {plan.cta !== 'Contact Us' && (
-                      <span className="text-[10px] font-bold text-gray-400 border border-gray-200 rounded-full px-1.5 py-0.5 mb-1.5">+ VAT</span>
-                    )}
                   </div>
                   <p className="text-gray-500 text-sm leading-relaxed mt-3">{plan.desc}</p>
                 </div>
@@ -486,7 +476,7 @@ export default function LandingPage() {
                     {plan.cta}
                   </button>
                 ) : (
-                  <Link href="/book-demo">
+                  <Link href={plan.key === 'qr_lite' ? 'mailto:info@allyjen.ie?subject=Early%20Adopter%20Offer' : '/book-demo'}>
                     <span className={`block w-full py-3 rounded-full text-center font-semibold text-sm transition-colors ${
                       plan.highlight
                         ? 'bg-[#42b8ac] text-white hover:bg-[#3aa89e]'
@@ -735,10 +725,6 @@ export default function LandingPage() {
                   <a href="mailto:info@allyjen.ie" className="flex w-fit items-center gap-2 text-sm text-white hover:text-[#42b8ac] transition-colors">
                     <Mail className="h-4 w-4 text-[#42b8ac] flex-shrink-0" />
                     info@allyjen.ie
-                  </a>
-                  <a href="tel:+353896580997" className="mt-2 flex w-fit items-center gap-2 text-sm text-white hover:text-[#42b8ac] transition-colors">
-                    <Phone className="h-4 w-4 text-[#42b8ac] flex-shrink-0" />
-                    +353 89 658 0997
                   </a>
                 </div>
               </div>

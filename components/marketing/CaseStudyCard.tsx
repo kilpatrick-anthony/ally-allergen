@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight, Globe, Mail, QrCode, Tablet } from 'lucide-react'
 import { oakberryCaseStudy } from '@/lib/oakberry-case-study'
@@ -5,10 +6,13 @@ import { oakberryCaseStudy } from '@/lib/oakberry-case-study'
 export function CaseStudyCard() {
   return <article className="grid overflow-hidden rounded-3xl border border-[#003842]/10 bg-white shadow-sm lg:grid-cols-[0.85fr_1.15fr]">
     <div className="flex flex-col justify-between gap-10 bg-[#003842] p-7 text-white sm:p-10">
-      <div>
-        <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#8dd8d2]">A customer story</p>
-        <p className="text-3xl font-bold tracking-tight sm:text-4xl">OAKBERRY</p>
-        <p className="mt-1 text-lg text-white/80">Maynooth, Co. Kildare</p>
+      <div className="flex items-center gap-6 sm:gap-7">
+        <Image src="/Logo_Primario_Arara.ai.png" alt="OAKBERRY logo" width={2000} height={2000} sizes="(min-width: 640px) 96px, 72px" className="h-18 w-18 shrink-0 rounded-2xl bg-white object-contain sm:h-24 sm:w-24" />
+        <div className="min-w-0">
+          <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#8dd8d2]">A customer story</p>
+          <p className="text-2xl font-bold tracking-tight sm:text-3xl">OAKBERRY</p>
+          <p className="mt-1 text-lg text-white/80">Maynooth, Co. Kildare</p>
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-3 text-sm">
         {[

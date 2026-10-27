@@ -16,7 +16,7 @@ export default function PrivacyPolicyPage() {
       <section>
         <h2>1. Who we are</h2>
         <p>AllyJen Solutions Limited (CRO No. 811542), Republic of Ireland, is the controller for our website, sales, account, and service-administration activities. Business customers may act as controllers for personal data they enter into AllyJen, with AllyJen acting as their processor.</p>
-        <p>Contact: <a href="mailto:info@allyjen.ie">info@allyjen.ie</a> or +353 89 658 0997.</p>
+        <p>Contact: <a href="mailto:info@allyjen.ie">info@allyjen.ie</a>.</p>
       </section>
 
       <section>

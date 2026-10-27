@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     if (plan === 'qr_lite') {
       return NextResponse.json(
-        { error: 'QR Lite is €365 + VAT paid upfront for 12 months and is currently set up manually in Stripe' },
+        { error: 'Early Adopter is €99 per location per year and is currently set up manually in Stripe' },
         { status: 400 }
       )
     }

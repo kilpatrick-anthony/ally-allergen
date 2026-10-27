@@ -1,6 +1,8 @@
 // app/super-admin/components/BusinessSetupModal.tsx
 'use client'
 
+import { EARLY_ADOPTER_ADMIN_SUMMARY } from '@/lib/plans'
+
 import { useState } from 'react'
 import { X, Save, User, Building, Mail, Phone, MapPin, CreditCard, DollarSign, Calendar, CheckCircle } from 'lucide-react'
 import { Elements } from '@stripe/react-stripe-js'
@@ -38,7 +40,7 @@ const PLAN_DETAILS: Record<string, PlanDetails> = {
   },
   qr_lite: {
     name: PLAN_DEFINITIONS.qr_lite.title,
-    priceLabel: '€365',
+    priceLabel: PLAN_DEFINITIONS.qr_lite.priceLabel.replace('EUR', '€'),
     features: PLAN_DEFINITIONS.qr_lite.adminFeatures,
   },
   starter: {
@@ -570,7 +572,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
                 {plan.priceLabel}
                 {(key === 'qr_lite' || PLAN_DEFINITIONS[key].priceSuffix) && (
                   <span className="ml-1 text-sm font-normal text-gray-600 dark:text-gray-400">
-                    {key === 'qr_lite' ? '+ VAT upfront / 12 months' : PLAN_DEFINITIONS[key].priceSuffix}
+                    {PLAN_DEFINITIONS[key].priceSuffix}
                   </span>
                 )}
               </div>
@@ -598,7 +600,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
 
             {formData.plan === 'qr_lite' ? (
               <div className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
-                <strong>Fixed QR Lite offer:</strong> €365 + VAT paid upfront for a 12-month contract. This is advertised as €1 per day and cannot be discounted here.
+                <strong>Early Adopter offer:</strong> {EARLY_ADOPTER_ADMIN_SUMMARY} Discounts are disabled.
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -651,7 +653,7 @@ export function BusinessSetupModal({ isOpen, onClose, onSave }: BusinessSetupMod
                 </div>
                 {PLAN_DEFINITIONS[formData.plan].monthlyPrice !== null && (
                   <div className="md:col-span-2 rounded-md bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-                    Agreed monthly price before VAT: <strong>€{(PLAN_DEFINITIONS[formData.plan].monthlyPrice! * (1 - Number(formData.discountPercent || 0) / 100)).toFixed(2)}</strong>
+                    Agreed monthly price: <strong>€{(PLAN_DEFINITIONS[formData.plan].monthlyPrice! * (1 - Number(formData.discountPercent || 0) / 100)).toFixed(2)}</strong>
                     {' '}for {formData.contractLengthMonths} month{Number(formData.contractLengthMonths) === 1 ? '' : 's'}.
                   </div>
                 )}

@@ -1,6 +1,8 @@
 // app/super-admin/page.tsx
 'use client'
 
+import { EARLY_ADOPTER_ADMIN_SUMMARY } from '@/lib/plans'
+
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Elements } from '@stripe/react-stripe-js'
@@ -1530,7 +1532,7 @@ export default function SuperAdminDashboard() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent text-sm"
                 >
                   <option value="free">Free</option>
-                  <option value="qr_lite">QR Lite</option>
+                  <option value="qr_lite">Early Adopter</option>
                   <option value="starter">Self-Managed</option>
                   <option value="pro">Fully Managed</option>
                   <option value="enterprise">Enterprise</option>
@@ -1551,7 +1553,7 @@ export default function SuperAdminDashboard() {
               </div>
               {editForm.plan === 'qr_lite' ? (
                 <div className="md:col-span-2 rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
-                  <strong>Fixed QR Lite offer:</strong> €365 + VAT paid upfront for 12 months, advertised as €1 per day. Discounts are disabled.
+                  <strong>Early Adopter offer:</strong> {EARLY_ADOPTER_ADMIN_SUMMARY} Discounts are disabled.
                 </div>
               ) : editForm.plan !== 'free' && editForm.plan !== 'demo' ? (
                 <>

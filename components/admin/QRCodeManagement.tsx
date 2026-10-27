@@ -276,7 +276,7 @@ export default function QRCodeManagement({ siteId, siteName, signDownloadOnly = 
     <div className="space-y-6">
       {planType === 'qr_lite' && (
         <div className="rounded-xl border border-[#42b8ac]/30 bg-[#f0faf9] p-4 text-sm text-[#134e4a]">
-          <strong data-no-translate>QR Lite:</strong> {t('accessPoints.qrLiteDescription')}
+          <strong data-no-translate>Early Adopter:</strong> {t('accessPoints.qrLiteDescription')}
         </div>
       )}
 

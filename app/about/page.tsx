@@ -235,10 +235,7 @@ export default function AboutPage() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <img src="/Logo-AllyJen.svg" alt="AllyJen" className="h-24 w-auto" />
             <div className="flex flex-col items-center md:items-end gap-3">
-              <div className="grid grid-cols-4 place-items-center gap-3" aria-label="Contact AllyJen">
-                <a href="tel:+353896580997" aria-label="Call AllyJen on +353 89 658 0997" title="Call AllyJen: +353 89 658 0997" className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/10 leading-none text-white/70 transition-colors hover:bg-[#42b8ac] hover:text-white sm:h-9 sm:w-9">
-                  <Phone className="h-4 w-4" aria-hidden="true" />
-                </a>
+              <div className="grid grid-cols-3 place-items-center gap-3" aria-label="Contact AllyJen">
                 <a
                   href="https://www.linkedin.com/company/allyjen/"
                   target="_blank"
