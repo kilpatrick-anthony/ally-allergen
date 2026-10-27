@@ -59,7 +59,6 @@ export default function LandingPage() {
         'Support: email support.',
       ],
       hardware: 'No tablet required.',
-      kioskNote: 'For in-store kiosk use, choose Self-Managed or Fully Managed.',
       terms: 'Annual price protected for your first three years while your subscription remains active. No obligation to renew after each paid year.',
       availability: 'Available to the next 10 locations to sign up.',
       cta: 'Enquire about the offer',
@@ -81,7 +80,6 @@ export default function LandingPage() {
         'Support: email support.',
       ],
       hardware: 'Kiosk tablet purchased separately.',
-      kioskNote: null,
       terms: 'Monthly billing available. Minimum commitment, renewal and cancellation arrangements agreed in your quote.',
       availability: null,
       cta: 'Choose Self-Managed',
@@ -103,7 +101,6 @@ export default function LandingPage() {
         'Support: priority email support.',
       ],
       hardware: 'Kiosk tablet purchased separately.',
-      kioskNote: null,
       terms: 'Monthly billing available. Minimum commitment, renewal and cancellation arrangements agreed in your quote.',
       availability: null,
       cta: 'Discuss Fully Managed',
@@ -457,7 +454,7 @@ export default function LandingPage() {
                 }`}
               >
                 <div className="mb-4 min-h-7">
-                  {plan.badge && <span className="inline-block rounded-full bg-[#42b8ac] px-3 py-1 text-xs font-bold text-[#003842]">{plan.badge}</span>}
+                  {plan.badge && <span className="inline-block rounded-full bg-[#42b8ac] px-4 py-1.5 text-sm font-bold text-[#003842]">{plan.badge}</span>}
                 </div>
                 <h3 id={`pricing-${plan.key}`} className="mb-3 text-xl font-bold text-[#003842]">{plan.title}</h3>
                 <div className="mb-1 flex flex-wrap items-baseline gap-1">
@@ -476,7 +473,6 @@ export default function LandingPage() {
                 </ul>
                 <div className="mt-auto border-t border-gray-100 pt-5">
                   <p className="mb-3 text-sm font-bold text-[#003842]">{plan.hardware}</p>
-                  {plan.kioskNote && <p className="mb-3 text-sm leading-relaxed text-gray-600">{plan.kioskNote}</p>}
                   <p className="text-sm leading-relaxed text-gray-600">{plan.terms}</p>
                   {plan.availability && <p className="mt-3 text-sm font-semibold text-[#0e7066]">{plan.availability}</p>}
                 </div>
