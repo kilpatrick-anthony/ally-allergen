@@ -1,13 +1,13 @@
 # Homepage pricing review
 
-The homepage presents three enquiry-only plans. Prices come from `lib/plans.ts`; this change does not alter plan IDs, permissions, billing, or subscription entitlements.
+The homepage presents three enquiry-only plans. Homepage early-adopter rates are €99/year for QR Lite, €19.99/month for Self-Managed and €59.99/month for Fully Managed. Promotional monthly labels override the homepage display only; `lib/plans.ts`, payment-provider prices, subscriptions, permissions and billing records are unchanged.
 
 ## Evidence used
 
 - QR Lite: the existing plan and previous homepage describe QR signage, setup help, self-managed menu updates, reports, analytics and email support. Its annual amount remains €99.
-- Self-Managed: `lib/plans.ts` includes full platform, kiosk/QR access and email support; amount remains €39.99/month.
-- Fully Managed: the plan includes Self-Managed features, team-managed menus and priority support; amount remains €79.99/month. Updates depend on customer-provided ingredient and supplier information.
-- Setup: the previous homepage's “How It Works” says AllyJen configures the allergen system. The new copy avoids promising unconfirmed shipping or hardware accessories.
+- Self-Managed: `lib/plans.ts` includes full platform, kiosk/QR access and email support; its established billing definition remains €39.99/month, while the homepage advertises the requested €19.99/month early-adopter offer.
+- Fully Managed: the plan includes Self-Managed features, team-managed menus and priority support; its established billing definition remains €79.99/month, while the homepage advertises the requested €59.99/month early-adopter offer. Updates depend on customer-provided ingredient and supplier information.
+- Setup: the previous homepage's “How It Works” says AllyJen configures the allergen system. The updated setup copy distinguishes printing an on-site QR Lite guide from using a customer-facing kiosk.
 - Billing: `lib/stripe.ts` supports monthly/yearly cycles. Deal commitments are configurable in `lib/deal-terms.ts`; the setup form defaults to 12 months but allows other agreed terms. Consequently the homepage does not promise month-to-month cancellation or a universal minimum term.
 - Reports and analytics have no QR Lite plan exclusion in the inspected admin/reporting code.
 - Structured data previously claimed a zero-priced free trial without verified public availability. This offer object has been removed, retaining the organization, software application and website descriptions.
@@ -18,7 +18,7 @@ The homepage presents three enquiry-only plans. Prices come from `lib/plans.ts`;
 - The user confirmed the €299 one-off purchase includes a customer-owned tablet and stand, remote configuration, and courier delivery ready for plug and play. These details are now stated in the hardware panel and setup wording. No specifications or warranty promises are added.
 - The existing `public/unnamed.webp` photo is used by the OAKBERRY case study and depicts the actual AllyJen counter tablet in use. The panel reuses it with an OAKBERRY caption and no model/specification claims.
 - Compatibility with customer-owned tablets remains unconfirmed and is not advertised.
-- Offer availability is the next 10 locations as requested. There is no verified allocation source, so no remaining-places counter or automatic reservation is shown.
+- One shared offer covers the next 10 locations total across all three plans. All rates are protected for the first three years while subscriptions remain continuously active; this is not a mandatory three-year commitment. There is no verified allocation source, so no remaining-places counter or automatic reservation is shown.
 
 ## Enquiry behaviour
 
@@ -26,6 +26,17 @@ Every pricing, kiosk and group-pricing button scrolls to the existing contact fo
 
 ## Verification notes
 
-The production build passes. Browser checks cover narrow/mobile/tablet/desktop widths, all five enquiry buttons, focus, preserving the typed message, and the selected-type payload using a mocked contact endpoint. Service workers are blocked in those fixture contexts.
+Production builds and responsive browser checks are run locally before handoff. Browser checks cover narrow/mobile/tablet/desktop widths, all five enquiry buttons, focus, preserving the typed message, and the selected-type payload using a mocked contact endpoint. Service workers are blocked in those fixture contexts.
 
 During the first browser check, one test enquiry bypassed the browser mock through the production-mode service worker and reached the existing contact endpoint. This generated a test notification; no customer records were used. The server reported that HubSpot's form rejects API submissions because CAPTCHA is enabled. The API currently logs that error without failing the email path. The user subsequently confirmed disabling CAPTCHA on the HubSpot form. Live receipt after that setting change has not been rechecked; browser submission checks remain mocked.
+
+## Allergen display wording
+
+The homepage compares updating and printing a QR Lite guide with digitally updating an in-store kiosk guide. The FAQ states that a QR code alone is insufficient and that electronic written information must be clearly signposted, customer-facing, working, freely accessible before purchase, and usable without staff assistance. It recommends a practical backup if the device/internet is unavailable and avoids guaranteed-compliance claims.
+
+Primary sources checked for this update:
+- https://www.fsai.ie/business-advice/labelling/labelling-allergens (QR codes alone insufficient).
+- https://www.fsai.ie/business-advice/running-a-food-business/allergens/allergen-information-for-non-prepacked-food (paper/electronic written information, visibility and signposting).
+- FSAI Guidance Note 28, Food Allergen Declaration for Non-prepacked Foods in Ireland (electronic or paper information accessible without staff assistance).
+
+Commercial terms still requiring an individual quote: minimum commitment, renewal and cancellation arrangements for monthly offers. Customer-owned tablet compatibility remains unconfirmed and is not advertised. Enquiries select the early-adopter plan, do not reserve an allocation, and do not complete a purchase. No production deployment is part of this update.

@@ -47,64 +47,71 @@ export default function LandingPage() {
     {
       ...getPlanDefinition('qr_lite'),
       title: 'QR Lite',
-      badge: 'Early Adopter Offer',
+      badge: null,
       unit: '/year',
       billingLabel: 'Per location · Paid annually',
-      desc: 'Customers access your allergen guide on their own phones. You manage your menu updates.',
+      desc: 'Our lowest-cost option. Customers scan your QR code, and you manage your menu information.',
       features: [
-        'Customer access: scan your QR code to open your guide.',
-        'Menu updates: update your information as your menu changes.',
+        'Customer access: through your QR guide.',
+        'Menu updates: managed by you.',
         'Reporting: allergen reports and usage analytics.',
         'Setup: QR signage and help setting up your existing allergen information.',
         'Support: email support.',
+        'Printable allergen guide.',
       ],
+      guideNote: 'Print your guide from AllyJen and keep an up-to-date copy accessible to customers whenever allergen information changes.',
+      accessNote: 'QR access only. In-store kiosk access requires Self-Managed or Fully Managed.',
       hardware: 'No tablet required.',
-      terms: 'Annual price protected for your first three years while your subscription remains active. No obligation to renew after each paid year.',
-      availability: 'Available to the next 10 locations to sign up.',
-      cta: 'Enquire about the offer',
+      terms: 'No obligation to renew after each paid year.',
+      cta: 'Enquire about QR Lite',
       enquiry: 'QR Lite — Early Adopter Offer',
-      highlight: true,
+      highlight: false,
     },
     {
       ...getPlanDefinition('starter'),
-      badge: null,
+      // Homepage offer only: existing billing prices and subscriptions stay unchanged.
+      priceLabel: 'EUR 19.99',
+      badge: 'Recommended for in-store access',
       unit: '/month',
       billingLabel: 'Per location',
-      desc: 'Customers use your QR guide or an in-store tablet. You keep your menu information up to date.',
+      desc: 'Keep your in-store allergen guide updated digitally, without reprinting it whenever allergen information changes.',
       features: [
-        'Customer access: QR guide or in-store tablet.',
+        'Customer access: QR guide and in-store kiosk.',
         'Kiosk software: included with your subscription.',
         'Menu updates: managed by you.',
         'Reporting: allergen reports and usage analytics.',
         'Setup: help getting your system running.',
         'Support: email support.',
       ],
-      hardware: 'Kiosk tablet purchased separately.',
+      guideNote: null,
+      accessNote: null,
+      hardware: 'Kiosk tablet purchased separately: €299 one-off.',
       terms: 'Monthly billing available. Minimum commitment, renewal and cancellation arrangements agreed in your quote.',
-      availability: null,
-      cta: 'Choose Self-Managed',
-      enquiry: 'Self-Managed',
-      highlight: false,
+      cta: 'Enquire about Self-Managed',
+      enquiry: 'Self-Managed — Early Adopter Offer',
+      highlight: true,
     },
     {
       ...getPlanDefinition('pro'),
+      priceLabel: 'EUR 59.99',
       badge: null,
       unit: '/month',
       billingLabel: 'Per location',
-      desc: 'Your QR guide and in-store kiosk, with menu updates managed for you.',
+      desc: 'Your QR guide and in-store kiosk, with menu updates managed for you using the ingredient and supplier information you provide.',
       features: [
-        'Customer access: QR guide or in-store tablet.',
+        'Customer access: QR guide and in-store kiosk.',
         'Kiosk software: included with your subscription.',
-        'Menu updates managed using the ingredient and supplier information you provide.',
+        'Menu updates: managed by AllyJen.',
         'Reporting: allergen reports and usage analytics.',
-        'Setup: help getting your system running.',
+        'Setup: initial setup assistance.',
         'Support: priority email support.',
       ],
-      hardware: 'Kiosk tablet purchased separately.',
+      guideNote: null,
+      accessNote: null,
+      hardware: 'Kiosk tablet purchased separately: €299 one-off.',
       terms: 'Monthly billing available. Minimum commitment, renewal and cancellation arrangements agreed in your quote.',
-      availability: null,
       cta: 'Discuss Fully Managed',
-      enquiry: 'Fully Managed',
+      enquiry: 'Fully Managed — Early Adopter Offer',
       highlight: false,
     },
   ]
@@ -407,8 +414,8 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
               { step: '01', title: 'Get in Touch', desc: 'Fill out the contact form below and tell us about your business. We\'ll respond within one business day.' },
-              { step: '02', title: 'We Get You Running', desc: 'We help you set up your existing allergen information. QR Lite includes QR signage. For an in-store kiosk, choose Self-Managed or Fully Managed and add a tablet for €299. We configure it remotely and deliver it by courier, ready for plug and play.' },
-              { step: '03', title: 'Go Live with Confidence', desc: 'Launch AllyJen, manage allergens, and show customers the information they need.' },
+              { step: '02', title: 'We Get You Running', desc: 'We help set up your existing allergen information. With QR Lite, print your on-site guide and display your QR signage. With Self-Managed or Fully Managed, add a tablet and stand for €299; we configure it remotely and deliver it by courier, ready for plug and play.' },
+              { step: '03', title: 'Go Live with Confidence', desc: 'Keep your information current as your menu changes. QR Lite customers print an updated on-site guide; kiosk plans update the customer-facing screen digitally.' },
             ].map((s, i) => (
               <div key={i} className="relative pl-6 border-l-2 border-[#42b8ac]">
                 <span className="block text-[#42b8ac] text-xs font-bold uppercase tracking-widest mb-2">{s.step}</span>
@@ -442,6 +449,14 @@ export default function LandingPage() {
             </p>
           </div>
 
+          <div className="mb-8 rounded-2xl bg-[#003842] p-6 text-white sm:p-8" aria-labelledby="early-adopter-offer-heading">
+            <h3 id="early-adopter-offer-heading" className="text-xl font-bold sm:text-2xl">Early Adopter Offer — available to the next 10 locations to sign up.</h3>
+            <p className="mt-3 max-w-3xl leading-relaxed text-white/90">Choose the plan that suits your business and keep your early-adopter subscription price for your first three years while your subscription remains active.</p>
+            <p className="mt-3 text-sm leading-relaxed text-white/80">10 locations total across all three packages. Price protection applies while your subscription remains continuously active; it is not a compulsory three-year contract. An enquiry does not reserve a place.</p>
+          </div>
+
+          <p className="mb-8 text-center text-sm font-semibold text-[#003842]">Already in use across 9 OAKBERRY locations and Rio Coffee Shop.</p>
+
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-6">
             {publicPlans.map((plan) => (
               <article
@@ -449,14 +464,15 @@ export default function LandingPage() {
                 aria-labelledby={`pricing-${plan.key}`}
                 className={`relative flex min-w-0 flex-col rounded-2xl border-2 p-6 sm:p-7 ${
                   plan.highlight
-                    ? 'border-[#42b8ac] shadow-xl shadow-[#42b8ac]/10'
+                    ? 'border-[#42b8ac] bg-[#f0f9f8] shadow-xl shadow-[#42b8ac]/10'
                     : 'border-gray-100 shadow-sm'
                 }`}
               >
-                <div className="mb-4 min-h-7">
+                <div className="mb-4 lg:min-h-12">
                   {plan.badge && <span className="inline-block rounded-full bg-[#42b8ac] px-4 py-1.5 text-sm font-bold text-[#003842]">{plan.badge}</span>}
                 </div>
                 <h3 id={`pricing-${plan.key}`} className="mb-3 text-xl font-bold text-[#003842]">{plan.title}</h3>
+                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#0e7066]">Early-adopter rate</p>
                 <div className="mb-1 flex flex-wrap items-baseline gap-1">
                   <span className="text-4xl font-extrabold tracking-tight text-[#003842]">{plan.priceLabel.replace('EUR ', '€')}</span>
                   <span className="text-lg font-semibold text-gray-600">{plan.unit}</span>
@@ -471,15 +487,16 @@ export default function LandingPage() {
                     </li>
                   ))}
                 </ul>
+                {plan.guideNote && <p className="mb-5 rounded-xl bg-[#f0f9f8] p-4 text-sm font-semibold leading-relaxed text-[#003842]">{plan.guideNote}</p>}
                 <div className="mt-auto border-t border-gray-100 pt-5">
                   <p className="mb-3 text-sm font-bold text-[#003842]">{plan.hardware}</p>
                   <p className="text-sm leading-relaxed text-gray-600">{plan.terms}</p>
-                  {plan.availability && <p className="mt-3 text-sm font-semibold text-[#0e7066]">{plan.availability}</p>}
+                  {plan.accessNote && <p className="mt-3 text-sm leading-relaxed text-gray-600">{plan.accessNote}</p>}
                 </div>
                 <button
                   type="button"
                   onClick={() => enquireAbout(plan.enquiry)}
-                  className={`mt-6 min-h-12 w-full rounded-full px-4 py-3 text-center text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#003842] ${
+                  className={`mt-6 min-h-12 w-full rounded-full shrink-0 lg:h-16 px-4 py-3 text-center text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#003842] ${
                     plan.highlight ? 'bg-[#42b8ac] text-[#003842] hover:bg-[#3aa89e]' : 'bg-[#003842] text-white hover:bg-[#004d5e]'
                   }`}
                 >
@@ -489,6 +506,11 @@ export default function LandingPage() {
             ))}
           </div>
 
+          <div className="mt-8 grid gap-4 rounded-2xl border border-gray-200 p-6 text-sm leading-relaxed sm:grid-cols-2" aria-label="Keeping your on-site allergen guide current">
+            <p><strong className="text-[#003842]">QR Lite:</strong> Update online, then print your updated on-site guide.</p>
+            <p><strong className="text-[#003842]">Kiosk plans:</strong> Update online and your in-store guide updates digitally.</p>
+          </div>
+
           <div className="mt-10 rounded-3xl border border-[#42b8ac]/30 bg-[#f0f9f8] p-6 sm:p-9" aria-labelledby="kiosk-hardware-heading">
             <div className="flex flex-col gap-7 md:flex-row md:items-center">
               <figure className="w-full shrink-0 md:w-64">
@@ -496,7 +518,8 @@ export default function LandingPage() {
                 <figcaption className="mt-2 text-xs leading-relaxed text-gray-600">AllyJen in use at OAKBERRY Maynooth.</figcaption>
               </figure>
               <div className="min-w-0 flex-1">
-                <h3 id="kiosk-hardware-heading" className="mb-3 text-2xl font-bold text-[#003842]">Want an in-store allergen kiosk?</h3>
+                <h3 id="kiosk-hardware-heading" className="mb-3 text-2xl font-bold text-[#003842]">Less printing. Easier updates.</h3>
+                <p className="mb-4 max-w-2xl text-sm leading-relaxed text-gray-600">With an AllyJen kiosk, customers can view your current allergen guide directly on the in-store screen. Update your information on the platform and the kiosk reflects the changes—saving you the job of reprinting and replacing your paper guide.</p>
                 <p className="text-xl font-bold text-[#003842]">Add a kiosk tablet for €299 — one-off purchase.</p>
                 <p className="mt-2 font-semibold text-gray-700">Subscription charged separately.</p>
                 <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gray-600">
@@ -511,6 +534,22 @@ export default function LandingPage() {
                 </button>
               </div>
             </div>
+          </div>
+
+          <div className="mt-8 rounded-2xl border border-gray-200 p-6 sm:p-8" aria-labelledby="allergen-guide-faq-heading">
+            <h3 id="allergen-guide-faq-heading" className="mb-5 text-2xl font-bold text-[#003842]">Your on-site allergen guide</h3>
+            <details className="border-b border-gray-200 pb-4">
+              <summary className="cursor-pointer text-base font-bold text-[#003842] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#003842]">Do I need a printed allergen guide?</summary>
+              <p className="mt-3 text-sm leading-relaxed text-gray-600">With QR Lite, print your guide from AllyJen and keep the customer-accessible copy current whenever allergen information changes. A QR code alone is insufficient. Other suitable written formats may also be used, provided customers can easily find and read the food-specific information before purchase without needing to ask staff.</p>
+            </details>
+            <details className="pt-4">
+              <summary className="cursor-pointer text-base font-bold text-[#003842] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#003842]">With a kiosk, can I stop reprinting my guide?</summary>
+              <p className="mt-3 text-sm leading-relaxed text-gray-600">A clearly signposted, working customer-facing kiosk can provide electronic written allergen information when it is freely accessible before purchase without staff assistance. Keep a practical backup arrangement, such as a current printed guide, if the device or internet is unavailable. A kiosk does not automatically guarantee compliance.</p>
+            </details>
+            <p className="mt-5 text-xs leading-relaxed text-gray-600">See FSAI guidance on{' '}
+              <a className="font-semibold text-[#0e7066] underline underline-offset-2" href="https://www.fsai.ie/business-advice/running-a-food-business/allergens/allergen-information-for-non-prepacked-food">written allergen information</a>{' '}and{' '}
+              <a className="font-semibold text-[#0e7066] underline underline-offset-2" href="https://www.fsai.ie/business-advice/labelling/labelling-allergens">QR codes</a>.
+            </p>
           </div>
 
           <div className="mt-6 flex flex-col items-start justify-between gap-5 rounded-2xl bg-[#003842] p-6 text-white sm:flex-row sm:items-center sm:p-7">
@@ -636,10 +675,10 @@ export default function LandingPage() {
                 ) : (
                   <form onSubmit={handleContactSubmit} className="space-y-5">
                     <div>
-                      <label htmlFor="enquiry-type" className="mb-1.5 block text-sm font-medium text-white/80">Enquiry type</label>
+                      <label htmlFor="enquiry-type" className="mb-1.5 block text-sm font-medium text-white/80">Plan or enquiry type</label>
                       <select id="enquiry-type" name="enquiryType" value={selectedEnquiry} onChange={(e) => setSelectedEnquiry(e.target.value)} className="w-full rounded-lg border border-white/20 bg-[#003842] px-4 py-3 text-sm text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#42b8ac]">
                         <option value="">General enquiry</option>
-                        {['QR Lite — Early Adopter Offer', 'Self-Managed', 'Fully Managed', 'Kiosk tablet — €299 one-off purchase', 'Group pricing'].map((enquiry) => <option key={enquiry} value={enquiry}>{enquiry}</option>)}
+                        {['QR Lite — Early Adopter Offer', 'Self-Managed — Early Adopter Offer', 'Fully Managed — Early Adopter Offer', 'Kiosk tablet — €299 one-off purchase', 'Group pricing'].map((enquiry) => <option key={enquiry} value={enquiry}>{enquiry}</option>)}
                       </select>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
