@@ -20,7 +20,7 @@ export default function CookiePolicyPage() {
 
       <section>
         <h2>2. Your choices</h2>
-        <p>Optional analytics is disabled unless you actively consent. You can accept, reject, or change your choice at any time using the <strong>Cookie settings</strong> button displayed on the website. Rejecting analytics does not prevent you from using AllyJen.</p>
+        <p>Optional analytics and marketing tracking are disabled unless you actively consent to each category. You can accept, reject, or change your choice at any time using the <strong>Cookie settings</strong> button displayed on the website. Rejecting optional tracking does not prevent you from using AllyJen.</p>
       </section>
 
       <section>
@@ -54,8 +54,10 @@ export default function CookiePolicyPage() {
       </section>
 
       <section>
-        <h2>5. Third parties</h2>
-        <p>Optional analytics data may be processed by Google and Vercel. Necessary service data may be processed by hosting, database, authentication, and payment providers where required to deliver the service. More information is available in our <a href="/privacy">Privacy Policy</a>.</p>
+        <h2>5. Optional marketing and third parties</h2>
+        <p>With marketing consent, the LinkedIn Insight Tag (partner ID 11335313) measures LinkedIn advertising performance and supports advertising personalisation and retargeting. LinkedIn may receive information such as page visits, referrer, IP address, browser and device information, and cookie identifiers. Marketing is controlled separately from analytics in Cookie settings. Existing analytics consent does not enable LinkedIn tracking. Withdrawing marketing consent reloads the page to stop the tag.</p>
+        <p>LinkedIn may set cookies with durations determined by LinkedIn. You can delete existing cookies using your browser controls. See <a href="https://www.linkedin.com/legal/cookie-policy">LinkedIn’s Cookie Policy</a> for details.</p>
+        <p>Optional analytics data may be processed by Google and Vercel. Optional marketing data may be processed by LinkedIn. Necessary service data may be processed by hosting, database, authentication, and payment providers where required to deliver the service. More information is available in our <a href="/privacy">Privacy Policy</a>.</p>
       </section>
 
       <section>
