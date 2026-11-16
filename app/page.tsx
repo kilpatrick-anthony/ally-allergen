@@ -23,6 +23,7 @@ import {
 import { CaseStudyCard } from '@/components/marketing/CaseStudyCard'
 import { PublicFooter } from '@/components/marketing/PublicFooter'
 import { getPlanDefinition } from '@/lib/plans'
+import { hasAnalyticsConsent } from '@/lib/cookie-consent'
 
 const TEAM_PREVIEW = [
   { photo: '/Anthony.png', name: 'Anthony Kilpatrick', role: 'Co-Founder' },
@@ -139,6 +140,10 @@ export default function LandingPage() {
         setSubmitted(true)
         setSelectedEnquiry('')
         setContactForm({ name: '', email: '', company: '', phone: '', message: '', privacyAccepted: false })
+
+        if (hasAnalyticsConsent()) {
+          window.gtag?.('event', 'generate_lead', { lead_source: 'website_contact_form' })
+        }
       } else {
         alert('Failed to send message. Please try again.')
       }
