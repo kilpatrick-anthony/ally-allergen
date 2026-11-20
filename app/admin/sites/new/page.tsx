@@ -11,6 +11,8 @@ import {
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
+import { LocationJurisdictionField } from '@/components/admin/LocationJurisdictionField'
+import type { Jurisdiction } from '@/lib/location-jurisdiction'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 
 export default function NewSitePage() {
@@ -25,6 +27,7 @@ export default function NewSitePage() {
     address: '',
     city: '',
     country: 'Ireland',
+    jurisdiction: 'IE' as Jurisdiction,
     eircode: '',
     phone: '',
     email: '',
@@ -59,6 +62,7 @@ export default function NewSitePage() {
           address: formData.address,
           city: formData.city,
           country: formData.country,
+          jurisdiction: formData.jurisdiction,
           eircode: formData.eircode,
           phone: formData.phone,
           email: formData.email,
@@ -210,10 +214,13 @@ export default function NewSitePage() {
                     />
                   </div>
 
-                  {/* Eircode */}
+                  <LocationJurisdictionField value={formData.jurisdiction} onChange={(jurisdiction) => setFormData(previous => ({ ...previous, jurisdiction,
+                    country: ['Ireland', 'United Kingdom'].includes(previous.country)
+                      ? (jurisdiction === 'IE' ? 'Ireland' : 'United Kingdom') : previous.country,
+                  }))} />
                   <div className="md:col-span-2">
                     <label htmlFor="site-eircode" className="block text-sm font-medium text-gray-700 mb-2">
-                      {t('sitePortal.eircode')}
+                      {formData.jurisdiction === 'IE' ? t('sitePortal.eircode') : 'Postcode'}
                     </label>
                     <input
                       type="text"
@@ -221,7 +228,7 @@ export default function NewSitePage() {
                       value={formData.eircode}
                       onChange={(e) => setFormData(prev => ({ ...prev, eircode: e.target.value.toUpperCase() }))}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white uppercase"
-                      placeholder={t('sitePortal.eircodePlaceholder')}
+                      placeholder={formData.jurisdiction === 'IE' ? t('sitePortal.eircodePlaceholder') : 'Postcode'}
                       maxLength={8}
                     />
                     <p className="text-xs text-gray-500 mt-1">

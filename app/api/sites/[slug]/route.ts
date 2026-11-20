@@ -1,3 +1,4 @@
+import { isJurisdiction } from '@/lib/location-jurisdiction'
 import { getJwtSecret } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
@@ -98,16 +99,28 @@ export async function PUT(
     }
 
     const body = await request.json()
+    if (body?.jurisdiction !== undefined && !isJurisdiction(body.jurisdiction)) {
+      return NextResponse.json({ error: 'Choose a valid allergen jurisdiction' }, { status: 400 })
+    }
 
     if (!body?.name || typeof body.name !== 'string') {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
     const supabase = createServiceClient()
-    const businessId = await getUserBusinessId(supabase, userId)
-
-    if (!businessId) {
-      return NextResponse.json({ error: 'Business not found' }, { status: 404 })
+    const { data: membership, error: membershipError } = await supabase.from('user_businesses')
+      .select('business_id,role').eq('user_id', userId).maybeSingle()
+    if (membershipError) throw membershipError
+    if (!membership) return NextResponse.json({ error: 'Business not found' }, { status: 404 })
+    const businessId = membership.business_id
+    const canSetJurisdiction = membership.role === 'owner' || membership.role === 'manager'
+    if (body.jurisdiction !== undefined && !canSetJurisdiction) {
+      const { data: current, error } = await supabase.from('sites').select('jurisdiction')
+        .eq('slug', slug).eq('business_id', businessId).maybeSingle()
+      if (error) throw error
+      if (!current || current.jurisdiction !== body.jurisdiction) {
+        return NextResponse.json({ error: 'Only owners and managers can change a location’s allergen jurisdiction.' }, { status: 403 })
+      }
     }
 
     const updatedSlug = typeof body.slug === 'string' && body.slug.trim() !== ''
@@ -123,6 +136,7 @@ export async function PUT(
         city: body.city || null,
         country: body.country || null,
         eircode: body.eircode || null,
+        jurisdiction: canSetJurisdiction ? body.jurisdiction : undefined,
         phone: body.phone || null,
         email: body.email || null,
         is_active: typeof body.is_active === 'boolean' ? body.is_active : true,

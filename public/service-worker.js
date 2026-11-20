@@ -1,8 +1,8 @@
 // Service Worker for AllyJen Kiosk
 // Enables offline functionality with cache-first strategy
 
-const CACHE_NAME = 'ally-allergen-v2';
-const DATA_CACHE_NAME = 'ally-allergen-data-v2';
+const CACHE_NAME = 'ally-allergen-v3';
+const DATA_CACHE_NAME = 'ally-allergen-data-v3';
 
 // Assets to cache immediately on install
 const STATIC_ASSETS = [
@@ -79,6 +79,14 @@ self.addEventListener('fetch', (event) => {
           return caches.match('/offline.html');
         })
     );
+    return;
+  }
+
+  // Approved files and private review data must always use current permissions
+  // and source revisions. The kiosk hook owns its explicitly marked offline copy.
+  const privateAllergenReview = /^\/api\/sites\/[^/]+\/(?:allergens|ppds)(?:\/|$)/.test(url.pathname);
+  if (request.method !== 'GET' || request.cache === 'no-store' ||
+      url.pathname === '/api/kiosk/data' || privateAllergenReview) {
     return;
   }
 

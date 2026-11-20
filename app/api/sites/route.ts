@@ -1,3 +1,4 @@
+import { isJurisdiction } from '@/lib/location-jurisdiction'
 import { getJwtSecret } from '@/lib/auth'
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
@@ -87,6 +88,9 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+    if (body?.jurisdiction !== undefined && !isJurisdiction(body.jurisdiction)) {
+      return NextResponse.json({ error: 'Choose a valid allergen jurisdiction' }, { status: 400 })
+    }
 
     if (!body?.name || typeof body.name !== 'string') {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
@@ -113,6 +117,7 @@ export async function POST(request: NextRequest) {
         city: body.city || null,
         country: body.country || null,
         eircode: body.eircode || null,
+        jurisdiction: body.jurisdiction,
         phone: body.phone || null,
         email: body.email || null,
         is_active: typeof body.is_active === 'boolean' ? body.is_active : true

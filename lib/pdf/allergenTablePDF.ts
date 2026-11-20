@@ -1,3 +1,4 @@
+import { JURISDICTIONS, publishedDate } from '@/lib/location-jurisdiction'
 import { categorySections } from '@/lib/item-category-tree'
 import { menuItemSourceLines } from './menuItemSource'
 // lib/pdf/allergenTablePDF.ts
@@ -280,6 +281,17 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
     doc.setTextColor(80, 80, 80)
     doc.text(title || 'Allergen Information', pageWidth / 2, currentY, { align: 'center' })
     currentY += 6
+
+    if (business.location) {
+      const { name, jurisdiction, publishedAt } = business.location
+      doc.setFontSize(9)
+      doc.text(`${name} - ${JURISDICTIONS[jurisdiction]}`, pageWidth / 2, currentY, { align: 'center' })
+      currentY += 5
+      if (publishedAt) {
+        doc.text(`Published ${publishedDate(publishedAt)}`, pageWidth / 2, currentY, { align: 'center' })
+        currentY += 5
+      }
+    }
 
     const addr = business.settings?.address
     const contactInfo = [
@@ -617,7 +629,7 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
       .sort(sortItemsByName)
 
     // ── Render Menu Items section (categories first) ──────────────────────────
-    const FIC_NOTE = 'Allergen information declared in accordance with EU Regulation No. 1169/2011 (FIC Regulation). Where multiple suppliers exist, the most conservative (worst-case) declaration is shown.'
+    const FIC_NOTE = 'Where multiple suppliers exist, the most conservative allergen declaration is shown. Replace printed guides when a new version is published.'
     let finalY = currentY
     if (menuSectionItems.length > 0) {
       // Top-level "Menu Items" heading — centred

@@ -20,6 +20,7 @@ import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { createClient } from '@/lib/supabase/client'
+import { downloadLocationGuide } from '@/lib/location-guide-client'
 import { generateAllergenTablePDF } from '@/lib/pdf/allergenTablePDF'
 import { generateIngredientsReportPDF } from '@/lib/pdf/ingredientsReportPDF'
 import { generateMenuItemsReportPDF } from '@/lib/pdf/menuItemsReportPDF'
@@ -166,16 +167,6 @@ export default function DownloadsPage() {
       return
     }
 
-    const site = sites.find((item) => item.id === selectedSiteId)
-    const siteItems = menuItems.filter(
-      (item) => item.site_id === selectedSiteId || item.site_id === null
-    )
-
-    if (siteItems.length === 0 && ingredients.length === 0) {
-      setGuideError(t('admin.noActiveItemsSite'))
-      return
-    }
-
     try {
       setSiteGuideLoading(true)
       setGuideError(null)
@@ -195,18 +186,7 @@ export default function DownloadsPage() {
         throw new Error(result.error || t('admin.pdfDownloadLimitReached'))
       }
 
-      // Combine site menu items and all ingredients with type indicators
-      const combinedItems = [
-        ...siteItems.map(item => ({ ...item, itemType: 'menu_item' })),
-        ...ingredients.map(item => ({ ...item, itemType: 'ingredient' }))
-      ]
-
-      await generateAllergenTablePDF({
-        business,
-        items: combinedItems,
-        title: `${site?.name || t('admin.sites')} ${t('admin.completeAllergenGuide')}`,
-        showLegend: true
-      })
+      await downloadLocationGuide(business.id, selectedSiteId)
 
       setSiteGuideOpen(false)
     } catch (err: any) {

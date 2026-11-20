@@ -1,7 +1,8 @@
 // lib/hooks/useOfflineKioskData.ts
 // Custom hook for fetching and caching kiosk data with offline support
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import type { Jurisdiction } from '@/lib/location-jurisdiction';
 import type { AllergenWarnings } from '@/types/allergen';
 
 export interface Business {
@@ -17,6 +18,13 @@ export interface Business {
   address?: string;
   phone?: string;
   website?: string;
+  location?: {
+    id: string;
+    name: string;
+    jurisdiction: Jurisdiction;
+    publicationId: string | null;
+    publishedAt: string | null;
+  };
 }
 
 export interface MenuItem {
@@ -81,15 +89,15 @@ export interface KioskData {
 }
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes - configurable
-const STORAGE_KEY_PREFIX = 'kiosk_data_';
+const STORAGE_KEY_PREFIX = 'kiosk_data_v2_';
+const emptyData: KioskData = { business: null, menuItems: [], ingredients: [], lastUpdated: 0 };
+class KioskLocationUnavailable extends Error {}
 
 export function useOfflineKioskData(slug: string, siteId?: string | null) {
-  const [data, setData] = useState<KioskData>({
-    business: null,
-    menuItems: [],
-    ingredients: [],
-    lastUpdated: 0,
-  });
+  const cacheKey = `${STORAGE_KEY_PREFIX}${slug}:${siteId || 'business'}`;
+  const loadSequence = useRef(0);
+  const [loadedKey, setLoadedKey] = useState('');
+  const [data, setData] = useState<KioskData>(emptyData);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState(false);
@@ -103,7 +111,7 @@ export function useOfflineKioskData(slug: string, siteId?: string | null) {
   // Get data from localStorage
   const getCachedData = useCallback((): KioskData | null => {
     try {
-      const cached = localStorage.getItem(`${STORAGE_KEY_PREFIX}${slug}`);
+      const cached = localStorage.getItem(cacheKey);
       if (cached) {
         const parsedData = JSON.parse(cached) as KioskData;
         console.log('📦 [Cache] Retrieved cached data for:', slug, 'Age:', Math.floor((Date.now() - parsedData.lastUpdated) / 1000), 'seconds');
@@ -113,17 +121,17 @@ export function useOfflineKioskData(slug: string, siteId?: string | null) {
       console.error('❌ [Cache] Error reading cached data:', error);
     }
     return null;
-  }, [slug]);
+  }, [cacheKey, slug]);
 
   // Save data to localStorage
   const setCachedData = useCallback((kioskData: KioskData) => {
     try {
-      localStorage.setItem(`${STORAGE_KEY_PREFIX}${slug}`, JSON.stringify(kioskData));
+      localStorage.setItem(cacheKey, JSON.stringify(kioskData));
       console.log('💾 [Cache] Saved data to localStorage for:', slug);
     } catch (error) {
       console.error('❌ [Cache] Error saving data to localStorage:', error);
     }
-  }, [slug]);
+  }, [cacheKey, slug]);
 
   // Fetch fresh data from Supabase
   const fetchFreshData = useCallback(async (): Promise<KioskData | null> => {
@@ -135,9 +143,12 @@ export function useOfflineKioskData(slug: string, siteId?: string | null) {
         params.set('site_id', siteId);
       }
 
-      const response = await fetch(`/api/kiosk/data?${params.toString()}`);
+      const response = await fetch(`/api/kiosk/data?${params.toString()}`, { cache: 'no-store' });
       const payload = await response.json();
 
+      if (response.status === 404 || response.status === 400) {
+        throw new KioskLocationUnavailable(payload.error || 'Ask staff for the current written allergen guide.');
+      }
       if (!response.ok) {
         throw new Error(payload.error || 'Failed to fetch kiosk data');
       }
@@ -152,6 +163,7 @@ export function useOfflineKioskData(slug: string, siteId?: string | null) {
       console.log('✅ [Network] Fetched fresh data successfully');
       return freshData;
     } catch (error) {
+      if (error instanceof KioskLocationUnavailable) throw error;
       console.error('❌ [Network] Error fetching fresh data:', error);
       return null;
     }
@@ -159,6 +171,7 @@ export function useOfflineKioskData(slug: string, siteId?: string | null) {
 
   // Main data loading logic
   const loadData = useCallback(async () => {
+    const sequence = ++loadSequence.current;
     setLoading(true);
     setError(null);
 
@@ -168,11 +181,12 @@ export function useOfflineKioskData(slug: string, siteId?: string | null) {
     if (cachedData) {
       // Use cached data immediately
       setData(cachedData);
-      setIsStale(isCacheStale(cachedData.lastUpdated));
+      setLoadedKey(cacheKey);
+      setIsStale(Boolean(siteId) || isCacheStale(cachedData.lastUpdated));
       setLoading(false);
 
       // If cache is fresh enough, we're done
-      if (!isCacheStale(cachedData.lastUpdated)) {
+      if (!siteId && !isCacheStale(cachedData.lastUpdated)) {
         console.log('✅ [Cache] Using fresh cached data');
         return;
       }
@@ -183,22 +197,34 @@ export function useOfflineKioskData(slug: string, siteId?: string | null) {
     // Step 2: Try to fetch fresh data
     try {
       const freshData = await fetchFreshData();
+      if (sequence !== loadSequence.current) return;
       
       if (freshData) {
         // Success! Update state and cache
         setData(freshData);
+        setLoadedKey(cacheKey);
         setCachedData(freshData);
         setIsOffline(false);
         setIsStale(false);
       } else if (!cachedData) {
         // No fresh data and no cache - this is an error
-        setError('Unable to load menu data. Please check your connection.');
+        setData(emptyData);
+        setLoadedKey(cacheKey);
+        setError('Unable to load menu data. Ask staff for the current written allergen guide.');
       } else {
         // Have cached data but couldn't refresh
         setIsOffline(true);
         console.log('📶 [Offline] Using cached data, network unavailable');
       }
     } catch (err) {
+      if (sequence !== loadSequence.current) return;
+      if (err instanceof KioskLocationUnavailable) {
+        try { localStorage.removeItem(cacheKey); } catch { /* Storage can be disabled. */ }
+        setData(emptyData);
+        setLoadedKey(cacheKey);
+        setError(err.message);
+        return;
+      }
       console.error('❌ [Error] Failed to load data:', err);
       
       if (cachedData) {
@@ -210,9 +236,9 @@ export function useOfflineKioskData(slug: string, siteId?: string | null) {
         setError('Unable to load menu data. Please try again later.');
       }
     } finally {
-      setLoading(false);
+      if (sequence === loadSequence.current) setLoading(false);
     }
-  }, [slug, getCachedData, fetchFreshData, setCachedData]);
+  }, [cacheKey, siteId, getCachedData, fetchFreshData, setCachedData]);
 
   // Manual refresh function
   const refresh = useCallback(async () => {
@@ -275,11 +301,11 @@ export function useOfflineKioskData(slug: string, siteId?: string | null) {
   }, [loadData, isStale]);
 
   return {
-    business: data.business,
-    menuItems: data.menuItems,
-    ingredients: data.ingredients,
-    loading,
-    error,
+    business: loadedKey === cacheKey ? data.business : null,
+    menuItems: loadedKey === cacheKey ? data.menuItems : emptyData.menuItems,
+    ingredients: loadedKey === cacheKey ? data.ingredients : emptyData.ingredients,
+    loading: loading || loadedKey !== cacheKey,
+    error: loadedKey === cacheKey ? error : null,
     isOffline,
     isStale,
     lastUpdated: data.lastUpdated,
