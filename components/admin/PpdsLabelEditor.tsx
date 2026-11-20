@@ -114,6 +114,7 @@ function LabelReview({ siteSlug, itemId, isIrishLocation, canApprove, onUpdated 
 }) {
   const endpoint = `/api/sites/${encodeURIComponent(siteSlug)}/ppds`
   const [review, setReview] = useState<Review | null>(null)
+  const [loadAttempt, setLoadAttempt] = useState(0)
   const [answers, setAnswers] = useState<Partial<PpdsAnswers>>({})
   const [foodName, setFoodName] = useState('')
   const [ingredients, setIngredients] = useState('')
@@ -153,11 +154,26 @@ function LabelReview({ siteSlug, itemId, isIrishLocation, canApprove, onUpdated 
 
   useEffect(() => {
     const request = new AbortController()
+    let timedOut = false
+    const timeoutId = window.setTimeout(() => {
+      timedOut = true
+      request.abort()
+    }, 30_000)
+    setReview(null)
+    setError('')
     void load(request.signal).catch(err => {
-      if (!request.signal.aborted) setError(err.message)
+      if (!request.signal.aborted) {
+        setError(err instanceof Error ? err.message : 'Could not load the label review.')
+      }
+    }).finally(() => {
+      window.clearTimeout(timeoutId)
+      if (timedOut) setError('Loading the label review timed out. Check your connection and retry.')
     })
-    return () => request.abort()
-  }, [load])
+    return () => {
+      window.clearTimeout(timeoutId)
+      request.abort()
+    }
+  }, [load, loadAttempt])
 
   function clearPreview() {
     setPreview(null)
@@ -229,7 +245,14 @@ function LabelReview({ siteSlug, itemId, isIrishLocation, canApprove, onUpdated 
     window.setTimeout(() => URL.revokeObjectURL(pdf), 30_000)
   }
 
-  if (!review) return error ? <p role="alert" className="text-sm text-red-800">{error}</p> : <p role="status" className="text-sm">Loading label review…</p>
+  if (!review) return error ? (
+    <div className="space-y-2">
+      <p role="alert" className="text-sm text-red-800">{error}</p>
+      <button type="button" className={actionClass} onClick={() => setLoadAttempt(attempt => attempt + 1)}>
+        Retry loading label review
+      </button>
+    </div>
+  ) : <p role="status" className="text-sm">Loading label review…</p>
 
   return (
     <div className="space-y-4">

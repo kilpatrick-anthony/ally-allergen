@@ -40,9 +40,10 @@ test('UK classification covers same-café PPDS, loose, remote-only, mobile and s
 })
 
 test('public rates use fixed amounts; contact sends server-derived market, currency and plan through both channels', async () => {
-  const { publicPrice, isPublicMarket } = load('lib/public-pricing.ts')
+  const { publicPrice, isPublicMarket, PUBLIC_MARKETS } = load('lib/public-pricing.ts')
   assert.deepEqual(['qr_lite', 'starter', 'pro', 'kiosk'].map(plan => publicPrice(plan, 'ireland')), ['€99', '€19.99', '€59.99', '€299'])
   assert.deepEqual(['qr_lite', 'starter', 'pro', 'kiosk'].map(plan => publicPrice(plan, 'uk')), ['£83', '£17', '£50', '£250'])
+  assert.equal(PUBLIC_MARKETS.ireland.label, 'Ireland/EU €')
   assert.equal(isPublicMarket('constructor'), false)
 
   const mails = [], forms = []
@@ -61,10 +62,12 @@ test('public rates use fixed amounts; contact sends server-derived market, curre
     assert.match(payload, /UK \(GBP\)/)
     assert.match(payload, /Self-Managed — £17\/month/)
   }
+  assert.equal((await post({ ...body, pricingMarket: 'ireland' })).status, 200)
+  assert.match(mails[2].text, /Pricing market: Ireland\/EU \(EUR\)/)
   assert.equal((await post({ ...body, pricingMarket: 'IE', enquiryType: 'invented' })).status, 400)
   const { pricingMarket, enquiryType, ...legacy } = body
   assert.equal((await post(legacy)).status, 200)
-  assert.doesNotMatch(mails[2].text, /GBP/)
+  assert.doesNotMatch(mails[4].text, /GBP/)
 })
 
 function labelFixture() {

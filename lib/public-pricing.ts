@@ -1,5 +1,5 @@
 export const PUBLIC_MARKETS = {
-  ireland: { label: 'Ireland €', currency: 'EUR', symbol: '€' },
+  ireland: { label: 'Ireland/EU €', currency: 'EUR', symbol: '€' },
   uk: { label: 'UK £', currency: 'GBP', symbol: '£' },
 } as const
 

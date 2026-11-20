@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   MessageCircle,
+  Tag,
   type LucideIcon,
 } from 'lucide-react'
 import { useTranslation } from '@/lib/hooks/useTranslation'
@@ -55,6 +56,7 @@ export function Navigation() {
     { name: t('admin.ingredients'), href: '/admin/ingredients',  icon: Package },
     { name: t('admin.menuBuilder'), href: '/admin/menu-builder', icon: ChefHat },
     { name: t('admin.sites'),       href: '/admin/sites',        icon: Building },
+    { name: 'Label Creator', href: '/admin/labels', icon: Tag },
     { name: t('admin.suppliers'),   href: '/admin/suppliers',    icon: ShoppingBag },
     { name: t('admin.analytics'),   href: '/admin/analytics',    icon: BarChart },
     { name: t('admin.downloads'),   href: '/admin/downloads',    icon: Download },
