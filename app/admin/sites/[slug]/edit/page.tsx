@@ -10,6 +10,8 @@ import {
 import { Container } from '@/components/layout/Container'
 import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
+import { LocationJurisdictionField } from '@/components/admin/LocationJurisdictionField'
+import { isJurisdiction, type Jurisdiction } from '@/lib/location-jurisdiction'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 
 export default function EditSitePage() {
@@ -27,6 +29,7 @@ export default function EditSitePage() {
     address: '',
     city: '',
     country: '',
+    jurisdiction: 'IE' as Jurisdiction,
     eircode: '',
     phone: '',
     email: '',
@@ -54,6 +57,7 @@ export default function EditSitePage() {
         setFormData({
           name: data.site.name || '', slug: data.site.slug || slug,
           address: data.site.address || '', city: data.site.city || '', country: data.site.country || '',
+          jurisdiction: isJurisdiction(data.site.jurisdiction) ? data.site.jurisdiction : 'IE',
           eircode: data.site.eircode || '', phone: data.site.phone || '', email: data.site.email || '',
           status: data.site.is_active ? 'active' : 'inactive'
         })
@@ -84,6 +88,7 @@ export default function EditSitePage() {
           address: formData.address,
           city: formData.city,
           country: formData.country,
+          jurisdiction: formData.jurisdiction,
           eircode: formData.eircode,
           phone: formData.phone,
           email: formData.email,
@@ -92,7 +97,8 @@ export default function EditSitePage() {
       })
 
       if (!response.ok) {
-        throw new Error(t('sitePortal.updateError'))
+        const result = await response.json().catch(() => null)
+        throw new Error(result?.error || t('sitePortal.updateError'))
       }
 
       // Redirect to the site's detail page
@@ -297,10 +303,10 @@ export default function EditSitePage() {
                     />
                   </div>
 
-                  {/* Eircode */}
+                  <LocationJurisdictionField value={formData.jurisdiction} onChange={(jurisdiction) => setFormData(previous => ({ ...previous, jurisdiction }))} />
                   <div className="md:col-span-2">
                     <label htmlFor="site-eircode" className="block text-sm font-medium text-gray-700 mb-2">
-                      {t('sitePortal.eircode')}
+                      {formData.jurisdiction === 'IE' ? t('sitePortal.eircode') : 'Postcode'}
                     </label>
                     <input
                       type="text"
@@ -308,7 +314,7 @@ export default function EditSitePage() {
                       value={formData.eircode}
                       onChange={(e) => setFormData(prev => ({ ...prev, eircode: e.target.value.toUpperCase() }))}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent bg-white dark:bg-gray-700 dark:text-white uppercase"
-                      placeholder={t('sitePortal.eircodePlaceholder')}
+                      placeholder={formData.jurisdiction === 'IE' ? t('sitePortal.eircodePlaceholder') : 'Postcode'}
                       maxLength={8}
                     />
                     <p className="text-xs text-gray-500 mt-1">

@@ -1,7 +1,7 @@
 // app/page.tsx
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Container } from '@/components/layout/Container'
@@ -22,7 +22,8 @@ import {
 } from 'lucide-react'
 import { CaseStudyCard } from '@/components/marketing/CaseStudyCard'
 import { PublicFooter } from '@/components/marketing/PublicFooter'
-import { getPlanDefinition } from '@/lib/plans'
+import { PUBLIC_MARKETS, PUBLIC_OFFERS, isPublicEnquiry, isPublicMarket, publicEnquiryLabel, publicPrice, type PublicEnquiry, type PublicMarket } from '@/lib/public-pricing'
+import { hasAnalyticsConsent } from '@/lib/cookie-consent'
 
 const TEAM_PREVIEW = [
   { photo: '/Anthony.png', name: 'Anthony Kilpatrick', role: 'Co-Founder' },
@@ -42,13 +43,32 @@ export default function LandingPage() {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
-  const [selectedEnquiry, setSelectedEnquiry] = useState('')
+  const [selectedEnquiry, setSelectedEnquiry] = useState<PublicEnquiry>('')
+  const [market, setMarket] = useState<PublicMarket>('ireland')
+  const kioskPrice = publicPrice('kiosk', market)
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem('allyjen-pricing-market')
+      if (isPublicMarket(saved)) setMarket(saved)
+    } catch {
+      // Keep the default when browser storage is unavailable.
+    }
+  }, [])
+
+  const selectMarket = (nextMarket: PublicMarket) => {
+    setMarket(nextMarket)
+    try {
+      window.localStorage.setItem('allyjen-pricing-market', nextMarket)
+    } catch {
+      // The selector still works for the current visit.
+    }
+  }
   const publicPlans = [
     {
-      ...getPlanDefinition('qr_lite'),
+      key: 'qr_lite' as const,
       title: 'QR Lite',
       badge: null,
-      unit: '/year',
       billingLabel: 'Per location · Paid annually',
       desc: 'Our lowest-cost option. Customers scan your QR code, and you manage your menu information.',
       features: [
@@ -64,15 +84,11 @@ export default function LandingPage() {
       hardware: 'No tablet required.',
       terms: 'No obligation to renew after each paid year.',
       cta: 'Enquire about QR Lite',
-      enquiry: 'QR Lite — Early Adopter Offer',
       highlight: false,
     },
     {
-      ...getPlanDefinition('starter'),
-      // Homepage offer only: existing billing prices and subscriptions stay unchanged.
-      priceLabel: 'EUR 19.99',
+      key: 'starter' as const,
       badge: 'Recommended for in-store access',
-      unit: '/month',
       billingLabel: 'Per location',
       desc: 'Keep your in-store allergen guide updated digitally, without reprinting it whenever allergen information changes.',
       features: [
@@ -85,17 +101,14 @@ export default function LandingPage() {
       ],
       guideNote: null,
       accessNote: null,
-      hardware: 'Kiosk tablet purchased separately: €299 one-off.',
+      hardware: `Kiosk tablet purchased separately: ${kioskPrice} one-off.`,
       terms: 'Monthly billing available. Minimum commitment, renewal and cancellation arrangements agreed in your quote.',
       cta: 'Enquire about Self-Managed',
-      enquiry: 'Self-Managed — Early Adopter Offer',
       highlight: true,
     },
     {
-      ...getPlanDefinition('pro'),
-      priceLabel: 'EUR 59.99',
+      key: 'pro' as const,
       badge: null,
-      unit: '/month',
       billingLabel: 'Per location',
       desc: 'Your QR guide and in-store kiosk, with menu updates managed for you using the ingredient and supplier information you provide.',
       features: [
@@ -108,15 +121,14 @@ export default function LandingPage() {
       ],
       guideNote: null,
       accessNote: null,
-      hardware: 'Kiosk tablet purchased separately: €299 one-off.',
+      hardware: `Kiosk tablet purchased separately: ${kioskPrice} one-off.`,
       terms: 'Monthly billing available. Minimum commitment, renewal and cancellation arrangements agreed in your quote.',
       cta: 'Discuss Fully Managed',
-      enquiry: 'Fully Managed — Early Adopter Offer',
       highlight: false,
     },
   ]
 
-  const enquireAbout = (enquiry: string) => {
+  const enquireAbout = (enquiry: PublicEnquiry) => {
     setSelectedEnquiry(enquiry)
     setSubmitted(false)
     document.getElementById('contact-form')?.scrollIntoView({ behavior: 'smooth' })
@@ -132,13 +144,18 @@ export default function LandingPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...contactForm,
-          message: [selectedEnquiry ? `Enquiry: ${selectedEnquiry}` : '', contactForm.message].filter(Boolean).join('\n\n'),
+          pricingMarket: market,
+          enquiryType: selectedEnquiry,
         }),
       })
       if (response.ok) {
         setSubmitted(true)
         setSelectedEnquiry('')
         setContactForm({ name: '', email: '', company: '', phone: '', message: '', privacyAccepted: false })
+
+        if (hasAnalyticsConsent()) {
+          window.gtag?.('event', 'generate_lead', { lead_source: 'website_contact_form' })
+        }
       } else {
         alert('Failed to send message. Please try again.')
       }
@@ -353,7 +370,7 @@ export default function LandingPage() {
                 <span className="text-[#42b8ac]">peace of mind.</span>
               </h1>
               <p className="text-lg text-white/70 mb-8 max-w-xl mx-auto lg:mx-0">
-                The all-in-one platform for Irish &amp; EU food businesses to track allergens, inform customers, and stay compliant.
+                The all-in-one platform for food businesses in Ireland and the UK to manage allergen information and share it with customers.
               </p>
 
             </div>
@@ -365,9 +382,9 @@ export default function LandingPage() {
       <section className="bg-[#f0f9f8] border-y border-[#42b8ac]/20 py-5">
         <Container>
           <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10 text-sm text-[#003842] font-medium">
-            <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac]" />EU Regulation 1169/2011 compliant</span>
+            <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac]" />Available in Ireland and the UK</span>
             <span className="hidden sm:inline text-[#42b8ac]/40">|</span>
-            <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac]" />FSAI-aligned allergen workflows</span>
+            <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac]" />Location-specific allergen workflows</span>
             <span className="hidden sm:inline text-[#42b8ac]/40">|</span>
             <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac]" />Irish-owned</span>
           </div>
@@ -382,7 +399,7 @@ export default function LandingPage() {
               Save Time. Reduce Risk. Build Trust.
             </h2>
             <p className="text-lg text-gray-500 max-w-xl mx-auto">
-              Built for Irish &amp; EU food businesses.
+              Built for food businesses in Ireland and the UK.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -414,7 +431,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
               { step: '01', title: 'Get in Touch', desc: 'Fill out the contact form below and tell us about your business. We\'ll respond within one business day.' },
-              { step: '02', title: 'We Get You Running', desc: 'We help set up your existing allergen information. With QR Lite, print your on-site guide and display your QR signage. With Self-Managed or Fully Managed, add a tablet and stand for €299; we configure it remotely and deliver it by courier, ready for plug and play.' },
+              { step: '02', title: 'We Get You Running', desc: `We help set up your existing allergen information. With QR Lite, print your on-site guide and display your QR signage. With Self-Managed or Fully Managed, add a tablet and stand for ${kioskPrice}. We configure it remotely and deliver it by courier, ready for plug and play.` },
               { step: '03', title: 'Go Live with Confidence', desc: 'Keep your information current as your menu changes. QR Lite customers print an updated on-site guide; kiosk plans update the customer-facing screen digitally.' },
             ].map((s, i) => (
               <div key={i} className="relative pl-6 border-l-2 border-[#42b8ac]">
@@ -455,7 +472,15 @@ export default function LandingPage() {
             <p className="mt-3 text-sm leading-relaxed text-white/80">10 locations total across all three packages. Price protection applies while your subscription remains continuously active; it is not a compulsory three-year contract. An enquiry does not reserve a place.</p>
           </div>
 
-          <p className="mb-8 text-center text-sm font-semibold text-[#003842]">Already in use across 9 OAKBERRY locations and Rio Coffee Shop.</p>
+          <fieldset className="mb-6 flex flex-wrap items-center justify-center gap-2">
+            <legend className="mx-auto mb-2 text-sm font-semibold text-[#003842]">Pricing market</legend>
+            {(Object.keys(PUBLIC_MARKETS) as PublicMarket[]).map((option) => (
+              <label key={option} className="cursor-pointer">
+                <input className="peer sr-only" type="radio" name="pricing-market" value={option} checked={market === option} onChange={() => selectMarket(option)} />
+                <span className="inline-flex min-h-11 items-center rounded-full border border-[#003842] px-5 text-sm font-semibold text-[#003842] peer-checked:bg-[#003842] peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-[#003842] peer-focus-visible:ring-offset-2">{PUBLIC_MARKETS[option].label}</span>
+              </label>
+            ))}
+          </fieldset>
 
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-6">
             {publicPlans.map((plan) => (
@@ -474,8 +499,8 @@ export default function LandingPage() {
                 <h3 id={`pricing-${plan.key}`} className="mb-3 text-xl font-bold text-[#003842]">{plan.title}</h3>
                 <p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#0e7066]">Early-adopter rate</p>
                 <div className="mb-1 flex flex-wrap items-baseline gap-1">
-                  <span className="text-4xl font-extrabold tracking-tight text-[#003842]">{plan.priceLabel.replace('EUR ', '€')}</span>
-                  <span className="text-lg font-semibold text-gray-600">{plan.unit}</span>
+                  <span className="text-4xl font-extrabold tracking-tight text-[#003842]">{publicPrice(plan.key, market)}</span>
+                  <span className="text-lg font-semibold text-gray-600">/{PUBLIC_OFFERS[plan.key].cadence}</span>
                 </div>
                 <p className="text-sm font-semibold text-gray-600">{plan.billingLabel}</p>
                 <p className="mb-6 mt-4 text-sm leading-relaxed text-gray-600">{plan.desc}</p>
@@ -495,7 +520,7 @@ export default function LandingPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => enquireAbout(plan.enquiry)}
+                  onClick={() => enquireAbout(plan.key)}
                   className={`mt-6 min-h-12 w-full rounded-full shrink-0 lg:h-16 px-4 py-3 text-center text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#003842] ${
                     plan.highlight ? 'bg-[#42b8ac] text-[#003842] hover:bg-[#3aa89e]' : 'bg-[#003842] text-white hover:bg-[#004d5e]'
                   }`}
@@ -520,7 +545,7 @@ export default function LandingPage() {
               <div className="min-w-0 flex-1">
                 <h3 id="kiosk-hardware-heading" className="mb-3 text-2xl font-bold text-[#003842]">Less printing. Easier updates.</h3>
                 <p className="mb-4 max-w-2xl text-sm leading-relaxed text-gray-600">With an AllyJen kiosk, customers can view your current allergen guide directly on the in-store screen. Update your information on the platform and the kiosk reflects the changes—saving you the job of reprinting and replacing your paper guide.</p>
-                <p className="text-xl font-bold text-[#003842]">Add a kiosk tablet for €299 — one-off purchase.</p>
+                <p className="text-xl font-bold text-[#003842]">Add a kiosk tablet for {kioskPrice} — one-off purchase.</p>
                 <p className="mt-2 font-semibold text-gray-700">Subscription charged separately.</p>
                 <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gray-600">
                   Kiosk software access is included with Self-Managed and Fully Managed.
@@ -529,7 +554,7 @@ export default function LandingPage() {
                   Includes the tablet and stand, remote configuration, and courier delivery to your location,
                   ready for plug and play. You own the tablet and stand.
                 </p>
-                <button type="button" onClick={() => enquireAbout('Kiosk tablet — €299 one-off purchase')} className="mt-5 min-h-11 rounded-full border-2 border-[#003842] px-6 py-2.5 text-sm font-semibold text-[#003842] transition-colors hover:bg-[#003842] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#003842]">
+                <button type="button" onClick={() => enquireAbout('kiosk')} className="mt-5 min-h-11 rounded-full border-2 border-[#003842] px-6 py-2.5 text-sm font-semibold text-[#003842] transition-colors hover:bg-[#003842] hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#003842]">
                   Enquire about a kiosk tablet
                 </button>
               </div>
@@ -540,7 +565,7 @@ export default function LandingPage() {
             <h3 id="allergen-guide-faq-heading" className="mb-5 text-2xl font-bold text-[#003842]">Your on-site allergen guide</h3>
             <details className="border-b border-gray-200 pb-4">
               <summary className="cursor-pointer text-base font-bold text-[#003842] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#003842]">Do I need a printed allergen guide?</summary>
-              <p className="mt-3 text-sm leading-relaxed text-gray-600">With QR Lite, print your guide from AllyJen and keep the customer-accessible copy current whenever allergen information changes. A QR code alone is insufficient. Other suitable written formats may also be used, provided customers can easily find and read the food-specific information before purchase without needing to ask staff.</p>
+              <p className="mt-3 text-sm leading-relaxed text-gray-600">In the Republic of Ireland, customers must be able to find and read written allergen information before buying. A QR code alone is insufficient. In the UK, you can provide loose-food allergen information verbally when signage clearly directs customers to staff. Keep current written information available in either case.</p>
             </details>
             <details className="pt-4">
               <summary className="cursor-pointer text-base font-bold text-[#003842] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#003842]">With a kiosk, can I stop reprinting my guide?</summary>
@@ -548,13 +573,13 @@ export default function LandingPage() {
             </details>
             <p className="mt-5 text-xs leading-relaxed text-gray-600">See FSAI guidance on{' '}
               <a className="font-semibold text-[#0e7066] underline underline-offset-2" href="https://www.fsai.ie/business-advice/running-a-food-business/allergens/allergen-information-for-non-prepacked-food">written allergen information</a>{' '}and{' '}
-              <a className="font-semibold text-[#0e7066] underline underline-offset-2" href="https://www.fsai.ie/business-advice/labelling/labelling-allergens">QR codes</a>.
+              <a className="font-semibold text-[#0e7066] underline underline-offset-2" href="https://www.fsai.ie/business-advice/labelling/labelling-allergens">QR codes</a>. For the UK, see <a className="font-semibold text-[#0e7066] underline underline-offset-2" href="https://www.gov.uk/government/publications/food-allergen-labelling-and-information-requirements-technical-guidance">Food Standards Agency guidance</a> and <a className="font-semibold text-[#0e7066] underline underline-offset-2" href="https://www.foodstandards.gov.scot/business-guidance/running-a-food-business/packaging-and-labelling/allergen-labelling">Food Standards Scotland guidance</a>.
             </p>
           </div>
 
           <div className="mt-6 flex flex-col items-start justify-between gap-5 rounded-2xl bg-[#003842] p-6 text-white sm:flex-row sm:items-center sm:p-7">
             <p className="text-lg font-semibold">Multiple locations? Talk to us about group pricing.</p>
-            <button type="button" onClick={() => enquireAbout('Group pricing')} className="min-h-11 shrink-0 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#003842] transition-colors hover:bg-[#d4f0ed] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
+            <button type="button" onClick={() => enquireAbout('group')} className="min-h-11 shrink-0 rounded-full bg-white px-6 py-3 text-sm font-semibold text-[#003842] transition-colors hover:bg-[#d4f0ed] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white">
               Discuss group pricing
             </button>
           </div>
@@ -583,12 +608,12 @@ export default function LandingPage() {
                 Compliance Without Complexity.
               </h2>
               <p className="text-gray-600 mb-5 leading-relaxed">
-                Meeting allergen requirements doesn't have to be hard. AllyJen helps Irish &amp; EU food businesses protect customers, reduce risk, and build trust.
+                Meeting allergen requirements doesn't have to be hard. AllyJen helps food businesses in Ireland and the UK protect customers, reduce risk, and build trust.
               </p>
               <ul className="space-y-3">
                 {[
-                  'Full EU Regulation (EU) No 1169/2011 compliance support',
-                  'FSAI-aligned allergen labelling workflows',
+                  'Tools to document and share allergen information',
+                  'Guidance for Irish and UK locations',
                   'Plain-language customer-facing allergen displays',
                   'Audit-ready reports at the click of a button',
                 ].map((item, i) => (
@@ -676,10 +701,11 @@ export default function LandingPage() {
                   <form onSubmit={handleContactSubmit} className="space-y-5">
                     <div>
                       <label htmlFor="enquiry-type" className="mb-1.5 block text-sm font-medium text-white/80">Plan or enquiry type</label>
-                      <select id="enquiry-type" name="enquiryType" value={selectedEnquiry} onChange={(e) => setSelectedEnquiry(e.target.value)} className="w-full rounded-lg border border-white/20 bg-[#003842] px-4 py-3 text-sm text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#42b8ac]">
+                      <select id="enquiry-type" name="enquiryType" value={selectedEnquiry} onChange={(e) => { if (isPublicEnquiry(e.target.value)) setSelectedEnquiry(e.target.value) }} className="w-full rounded-lg border border-white/20 bg-[#003842] px-4 py-3 text-sm text-white focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#42b8ac]">
                         <option value="">General enquiry</option>
-                        {['QR Lite — Early Adopter Offer', 'Self-Managed — Early Adopter Offer', 'Fully Managed — Early Adopter Offer', 'Kiosk tablet — €299 one-off purchase', 'Group pricing'].map((enquiry) => <option key={enquiry} value={enquiry}>{enquiry}</option>)}
+                        {(['qr_lite', 'starter', 'pro', 'kiosk', 'group'] as const).map((enquiry) => <option key={enquiry} value={enquiry}>{publicEnquiryLabel(enquiry, market)}</option>)}
                       </select>
+                      <p className="mt-2 text-xs text-white/80">Pricing market {PUBLIC_MARKETS[market].label} ({PUBLIC_MARKETS[market].currency})</p>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                       <div>
@@ -781,7 +807,7 @@ export default function LandingPage() {
                     {[
                       { title: 'Expert-Guided Setup', body: 'Our team handles the initial configuration.' },
                       { title: 'Ongoing Support', body: 'We\'re always on hand with dedicated support and regular platform updates.' },
-                      { title: 'FSAI Compliance Ready', body: 'Built fully in line with Irish and EU food safety regulations.' },
+                      { title: 'Allergen Guidance', body: 'Support for managing allergen information across Irish and UK locations.' },
                       { title: 'No Technical Skills Needed', body: 'An intuitive platform designed for busy food businesses, not IT professionals.' },
                     ].map((item, i) => (
                       <div key={i} className="flex items-start gap-3">

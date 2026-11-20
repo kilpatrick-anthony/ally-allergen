@@ -36,14 +36,14 @@ export default function PrivacyPolicyPage() {
         <ul>
           <li><strong>Contract:</strong> to create accounts, provide subscriptions, operate the service, process requested payments, and provide support.</li>
           <li><strong>Legitimate interests:</strong> to secure, maintain, troubleshoot, and improve the service; prevent misuse; and communicate with business contacts, balanced against individual rights.</li>
-          <li><strong>Consent:</strong> for optional website and kiosk analytics and where we specifically ask for consent. Consent can be withdrawn at any time.</li>
+          <li><strong>Consent:</strong> for optional website and kiosk analytics, LinkedIn advertising measurement and personalisation, and where we specifically ask for consent. Consent can be withdrawn at any time.</li>
           <li><strong>Legal obligation:</strong> to maintain records or respond to lawful requests where required.</li>
         </ul>
       </section>
 
       <section>
         <h2>4. Service providers and disclosures</h2>
-        <p>We use vetted providers to operate AllyJen, including Vercel for hosting and performance services, Supabase for database and authentication services, Stripe for payment processing, HubSpot for CRM, enquiry management and sales communications, and Google Analytics only where analytics consent is granted. Providers process data under their own terms and applicable data-processing commitments. We may also disclose information where legally required or as part of a properly managed corporate transaction.</p>
+        <p>We use vetted providers to operate AllyJen, including Vercel for hosting and performance services, Supabase for database and authentication services, Stripe for payment processing, HubSpot for CRM, enquiry management and sales communications, and Google Analytics only where analytics consent is granted, and LinkedIn Insight Tag only where separate marketing consent is granted. LinkedIn may process page visits, referrers, IP addresses, browser/device details, and cookie identifiers for advertising measurement and personalisation. Providers process data under their own terms and applicable data-processing commitments. We may also disclose information where legally required or as part of a properly managed corporate transaction.</p>
       </section>
 
       <section>
@@ -68,7 +68,7 @@ export default function PrivacyPolicyPage() {
 
       <section>
         <h2>9. Cookies and changes to this policy</h2>
-        <p>See our <a href="/cookies">Cookie Policy</a> for details of browser storage and analytics choices. We may update this policy as the service or legal requirements change and will show the new date on this page.</p>
+        <p>See our <a href="/cookies">Cookie Policy</a> for details of browser storage, analytics, and marketing choices. We may update this policy as the service or legal requirements change and will show the new date on this page.</p>
       </section>
     </LegalPageLayout>
   )

@@ -1,19 +1,36 @@
 // app/api/contact/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import { sendMail } from '@/lib/email'
+import { isPublicEnquiry, isPublicMarket, PUBLIC_MARKETS, publicEnquiryLabel } from '@/lib/public-pricing'
+
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (character) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character] || character)
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, email, company, phone, message, privacyAccepted } = await request.json()
+    const { name, email, company, phone, message: userMessage, privacyAccepted, pricingMarket, enquiryType } = await request.json()
 
     // Validate required fields
-    if (!name || !email || !company || privacyAccepted !== true) {
+    if ([name, email, company].some(value => typeof value !== 'string' || !value.trim()) || privacyAccepted !== true ||
+        (phone != null && typeof phone !== 'string') || (userMessage != null && typeof userMessage !== 'string')) {
       return NextResponse.json(
         { error: 'Name, email, and company are required' },
         { status: 400 }
       )
     }
 
+    if ((pricingMarket !== undefined || enquiryType !== undefined) &&
+        (!isPublicMarket(pricingMarket) || !isPublicEnquiry(enquiryType))) {
+      return NextResponse.json({ error: 'Choose a valid pricing market and enquiry type' }, { status: 400 })
+    }
+
+    const pricingDetails = isPublicMarket(pricingMarket) && isPublicEnquiry(enquiryType)
+      ? [
+          `Pricing market: ${pricingMarket === 'ireland' ? 'Ireland' : 'UK'} (${PUBLIC_MARKETS[pricingMarket].currency})`,
+          `Enquiry: ${publicEnquiryLabel(enquiryType, pricingMarket)}`,
+        ].join('\n')
+      : ''
+    const message = [pricingDetails, userMessage].filter(Boolean).join('\n\n')
     const adminEmail = 'info@allyjen.ie'
     const submittedAt = new Date().toLocaleString('en-IE', { timeZone: 'Europe/Dublin' })
 
@@ -23,11 +40,11 @@ export async function POST(request: NextRequest) {
       subject: `New contact form submission from ${company}`,
       html: `
         <h2>New Contact Form Submission</h2>
-        <p><strong>Name:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Company:</strong> ${company}</p>
-        ${phone ? `<p><strong>Phone:</strong> ${phone}</p>` : ''}
-        ${message ? `<p><strong>Message:</strong></p><p>${message.replace(/\n/g, '<br>')}</p>` : ''}
+        <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+        <p><strong>Email:</strong> ${escapeHtml(email)}</p>
+        <p><strong>Company:</strong> ${escapeHtml(company)}</p>
+        ${phone ? `<p><strong>Phone:</strong> ${escapeHtml(phone)}</p>` : ''}
+        ${message ? `<p><strong>Message:</strong></p><p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>` : ''}
         <hr>
         <p style="color:#999;font-size:12px">Submitted at ${submittedAt}</p>
       `,
@@ -38,14 +55,14 @@ export async function POST(request: NextRequest) {
     // The website retains its own acknowledgement email as a fallback if HubSpot is unavailable.
     const hubspotPortalId = '149233820'
     const hubspotFormId = '1fc460a4-02d7-4a08-9d64-ea4d1fa902e9'
-    const nameParts = String(name).trim().split(/\\s+/)
+    const nameParts = String(name).trim().split(/\s+/)
     const hubspotFields = [
       { name: 'firstname', value: nameParts[0] || '' },
       { name: 'lastname', value: nameParts.slice(1).join(' ') },
       { name: 'email', value: email },
       { name: 'company', value: company },
       { name: 'phone', value: phone || '' },
-      { name: 'message', value: [`Business: ${company}`, message || ''].filter(Boolean).join('\\n\\n') },
+      { name: 'message', value: [`Business: ${company}`, message || ''].filter(Boolean).join('\n\n') },
     ]
     try {
       const hubspotResponse = await fetch(`https://api.hsforms.com/submissions/v3/integration/submit/${hubspotPortalId}/${hubspotFormId}`, {
@@ -63,13 +80,13 @@ export async function POST(request: NextRequest) {
       to: email,
       subject: `We've received your enquiry – AllyJen`,
       html: `
-        <h2>Thanks for getting in touch, ${name}!</h2>
+        <h2>Thanks for getting in touch, ${escapeHtml(name)}!</h2>
         <p>We've received your enquiry and will get back to you within one business day.</p>
         <p>Here's a copy of what you sent us:</p>
         <ul>
-          <li><strong>Company:</strong> ${company}</li>
-          ${phone ? `<li><strong>Phone:</strong> ${phone}</li>` : ''}
-          ${message ? `<li><strong>Message:</strong> ${message}</li>` : ''}
+          <li><strong>Company:</strong> ${escapeHtml(company)}</li>
+          ${phone ? `<li><strong>Phone:</strong> ${escapeHtml(phone)}</li>` : ''}
+          ${message ? `<li><strong>Message:</strong> ${escapeHtml(message).replace(/\n/g, '<br>')}</li>` : ''}
         </ul>
         <p>Best regards,<br>The AllyJen Team</p>
       `,

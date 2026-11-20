@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { Building, MapPin, Phone, Mail, Loader2, Tablet, Edit, ChefHat, Search, Trash2, QrCode } from 'lucide-react';
 import DeviceManagement from '@/components/admin/DeviceManagement';
+import { LocationAllergenTools } from '@/components/admin/LocationAllergenTools';
+import { isJurisdiction } from '@/lib/location-jurisdiction';
 import QRCodeManagement from '@/components/admin/QRCodeManagement';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -21,7 +23,7 @@ export default function SiteKioskPage() {
   const [site, setSite] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'menu' | 'devices' | 'qr'>('devices');
+  const [activeTab, setActiveTab] = useState<'menu' | 'devices' | 'qr' | 'allergens'>('devices');
   const [menuItems, setMenuItems] = useState<any[]>([]);
   const [menuLoading, setMenuLoading] = useState(false);
   const [menuError, setMenuError] = useState<string | null>(null);
@@ -36,7 +38,7 @@ export default function SiteKioskPage() {
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab === 'menu' || tab === 'devices' || tab === 'qr') {
+    if (tab === 'menu' || tab === 'devices' || tab === 'qr' || tab === 'allergens') {
       setActiveTab(tab);
     }
   }, [searchParams]);
@@ -263,7 +265,7 @@ export default function SiteKioskPage() {
         {/* Tabs */}
         <div className="mb-6">
           <div className="border-b border-gray-200">
-            <nav className="-mb-px flex gap-6 max-w-7xl mx-auto px-4">
+            <nav className="-mb-px flex flex-wrap gap-6 max-w-7xl mx-auto px-4">
               <button
                 onClick={() => setActiveTab('qr')}
                 className={`pb-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
@@ -296,13 +298,21 @@ export default function SiteKioskPage() {
               >
                 {t('admin.menuItemsStat')}
               </button>
+              <button type="button" onClick={() => setActiveTab('allergens')}
+                className={`pb-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'allergens'
+                  ? 'border-[#42b8ac] text-[#003842]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                Allergen guides and labels
+              </button>
             </nav>
           </div>
         </div>
 
         {/* Tab Content */}
         <div className="max-w-7xl mx-auto px-4">
-          {activeTab === 'qr' ? (
+          {activeTab === 'allergens' ? (
+            site.business?.slug && <LocationAllergenTools key={site.id} siteId={site.id} siteSlug={slug} siteName={site.name}
+              businessSlug={site.business.slug} jurisdiction={isJurisdiction(site.jurisdiction) ? site.jurisdiction : 'IE'} />
+          ) : activeTab === 'qr' ? (
             <QRCodeManagement siteId={site.id} siteName={site.name} />
           ) : activeTab === 'devices' ? (
             <DeviceManagement

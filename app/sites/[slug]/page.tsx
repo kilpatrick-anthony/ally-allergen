@@ -1,6 +1,8 @@
 // app/sites/[slug]/page.tsx
-import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { notFound, redirect } from 'next/navigation';
+import { locationGuidePath, isJurisdiction } from '@/lib/location-jurisdiction';
+import { getGuidePublication } from '@/lib/server/location-allergens';
+import { createClient, createServiceClient } from '@/lib/supabase/server';
 import { Building } from 'lucide-react';
 import KioskMenu from '@/components/kiosk/MenuDisplay';
 
@@ -27,6 +29,11 @@ export default async function SiteKioskPage({
 
   if (!site) {
     notFound();
+  }
+
+  if (site.business?.slug && isJurisdiction(site.jurisdiction) &&
+      (site.jurisdiction !== 'IE' || await getGuidePublication(createServiceClient(), site.id, site.jurisdiction))) {
+    redirect(locationGuidePath(site.business.slug, site.id, 'web'));
   }
 
   // Fetch allergen items for this site

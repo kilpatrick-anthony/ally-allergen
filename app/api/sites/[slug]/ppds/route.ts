@@ -1,0 +1,158 @@
+import { NextResponse } from 'next/server'
+import { z } from 'zod'
+import { QuickAddError } from '@/lib/server/quick-add'
+import { locationAllergenContext, locationAllergenFailure, sourceFingerprint } from '@/lib/server/location-allergens'
+import { buildPpdsLabel, ppdsReviewSources, type PpdsSource, type StoredPpdsLabel } from '@/lib/server/ppds-labels'
+import { makePpdsLabelPdf } from '@/lib/pdf/ppds-label'
+import { classifyPpds, ppdsAnswers, ppdsLabelInput, type PpdsAnswers, type PpdsClassification } from '@/lib/ppds'
+
+type RouteParams = { params: Promise<{ slug: string }> }
+type Actor = Awaited<ReturnType<typeof locationAllergenContext>>
+type Revision = {
+  id: string
+  classification: PpdsClassification
+  answers: PpdsAnswers
+  label: StoredPpdsLabel | null
+  source_fingerprint: string
+  source: PpdsSource
+  recorded_at: string
+  recorded_by: string
+}
+
+const itemIdInput = z.string().uuid()
+const reviewInput = z.object({
+  itemId: itemIdInput,
+  expected: sourceFingerprint,
+  previous: z.string().uuid().nullable(),
+  answers: ppdsAnswers,
+  intent: z.enum(['classify', 'review', 'preview', 'approve']),
+  label: ppdsLabelInput.optional(),
+}).strict()
+
+async function readSource(actor: Actor, itemId: string) {
+  const { data, error } = await actor.supabase.rpc('review_site_ppds_source', {
+    p_site: actor.site.id, p_business: actor.businessId, p_item: itemId,
+  })
+  if (error) throw error
+  if (!data?.source) throw new QuickAddError('Active UK menu item not found for this location.', 404)
+  return data as { source: PpdsSource; fingerprint: string }
+}
+
+async function readRevisions(actor: Actor, itemId: string) {
+  const { data, error } = await actor.supabase.from('site_ppds_revisions')
+    .select('id,classification,answers,label,source_fingerprint,source,recorded_at,recorded_by')
+    .eq('site_id', actor.site.id).eq('menu_item_id', itemId)
+    .order('recorded_at', { ascending: false }).order('id', { ascending: false }).limit(20)
+  if (error) throw error
+  return (data || []) as Revision[]
+}
+
+function staleReason(revision: Revision | undefined, source: PpdsSource, fingerprint: string) {
+  if (!revision?.label) return null
+  if (revision.source_fingerprint !== fingerprint) return 'Recipe or supplier data changed. Review the sources and approve a new label.'
+  const documents = ppdsReviewSources(source).flatMap(row => row.documents)
+  const expired = revision.label.input.specifications.some(spec => !documents.some(doc => doc.id === spec.documentId && doc.current))
+  return expired ? 'A source specification is due for review. Update it and approve a new label.' : null
+}
+
+export async function GET(request: Request, { params }: RouteParams) {
+  try {
+    const query = new URL(request.url).searchParams
+    const printId = query.get('print')
+    const actor = await locationAllergenContext((await params).slug, printId !== null)
+    if (!query.has('item') && printId === null) {
+      const { data, error } = await actor.supabase.rpc('site_ppds_overview', { p_site: actor.site.id, p_business: actor.businessId })
+      if (error) throw error
+      return NextResponse.json({ items: data }, { headers: { 'Cache-Control': 'private, no-store' } })
+    }
+    const itemId = itemIdInput.safeParse(query.get('item'))
+    if (!itemId.success) return NextResponse.json({ error: 'Choose a valid menu item.' }, { status: 400 })
+    const [{ source, fingerprint }, revisions] = await Promise.all([
+      readSource(actor, itemId.data), readRevisions(actor, itemId.data),
+    ])
+    const current = revisions[0]
+    const stale = staleReason(current, source, fingerprint)
+
+    if (printId !== null) {
+      if (!current?.label || current.id !== printId || stale) {
+        return NextResponse.json({ error: stale || 'Only the current approved revision is available to print.' }, { status: 409 })
+      }
+      const { doc } = makePpdsLabelPdf(current.label.rendered)
+      return new NextResponse(doc.output('arraybuffer'), {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="ppds-${current.id}.pdf"`,
+          'Cache-Control': 'private, no-store',
+        },
+      })
+    }
+
+    return NextResponse.json({
+      fingerprint,
+      foodName: source.item.name,
+      ingredientDeclaration: source.item.ingredient_declaration,
+      sources: ppdsReviewSources(source),
+      stale,
+      current: current ? {
+        id: current.id, classification: current.classification, answers: current.answers,
+        label: current.label, date: current.recorded_at,
+      } : null,
+      history: revisions.map(revision => {
+        const documents = ppdsReviewSources(revision.source).flatMap(row => row.documents)
+        return {
+          id: revision.id, date: revision.recorded_at, approved: Boolean(revision.label), actor: revision.recorded_by,
+          classification: revision.classification,
+          documents: revision.label?.input.specifications.map(spec => {
+            const doc = documents.find(item => item.id === spec.documentId)
+            return doc ? [doc.name, doc.version].filter(Boolean).join(' · ') : spec.documentId
+          }) || [],
+        }
+      }),
+    }, { headers: { 'Cache-Control': 'private, no-store' } })
+  } catch (error) {
+    return locationAllergenFailure(error)
+  }
+}
+
+export async function POST(request: Request, { params }: RouteParams) {
+  try {
+    const actor = await locationAllergenContext((await params).slug, true)
+    const result = reviewInput.safeParse(await request.json().catch(() => null))
+    if (!result.success) {
+      const issue = result.error.issues[0]
+      return NextResponse.json({ error: issue?.path.length ? `Check ${issue.path.join('.')}. ${issue.message}` : 'Complete the classification and review fields.' }, { status: 400 })
+    }
+
+    const input = result.data
+    const { source, fingerprint } = await readSource(actor, input.itemId)
+    if (fingerprint !== input.expected) {
+      return NextResponse.json({ error: 'Recipe or supplier data changed. Reload the item and review its sources.' }, { status: 409 })
+    }
+
+    const classification = input.intent === 'review' ? 'review' : classifyPpds(input.answers)
+    let label: StoredPpdsLabel | null = null
+    if (input.intent === 'preview' || input.intent === 'approve') {
+      if (classification !== 'ppds' || !input.label) {
+        return NextResponse.json({ error: 'Complete the PPDS classification and label declaration.' }, { status: 400 })
+      }
+      try {
+        const built = buildPpdsLabel(source, input.label)
+        label = built.label
+        if (input.intent === 'preview') {
+          return NextResponse.json({ label: label.rendered, xHeight: built.xHeight, minimumXHeight: built.minimumXHeight })
+        }
+      } catch (error) {
+        return NextResponse.json({ error: error instanceof Error ? error.message : 'Review the label declaration.' }, { status: 409 })
+      }
+    }
+    const { data, error } = await actor.supabase.rpc('record_site_ppds_revision', {
+      p_site: actor.site.id, p_business: actor.businessId, p_item: input.itemId, p_actor: actor.userId,
+      p_previous: input.previous, p_expected: input.expected, p_classification: classification, p_answers: input.answers, p_label: label,
+    })
+    if (error?.code === '40001') return NextResponse.json({ error: error.message }, { status: 409 })
+    if (error) throw error
+    return NextResponse.json({ id: data })
+  } catch (error) {
+    return locationAllergenFailure(error)
+  }
+}

@@ -21,6 +21,9 @@ import {
   QrCode
 } from 'lucide-react'
 
+import { LocationJurisdictionField } from '@/components/admin/LocationJurisdictionField'
+import type { Jurisdiction } from '@/lib/location-jurisdiction'
+
 type OnboardingStep = 'welcome' | 'location' | 'complete'
 
 interface LocationData {
@@ -43,6 +46,7 @@ export default function OnboardingPage() {
   const [isQRLite, setIsQRLite] = useState(false)
   const [createdSiteSlug, setCreatedSiteSlug] = useState<string | null>(null)
   
+  const [jurisdiction, setJurisdiction] = useState<Jurisdiction>('IE')
   const [locationData, setLocationData] = useState<LocationData>({
     name: '',
     address: '',
@@ -129,7 +133,8 @@ export default function OnboardingPage() {
           name: locationData.name,
           address: locationData.address || null,
           city: locationData.city || null,
-          country: 'Ireland',
+          country: jurisdiction === 'IE' ? 'Ireland' : 'United Kingdom',
+          jurisdiction,
           eircode: locationData.eircode || null,
           phone: locationData.phone || null,
           email: locationData.email || null,
@@ -264,6 +269,7 @@ export default function OnboardingPage() {
       </div>
 
       <div className="space-y-4">
+        <LocationJurisdictionField value={jurisdiction} onChange={setJurisdiction} />
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Location Name *
@@ -324,14 +330,14 @@ export default function OnboardingPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Eircode / Postcode
+              {jurisdiction === 'IE' ? 'Eircode' : 'Postcode'}
             </label>
             <input
               type="text"
               name="eircode"
               value={locationData.eircode}
               onChange={handleLocationChange}
-              placeholder="D02 XY45"
+              placeholder={jurisdiction === 'IE' ? 'D02 XY45' : 'Postcode'}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#42b8ac] focus:border-transparent"
             />
           </div>

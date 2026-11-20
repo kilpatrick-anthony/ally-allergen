@@ -8,6 +8,7 @@ export type CookieConsentPreferences = {
   version: number
   necessary: true
   analytics: boolean
+  marketing: boolean
   updatedAt: string
 }
 
@@ -28,22 +29,24 @@ export function readCookieConsent(): CookieConsentPreferences | null {
       parsed.version !== COOKIE_CONSENT_VERSION ||
       parsed.necessary !== true ||
       typeof parsed.analytics !== 'boolean' ||
+      (parsed.marketing !== undefined && typeof parsed.marketing !== 'boolean') ||
       typeof parsed.updatedAt !== 'string'
     ) {
       return null
     }
 
-    return parsed as CookieConsentPreferences
+    return { ...parsed, marketing: parsed.marketing === true } as CookieConsentPreferences
   } catch {
     return null
   }
 }
 
-export function saveCookieConsent(analytics: boolean): CookieConsentPreferences {
+export function saveCookieConsent(analytics: boolean, marketing = false): CookieConsentPreferences {
   const preferences: CookieConsentPreferences = {
     version: COOKIE_CONSENT_VERSION,
     necessary: true,
     analytics,
+    marketing,
     updatedAt: new Date().toISOString(),
   }
 

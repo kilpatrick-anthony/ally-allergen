@@ -32,6 +32,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 
 // Import offline functionality
+import { JURISDICTIONS, KIOSK_LOCATION_STORAGE_KEY, LEGACY_KIOSK_STORAGE_KEY, locationAllergenGuidance, publishedDate } from '@/lib/location-jurisdiction'
 import { useOfflineKioskData, type Business, type MenuItem } from '@/lib/hooks/useOfflineKioskData'
 import OfflineIndicator from '@/components/kiosk/OfflineIndicator'
 import { useDeviceHeartbeat } from '@/lib/hooks/useDeviceHeartbeat'
@@ -344,13 +345,6 @@ export default function KioskPage() {
   const pdfAutoDownload = searchParams.get('pdf')
   const analyticsAllowed = useAnalyticsConsent()
 
-  // Persist slug so the PWA start_url (/kiosk) can redirect back here
-  useEffect(() => {
-    if (!isWebsiteLink && slug && typeof window !== 'undefined') {
-      localStorage.setItem('allyjen_kiosk_slug', slug)
-    }
-  }, [slug, isWebsiteLink])
-  
   // Use offline-enabled data hook
   const {
     business,
@@ -363,6 +357,19 @@ export default function KioskPage() {
     lastUpdated,
     refresh,
   } = useOfflineKioskData(slug, siteIdParam)
+
+  // The installed kiosk must reopen the same location after a device restart.
+  useEffect(() => {
+    if (isWebsiteLink || qrDeploymentCode || !business || !slug ||
+        (siteIdParam && business.location?.id !== siteIdParam)) return
+    try {
+      localStorage.setItem(KIOSK_LOCATION_STORAGE_KEY, JSON.stringify({ slug, siteId: siteIdParam }))
+      localStorage.setItem(LEGACY_KIOSK_STORAGE_KEY, slug)
+    } catch {
+      // The guide remains available when storage is disabled.
+    }
+  }, [business, isWebsiteLink, qrDeploymentCode, siteIdParam, slug])
+
 
   // Send periodic heartbeats to track device status
   useDeviceHeartbeat({
@@ -931,24 +938,23 @@ export default function KioskPage() {
     
     setGeneratingPDF(true)
     try {
-      // Check if PDF download is allowed (trial limits)
-      const response = await fetch('/api/pdf/track-download', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          downloadType: includeFilters ? 'filtered_pdf' : 'full_pdf',
-          siteId: siteIdParam || null
+      // Legacy guides keep the existing download tracking flow.
+      if (!business.location?.publicationId) {
+        const response = await fetch('/api/pdf/track-download', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            downloadType: includeFilters ? 'filtered_pdf' : 'full_pdf',
+            siteId: siteIdParam || null,
+          }),
         })
-      })
-      
-      const result = await response.json()
-      
-      if (!response.ok || !result.allowed) {
-        setGeneratingPDF(false)
-        alert(result.error || t.kioskPortal.pdfLimitReached)
-        return
+        const result = await response.json()
+        if (!response.ok || !result.allowed) {
+          alert(result.error || t.kioskPortal.pdfLimitReached)
+          return
+        }
       }
-      
+
       const menuItemsToInclude = (includeFilters ? filteredItems : menuItems).map(i => ({ ...i, itemType: 'menu_item' as const }))
       const allItemsToInclude = [...menuItemsToInclude, ...ingredientGuideRows.map(i => ({ ...i, itemType: 'ingredient' as const }))]
       
@@ -1127,6 +1133,26 @@ export default function KioskPage() {
     )
   }
 
+  const location = business?.location
+  const locationGuidance = location && locationAllergenGuidance(location.jurisdiction)
+  if (location && location.jurisdiction !== 'IE' && !location.publishedAt) {
+    return (
+      <main className="mx-auto max-w-lg space-y-4 px-6 py-16 text-[#003842]" data-context="kiosk">
+        <h1 className="text-2xl font-bold">{location.name} allergen information</h1>
+        <p>The location has not published its guide yet. Ask staff for the current written allergen information before ordering.</p>
+        <a className="underline" href={locationGuidance?.href}>{locationGuidance?.regulator}</a>
+      </main>
+    )
+  }
+  const locationNotice = location && (
+    <div className="mx-auto max-w-4xl px-4 py-3 text-center text-sm">
+      <p className="font-semibold">{location.name} · {JURISDICTIONS[location.jurisdiction]}</p>
+      {location.publishedAt && <p>Published {publishedDate(location.publishedAt)}</p>}
+      {(isOffline || isStale) && <p>Check the current printed guide with staff before ordering.</p>}
+      <a className="underline underline-offset-2" href={locationGuidance?.href}>{locationGuidance?.regulator} guidance</a>
+    </div>
+  )
+
   // ===== INACTIVITY WARNING MODAL =====
   const InactivityWarning = () => (
     <div className="fixed inset-0 bg-[#001e24]/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
@@ -1181,6 +1207,7 @@ export default function KioskPage() {
         data-context="kiosk"
         onClick={enterFullscreen}
       >
+        <div className="relative z-10 text-white">{locationNotice}</div>
         {/* Decorative blobs for depth */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div
@@ -1466,6 +1493,8 @@ export default function KioskPage() {
           </div>
         </Container>
       </header>
+      {locationNotice}
+
 
       <Container className="py-8">
         {/* Landing Page View */}

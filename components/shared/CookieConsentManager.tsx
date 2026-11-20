@@ -17,6 +17,7 @@ import {
 import { useTranslation } from '@/lib/hooks/useTranslation'
 
 const GOOGLE_ANALYTICS_ID = 'G-9BH4TMRH75'
+const LINKEDIN_PARTNER_ID = '11335313'
 
 declare global {
   interface Window {
@@ -48,34 +49,43 @@ export default function CookieConsentManager() {
   const [hasLoadedPreferences, setHasLoadedPreferences] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [analyticsEnabled, setAnalyticsEnabled] = useState(false)
+  const [marketingEnabled, setMarketingEnabled] = useState(false)
 
   useEffect(() => {
     const storedPreferences = readCookieConsent()
     setPreferences(storedPreferences)
     setAnalyticsEnabled(storedPreferences?.analytics ?? false)
+    setMarketingEnabled(storedPreferences?.marketing ?? false)
     setHasLoadedPreferences(true)
 
     if (!storedPreferences?.analytics) disableAnalytics()
   }, [])
 
-  const applyPreferences = (analytics: boolean) => {
-    const nextPreferences = saveCookieConsent(analytics)
+  const applyPreferences = (analytics: boolean, marketing = false) => {
+    const marketingRevoked = preferences?.marketing === true && !marketing
+    const nextPreferences = saveCookieConsent(analytics, marketing)
     setPreferences(nextPreferences)
     setAnalyticsEnabled(analytics)
     setSettingsOpen(false)
 
     if (analytics) enableAnalytics()
     else disableAnalytics()
+
+    // Unload LinkedIn and its event listeners when consent is withdrawn.
+    if (marketingRevoked) window.location.reload()
   }
 
   const openSettings = () => {
     setAnalyticsEnabled(preferences?.analytics ?? false)
+    setMarketingEnabled(preferences?.marketing ?? false)
     setSettingsOpen(true)
   }
 
   useEffect(() => {
     const handleOpenSettings = () => {
-      setAnalyticsEnabled(readCookieConsent()?.analytics ?? false)
+      const storedPreferences = readCookieConsent()
+      setAnalyticsEnabled(storedPreferences?.analytics ?? false)
+      setMarketingEnabled(storedPreferences?.marketing ?? false)
       setSettingsOpen(true)
     }
 
@@ -119,6 +129,29 @@ export default function CookieConsentManager() {
         </>
       ) : null}
 
+      {preferences?.marketing === true ? (
+        <Script id="linkedin-insight" strategy="afterInteractive">
+          {`
+            window._linkedin_partner_id = '${LINKEDIN_PARTNER_ID}';
+            window._linkedin_data_partner_ids = window._linkedin_data_partner_ids || [];
+            if (!window._linkedin_data_partner_ids.includes(window._linkedin_partner_id)) {
+              window._linkedin_data_partner_ids.push(window._linkedin_partner_id);
+            }
+            (function(l) {
+              if (!l) {
+                window.lintrk = function(a,b){window.lintrk.q.push([a,b])};
+                window.lintrk.q = [];
+              }
+              var s = document.getElementsByTagName('script')[0];
+              var b = document.createElement('script');
+              b.type = 'text/javascript'; b.async = true;
+              b.src = 'https://snap.licdn.com/li.lms-analytics/insight.min.js';
+              s.parentNode.insertBefore(b, s);
+            })(window.lintrk);
+          `}
+        </Script>
+      ) : null}
+
       {showBanner ? (
         <section
           aria-label={t('cookieConsent.consentAria')}
@@ -132,7 +165,7 @@ export default function CookieConsentManager() {
             <div className="min-w-0 flex-1">
               <h2 className="text-lg font-bold text-[#003842] dark:text-white">{t('cookieConsent.privacyChoices')}</h2>
               <p className="mt-2 text-sm leading-6 text-gray-700 dark:text-gray-300">
-                {t('cookieConsent.bannerDescription')}
+                {t('cookieConsent.bannerDescription')} {t('cookieConsent.marketingDescription')}
               </p>
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                 {t('cookieConsent.readOur')} <Link href="/cookies" className="font-semibold text-[#007f75] underline">{t('cookieConsent.cookiePolicy')}</Link>{' '}
@@ -148,10 +181,10 @@ export default function CookieConsentManager() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => applyPreferences(true)}
+                  onClick={() => applyPreferences(true, true)}
                   className="min-h-11 rounded-lg border-2 border-[#003842] bg-[#003842] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#00505c]"
                 >
-                  {t('cookieConsent.acceptAnalytics')}
+                  {t('cookieConsent.acceptAll')}
                 </button>
                 <button
                   type="button"
@@ -187,7 +220,7 @@ export default function CookieConsentManager() {
               <div>
                 <Dialog.Title className="text-2xl font-bold text-[#003842] dark:text-white">{t('cookieConsent.preferences')}</Dialog.Title>
                 <Dialog.Description className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
-                  {t('cookieConsent.preferencesDescription')}
+                  {t('cookieConsent.preferencesDescription')} {t('cookieConsent.marketingDescription')}
                 </Dialog.Description>
               </div>
               <Dialog.Close asChild>
@@ -220,6 +253,18 @@ export default function CookieConsentManager() {
                   className="mt-1 h-5 w-5 shrink-0 accent-[#007f75]"
                 />
               </label>
+              <label className="flex cursor-pointer items-start justify-between gap-4 rounded-xl border border-gray-200 p-4 dark:border-gray-700">
+                <span>
+                  <span className="block font-semibold text-gray-900 dark:text-white">{t('cookieConsent.marketing')}</span>
+                  <span className="mt-1 block text-sm text-gray-600 dark:text-gray-400">{t('cookieConsent.marketingDescription')}</span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={marketingEnabled}
+                  onChange={(event) => setMarketingEnabled(event.target.checked)}
+                  className="mt-1 h-5 w-5 shrink-0 accent-[#007f75]"
+                />
+              </label>
             </div>
 
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
@@ -232,7 +277,7 @@ export default function CookieConsentManager() {
               </button>
               <button
                 type="button"
-                onClick={() => applyPreferences(analyticsEnabled)}
+                onClick={() => applyPreferences(analyticsEnabled, marketingEnabled)}
                 className="min-h-11 rounded-lg bg-[#003842] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#00505c]"
               >
                 {t('cookieConsent.savePreferences')}

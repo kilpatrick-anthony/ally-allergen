@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 
-const STORAGE_KEY = 'allyjen_kiosk_slug'
+import { KIOSK_LOCATION_STORAGE_KEY, LEGACY_KIOSK_STORAGE_KEY, locationGuidePath } from '@/lib/location-jurisdiction'
 
 export default function KioskLanding() {
   const { t } = useTranslation()
@@ -17,20 +17,25 @@ export default function KioskLanding() {
   const [slug, setSlug] = useState<string | null>(null)
 
   useEffect(() => {
-    const saved = typeof window !== 'undefined'
-      ? localStorage.getItem(STORAGE_KEY)
-      : null
-
-    if (saved) {
-      setSlug(saved)
-      router.replace(`/kiosk/${saved}`)
-    } else {
-      setSlug('')
+    let savedPath: string | null = null
+    try {
+      const raw = localStorage.getItem(KIOSK_LOCATION_STORAGE_KEY)
+      const saved = raw ? JSON.parse(raw) : null
+      const slug = typeof saved?.slug === 'string' ? saved.slug : localStorage.getItem(LEGACY_KIOSK_STORAGE_KEY)
+      if (slug) {
+        savedPath = typeof saved?.siteId === 'string' && saved.siteId
+          ? locationGuidePath(slug, saved.siteId)
+          : `/kiosk/${encodeURIComponent(slug)}`
+      }
+    } catch {
+      // The setup screen is available if saved browser data cannot be read.
     }
+    setSlug(savedPath || '')
+    if (savedPath) router.replace(savedPath)
   }, [router])
 
   // While we're reading storage / redirecting, show a brief splash
-  if (slug === null) {
+  if (slug === null || slug) {
     return (
       <div className="min-h-screen bg-[#003842] flex items-center justify-center">
         <div className="text-white text-center">

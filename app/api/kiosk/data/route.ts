@@ -1,3 +1,5 @@
+import { isJurisdiction } from '@/lib/location-jurisdiction'
+import { getGuidePublication } from '@/lib/server/location-allergens'
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -10,8 +12,8 @@ export async function GET(request: NextRequest) {
     const target = (searchParams.get('target') || '').trim()
     const siteId = (searchParams.get('site_id') || '').trim()
 
-    if (!target) {
-      return NextResponse.json({ error: 'target is required' }, { status: 400 })
+    if (!target || (siteId && !UUID_PATTERN.test(siteId))) {
+      return NextResponse.json({ error: 'A valid kiosk target and location are required' }, { status: 400 })
     }
 
     const supabase = createServiceClient()
@@ -29,6 +31,45 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Kiosk business not found' }, { status: 404 })
     }
 
+    const { settings, ...publicBusiness } = business
+    const businessData = {
+      ...publicBusiness,
+      logo_url: settings?.logoUrl ?? business.logo_url ?? null,
+      primary_color: settings?.primaryColor ?? business.primary_color ?? null,
+      kiosk_disclaimer: settings?.kioskDisclaimer ?? null,
+      default_language: settings?.defaultLanguage ?? 'en',
+    }
+    let mixedLocations = false
+    let legacySiteIds: string[] = []
+    if (siteId) {
+      const { data: site, error } = await supabase.from('sites')
+        .select('id,name,jurisdiction,opening_hours').eq('id', siteId).eq('business_id', business.id).eq('is_active', true).maybeSingle()
+      if (error) throw error
+      if (!site || !isJurisdiction(site.jurisdiction)) {
+        return NextResponse.json({ error: 'Kiosk location not found' }, { status: 404 })
+      }
+
+      const publication = await getGuidePublication(supabase, site.id, site.jurisdiction)
+      const siteMetadata = {
+        id: site.id, name: site.name, jurisdiction: site.jurisdiction,
+        publicationId: publication?.id ?? null, publishedAt: publication?.published_at ?? null,
+      }
+      Object.assign(businessData, { location: siteMetadata, opening_hours: site.opening_hours ?? null })
+      if (publication || site.jurisdiction !== 'IE') {
+        return NextResponse.json({ business: businessData, menuItems: publication?.items ?? [], ingredients: [] })
+      }
+    } else {
+      const { data: sites, error } = await supabase.from('sites')
+        .select('id,jurisdiction').eq('business_id', business.id)
+      if (error) throw error
+      const irishLocations = (sites || []).filter(site => site.jurisdiction === 'IE')
+      mixedLocations = (sites || []).some(site => site.jurisdiction !== 'IE')
+      if (mixedLocations && !irishLocations.length) {
+        return NextResponse.json({ error: 'Open the allergen guide for your specific location.' }, { status: 404 })
+      }
+      if (mixedLocations) legacySiteIds = irishLocations.map(site => site.id)
+    }
+
     let menuQuery = supabase
       .from('menu_items')
       .select('*')
@@ -38,6 +79,8 @@ export async function GET(request: NextRequest) {
 
     if (siteId) {
       menuQuery = menuQuery.or(`site_id.is.null,site_id.eq.${siteId}`)
+    } else if (mixedLocations) {
+      menuQuery = menuQuery.or(`site_id.is.null,site_id.in.(${legacySiteIds.join(',')})`)
     }
 
     const { data: menuItems, error: menuError } = await menuQuery
@@ -115,31 +158,11 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching ingredient list:', ingredientsListError)
     }
 
-    const { settings: _bizSettings, ...businessWithoutSettings } = business as any
-
-    // Fetch site opening_hours if a siteId was provided
-    let siteOpeningHours: Record<string, unknown> | null = null
-    if (siteId) {
-      const { data: siteRow } = await supabase
-        .from('sites')
-        .select('opening_hours')
-        .eq('id', siteId)
-        .single()
-      siteOpeningHours = (siteRow as any)?.opening_hours ?? null
-    }
 
     return NextResponse.json({
-      business: {
-        ...businessWithoutSettings,
-        // Forward branding from settings so the PDF function can use it
-        logo_url: (business as any).settings?.logoUrl ?? (business as any).logo_url ?? null,
-        primary_color: (business as any).settings?.primaryColor ?? (business as any).primary_color ?? null,
-        kiosk_disclaimer: (business as any).settings?.kioskDisclaimer ?? null,
-        default_language: (business as any).settings?.defaultLanguage ?? 'en',
-        opening_hours: siteOpeningHours,
-      },
+      business: businessData,
       menuItems: menuItemsWithIngredients,
-      ingredients: ingredients || [],
+      ingredients: mixedLocations ? [] : ingredients || [],
     })
   } catch (error: any) {
     console.error('Unexpected kiosk data error:', error)
