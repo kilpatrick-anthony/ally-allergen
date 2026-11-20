@@ -545,7 +545,7 @@ export default function LandingPage() {
               <div className="min-w-0 flex-1">
                 <h3 id="kiosk-hardware-heading" className="mb-3 text-2xl font-bold text-[#003842]">Less printing. Easier updates.</h3>
                 <p className="mb-4 max-w-2xl text-sm leading-relaxed text-gray-600">With an AllyJen kiosk, customers can view your current allergen guide directly on the in-store screen. Update your information on the platform and the kiosk reflects the changes—saving you the job of reprinting and replacing your paper guide.</p>
-                <p className="text-xl font-bold text-[#003842]">Add a kiosk tablet for {kioskPrice} — one-off purchase.</p>
+                <p className="text-xl font-bold text-[#003842]">Add a kiosk tablet for €299 in Ireland/EU or £250 in the UK — one-off purchase.</p>
                 <p className="mt-2 font-semibold text-gray-700">Subscription charged separately.</p>
                 <p className="mt-3 max-w-2xl text-sm leading-relaxed text-gray-600">
                   Kiosk software access is included with Self-Managed and Fully Managed.

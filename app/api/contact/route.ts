@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     const pricingDetails = isPublicMarket(pricingMarket) && isPublicEnquiry(enquiryType)
       ? [
-          `Pricing market: ${pricingMarket === 'ireland' ? 'Ireland' : 'UK'} (${PUBLIC_MARKETS[pricingMarket].currency})`,
+          `Pricing market: ${pricingMarket === 'ireland' ? 'Ireland/EU' : 'UK'} (${PUBLIC_MARKETS[pricingMarket].currency})`,
           `Enquiry: ${publicEnquiryLabel(enquiryType, pricingMarket)}`,
         ].join('\n')
       : ''
