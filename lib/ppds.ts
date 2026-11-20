@@ -10,7 +10,7 @@ export const ppdsAnswers = z.object({
 }).strict()
 
 export type PpdsAnswers = z.infer<typeof ppdsAnswers>
-export type PpdsClassification = 'loose' | 'distance' | 'ppds' | 'review'
+export type PpdsClassification = 'loose' | 'distance' | 'ppds' | 'review' | 'ingredient_label'
 
 export function classifyPpds(answers: PpdsAnswers): PpdsClassification {
   if (Object.values(answers).includes('uncertain') || answers.packer === 'other_business') return 'review'
@@ -25,6 +25,7 @@ export const PPDS_CLASSIFICATIONS: Record<PpdsClassification, { title: string; d
   distance: { title: 'Distance selling only', detail: 'Share allergen information before purchase and again at delivery. Use the location link and the item’s delivery slip.' },
   ppds: { title: 'Prepacked for direct sale (PPDS)', detail: 'Use an approved on-pack label for in-person sales. For remote orders, also make allergen information available before purchase and at delivery.' },
   review: { title: 'Product needs a separate review', detail: 'Check the applicable prepacked food rules or confirm how this product is packed and sold before choosing a label.' },
+  ingredient_label: { title: 'Optional ingredient label', detail: 'This is an ingredient declaration, not a complete food package label or a check of all local requirements.' },
 }
 
 function labelText(max: number) {

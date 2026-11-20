@@ -15,7 +15,7 @@ type Review = {
   ingredientDeclaration: string | null
   sources: PpdsReviewSources
   stale: string | null
-  current: { id: string; answers: PpdsAnswers; classification: PpdsClassification; label: StoredPpdsLabel | null; date: string } | null
+  current: { id: string; answers: Partial<PpdsAnswers>; classification: PpdsClassification; label: StoredPpdsLabel | null; date: string } | null
   history: HistoryEntry[]
 }
 type Preview = { label: PpdsPrintLabel; xHeight: number; minimumXHeight: number }
@@ -54,8 +54,9 @@ const fieldClass = 'min-h-11 w-full rounded-lg border border-gray-300 bg-white p
 const actionClass = 'inline-flex min-h-11 items-center justify-center rounded-lg border border-[#003842] px-4 py-2 text-sm font-semibold text-[#003842] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 
 export function PpdsLabelEditor({ siteSlug, jurisdiction, items, canApprove }: {
-  siteSlug: string; jurisdiction: Exclude<Jurisdiction, 'IE'>; items: { id: string; name: string }[]; canApprove: boolean
+  siteSlug: string; jurisdiction: Jurisdiction; items: { id: string; name: string }[]; canApprove: boolean
 }) {
+  const isIrishLocation = jurisdiction === 'IE'
   const [itemId, setItemId] = useState('')
   const [statuses, setStatuses] = useState<Record<string, PpdsClassification | 'approved'>>({})
   const [statusError, setStatusError] = useState('')
@@ -86,8 +87,12 @@ export function PpdsLabelEditor({ siteSlug, jurisdiction, items, canApprove }: {
 
   return (
     <section className="space-y-4 rounded-xl border border-gray-200 bg-white p-5">
-      <h3 className="text-lg font-bold">On-pack PPDS labels</h3>
-      <p className="text-sm">Classify an item for this location. A sandwich sealed in advance and sold from the same café is an example of PPDS. <a href={href} className="font-semibold underline">PPDS guidance</a></p>
+      <h3 className="text-lg font-bold">{isIrishLocation ? 'Optional ingredient labels' : 'Ingredient and PPDS labels'}</h3>
+      {isIrishLocation ? (
+        <p className="text-sm">Create an optional, printable ingredient declaration from verified menu and supplier data. This is not a complete food package label or a check of all local requirements. Confirm the full label separately before use.</p>
+      ) : (
+        <p className="text-sm">Classify an item for this location. A sandwich sealed in advance and sold from the same café is an example of PPDS. <a href={href} className="font-semibold underline">PPDS guidance</a></p>
+      )}
       {reviewCount > 0 && <p className="text-sm font-semibold text-amber-900">{reviewCount} {reviewCount === 1 ? 'item needs' : 'items need'} label review.</p>}
       {statusError && <p role="status" className="text-sm text-amber-900">{statusError}</p>}
       <label className="block space-y-1 text-sm font-semibold">Menu item
@@ -98,13 +103,14 @@ export function PpdsLabelEditor({ siteSlug, jurisdiction, items, canApprove }: {
           </option>)}
         </select>
       </label>
-      {items.some(item => item.id === itemId) && <LabelReview key={itemId} siteSlug={siteSlug} itemId={itemId} canApprove={canApprove} onUpdated={refreshStatuses} />}
+      {items.some(item => item.id === itemId) && <LabelReview key={itemId} siteSlug={siteSlug} itemId={itemId}
+        isIrishLocation={isIrishLocation} canApprove={canApprove} onUpdated={refreshStatuses} />}
     </section>
   )
 }
 
-function LabelReview({ siteSlug, itemId, canApprove, onUpdated }: {
-  siteSlug: string; itemId: string; canApprove: boolean; onUpdated: () => Promise<void>
+function LabelReview({ siteSlug, itemId, isIrishLocation, canApprove, onUpdated }: {
+  siteSlug: string; itemId: string; isIrishLocation: boolean; canApprove: boolean; onUpdated: () => Promise<void>
 }) {
   const endpoint = `/api/sites/${encodeURIComponent(siteSlug)}/ppds`
   const [review, setReview] = useState<Review | null>(null)
@@ -173,8 +179,8 @@ function LabelReview({ siteSlug, itemId, canApprove, onUpdated }: {
   }
 
   const parsedAnswers = ppdsAnswers.safeParse(answers)
-  const classification = parsedAnswers.success ? classifyPpds(parsedAnswers.data) : null
-  const classificationChanged = Boolean(review?.current && classification &&
+  const classification = isIrishLocation ? 'ingredient_label' : parsedAnswers.success ? classifyPpds(parsedAnswers.data) : null
+  const classificationChanged = Boolean(!isIrishLocation && review?.current && classification &&
     classificationFields.some(({ key }) => answers[key] !== review.current?.answers[key]))
   const specificationsSelected = review?.sources.length && review.sources.every(row =>
     row.documents.some(doc => doc.id === documents[row.id] && doc.current) &&
@@ -182,7 +188,7 @@ function LabelReview({ siteSlug, itemId, canApprove, onUpdated }: {
   const canPreview = Boolean(foodName.trim() && ingredients.trim() && area && width && height && verified && suitable && specificationsSelected)
 
   async function submit(intent: Intent) {
-    if (!review || !parsedAnswers.success) return
+    if (!review || (!isIrishLocation && !parsedAnswers.success)) return
     const label = intent === 'approve' || intent === 'preview' ? {
       foodName, ingredients, precaution, areaCm2: Number(area), widthMm: Number(width), heightMm: Number(height),
       specifications: review.sources.map(source => ({
@@ -193,7 +199,8 @@ function LabelReview({ siteSlug, itemId, canApprove, onUpdated }: {
     const response = await fetch(endpoint, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        itemId, expected: review.fingerprint, previous: review.current?.id || null, answers: parsedAnswers.data, intent, label,
+        itemId, expected: review.fingerprint, previous: review.current?.id || null,
+        answers: parsedAnswers.success ? parsedAnswers.data : undefined, intent, label,
       }),
     })
     const data = await response.json()
@@ -217,7 +224,7 @@ function LabelReview({ siteSlug, itemId, canApprove, onUpdated }: {
     const pdf = URL.createObjectURL(await response.blob())
     const link = document.createElement('a')
     link.href = pdf
-    link.download = `ppds-${review.current.id}.pdf`
+    link.download = `${isIrishLocation ? 'ingredient-label' : 'ppds'}-${review.current.id}.pdf`
     link.click()
     window.setTimeout(() => URL.revokeObjectURL(pdf), 30_000)
   }
@@ -228,10 +235,10 @@ function LabelReview({ siteSlug, itemId, canApprove, onUpdated }: {
     <div className="space-y-4">
       {review.stale && <p className="rounded-lg bg-amber-50 p-3 text-sm font-semibold text-amber-900" role="status">{review.stale}</p>}
       {review.current && <p className="text-sm">
-        Saved classification <strong>{PPDS_CLASSIFICATIONS[review.current.classification].title}</strong>
+        Saved review <strong>{PPDS_CLASSIFICATIONS[review.current.classification].title}</strong>
         {review.current.label && !review.stale && ` · Label approved ${publishedDate(review.current.date)}`}
       </p>}
-      {canApprove ? (
+      {!isIrishLocation && canApprove ? (
         <fieldset className="grid gap-3 rounded-lg border border-gray-200 p-4 sm:grid-cols-2" disabled={busy}>
           <legend className="px-1 text-sm font-bold">How this location sells the item</legend>
           {classificationFields.map(({ key, label, options }) => (
@@ -256,9 +263,9 @@ function LabelReview({ siteSlug, itemId, canApprove, onUpdated }: {
             </div>
           </div>}
         </fieldset>
-      ) : <p className="text-sm">An owner or manager can approve and print PPDS labels.</p>}
+      ) : !canApprove ? <p className="text-sm">An owner or manager can approve and print labels.</p> : null}
 
-      {canApprove && classification === 'ppds' && (
+      {canApprove && (isIrishLocation || classification === 'ppds') && (
         <>
           <fieldset className="space-y-3 rounded-lg border border-gray-200 p-4" disabled={busy}>
             <legend className="px-1 text-sm font-bold">Recipe and supplier specifications</legend>

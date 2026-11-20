@@ -121,4 +121,51 @@ test('PPDS blocks missing, mismatched, unverified or expired specifications and 
   assert.throws(() => buildPpdsLabel(source, { ...input, widthMm: 28, heightMm: 15 }), /overflows|too wide/)
 })
 
+test('Irish ingredient labels can preview and approve without UK PPDS answers', async () => {
+  const { input, source } = labelFixture()
+  const fingerprint = 'a'.repeat(32)
+  const revisionId = uuid(45)
+  const saved = []
+  const query = {
+    select() { return this },
+    eq() { return this },
+    order() { return this },
+    limit: async () => ({ data: [], error: null }),
+  }
+  const actor = {
+    site: { id: uuid(46), jurisdiction: 'IE' },
+    businessId: uuid(47), userId: uuid(48), role: 'manager',
+    supabase: {
+      rpc: async (name, args) => {
+        if (name === 'review_site_ppds_source') return { data: { source, fingerprint }, error: null }
+        saved.push(args)
+        return { data: revisionId, error: null }
+      },
+      from: () => query,
+    },
+  }
+  const route = loader({
+    'next/server': { NextResponse: Response },
+    '@/lib/server/quick-add': { QuickAddError: class QuickAddError extends Error {} },
+    '@/lib/server/location-allergens': {
+      locationAllergenContext: async () => actor,
+      locationAllergenFailure: error => Response.json({ error: error.message }, { status: 500 }),
+      sourceFingerprint: require('zod').z.string().regex(/^[0-9a-f]{32}$/),
+    },
+  })('app/api/sites/[slug]/ppds/route.ts')
+  const post = intent => route.POST(new Request('https://example.test/api/sites/dublin/ppds', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ itemId: uuid(40), expected: fingerprint, previous: null, intent, label: input }),
+  }), { params: Promise.resolve({ slug: 'dublin' }) })
+
+  const preview = await post('preview')
+  assert.equal(preview.status, 200)
+  assert.equal(saved.length, 0)
+  const approved = await post('approve')
+  assert.equal(approved.status, 200)
+  assert.equal(saved[0].p_classification, 'ingredient_label')
+  assert.deepEqual(saved[0].p_answers, {})
+  assert.ok(saved[0].p_label)
+})
+
 module.exports = { loader, labelFixture }

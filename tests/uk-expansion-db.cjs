@@ -6,6 +6,7 @@ const { createReviewDb, completeReview, uuid } = require('./helpers/quick-add-re
 const uk = uuid(10), ireland = uuid(5), business = uuid(1), supplier = uuid(6), staff = uuid(3), manager = uuid(4)
 const sharedItem = uuid(11), irishItem = uuid(12), ukItem = uuid(13), ingredient = uuid(14), spec = uuid(15)
 const migration = 'supabase/migrations/20261120133040_uk_locations_allergen_publications_and_ppds.sql'
+const labelMigration = 'supabase/migrations/20261120143800_optional_ingredient_labels_for_all_locations.sql'
 
 async function setup() {
   const db = await createReviewDb()
@@ -19,6 +20,7 @@ async function setup() {
     alter table menu_items add column if not exists updated_at timestamptz;
     alter table datasheets add column if not exists version text;`)
   await db.exec(fs.readFileSync(migration, 'utf8'))
+  await db.exec(fs.readFileSync(labelMigration, 'utf8'))
   await db.query("insert into sites(id, business_id, name, jurisdiction) values ($1,$2,'Belfast','NI')", [uk, business])
   const warnings = JSON.stringify(completeReview().allergen_warnings)
   await db.query(`insert into menu_items(id,business_id,name,category,is_active,site_id,allergen_warnings,item_type)
@@ -92,5 +94,22 @@ test('a supplier change flags the approved PPDS revision and stale approvals can
     assert.deepEqual(history.map(row => row.version), ['v1', 'v2'])
     await db.exec('reset role; set role authenticated')
     await assert.rejects(db.query('select * from site_ppds_revisions'), /permission denied/)
+  } finally { await db.close() }
+})
+
+test('Irish locations can approve optional ingredient labels without UK PPDS classification', async () => {
+  const db = await setup()
+  try {
+    await db.exec('set role service_role')
+    const review = await value(db, 'select review_site_ppds_source($1,$2,$3) result', [ireland, business, irishItem])
+    assert.equal(review.source.jurisdiction, 'IE')
+    const label = JSON.stringify({ input: { specifications: [] }, rendered: { foodName: 'Dublin breakfast' } })
+    const revision = await value(db,
+      'select record_site_ppds_revision($1,$2,$3,$4,$5,$6,$7,$8::jsonb,$9::jsonb) result',
+      [ireland, business, irishItem, manager, null, review.fingerprint, 'ingredient_label', '{}', label])
+    assert.deepEqual(await value(db, 'select site_ppds_overview($1,$2) result', [ireland, business]),
+      [{ itemId: irishItem, state: 'approved' }])
+    const stored = await value(db, 'select jsonb_build_object(\'jurisdiction\',jurisdiction,\'classification\',classification) result from site_ppds_revisions where id=$1', [revision])
+    assert.deepEqual(stored, { jurisdiction: 'IE', classification: 'ingredient_label' })
   } finally { await db.close() }
 })

@@ -370,7 +370,7 @@ export default function LandingPage() {
                 <span className="text-[#42b8ac]">peace of mind.</span>
               </h1>
               <p className="text-lg text-white/70 mb-8 max-w-xl mx-auto lg:mx-0">
-                The all-in-one platform for food businesses in Ireland and the UK to manage allergen information and share it with customers.
+                The all-in-one platform for food businesses in Ireland, the UK and across the EU to manage allergen information and share it with customers.
               </p>
 
             </div>
@@ -382,7 +382,7 @@ export default function LandingPage() {
       <section className="bg-[#f0f9f8] border-y border-[#42b8ac]/20 py-5">
         <Container>
           <div className="flex flex-wrap items-center justify-center gap-6 md:gap-10 text-sm text-[#003842] font-medium">
-            <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac]" />Available in Ireland and the UK</span>
+            <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac]" />Available in Ireland, the UK and across the EU</span>
             <span className="hidden sm:inline text-[#42b8ac]/40">|</span>
             <span className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-[#42b8ac]" />Location-specific allergen workflows</span>
             <span className="hidden sm:inline text-[#42b8ac]/40">|</span>
@@ -399,7 +399,7 @@ export default function LandingPage() {
               Save Time. Reduce Risk. Build Trust.
             </h2>
             <p className="text-lg text-gray-500 max-w-xl mx-auto">
-              Built for food businesses in Ireland and the UK.
+              Built for food businesses in Ireland, the UK and across the EU.
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -571,6 +571,10 @@ export default function LandingPage() {
               <summary className="cursor-pointer text-base font-bold text-[#003842] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#003842]">With a kiosk, can I stop reprinting my guide?</summary>
               <p className="mt-3 text-sm leading-relaxed text-gray-600">A clearly signposted, working customer-facing kiosk can provide electronic written allergen information when it is freely accessible before purchase without staff assistance. Keep a practical backup arrangement, such as a current printed guide, if the device or internet is unavailable. A kiosk does not automatically guarantee compliance.</p>
             </details>
+            <details className="border-t border-gray-200 pt-4">
+              <summary className="cursor-pointer text-base font-bold text-[#003842] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#003842]">Can AllyJen create printable ingredient labels?</summary>
+              <p className="mt-3 text-sm leading-relaxed text-gray-600">Yes. Authorised owners and managers can prepare and approve optional ingredient declaration labels from verified recipe and supplier information for any location. UK locations also have a PPDS classification flow. The output is an ingredient label panel, not a complete food package label or a guarantee of compliance; confirm all market-specific requirements separately.</p>
+            </details>
             <p className="mt-5 text-xs leading-relaxed text-gray-600">See FSAI guidance on{' '}
               <a className="font-semibold text-[#0e7066] underline underline-offset-2" href="https://www.fsai.ie/business-advice/running-a-food-business/allergens/allergen-information-for-non-prepacked-food">written allergen information</a>{' '}and{' '}
               <a className="font-semibold text-[#0e7066] underline underline-offset-2" href="https://www.fsai.ie/business-advice/labelling/labelling-allergens">QR codes</a>. For the UK, see <a className="font-semibold text-[#0e7066] underline underline-offset-2" href="https://www.gov.uk/government/publications/food-allergen-labelling-and-information-requirements-technical-guidance">Food Standards Agency guidance</a> and <a className="font-semibold text-[#0e7066] underline underline-offset-2" href="https://www.foodstandards.gov.scot/business-guidance/running-a-food-business/packaging-and-labelling/allergen-labelling">Food Standards Scotland guidance</a>.
@@ -608,7 +612,7 @@ export default function LandingPage() {
                 Compliance Without Complexity.
               </h2>
               <p className="text-gray-600 mb-5 leading-relaxed">
-                Meeting allergen requirements doesn't have to be hard. AllyJen helps food businesses in Ireland and the UK protect customers, reduce risk, and build trust.
+                Meeting allergen requirements doesn't have to be hard. AllyJen helps food businesses in Ireland, the UK and across the EU protect customers, reduce risk, and build trust.
               </p>
               <ul className="space-y-3">
                 {[

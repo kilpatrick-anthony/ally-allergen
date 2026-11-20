@@ -212,7 +212,7 @@ export function LocationAllergenTools({ siteId, siteSlug, siteName, businessSlug
         )}
       </section>
 
-      {jurisdiction !== 'IE' && review && (
+      {review && (
         <PpdsLabelEditor siteSlug={siteSlug} jurisdiction={jurisdiction} items={review.items} canApprove={review.canApprove} />
       )}
     </div>
