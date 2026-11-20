@@ -460,8 +460,6 @@ export default function LandingPage() {
             <p className="mt-3 text-sm leading-relaxed text-white/80">10 locations total across all three packages. Price protection applies while your subscription remains continuously active; it is not a compulsory three-year contract. An enquiry does not reserve a place.</p>
           </div>
 
-          <p className="mb-8 text-center text-sm font-semibold text-[#003842]">Already in use across 9 OAKBERRY locations and Rio Coffee Shop.</p>
-
           <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:gap-6">
             {publicPlans.map((plan) => (
               <article
