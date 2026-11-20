@@ -53,7 +53,7 @@ export async function generateMetadata(): Promise<Metadata> {
       template: '%s | AllyJen',
     },
     description:
-      'AllyJen helps food businesses in Ireland and the UK manage allergen information and share it through QR guides, kiosks and printed guides.',
+      'AllyJen helps food businesses in Ireland, the UK and across the EU manage allergen information and share it through QR guides, kiosks and printed guides.',
     keywords: [
       'allergen management software',
       'restaurant allergen compliance Ireland',
@@ -88,7 +88,7 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: 'AllyJen',
       title: 'AllyJen | Serving Confidence',
       description:
-        'AllyJen helps food businesses in Ireland and the UK share allergen information through QR guides, kiosks and printed guides.',
+        'AllyJen helps food businesses in Ireland, the UK and across the EU share allergen information through QR guides, kiosks and printed guides.',
       images: [
         {
           url: '/AllyJen Logo (1200 x 630 px).png',
@@ -103,7 +103,7 @@ export async function generateMetadata(): Promise<Metadata> {
       card: 'summary_large_image',
       title: 'AllyJen | Serving Confidence',
       description:
-        'Allergen management software for food businesses in Ireland and the UK.',
+        'Allergen management software for food businesses in Ireland, the UK and across the EU.',
       images: ['/AllyJen Logo (1200 x 630 px).png'],
     },
     alternates: {
@@ -155,7 +155,7 @@ export default function RootLayout({
                     height: 630,
                   },
                   description:
-                    'Digital allergen management platform for food businesses in Ireland and the UK.',
+                    'Digital allergen management platform for food businesses in Ireland, the UK and across the EU.',
                   sameAs: [],
                 },
                 {
@@ -166,7 +166,7 @@ export default function RootLayout({
                   operatingSystem: 'Web, iOS, Android',
                   url: BASE_URL,
                   description:
-                    'AllyJen is a digital allergen management platform enabling restaurants and food businesses to manage, display, and communicate allergen information to customers in Ireland and the UK.',
+                    'AllyJen is a digital allergen management platform enabling restaurants and food businesses to manage, display, and communicate allergen information to customers in Ireland, the UK and across the EU.',
                   publisher: { '@id': `${BASE_URL}/#organization` },
                 },
                 {

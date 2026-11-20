@@ -17,7 +17,7 @@ import { Card } from '@/components/layout/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 
-const HELP_TOPIC_JOURNEY = [1, 2, 18, 9, 16, 5, 3, 4, 7, 8, 6, 17, 10, 15, 11, 12, 13, 14]
+const HELP_TOPIC_JOURNEY = [1, 2, 18, 9, 16, 5, 3, 4, 7, 8, 6, 17, 19, 10, 15, 11, 12, 13, 14]
 
 export default function HelpPage() {
   const { t, language } = useTranslation()
@@ -163,6 +163,14 @@ export default function HelpPage() {
       description: 'Record manufacturer labels, allergens, dietary claims, suppliers and evidence for sealed products sold directly.',
       icon: Package,
       color: 'orange'
+    },
+    {
+      id: 19,
+      category: 'menu',
+      title: 'Creating ingredient labels',
+      description: 'Prepare and approve optional ingredient declaration labels from verified recipe and supplier information.',
+      icon: FileText,
+      color: 'teal'
     },
     {
       id: 7,
@@ -393,6 +401,16 @@ export default function HelpPage() {
         'Tick Label details checked only after comparing the saved details with the current label or specification.',
         'Packaged-product compliance requires label evidence, an ingredient declaration and label verification. Linking a supplier is also strongly recommended.',
       ],
+      19: [
+        'Open Sites & Locations, select a location, then choose Allergen guides and labels. Choose an active menu item in the ingredient-label section.',
+        'For UK locations, first complete the product classification. Only items classified as PPDS can be approved as UK PPDS on-pack labels. Republic of Ireland locations use the optional ingredient-label flow without PPDS classification.',
+        'Select a current supplier specification for each recipe ingredient or the complete product, and choose the assessed supplier variant where one is used.',
+        'Enter the food name and complete ingredient declaration in descending weight at manufacture. Include compound ingredients where required and name declarable allergens specifically.',
+        'Keep any approved “May contain” statement separate from the ingredients. Enter the largest package surface and label dimensions, then review the preview and fit check.',
+        'An owner or manager must verify and approve the label. Download it and print at 100% (Actual size).',
+        'Recipe or supplier changes can make an approval stale; review sources and approve a new revision before printing.',
+        'The output is an ingredient label panel, not a complete food package label or a check of every local requirement. Confirm the full label separately.',
+      ],
       7: [
         'Contains — The allergen is a deliberate, listed ingredient in the recipe.',
         'May Contain — Shared equipment or production lines create a cross-contamination risk.',
@@ -430,7 +448,7 @@ export default function HelpPage() {
         'EU Regulation 1169/2011 requires the 14 major allergens to be declared on all food products.',
         'For pre-packed food: allergens must be emphasised in the ingredients list (bold, underline, or different colour).',
         'For non-prepacked/loose food: allergen information must be available on request or proactively displayed.',
-        'AllyJen helps you maintain accurate allergen records and generate compliant labelling and display materials.',
+        'AllyJen helps you maintain allergen records and prepare ingredient label panels. Review the full package label against the rules for each market; the tool does not guarantee compliance.',
         'Review allergen data regularly — update records whenever supplier formulations change.',
         'Tip: Generate an allergen matrix from the Reports section to print and display in-venue for staff and customers.',
       ],

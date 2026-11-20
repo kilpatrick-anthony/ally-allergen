@@ -11,7 +11,7 @@ type Actor = Awaited<ReturnType<typeof locationAllergenContext>>
 type Revision = {
   id: string
   classification: PpdsClassification
-  answers: PpdsAnswers
+  answers: Partial<PpdsAnswers>
   label: StoredPpdsLabel | null
   source_fingerprint: string
   source: PpdsSource
@@ -24,7 +24,7 @@ const reviewInput = z.object({
   itemId: itemIdInput,
   expected: sourceFingerprint,
   previous: z.string().uuid().nullable(),
-  answers: ppdsAnswers,
+  answers: ppdsAnswers.optional(),
   intent: z.enum(['classify', 'review', 'preview', 'approve']),
   label: ppdsLabelInput.optional(),
 }).strict()
@@ -34,7 +34,7 @@ async function readSource(actor: Actor, itemId: string) {
     p_site: actor.site.id, p_business: actor.businessId, p_item: itemId,
   })
   if (error) throw error
-  if (!data?.source) throw new QuickAddError('Active UK menu item not found for this location.', 404)
+  if (!data?.source) throw new QuickAddError('Active menu item not found for this location.', 404)
   return data as { source: PpdsSource; fingerprint: string }
 }
 
@@ -81,7 +81,7 @@ export async function GET(request: Request, { params }: RouteParams) {
       return new NextResponse(doc.output('arraybuffer'), {
         headers: {
           'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="ppds-${current.id}.pdf"`,
+          'Content-Disposition': `attachment; filename="${current.classification === 'ingredient_label' ? 'ingredient-label' : 'ppds'}-${current.id}.pdf"`,
           'Cache-Control': 'private, no-store',
         },
       })
@@ -129,11 +129,23 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Recipe or supplier data changed. Reload the item and review its sources.' }, { status: 409 })
     }
 
-    const classification = input.intent === 'review' ? 'review' : classifyPpds(input.answers)
+    const isIrishLocation = actor.site.jurisdiction === 'IE'
+    let classification: PpdsClassification
+    if (isIrishLocation && (input.intent === 'classify' || input.intent === 'review')) {
+      return NextResponse.json({ error: 'Classification is available only for UK PPDS workflows.' }, { status: 400 })
+    }
+    if (isIrishLocation) {
+      classification = 'ingredient_label'
+    } else {
+      if (!input.answers) {
+        return NextResponse.json({ error: 'Complete the UK PPDS classification first.' }, { status: 400 })
+      }
+      classification = input.intent === 'review' ? 'review' : classifyPpds(input.answers)
+    }
     let label: StoredPpdsLabel | null = null
     if (input.intent === 'preview' || input.intent === 'approve') {
-      if (classification !== 'ppds' || !input.label) {
-        return NextResponse.json({ error: 'Complete the PPDS classification and label declaration.' }, { status: 400 })
+      if ((!isIrishLocation && classification !== 'ppds') || !input.label) {
+        return NextResponse.json({ error: isIrishLocation ? 'Complete the ingredient declaration.' : 'Complete the PPDS classification and label declaration.' }, { status: 400 })
       }
       try {
         const built = buildPpdsLabel(source, input.label)
@@ -147,7 +159,8 @@ export async function POST(request: Request, { params }: RouteParams) {
     }
     const { data, error } = await actor.supabase.rpc('record_site_ppds_revision', {
       p_site: actor.site.id, p_business: actor.businessId, p_item: input.itemId, p_actor: actor.userId,
-      p_previous: input.previous, p_expected: input.expected, p_classification: classification, p_answers: input.answers, p_label: label,
+      p_previous: input.previous, p_expected: input.expected, p_classification: classification,
+      p_answers: input.answers || {}, p_label: label,
     })
     if (error?.code === '40001') return NextResponse.json({ error: error.message }, { status: 409 })
     if (error) throw error
