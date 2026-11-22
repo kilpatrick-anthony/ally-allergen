@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { MapPin, Tag } from 'lucide-react'
 import { PpdsLabelEditor } from '@/components/admin/PpdsLabelEditor'
 import { isJurisdiction } from '@/lib/location-jurisdiction'
+import { FULL_INGREDIENT_LABEL_ENABLED } from '@/lib/ppds'
 
 type Location = {
   id: string
@@ -135,7 +136,9 @@ export default function LabelCreatorPage() {
           </div>
         </div>
         <p className="mt-4 text-sm text-gray-700">
-          Ingredient labels are optional and should be checked against the complete product and local requirements before use.
+          {FULL_INGREDIENT_LABEL_ENABLED
+            ? 'Ingredient labels are optional and should be checked against the complete product and local requirements before use.'
+            : 'Create a printable allergen label for food served loose or prepared to order.'}
         </p>
       </header>
 

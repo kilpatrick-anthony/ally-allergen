@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import { ALLERGEN_LIST, getAllergenLevelText, type AllergenId, type AllergenLevel, type AllergenWarnings } from '@/types/allergen'
 
+export const FULL_INGREDIENT_LABEL_ENABLED = false
+
 export const ppdsAnswers = z.object({
   packer: z.enum(['same_business', 'other_business', 'uncertain']),
   place: z.enum(['same_site', 'mobile_or_temporary', 'different_fixed_site', 'uncertain']),
@@ -62,6 +64,15 @@ export const ppdsLabelSourceSelection = z.object({
   sourceId: z.string().uuid(),
   variantId: z.string().uuid().nullable(),
 }).strict()
+
+const looseFoodIngredientEntry = z.object({
+  sourceId: z.string().uuid(),
+  description: labelText(2400),
+}).strict()
+
+export const looseFoodIngredientEntries = z.array(looseFoodIngredientEntry).min(1).max(100)
+
+export type LooseFoodIngredientEntry = z.infer<typeof looseFoodIngredientEntry>
 
 export type PpdsLabelInput = z.infer<typeof ppdsLabelInput>
 export interface LabelTextRun { text: string; bold: boolean }
@@ -176,6 +187,27 @@ export function labelRecipeIngredients(declaration: string, allergens: SpecificA
     throw new Error('Enter the full recipe in the ingredients list, including all ingredients and any compound ingredients required.')
   }
   return labelIngredients(declaration, allergens)
+}
+
+export function looseFoodIngredientRuns(entries: LooseFoodIngredientEntry[], sources: {
+  id: string
+  allergens: SpecificAllergen[]
+}[]): LabelTextRun[] {
+  const allergensBySource = new Map(sources.map(source => [source.id, source.allergens]))
+  const entryIds = new Set(entries.map(entry => entry.sourceId))
+  if (entries.length !== sources.length || entryIds.size !== sources.length ||
+      sources.some(source => !entryIds.has(source.id))) {
+    throw new Error('Include each recipe ingredient once in the ingredients list.')
+  }
+
+  return entries.flatMap(({ sourceId, description }, index) => {
+    const allergens = allergensBySource.get(sourceId) ?? []
+    const { contains } = looseFoodAllergenStatements(allergens)
+    const missing = missingDeclaredAllergens(description, contains)
+    const declaration = missing.length ? `${description} (contains ${missing.join(', ')})` : description
+    const runs = labelIngredients(declaration, allergens)
+    return index ? [{ text: ', ', bold: false }, ...runs] : runs
+  })
 }
 
 /** Preserve the operator's declaration and emphasise repeated allergen names wherever they appear. */

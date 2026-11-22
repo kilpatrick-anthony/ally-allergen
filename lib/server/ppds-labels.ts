@@ -1,5 +1,5 @@
 import { isAllergenAssessmentComplete, isIngredientAssessmentComplete } from '@/lib/allergen-assessment'
-import { labelRecipeIngredients, looseFoodAllergenStatements, ppdsLabelLayoutInput, specificAllergens, validatePrecaution, type PpdsLabelInput } from '@/lib/ppds'
+import { labelRecipeIngredients, looseFoodAllergenStatements, looseFoodIngredientRuns, ppdsLabelLayoutInput, specificAllergens, validatePrecaution, type LooseFoodIngredientEntry, type PpdsLabelInput } from '@/lib/ppds'
 import { makePpdsLabelPdf, type PpdsPrintLabel } from '@/lib/pdf/ppds-label'
 import type { AllergenWarnings } from '@/types/allergen'
 
@@ -111,8 +111,8 @@ export function canCreateLooseFoodLabel(source: PpdsSource) {
 }
 
 export function buildLooseFoodAllergenLabel(source: PpdsSource, selections: { sourceId: string; variantId: string }[], {
-  confirmedVariantIds = [], ingredients,
-}: { confirmedVariantIds?: string[]; ingredients?: string } = {}) {
+  confirmedVariantIds = [], ingredients, ingredientEntries,
+}: { confirmedVariantIds?: string[]; ingredients?: string; ingredientEntries?: LooseFoodIngredientEntry[] } = {}) {
   if (!canCreateLooseFoodLabel(source)) throw new Error('An allergen-only label requires a complete linked recipe for food served loose.')
   const foodName = ppdsLabelLayoutInput.shape.foodName.safeParse(source.item.name)
   if (!foodName.success) throw new Error('Use a menu item name that can be printed on the label.')
@@ -129,25 +129,28 @@ export function buildLooseFoodAllergenLabel(source: PpdsSource, selections: { so
     selected.add(variantId)
     variantsBySource.set(sourceId, selected)
   }
-  const allergens = rows.flatMap(row => {
+  const selectedSources = rows.map(row => {
     if (!row.active) throw new Error(`Use an active recipe ingredient for ${row.name}.`)
     if (!row.variants.length) {
       if (!row.assessed) throw new Error(`Complete the allergen assessment for ${row.name}.`)
-      return row.allergens
+      return { id: row.id, allergens: row.allergens }
     }
     const selected = row.variants.filter(variant => variantsBySource.get(row.id)?.has(variant.id))
     if (!selected.length) throw new Error(`Select the supplier variants used for ${row.name}.`)
     if (selected.some(variant => !variant.assessmentComplete || (!variant.assessed && !confirmed.has(variant.id)))) {
       throw new Error(`Complete the selected variant assessments for ${row.name} or confirm the recorded answers against the supplier evidence for this label.`)
     }
-    return selected.flatMap(variant => variant.allergens)
+    return { id: row.id, allergens: selected.flatMap(variant => variant.allergens) }
   })
+  const allergens = selectedSources.flatMap(entry => entry.allergens)
   const statements = looseFoodAllergenStatements(allergens)
   if (statements.needsSpecificNames) throw new Error('Identify the specific cereal or tree nut in the selected allergen assessments.')
   return {
     foodName: foodName.data,
     ...statements,
-    ingredients: ingredients === undefined ? undefined : labelRecipeIngredients(ingredients, allergens, rows.length),
+    ingredients: ingredientEntries
+      ? looseFoodIngredientRuns(ingredientEntries, selectedSources)
+      : ingredients === undefined ? undefined : labelRecipeIngredients(ingredients, allergens, rows.length),
   }
 }
 

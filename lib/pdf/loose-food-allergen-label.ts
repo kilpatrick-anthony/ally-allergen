@@ -13,15 +13,33 @@ export function makeLooseFoodAllergenLabelPdf({ foodName, contains, precautions,
   const doc = new jsPDF({ unit: 'mm', format: [width, 35], orientation: 'landscape' })
   doc.viewerPreferences({ PrintScaling: 'None' })
 
-  const blocks: ({ text: string; size: number; bold: boolean } | { runs: LabelTextRun[]; size: number })[] = [
+  const separator = { rule: true } as const
+  const blocks: ({ text: string; size: number; bold: boolean } | { runs: LabelTextRun[]; size: number } | typeof separator)[] = [
     { text: foodName, size: 13, bold: true },
+    separator,
+    { text: 'Allergens', size: 12, bold: true },
     ingredients
       ? { runs: [{ text: 'Ingredients: ', bold: true }, ...ingredients], size: 11 }
       : { text: contains.length ? `Contains ${contains.join(', ')}` : 'No declarable allergens recorded', size: 12, bold: true },
-    ...precautions.map(text => ({ text, size: 11, bold: false })),
+    ...(precautions.length ? [
+      separator,
+      { text: 'Precautionary warnings', size: 11, bold: true },
+      ...precautions.map(text => ({ text, size: 11, bold: false })),
+    ] : []),
+    separator,
     { text: 'For food served loose or prepared to order', size: 10, bold: false },
   ]
   const laidOut = blocks.map(block => {
+    if ('rule' in block) {
+      return {
+        height: 3,
+        draw: (y: number) => {
+          doc.setDrawColor(90)
+          doc.setLineWidth(0.2)
+          doc.line(margin, y + 0.5, width - margin, y + 0.5)
+        },
+      }
+    }
     doc.setFontSize(block.size)
     const lineHeight = block.size * 25.4 / 72 * doc.getLineHeightFactor()
     if ('runs' in block) {

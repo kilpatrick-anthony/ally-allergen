@@ -5,7 +5,7 @@ import { locationAllergenContext, locationAllergenFailure, sourceFingerprint } f
 import { buildLooseFoodAllergenLabel, buildPpdsLabel, canCreateLooseFoodLabel, ppdsReviewSources, type PpdsSource, type StoredPpdsLabel } from '@/lib/server/ppds-labels'
 import { makeLooseFoodAllergenLabelPdf } from '@/lib/pdf/loose-food-allergen-label'
 import { makePpdsLabelPdf } from '@/lib/pdf/ppds-label'
-import { classifyPpds, emphasiseDeclaredAllergens, ppdsAnswers, ppdsLabelDraftLayoutInput, ppdsLabelInput, ppdsLabelLayoutInput, ppdsLabelSourceSelection, selectedLabelAllergenSources, type PpdsAnswers, type PpdsClassification } from '@/lib/ppds'
+import { classifyPpds, emphasiseDeclaredAllergens, looseFoodIngredientEntries, ppdsAnswers, ppdsLabelDraftLayoutInput, ppdsLabelInput, ppdsLabelLayoutInput, ppdsLabelSourceSelection, selectedLabelAllergenSources, type PpdsAnswers, type PpdsClassification } from '@/lib/ppds'
 
 type RouteParams = { params: Promise<{ slug: string }> }
 type Actor = Awaited<ReturnType<typeof locationAllergenContext>>
@@ -43,6 +43,7 @@ const reviewInput = z.discriminatedUnion('intent', [
     selections: z.array(ppdsLabelSourceSelection.extend({ variantId: z.string().uuid() })).max(100),
     confirmedVariantIds: z.array(z.string().uuid()).max(100).optional(),
     ingredients: ppdsLabelLayoutInput.shape.ingredients.optional(),
+    ingredientEntries: looseFoodIngredientEntries.optional(),
   }).strict(),
 ])
 

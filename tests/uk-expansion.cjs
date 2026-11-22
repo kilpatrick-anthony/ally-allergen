@@ -223,6 +223,9 @@ test('the allergen-only label uses the selected variants without ingredient text
   assert.deepEqual(buildLooseFoodAllergenLabel(source, [first, second]).contains, ['soybeans', 'eggs'])
   const file = Buffer.from(makeLooseFoodAllergenLabelPdf(label).output('arraybuffer'))
   assert.ok(file.toString().includes('Contains soybeans'))
+  assert.ok(file.toString().includes('(Allergens)'))
+  assert.ok(file.toString().includes('(Precautionary warnings)'))
+  assert.equal((file.toString().match(/^S$/gm) ?? []).length, 3)
   assert.ok(file.toString().includes('For food served loose or prepared to order'))
   const pdf = await PDFDocument.load(file)
   assert.equal(pdf.getPageCount(), 1)
@@ -268,6 +271,33 @@ test('loose labels can show recipe ingredients with inline emphasis and separate
   assert.match(raw, /May contain barley/)
   assert.doesNotMatch(raw, /Contains oats/)
   assert.throws(() => buildLooseFoodAllergenLabel(source, selections, { ingredients: 'PerfectTed Matcha Powder' }), /Name oats/)
+})
+
+test('the optional recipe list adds contained allergens to the right ingredients automatically', () => {
+  const { buildLooseFoodAllergenLabel } = load('lib/server/ppds-labels.ts')
+  const { source, input } = labelFixture()
+  const neutral = completeReview().allergen_warnings
+  const coconut = source.ingredients[0].ingredient
+  coconut.name = 'Coconut Milk'
+  source.variants[0].variant.allergen_warnings = { ...neutral, soybeans: 'contains' }
+  const matcha = { ...coconut, id: uuid(71), name: 'PerfectTed Matcha Powder', allergen_warnings: neutral }
+  source.ingredients.push({ ingredient: matcha, link: {} })
+  source.recipeLinkCount = 2
+  const [{ sourceId, variantId }] = input.specifications
+  const selections = [{ sourceId, variantId }]
+  const ingredientEntries = [
+    { sourceId: matcha.id, description: matcha.name },
+    { sourceId: coconut.id, description: coconut.name },
+  ]
+  const { ingredients } = buildLooseFoodAllergenLabel(source, selections, { ingredientEntries })
+  assert.equal(ingredients.map(run => run.text).join(''), 'PerfectTed Matcha Powder, Coconut Milk (contains soybeans)')
+  assert.deepEqual(ingredients.filter(run => run.bold).map(run => run.text), ['soybeans'])
+  ingredientEntries[1].description = 'Coconut milk (soya lecithin)'
+  const named = buildLooseFoodAllergenLabel(source, selections, { ingredientEntries }).ingredients
+  assert.equal(named.map(run => run.text).join(''), 'PerfectTed Matcha Powder, Coconut milk (soya lecithin)')
+  assert.deepEqual(named.filter(run => run.bold).map(run => run.text), ['soya'])
+  assert.throws(() => buildLooseFoodAllergenLabel(source, selections, { ingredientEntries: [ingredientEntries[0]] }),
+    /Include each recipe ingredient once/)
 })
 
 test('a recipe label only requires allergen assessments for its selected sources', () => {
@@ -360,6 +390,9 @@ test('Irish ingredient labels can preview and approve without UK PPDS answers', 
   const withIngredients = await loose(true, { ingredients })
   assert.equal(withIngredients.status, 200)
   assert.match(withIngredients.headers.get('content-disposition'), /allergen-and-ingredients-label\.pdf/)
+  const withEntries = await loose(true, { ingredientEntries: [{ sourceId: input.specifications[0].sourceId, description: 'Sandwich mix' }] })
+  assert.equal(withEntries.status, 200)
+  assert.match(Buffer.from(await withEntries.arrayBuffer()).toString(), /\(wheat/)
   assert.equal(saved.length, 0)
   const reviewDate = source.specifications[1].next_review_date
   source.specifications[1].next_review_date = null

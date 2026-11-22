@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { labelRecipeIngredients, looseFoodAllergenStatements, ppdsLabelLayoutInput, type LabelTextRun } from '@/lib/ppds'
+import { looseFoodAllergenStatements, looseFoodIngredientEntries, looseFoodIngredientRuns, type LabelTextRun, type LooseFoodIngredientEntry } from '@/lib/ppds'
 import type { PpdsReviewSources } from '@/lib/server/ppds-labels'
 
 const buttonClass = 'inline-flex min-h-11 items-center rounded-lg border border-[#003842] px-4 py-2 text-sm font-semibold text-[#003842] disabled:cursor-not-allowed disabled:opacity-50'
@@ -20,7 +20,7 @@ export function LooseFoodAllergenLabel({ endpoint, itemId, fingerprint, foodName
     row.variants.length === 1 ? [row.variants[0].id] : [])))
   const [confirmedVariantIds, setConfirmedVariantIds] = useState<Set<string>>(() => new Set())
   const [includeIngredients, setIncludeIngredients] = useState(false)
-  const [ingredients, setIngredients] = useState(() => sources.map(row => row.name).join(', ').slice(0, 2400))
+  const [ingredientDraft, setIngredientDraft] = useState<LooseFoodIngredientEntry[]>([])
   const [confirmed, setConfirmed] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -33,24 +33,46 @@ export function LooseFoodAllergenLabel({ endpoint, itemId, fingerprint, foodName
     return { row, variants, complete }
   })
   const complete = selectedRows.length > 0 && selectedRows.every(entry => entry.complete)
-  const allergens = selectedRows.flatMap(({ row, variants }) =>
-    row.variants.length ? variants.flatMap(variant => variant.allergens) : row.allergens)
+  const selectedAllergenSources = selectedRows.map(({ row, variants }) => ({
+    id: row.id,
+    allergens: row.variants.length ? variants.flatMap(variant => variant.allergens) : row.allergens,
+  }))
+  const allergens = selectedAllergenSources.flatMap(source => source.allergens)
   const { contains, precautions, needsSpecificNames } = looseFoodAllergenStatements(allergens)
+  const ingredientEntries = [
+    ...ingredientDraft.filter(entry => sources.some(source => source.id === entry.sourceId)),
+    ...sources.filter(source => !ingredientDraft.some(entry => entry.sourceId === source.id))
+      .map(source => ({ sourceId: source.id, description: source.name })),
+  ]
   let ingredientRuns: LabelTextRun[] | undefined
   let ingredientError = ''
   if (includeIngredients) {
-    const declaration = ppdsLabelLayoutInput.shape.ingredients.safeParse(ingredients)
-    if (!declaration.success) {
-      ingredientError = ingredients.trim() ? 'Check the characters in the ingredients list.' : 'Enter the full ingredients list.'
+    const entries = looseFoodIngredientEntries.safeParse(ingredientEntries)
+    if (!entries.success) {
+      ingredientError = 'Enter each ingredient using characters the label can print.'
     } else if (complete && !needsSpecificNames) {
       try {
-        ingredientRuns = labelRecipeIngredients(declaration.data, allergens, sources.length)
+        ingredientRuns = looseFoodIngredientRuns(entries.data, selectedAllergenSources)
       } catch (failure) {
         ingredientError = failure instanceof Error ? failure.message : 'Check the ingredients list.'
       }
     }
   }
   const canDownload = complete && confirmed && !needsSpecificNames && !ingredientError
+
+  function saveIngredientDraft(entries: LooseFoodIngredientEntry[]) {
+    setIngredientDraft(entries)
+    setConfirmed(false)
+    setError('')
+  }
+
+  function moveIngredient(index: number, offset: number) {
+    const next = [...ingredientEntries]
+    const destination = index + offset
+    const [entry] = next.splice(index, 1)
+    next.splice(destination, 0, entry)
+    saveIngredientDraft(next)
+  }
 
   function confirmVariant(id: string, checked: boolean) {
     setConfirmedVariantIds(previous => {
@@ -87,7 +109,7 @@ export function LooseFoodAllergenLabel({ endpoint, itemId, fingerprint, foodName
           expected: fingerprint,
           confirmedLooseFood: confirmed,
           confirmedVariantIds: confirmedVariantIds.size ? [...confirmedVariantIds] : undefined,
-          ingredients: includeIngredients ? ingredients.trim() : undefined,
+          ingredientEntries: includeIngredients ? ingredientEntries : undefined,
           selections: selectedRows.flatMap(({ row, variants }) =>
             variants.map(variant => ({ sourceId: row.id, variantId: variant.id }))),
         }),
@@ -188,26 +210,44 @@ export function LooseFoodAllergenLabel({ endpoint, itemId, fingerprint, foodName
         </label>
         {includeIngredients && (
           <>
-            <label className="block space-y-1 font-medium">Full ingredients list
-              <textarea rows={3} maxLength={2400} className="block w-full rounded-lg border border-gray-300 px-3 py-2 font-normal"
-                value={ingredients} onChange={event => {
-                  setIngredients(event.target.value.replace(/\s*\n\s*/g, ' '))
-                  setConfirmed(false)
-                }} />
-            </label>
-            <p>Use the recipe names as a starting point. Check the order by weight and add compound ingredients from the supplier wording.</p>
+            <p>Contained allergens are added automatically next to each ingredient. Check the order by weight and add compound ingredients using the supplier wording.</p>
+            {ingredientEntries.map((entry, index) => {
+              const name = sources.find(source => source.id === entry.sourceId)?.name
+              return (
+                <div key={entry.sourceId} className="flex flex-wrap items-end gap-2">
+                  <label className="block min-w-48 flex-1 space-y-1 font-medium">{name}
+                    <input className="block min-h-11 w-full rounded-lg border border-gray-300 px-3 py-2 font-normal"
+                      maxLength={2400} value={entry.description} onChange={event =>
+                        saveIngredientDraft(ingredientEntries.map((current, position) =>
+                          position === index ? { ...current, description: event.target.value } : current))} />
+                  </label>
+                  <button type="button" className={buttonClass} disabled={index === 0} aria-label={`Move ${name} up`}
+                    onClick={() => moveIngredient(index, -1)}>Up</button>
+                  <button type="button" className={buttonClass} disabled={index === ingredientEntries.length - 1} aria-label={`Move ${name} down`}
+                    onClick={() => moveIngredient(index, 1)}>Down</button>
+                </div>
+              )
+            })}
             {ingredientError && <p className="text-amber-900">{ingredientError}</p>}
           </>
         )}
       </fieldset>
       {complete && !needsSpecificNames && (
-        <div className="rounded-lg border border-gray-200 p-4">
-          <p className="font-semibold">{foodName}</p>
-          {includeIngredients ? ingredientRuns && (
-            <p><strong>Ingredients: </strong>{ingredientRuns.map(({ text, bold }, index) =>
-              bold ? <strong key={index}>{text}</strong> : text)}</p>
-          ) : <p className="font-semibold">{contains.length ? `Contains ${contains.join(', ')}` : 'No declarable allergens recorded'}</p>}
-          {precautions.map(statement => <p key={statement}>{statement}</p>)}
+        <div className="divide-y divide-gray-300 rounded-lg border border-gray-300 px-4" data-no-translate>
+          <p className="py-3 font-semibold">{foodName}</p>
+          <section className="space-y-1 py-3">
+            <h4 className="font-semibold">Allergens</h4>
+            {includeIngredients ? ingredientRuns && (
+              <p><strong>Ingredients: </strong>{ingredientRuns.map(({ text, bold }, index) =>
+                bold ? <strong key={index}>{text}</strong> : text)}</p>
+            ) : <p className="font-semibold">{contains.length ? `Contains ${contains.join(', ')}` : 'No declarable allergens recorded'}</p>}
+          </section>
+          {precautions.length > 0 && (
+            <section className="space-y-1 py-3">
+              <h4 className="font-semibold">Precautionary warnings</h4>
+              {precautions.map(statement => <p key={statement}>{statement}</p>)}
+            </section>
+          )}
         </div>
       )}
       {needsSpecificNames && <p className="text-amber-900">Identify the specific cereal or tree nut in the selected allergen assessments.</p>}

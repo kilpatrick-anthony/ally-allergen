@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { Jurisdiction } from '@/lib/location-jurisdiction'
 import { publishedDate } from '@/lib/location-jurisdiction'
-import { classifyPpds, isSingleAllergenName, missingDeclaredAllergens, PPDS_CLASSIFICATIONS, PPDS_LABEL_SIZE, ppdsAnswers, selectedLabelAllergenSources, type PpdsAnswers, type PpdsClassification, type PpdsLabelInput } from '@/lib/ppds'
+import { classifyPpds, FULL_INGREDIENT_LABEL_ENABLED, isSingleAllergenName, missingDeclaredAllergens, PPDS_CLASSIFICATIONS, PPDS_LABEL_SIZE, ppdsAnswers, selectedLabelAllergenSources, type PpdsAnswers, type PpdsClassification, type PpdsLabelInput } from '@/lib/ppds'
 import type { PpdsPrintLabel } from '@/lib/pdf/ppds-label'
 import type { PpdsReviewSources, StoredPpdsLabel } from '@/lib/server/ppds-labels'
 import { LooseFoodAllergenLabel } from './LooseFoodAllergenLabel'
@@ -67,12 +67,14 @@ export function PpdsLabelEditor({ siteSlug, jurisdiction, item }: {
 
   return (
     <section className="space-y-4 rounded-xl border border-gray-200 bg-white p-5">
-      <h3 className="text-lg font-bold">{isIrishLocation ? 'Ingredient and allergen labels' : 'Allergen and PPDS labels'}</h3>
-      {isIrishLocation ? (
+      <h3 className="text-lg font-bold">{FULL_INGREDIENT_LABEL_ENABLED
+        ? isIrishLocation ? 'Ingredient and allergen labels' : 'Allergen and PPDS labels'
+        : 'Allergen-only label for loose or made-to-order food'}</h3>
+      {FULL_INGREDIENT_LABEL_ENABLED && (isIrishLocation ? (
         <p className="text-sm">Create an ingredient declaration or an allergen-only label for food served loose. Check any additional package labelling requirements separately.</p>
       ) : (
         <p className="text-sm">Classify an item for this location. A sandwich sealed in advance and sold from the same café is an example of PPDS. <a href={href} className="font-semibold underline">PPDS guidance</a></p>
-      )}
+      ))}
       <p className="text-sm font-semibold">Menu item: {item.name}</p>
       <LabelReview key={item.id} siteSlug={siteSlug} itemId={item.id} isIrishLocation={isIrishLocation} />
     </section>
@@ -343,7 +345,8 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
   ) : <p role="status" className="text-sm">Loading label review…</p>
 
   const canEditLabel = review.canApprove && (isIrishLocation || classification === 'ppds')
-  const typeControl = review.canApprove && review.canCreateLooseLabel && (
+  const canCreateLooseLabel = review.canApprove && review.canCreateLooseLabel
+  const typeControl = FULL_INGREDIENT_LABEL_ENABLED && canCreateLooseLabel && (
     <label className="block max-w-sm space-y-1 text-sm font-semibold">
       Label type
       <select className={fieldClass} value={labelType} disabled={busy}
@@ -353,7 +356,7 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
       </select>
     </label>
   )
-  if (typeControl && labelType === 'allergens') {
+  if (canCreateLooseLabel && (!FULL_INGREDIENT_LABEL_ENABLED || labelType === 'allergens')) {
     return (
       <div className="space-y-4">
         {typeControl}
@@ -362,6 +365,11 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
           onReload={() => load(AbortSignal.timeout(30_000), { revisionId: review.current?.id ?? null, specifications })} />
       </div>
     )
+  }
+  if (!FULL_INGREDIENT_LABEL_ENABLED) {
+    return <p className="text-sm">{review.canApprove
+      ? 'Allergen-only labels require a linked recipe for food served loose or prepared to order.'
+      : 'An owner or manager can print allergen labels.'}</p>
   }
   return (
     <div className="space-y-4">
