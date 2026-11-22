@@ -169,7 +169,7 @@ export default function HelpPage() {
       id: 19,
       category: 'menu',
       title: 'Creating and printing allergen labels',
-      description: 'Open the label maker from an ingredient or menu item, verify supplier variants and print the PDF.',
+      description: 'Print allergen labels for loose or made-to-order food, with an optional ingredients list and notes.',
       icon: FileText,
       color: 'teal'
     },
@@ -403,13 +403,17 @@ export default function HelpPage() {
         'Packaged-product compliance requires label evidence, an ingredient declaration and label verification. Linking a supplier is also strongly recommended.',
       ],
       19: [
-        'In Ingredients or Menu Builder, open a record and choose Create / print label. If you start from an ingredient, choose an active menu item that uses it. Then choose the location.',
+        'In Ingredients or Menu Builder, use the printer icon or choose Create / print label. If you start from an ingredient, choose an active menu item that uses it. Check the selected location.',
         FULL_INGREDIENT_LABEL_ENABLED
           ? 'For food served loose or prepared to order, choose Allergen-only label under Label type.'
           : 'The label maker opens to the allergen-only label for food served loose or prepared to order.',
-        'Select the supplier variants used, check the automatic allergen declaration, confirm it matches the food served and download the PDF. Display it where customers can read it before ordering.',
-        'If a selected supplier variant needs review and all allergen answers are recorded, check the answers against the supplier label or specification and confirm them for this printout. Complete any missing answers in the ingredient record.',
-        'Choose Include ingredients list to print the ingredients on a loose-food label. Check the recipe names, add compound ingredients using the supplier wording, and put the list in weight order. Contained allergen names are added and highlighted next to their ingredients. Precautionary warnings appear separately.',
+        'Under Ingredients used in this batch, select every supplier variant you actually used. You can select several variants of the same ingredient if they were used together.',
+        'If a selected supplier variant needs review and all allergen answers are recorded, check them against the current supplier label or specification and confirm them for this printout. If answers are missing, complete them in the ingredient record and choose Reload recipe and sources.',
+        'The preview pulls allergens from the selected ingredients and variants. “May contain”, “May contain traces of” and “Not suitable for” warnings appear in their own section, with allergen and sub-allergen names in bold.',
+        'Tick Include ingredients list to print the recipe on the label. Check the ingredient names, add compound ingredients using the supplier wording, and put the list in weight order. AllyJen adds and bolds the contained allergen names next to their ingredients. The heading changes to “Allergens in bold”.',
+        'Tick Add notes to label to add up to 400 characters. Notes appear between their own divider lines in the preview and PDF. Leave the field blank to omit the section.',
+        'Check the preview and tick the confirmation that it matches the food you serve. Choose Download allergen-only label or Download label with ingredients. Both PDFs include a link to allyjen.ie and show when the label was generated in Irish local time.',
+        'Display the printed label where customers can read it before ordering.',
         ...(FULL_INGREDIENT_LABEL_ENABLED ? [
         'For UK locations, first complete the product classification. Only items classified as PPDS can be approved as UK PPDS on-pack labels. Republic of Ireland locations use the optional ingredient-label flow without PPDS classification.',
         'Under Recipe and supplier specifications, tick each variant used in the product and choose its specification. You can tick several variants of the same ingredient when they are used together.',
