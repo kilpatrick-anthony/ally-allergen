@@ -127,22 +127,25 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
 
   useEffect(() => {
     const request = new AbortController()
-    let timedOut = false
-    const timeoutId = window.setTimeout(() => {
-      timedOut = true
-      request.abort()
-    }, 30_000)
+    let active = true
+    let timeoutId: number
+    const timeout = new Promise<never>((_, reject) => {
+      timeoutId = window.setTimeout(() => {
+        request.abort()
+        reject(new Error('The server did not finish loading this item’s label review within 30 seconds. The PDF download has not started yet. Retry, and contact support if it happens again.'))
+      }, 30_000)
+    })
     setReview(null)
     setError('')
-    void load(request.signal).catch(err => {
-      if (!request.signal.aborted) {
+    void Promise.race([load(request.signal), timeout]).catch(err => {
+      if (active) {
         setError(err instanceof Error ? err.message : 'Could not load the label review.')
       }
     }).finally(() => {
       window.clearTimeout(timeoutId)
-      if (timedOut) setError('The server did not finish loading this item’s label review within 30 seconds. The PDF download has not started yet. Retry, and contact support if it happens again.')
     })
     return () => {
+      active = false
       window.clearTimeout(timeoutId)
       request.abort()
     }
