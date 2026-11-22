@@ -73,7 +73,10 @@ export default function LabelCreatorPage() {
       setLoadingMenuItems(true)
       setMenuItemsError('')
       try {
-        const response = await fetch('/api/menu-items', { cache: 'no-store', signal: request.signal })
+        const filter = requestedItemId
+          ? `item_id=${encodeURIComponent(requestedItemId)}`
+          : `ingredient_id=${encodeURIComponent(requestedIngredientId)}`
+        const response = await fetch(`/api/menu-items?${filter}`, { cache: 'no-store', signal: request.signal })
         const data = await response.json() as { menuItems?: MenuItem[]; error?: string }
         if (!response.ok) throw new Error(data.error || 'Could not load menu items.')
         if (!Array.isArray(data.menuItems)) throw new Error('The menu item list could not be read.')
