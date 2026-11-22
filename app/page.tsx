@@ -416,6 +416,10 @@ export default function LandingPage() {
               </div>
             ))}
           </div>
+          <p className="mt-6 rounded-2xl border border-gray-100 bg-white p-7 text-sm leading-relaxed text-gray-600 shadow-sm">
+            <strong className="text-[#003842]">Printable allergen labels.</strong>{' '}
+            Create labels from your recipes for loose or made-to-order food, with bold allergen names and optional ingredients and notes.
+          </p>
         </Container>
       </section>
 
