@@ -236,7 +236,7 @@ export function LooseFoodAllergenLabel({ endpoint, itemId, fingerprint, foodName
         <div className="divide-y divide-gray-300 rounded-lg border border-gray-300 px-4" data-no-translate>
           <p className="py-3 font-semibold">{foodName}</p>
           <section className="space-y-1 py-3">
-            <h4 className="font-semibold">Allergens</h4>
+            <h4 className="font-semibold">{includeIngredients ? 'Allergens in bold' : 'Allergens'}</h4>
             {includeIngredients ? ingredientRuns && (
               <p><strong>Ingredients: </strong>{ingredientRuns.map(({ text, bold }, index) =>
                 bold ? <strong key={index}>{text}</strong> : text)}</p>
@@ -248,6 +248,9 @@ export function LooseFoodAllergenLabel({ endpoint, itemId, fingerprint, foodName
               {precautions.map(statement => <p key={statement}>{statement}</p>)}
             </section>
           )}
+          <p className="py-3">
+            <a className={linkClass} href="https://allyjen.ie" target="_blank" rel="noreferrer">allyjen.ie</a>
+          </p>
         </div>
       )}
       {needsSpecificNames && <p className="text-amber-900">Identify the specific cereal or tree nut in the selected allergen assessments.</p>}

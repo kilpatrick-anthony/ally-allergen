@@ -2,22 +2,29 @@ import jsPDF from 'jspdf'
 import type { LabelTextRun } from '@/lib/ppds'
 import { drawLabelTextLine, wrapLabelText } from '@/lib/pdf/label-text'
 
+const generatedDate = new Intl.DateTimeFormat('en-IE', {
+  day: 'numeric', month: 'short', year: 'numeric',
+  hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  timeZone: 'Europe/Dublin', timeZoneName: 'short',
+})
+
 export function makeLooseFoodAllergenLabelPdf({ foodName, contains, precautions, ingredients }: {
   foodName: string
   contains: string[]
   precautions: string[]
   ingredients?: LabelTextRun[]
-}) {
+}, generatedAt = new Date()) {
   const width = 80
   const margin = 4
   const doc = new jsPDF({ unit: 'mm', format: [width, 35], orientation: 'landscape' })
   doc.viewerPreferences({ PrintScaling: 'None' })
+  doc.setCreationDate(generatedAt)
 
   const separator = { rule: true } as const
-  const blocks: ({ text: string; size: number; bold: boolean } | { runs: LabelTextRun[]; size: number } | typeof separator)[] = [
+  const blocks: ({ text: string; size: number; bold: boolean; url?: string } | { runs: LabelTextRun[]; size: number } | typeof separator)[] = [
     { text: foodName, size: 13, bold: true },
     separator,
-    { text: 'Allergens', size: 12, bold: true },
+    { text: ingredients ? 'Allergens in bold' : 'Allergens', size: 12, bold: true },
     ingredients
       ? { runs: [{ text: 'Ingredients: ', bold: true }, ...ingredients], size: 11 }
       : { text: contains.length ? `Contains ${contains.join(', ')}` : 'No declarable allergens recorded', size: 12, bold: true },
@@ -28,6 +35,9 @@ export function makeLooseFoodAllergenLabelPdf({ foodName, contains, precautions,
     ] : []),
     separator,
     { text: 'For food served loose or prepared to order', size: 10, bold: false },
+    separator,
+    { text: 'allyjen.ie', size: 10, bold: true, url: 'https://allyjen.ie' },
+    { text: `Generated ${generatedDate.format(generatedAt)}`, size: 10, bold: false },
   ]
   const laidOut = blocks.map(block => {
     if ('rule' in block) {
@@ -59,7 +69,9 @@ export function makeLooseFoodAllergenLabelPdf({ foodName, contains, precautions,
       draw: (y: number) => {
         doc.setFont('helvetica', block.bold ? 'bold' : 'normal')
         doc.setFontSize(block.size)
-        doc.text(lines, margin, y + lineHeight * 0.8)
+        const baseline = y + lineHeight * 0.8
+        if (block.url) doc.textWithLink(block.text, margin, baseline, { url: block.url })
+        else doc.text(lines, margin, baseline)
       },
     }
   })
