@@ -4,7 +4,7 @@ import { QuickAddError } from '@/lib/server/quick-add'
 import { locationAllergenContext, locationAllergenFailure, sourceFingerprint } from '@/lib/server/location-allergens'
 import { buildPpdsLabel, ppdsReviewSources, type PpdsSource, type StoredPpdsLabel } from '@/lib/server/ppds-labels'
 import { makePpdsLabelPdf } from '@/lib/pdf/ppds-label'
-import { classifyPpds, ppdsAnswers, ppdsLabelInput, ppdsLabelLayoutInput, type PpdsAnswers, type PpdsClassification } from '@/lib/ppds'
+import { classifyPpds, emphasiseDeclaredAllergens, ppdsAnswers, ppdsLabelDraftLayoutInput, ppdsLabelInput, ppdsLabelSourceSelection, selectedLabelAllergenSources, type PpdsAnswers, type PpdsClassification } from '@/lib/ppds'
 
 type RouteParams = { params: Promise<{ slug: string }> }
 type Actor = Awaited<ReturnType<typeof locationAllergenContext>>
@@ -29,7 +29,11 @@ const reviewContext = z.object({
 }).strict()
 const reviewInput = z.discriminatedUnion('intent', [
   reviewContext.extend({ intent: z.enum(['classify', 'review', 'preview', 'approve']), label: ppdsLabelInput.optional() }),
-  reviewContext.extend({ intent: z.literal('preview-layout'), layout: ppdsLabelLayoutInput }),
+  reviewContext.extend({
+    intent: z.literal('preview-layout'),
+    layout: ppdsLabelDraftLayoutInput,
+    selections: z.array(ppdsLabelSourceSelection).max(100).default([]),
+  }),
 ])
 
 async function readSource(actor: Actor, itemId: string) {
@@ -170,7 +174,9 @@ export async function POST(request: Request, { params }: RouteParams) {
       try {
         if (input.intent === 'preview-layout') {
           const { ingredients, ...layout } = input.layout
-          const rendered = { ...layout, ingredients: [{ text: ingredients, bold: false }] }
+          const allergens = selectedLabelAllergenSources(ppdsReviewSources(source), input.selections)
+            .flatMap(entry => entry.containedAllergens ?? [])
+          const rendered = { ...layout, ingredients: emphasiseDeclaredAllergens(ingredients, allergens) }
           const { xHeight, minimumXHeight } = makePpdsLabelPdf(rendered)
           return NextResponse.json({ label: rendered, xHeight, minimumXHeight })
         }

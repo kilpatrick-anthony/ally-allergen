@@ -54,8 +54,30 @@ export const ppdsLabelInput = ppdsLabelLayoutInput.extend({
   templateSuitable: z.literal(true),
 }).strict()
 
+export const ppdsLabelDraftLayoutInput = ppdsLabelLayoutInput.extend({
+  ingredients: z.union([labelText(2400), z.literal('')]),
+})
+
+export const ppdsLabelSourceSelection = z.object({
+  sourceId: z.string().uuid(),
+  variantId: z.string().uuid().nullable(),
+}).strict()
+
 export type PpdsLabelInput = z.infer<typeof ppdsLabelInput>
 export interface LabelTextRun { text: string; bold: boolean }
+type LabelSourceSelection = z.infer<typeof ppdsLabelSourceSelection>
+type LabelAllergenSource = { id: string; name: string; containedAllergens?: string[] }
+
+export function selectedLabelAllergenSources(
+  sources: (LabelAllergenSource & { variants: LabelAllergenSource[] })[],
+  selections: LabelSourceSelection[],
+) {
+  return sources.flatMap(source => source.variants.length
+    ? source.variants.filter(variant => selections.some(selection =>
+      selection.sourceId === source.id && selection.variantId === variant.id))
+      .map(variant => ({ ...variant, name: `${source.name} · ${variant.name}` }))
+    : [source])
+}
 
 type SpecificAllergen = { id: AllergenId; name: string; level: AllergenLevel }
 
@@ -124,10 +146,18 @@ export function missingDeclaredAllergens(declaration: string, names: string[]) {
   return names.filter(name => allergenTerms[name] && !hasTerm(declaration, allergenTerms[name]))
 }
 
+export function isSingleAllergenName(declaration: string, names: string[]) {
+  return names.some(name => allergenTerms[name] &&
+    new RegExp(`^(?:${allergenTerms[name].source})[.,;]*$`, 'iu').test(declaration.trim()))
+}
+
 /** Preserve the operator's declaration and emphasise repeated allergen names wherever they appear. */
 export function labelIngredients(declaration: string, required: SpecificAllergen[]): LabelTextRun[] {
   if (/(?:^ingredients\s*:|\b(?:may contain|not suitable for)\b)/i.test(declaration)) {
     throw new Error('Enter the ingredients only. Put any precautionary statement in its own field.')
+  }
+  if (/(?:^|[.;])\s*contains\s*:/i.test(declaration)) {
+    throw new Error('Name contained allergens within the ingredients list where they occur.')
   }
 
   const open = declaration.match(/[([]/g)?.length || 0
@@ -151,7 +181,12 @@ export function labelIngredients(declaration: string, required: SpecificAllergen
     if (hasTerm(declaration, term)) throw new Error(`Check the declaration for ${name} against the verified source assessments.`)
   }
 
-  const pattern = names.map(name => allergenTerms[name]).sort((a, b) => b.source.length - a.source.length)
+  return emphasiseDeclaredAllergens(declaration, names)
+}
+
+export function emphasiseDeclaredAllergens(declaration: string, names: string[]): LabelTextRun[] {
+  const pattern = [...new Set(names)].filter(name => allergenTerms[name]).map(name => allergenTerms[name])
+    .sort((a, b) => b.source.length - a.source.length)
     .map(termPattern).join('|')
   if (!pattern) return [{ text: declaration, bold: false }]
 

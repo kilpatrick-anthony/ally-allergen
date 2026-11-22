@@ -1,5 +1,5 @@
 import { isAllergenAssessmentComplete, isIngredientAssessmentComplete } from '@/lib/allergen-assessment'
-import { labelIngredients, specificAllergens, validatePrecaution, type PpdsLabelInput } from '@/lib/ppds'
+import { isSingleAllergenName, labelIngredients, specificAllergens, validatePrecaution, type PpdsLabelInput } from '@/lib/ppds'
 import { makePpdsLabelPdf, type PpdsPrintLabel } from '@/lib/pdf/ppds-label'
 import type { AllergenWarnings } from '@/types/allergen'
 
@@ -173,6 +173,9 @@ export function buildPpdsLabel(source: PpdsSource, input: PpdsLabelInput) {
   // hide another source's precautionary warning for the same allergen.
   const allergens = assessments.flatMap(specificAllergens)
   const contains = new Set(allergens.filter(({ level }) => level === 'contains').map(({ name }) => name))
+  if (source.ingredients.length > 1 && isSingleAllergenName(input.ingredients, [...contains])) {
+    throw new Error('Enter the full recipe in the ingredients list, including all ingredients and any compound ingredients required.')
+  }
   const relevant = allergens.filter(({ name, level }) => level === 'contains' || !contains.has(name))
   const ingredients = labelIngredients(input.ingredients, relevant)
   validatePrecaution(input.precaution, relevant)

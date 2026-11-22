@@ -1,10 +1,10 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { Jurisdiction } from '@/lib/location-jurisdiction'
 import { publishedDate } from '@/lib/location-jurisdiction'
-import { classifyPpds, missingDeclaredAllergens, PPDS_CLASSIFICATIONS, PPDS_LABEL_SIZE, ppdsAnswers, type PpdsAnswers, type PpdsClassification, type PpdsLabelInput } from '@/lib/ppds'
+import { classifyPpds, isSingleAllergenName, missingDeclaredAllergens, PPDS_CLASSIFICATIONS, PPDS_LABEL_SIZE, ppdsAnswers, selectedLabelAllergenSources, type PpdsAnswers, type PpdsClassification, type PpdsLabelInput } from '@/lib/ppds'
 import type { PpdsPrintLabel } from '@/lib/pdf/ppds-label'
 import type { PpdsReviewSources, StoredPpdsLabel } from '@/lib/server/ppds-labels'
 
@@ -86,7 +86,6 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
   const [answers, setAnswers] = useState<Partial<PpdsAnswers>>({})
   const [foodName, setFoodName] = useState('')
   const [ingredients, setIngredients] = useState('')
-  const ingredientsField = useRef<HTMLTextAreaElement>(null)
   const [precaution, setPrecaution] = useState('')
   const [area, setArea] = useState('')
   const [width, setWidth] = useState('')
@@ -233,30 +232,22 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
     approvedSpecifications.length !== specifications.length ||
     approvedSpecifications.some(({ sourceId, variantId, documentId }) => selections[sourceId]?.[variantId ?? ''] !== documentId)
   )
-  const canPreview = Boolean(foodName.trim() && ingredients.trim())
-  const readyForApproval = Boolean(area && verified && suitable && specificationsSelected)
-  const missingAllergens = review?.sources.flatMap(row => {
-    const sources = row.variants.length
-      ? row.variants.filter(variant => variant.assessed && selections[row.id]?.[variant.id] !== undefined)
-        .map(variant => ({ id: variant.id, name: `${row.name} · ${variant.name}`, allergens: variant.containedAllergens ?? [] }))
-      : [{ id: row.id, name: row.name, allergens: row.containedAllergens ?? [] }]
-    return sources.flatMap(source => missingDeclaredAllergens(ingredients, source.allergens)
-      .map(allergen => ({ sourceId: source.id, sourceName: source.name, allergen })))
-  }) ?? []
-
-  function insertAllergen(name: string) {
-    const field = ingredientsField.current
-    if (!field) return
-    if (field.value.length - (field.selectionEnd - field.selectionStart) + name.length > field.maxLength) {
-      setError('The ingredient declaration has reached its character limit.')
-      return
-    }
-    field.setRangeText(name, field.selectionStart, field.selectionEnd, 'end')
-    setIngredients(field.value)
-    setVerified(false)
-    clearPreview()
-    field.focus()
-  }
+  const canPreview = Boolean(foodName.trim())
+  const allergenSources = selectedLabelAllergenSources(review?.sources ?? [], specifications)
+    .filter(source => source.containedAllergens?.length)
+  const allergenNames = [...new Set(allergenSources.flatMap(source => source.containedAllergens ?? []))]
+  const missingAllergens = missingDeclaredAllergens(ingredients, allergenNames)
+  const needsFullList = !ingredients.trim() ||
+    ((review?.sources.length ?? 0) > 1 && isSingleAllergenName(ingredients, allergenNames))
+  const approvalChecks = [
+    needsFullList && 'Enter the full ingredients list, including the recipe and relevant compound ingredients.',
+    !needsFullList && missingAllergens.length > 0 && `Name ${missingAllergens.join(', ')} where it appears in the supplier’s ingredients.`,
+    !specificationsSelected && 'Select a current specification for every ingredient used and complete any outstanding variant assessments.',
+    !area && 'Enter the measured area of the largest package surface.',
+    !verified && 'Confirm the recipe, ingredient order and supplier wording.',
+    !suitable && 'Confirm the label suits the package.',
+  ].filter(Boolean)
+  const readyForApproval = approvalChecks.length === 0
 
   async function saveReviewDate(documentId: string, nextReviewDate: string) {
     const response = await fetch(`/api/datasheets/${encodeURIComponent(documentId)}`, {
@@ -279,7 +270,7 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
     const heightMm = height ? Number(height) : PPDS_LABEL_SIZE.defaultHeightMm
     // Estimate an unmeasured draft with the larger font. Approval uses the measured surface.
     const areaCm2 = area ? Number(area) : Math.max(80, widthMm * heightMm / 100)
-    const layout = { foodName, ingredients, precaution, areaCm2, widthMm, heightMm }
+    const layout = { foodName, ingredients: ingredients.trim(), precaution, areaCm2, widthMm, heightMm }
     const label = intent === 'approve' || intent === 'preview' ? {
       ...layout,
       specifications,
@@ -294,6 +285,7 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
           itemId, expected: review.fingerprint, previous: review.current?.id || null,
           answers: parsedAnswers.success ? parsedAnswers.data : undefined, intent, label,
           layout: intent === 'preview-layout' ? layout : undefined,
+          selections: intent === 'preview-layout' ? specifications.map(({ sourceId, variantId }) => ({ sourceId, variantId })) : undefined,
         }),
         signal: request,
       })
@@ -437,26 +429,27 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
               <input className={fieldClass} maxLength={160} value={foodName} onChange={event => { setFoodName(event.target.value); clearPreview() }} />
             </label>
             <label className="sm:col-span-3 text-sm font-medium">Full ingredients list
-              <textarea ref={ingredientsField} className={fieldClass} rows={4} maxLength={2400} value={ingredients} onChange={event => {
+              <textarea className={fieldClass} rows={4} maxLength={2400} value={ingredients} onChange={event => {
                 setIngredients(event.target.value.replace(/\s*\n\s*/g, ' '))
                 setVerified(false)
                 clearPreview()
               }} />
             </label>
             <p className="sm:col-span-3 text-sm">Order ingredients by descending weight at manufacture. Include compound ingredients where required and name each declarable allergen wherever it appears. Use specific cereal and nut names and identify derivatives, for example whey (milk).</p>
-            {missingAllergens.length > 0 && (
+            {allergenSources.length > 0 && (
               <div className="space-y-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-950 sm:col-span-3">
-                <p className="font-semibold">Allergens to name in the ingredients list</p>
-                <p>Check the supplier’s wording, then place the cursor where the allergen belongs. The verified preview and PDF emphasise it automatically.</p>
-                <ul className="space-y-2">
-                  {missingAllergens.map(({ sourceId, sourceName, allergen }) => (
-                    <li key={`${sourceId}:${allergen}`} className="flex flex-wrap items-center gap-2">
-                      <span>{sourceName} contains <strong>{allergen}</strong></span>
-                      <button type="button" className={actionClass} onMouseDown={event => event.preventDefault()}
-                        onClick={() => insertAllergen(allergen)}>Insert {allergen}</button>
+                <p className="font-semibold">Allergens in the selected ingredients</p>
+                <p>Use the supplier’s wording in the full ingredients list. The label maker automatically bolds the allergen names it finds in that text.</p>
+                <ul className="list-disc pl-5">
+                  {allergenSources.map(source => (
+                    <li key={source.id}>
+                      {source.name} contains <strong>{source.containedAllergens?.join(', ')}</strong>
                     </li>
                   ))}
                 </ul>
+                {missingAllergens.length > 0 && (
+                  <p>Still missing from the ingredients list <strong>{missingAllergens.join(', ')}</strong></p>
+                )}
               </div>
             )}
             <label className="sm:col-span-3 text-sm font-medium">Separate “May contain” statement (if applicable)
@@ -491,7 +484,7 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
             </label>
           </fieldset>
 
-          {!canPreview && <p className="text-sm">Enter the food name and ingredients to preview.</p>}
+          {!canPreview && <p className="text-sm">Enter the food name to preview.</p>}
         </>
       )}
 
@@ -509,9 +502,18 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
       {preview && (
         <div className="max-w-md space-y-2 rounded-lg border-2 border-gray-300 bg-white p-4 text-sm print:hidden">
           <p className="text-xs font-bold uppercase text-amber-900">{preview.verified ? 'Preview only' : 'Draft layout only'}</p>
-          {!preview.verified && <p>Complete the source checks and confirmations to preview allergen emphasis and confirm the final fit before approval.</p>}
+          {!preview.verified && approvalChecks.length > 0 && (
+            <div>
+              <p className="font-semibold">Before printing</p>
+              <ul className="list-disc space-y-1 pl-5">
+                {approvalChecks.map(check => check && <li key={check}>{check}</li>)}
+              </ul>
+            </div>
+          )}
           <p className="font-bold">{preview.label.foodName}</p>
-          <p><strong>Ingredients: </strong>{preview.label.ingredients.map(({ text, bold }, index) => bold ? <strong key={index}>{text}</strong> : text)}</p>
+          <p><strong>Ingredients: </strong>{preview.label.ingredients.some(run => run.text)
+            ? preview.label.ingredients.map(({ text, bold }, index) => bold ? <strong key={index}>{text}</strong> : text)
+            : 'Full ingredients list pending'}</p>
           {preview.label.precaution && <p>{preview.label.precaution}</p>}
           <p className="text-xs">PDF size {preview.label.widthMm} × {preview.label.heightMm} mm. Calculated x-height {preview.xHeight.toFixed(2)} mm (minimum {preview.minimumXHeight} mm).</p>
         </div>

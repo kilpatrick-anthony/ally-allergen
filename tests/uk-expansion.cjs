@@ -187,6 +187,25 @@ test('one label validates and highlights allergens from all selected variants of
   assert.throws(() => buildPpdsLabel(expired, input), /review date/)
 })
 
+test('a single allergen name cannot substitute for the ingredients list of a multi-ingredient recipe', () => {
+  const { buildPpdsLabel } = load('lib/server/ppds-labels.ts')
+  const { input, source } = labelFixture()
+  const neutralWarnings = completeReview().allergen_warnings
+  const coconut = source.ingredients[0].ingredient
+  const matcha = { ...coconut, id: uuid(65), name: 'Matcha', allergen_warnings: neutralWarnings }
+  source.ingredients.push({ ingredient: matcha, link: {} })
+  source.recipeLinkCount = 2
+  source.variants[0].variant.allergen_warnings = { ...neutralWarnings, soybeans: 'contains' }
+  source.specifications.push({ ...source.specifications[0], id: uuid(66), ingredient_id: matcha.id })
+  input.specifications.push({ sourceId: matcha.id, documentId: uuid(66), variantId: null })
+  input.precaution = ''
+  assert.throws(() => buildPpdsLabel(source, { ...input, ingredients: 'soybeans' }), /Enter the full recipe/)
+  assert.throws(() => buildPpdsLabel(source, { ...input, ingredients: 'Soybeans.' }), /Enter the full recipe/)
+  assert.throws(() => buildPpdsLabel(source, { ...input, ingredients: 'Coconut milk, matcha. Contains: soybeans' }), /within the ingredients list/)
+  const { label } = buildPpdsLabel(source, { ...input, ingredients: 'Coconut milk (soya lecithin), matcha' })
+  assert.deepEqual(label.rendered.ingredients.filter(run => run.bold).map(run => run.text), ['soya'])
+})
+
 test('a recipe label only requires allergen assessments for its selected sources', () => {
   const { buildPpdsLabel } = load('lib/server/ppds-labels.ts')
   const { input, source } = multipleVariantLabelFixture()
@@ -267,6 +286,13 @@ test('Irish ingredient labels can preview and approve without UK PPDS answers', 
   const draft = await post('preview-layout', { layout })
   assert.equal(draft.status, 200)
   assert.deepEqual((await draft.json()).label.ingredients, [{ text: ingredients, bold: false }])
+  const emptyDraft = await post('preview-layout', { layout: { ...layout, ingredients: '' } })
+  assert.equal(emptyDraft.status, 200)
+  const selections = input.specifications.slice(0, 1).map(({ sourceId, variantId }) => ({ sourceId, variantId }))
+  const draftWithSources = await post('preview-layout', { layout, selections })
+  assert.equal(draftWithSources.status, 200)
+  assert.deepEqual((await draftWithSources.json()).label.ingredients.filter(run => run.bold).map(run => run.text),
+    ['wheat', 'milk', 'wheat', 'milk'])
   assert.equal((await post('preview-layout', { layout: { ...layout, widthMm: 25, heightMm: 15 } })).status, 409)
   assert.equal((await post('approve', { layout })).status, 400)
   assert.equal((await post('approve')).status, 409)
