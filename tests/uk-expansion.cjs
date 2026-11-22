@@ -92,6 +92,21 @@ function labelFixture() {
   return { input, source }
 }
 
+function multipleVariantLabelFixture() {
+  const { input, source } = labelFixture()
+  const secondVariant = {
+    ...source.variants[0].variant, id: uuid(60),
+    allergen_warnings: { ...completeReview().allergen_warnings, eggs: 'contains' },
+  }
+  source.variants.push({ variant: secondVariant, supplier: { id: uuid(61), name: 'Second Supplier' } })
+  source.specifications.push({
+    ...source.specifications[0], id: uuid(62), supplier_name: 'Second Supplier', file_name: 'Second specification.pdf',
+  })
+  input.ingredients += ', egg'
+  input.specifications.push({ sourceId: secondVariant.ingredient_id, documentId: uuid(62), variantId: secondVariant.id })
+  return { input, source }
+}
+
 test('approved in-store sandwich declaration has repeated allergen emphasis, separate precaution and actual PDF dimensions', async () => {
   const { buildPpdsLabel } = load('lib/server/ppds-labels.ts')
   const { input, source } = labelFixture()
@@ -124,16 +139,34 @@ test('PPDS blocks missing, mismatched, unverified or expired specifications and 
   assert.throws(() => buildPpdsLabel(source, { ...input, widthMm: 28, heightMm: 15 }), /overflows|too wide/)
 })
 
+test('one label validates and highlights allergens from all selected variants of one ingredient', () => {
+  const { buildPpdsLabel, ppdsReviewSources } = load('lib/server/ppds-labels.ts')
+  const { input, source } = multipleVariantLabelFixture()
+  const [first, second] = input.specifications
+  assert.deepEqual(ppdsReviewSources(source)[0].variants.map(variant => variant.documentIds), [[first.documentId], [second.documentId]])
+  const { label } = buildPpdsLabel(source, input)
+  assert.deepEqual(label.input.specifications, [first, second])
+  assert.deepEqual(label.rendered.ingredients.filter(run => run.bold).map(run => run.text), ['wheat', 'milk', 'wheat', 'milk', 'egg'])
+  assert.throws(() => buildPpdsLabel(source, { ...input, ingredients: input.ingredients.replace(', egg', '') }), /Name eggs/)
+  assert.throws(() => buildPpdsLabel(source, { ...input, specifications: [first, first] }), /one current specification per supplier variant/)
+  assert.throws(() => buildPpdsLabel(source, {
+    ...input, specifications: [first, { ...second, documentId: first.documentId }],
+  }), /matching specification/)
+  const expired = { ...source, specifications: [source.specifications[0], { ...source.specifications[1], next_review_date: '2000-01-01' }] }
+  assert.throws(() => buildPpdsLabel(expired, input), /review date/)
+})
+
 test('Irish ingredient labels can preview and approve without UK PPDS answers', async () => {
-  const { input, source } = labelFixture()
+  const { input, source } = multipleVariantLabelFixture()
   const fingerprint = 'a'.repeat(32)
   const revisionId = uuid(45)
   const saved = []
+  let current
   const query = {
     select() { return this },
     eq() { return this },
     order() { return this },
-    limit: async () => ({ data: [], error: null }),
+    limit: async () => ({ data: current ? [current] : [], error: null }),
   }
   const actor = {
     site: { id: uuid(46), jurisdiction: 'IE' },
@@ -142,6 +175,7 @@ test('Irish ingredient labels can preview and approve without UK PPDS answers', 
       rpc: async (name, args) => {
         if (name === 'review_site_ppds_source') return { data: { source, fingerprint }, error: null }
         saved.push(args)
+        current = { id: revisionId, source_fingerprint: fingerprint, label: args.p_label, classification: args.p_classification }
         return { data: revisionId, error: null }
       },
       from: () => query,
@@ -168,7 +202,17 @@ test('Irish ingredient labels can preview and approve without UK PPDS answers', 
   assert.equal(approved.status, 200)
   assert.equal(saved[0].p_classification, 'ingredient_label')
   assert.deepEqual(saved[0].p_answers, {})
-  assert.ok(saved[0].p_label)
+  assert.deepEqual(saved[0].p_label.input.specifications, input.specifications)
+
+  const print = () => route.GET(new Request(`https://example.test/api/sites/dublin/ppds?item=${uuid(40)}&print=${revisionId}`), {
+    params: Promise.resolve({ slug: 'dublin' }),
+  })
+  const download = await print()
+  assert.equal(download.status, 200)
+  assert.equal(download.headers.get('content-type'), 'application/pdf')
+  assert.equal((await PDFDocument.load(await download.arrayBuffer())).getPageCount(), 1)
+  source.specifications[1].next_review_date = '2000-01-01'
+  assert.equal((await print()).status, 409)
 })
 
 test('label review reads the current revision first and loads history separately', async () => {

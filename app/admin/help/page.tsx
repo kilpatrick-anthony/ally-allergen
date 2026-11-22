@@ -167,8 +167,8 @@ export default function HelpPage() {
     {
       id: 19,
       category: 'menu',
-      title: 'Creating ingredient labels',
-      description: 'Prepare and approve optional ingredient declaration labels from verified recipe and supplier information.',
+      title: 'Creating and printing ingredient labels',
+      description: 'Open the label maker from an ingredient or menu item, verify supplier variants and print the approved PDF.',
       icon: FileText,
       color: 'teal'
     },
@@ -402,14 +402,15 @@ export default function HelpPage() {
         'Packaged-product compliance requires label evidence, an ingredient declaration and label verification. Linking a supplier is also strongly recommended.',
       ],
       19: [
-        'Open Sites & Locations, select a location, then choose Allergen guides and labels. Choose an active menu item in the ingredient-label section.',
+        'In Ingredients or Menu Builder, open a record and choose Create / print label. If you start from an ingredient, choose an active menu item that uses it. Then choose the location.',
         'For UK locations, first complete the product classification. Only items classified as PPDS can be approved as UK PPDS on-pack labels. Republic of Ireland locations use the optional ingredient-label flow without PPDS classification.',
-        'Select a current supplier specification for each recipe ingredient or the complete product, and choose the assessed supplier variant where one is used.',
+        'Under Recipe and supplier specifications, tick each assessed variant used in the product and choose a current specification for each one. You can tick several variants of the same ingredient when they are used together.',
+        'If you switch between supplier variants for different batches, review and approve the label using the variants used in the batch you are labelling. For ingredients without variants and for bought-in products, choose the current specification for the ingredient or product.',
         'Enter the food name and complete ingredient declaration in descending weight at manufacture. Include compound ingredients where required and name declarable allergens specifically.',
         'Keep any approved “May contain” statement separate from the ingredients. Enter the largest package surface and label dimensions, then review the preview and fit check.',
         'An owner or manager must verify and approve the label. Download it and print at 100% (Actual size).',
-        'Recipe or supplier changes can make an approval stale; review sources and approve a new revision before printing.',
-        'The output is an ingredient label panel, not a complete food package label or a check of every local requirement. Confirm the full label separately.',
+        'If the recipe or supplier details change, review the sources and approve a new revision before printing.',
+        'The PDF covers the ingredient declaration. Check the full package label against the requirements for your location before use.',
       ],
       7: [
         'Contains — The allergen is a deliberate, listed ingredient in the recipe.',
