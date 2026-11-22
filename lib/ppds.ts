@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ALLERGEN_LIST, type AllergenId, type AllergenLevel, type AllergenWarnings } from '@/types/allergen'
+import { ALLERGEN_LIST, getAllergenLevelText, type AllergenId, type AllergenLevel, type AllergenWarnings } from '@/types/allergen'
 
 export const ppdsAnswers = z.object({
   packer: z.enum(['same_business', 'other_business', 'uncertain']),
@@ -79,7 +79,7 @@ export function selectedLabelAllergenSources(
     : [source])
 }
 
-type SpecificAllergen = { id: AllergenId; name: string; level: AllergenLevel }
+export type SpecificAllergen = { id: AllergenId; name: string; level: AllergenLevel }
 
 const specificNames: Partial<Record<AllergenId, Record<string, string>>> = {
   cereals_gluten: { wheat: 'wheat', rye: 'rye', barley: 'barley', oats: 'oats', spelt: 'spelt wheat', kamut: 'Khorasan wheat' },
@@ -103,6 +103,17 @@ export function specificAllergens(warnings: AllergenWarnings): SpecificAllergen[
     }
     return [{ id, name: id === 'cereals_gluten' ? 'cereals containing gluten' : name.toLowerCase(), level }]
   })
+}
+
+export function looseFoodAllergenStatements(allergens: SpecificAllergen[]) {
+  const contains = [...new Set(allergens.filter(entry => entry.level === 'contains').map(entry => entry.name))]
+  const precautions = [...new Set(allergens.filter(entry => entry.level !== 'contains' && entry.level !== 'none' &&
+    !contains.includes(entry.name)).map(entry => getAllergenLevelText(entry.level, entry.name)))]
+  return {
+    contains,
+    precautions,
+    needsSpecificNames: contains.some(name => name === 'cereals containing gluten' || name === 'tree nuts'),
+  }
 }
 
 const allergenTerms: Record<string, RegExp> = {

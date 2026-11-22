@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { QuickAddError } from '@/lib/server/quick-add'
 import { locationAllergenContext, locationAllergenFailure, sourceFingerprint } from '@/lib/server/location-allergens'
-import { buildPpdsLabel, ppdsReviewSources, type PpdsSource, type StoredPpdsLabel } from '@/lib/server/ppds-labels'
+import { buildLooseFoodAllergenLabel, buildPpdsLabel, canCreateLooseFoodLabel, ppdsReviewSources, type PpdsSource, type StoredPpdsLabel } from '@/lib/server/ppds-labels'
+import { makeLooseFoodAllergenLabelPdf } from '@/lib/pdf/loose-food-allergen-label'
 import { makePpdsLabelPdf } from '@/lib/pdf/ppds-label'
 import { classifyPpds, emphasiseDeclaredAllergens, ppdsAnswers, ppdsLabelDraftLayoutInput, ppdsLabelInput, ppdsLabelSourceSelection, selectedLabelAllergenSources, type PpdsAnswers, type PpdsClassification } from '@/lib/ppds'
 
@@ -34,6 +35,13 @@ const reviewInput = z.discriminatedUnion('intent', [
     layout: ppdsLabelDraftLayoutInput,
     selections: z.array(ppdsLabelSourceSelection).max(100).default([]),
   }),
+  z.object({
+    intent: z.literal('download-loose-label'),
+    itemId: itemIdInput,
+    expected: sourceFingerprint,
+    confirmedLooseFood: z.literal(true),
+    selections: z.array(ppdsLabelSourceSelection.extend({ variantId: z.string().uuid() })).max(100),
+  }).strict(),
 ])
 
 async function readSource(actor: Actor, itemId: string) {
@@ -122,6 +130,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     return NextResponse.json({
       canApprove: actor.role !== 'staff',
+      canCreateLooseLabel: canCreateLooseFoodLabel(source),
       fingerprint,
       foodName: source.item.name,
       ingredientDeclaration: source.item.ingredient_declaration,
@@ -151,6 +160,22 @@ export async function POST(request: Request, { params }: RouteParams) {
     const { source, fingerprint } = await readSource(actor, input.itemId)
     if (fingerprint !== input.expected) {
       return NextResponse.json({ error: 'Recipe or supplier data changed. Reload the item and review its sources.' }, { status: 409 })
+    }
+
+    if (input.intent === 'download-loose-label') {
+      try {
+        const label = buildLooseFoodAllergenLabel(source, input.selections)
+        const pdf = makeLooseFoodAllergenLabelPdf(label)
+        return new NextResponse(pdf.output('arraybuffer'), {
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': 'attachment; filename="allergen-only-label.pdf"',
+            'Cache-Control': 'private, no-store',
+          },
+        })
+      } catch (error) {
+        return NextResponse.json({ error: error instanceof Error ? error.message : 'Could not create the allergen-only label.' }, { status: 409 })
+      }
     }
 
     const isIrishLocation = actor.site.jurisdiction === 'IE'

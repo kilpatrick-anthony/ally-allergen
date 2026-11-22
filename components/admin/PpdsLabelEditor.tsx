@@ -7,10 +7,12 @@ import { publishedDate } from '@/lib/location-jurisdiction'
 import { classifyPpds, isSingleAllergenName, missingDeclaredAllergens, PPDS_CLASSIFICATIONS, PPDS_LABEL_SIZE, ppdsAnswers, selectedLabelAllergenSources, type PpdsAnswers, type PpdsClassification, type PpdsLabelInput } from '@/lib/ppds'
 import type { PpdsPrintLabel } from '@/lib/pdf/ppds-label'
 import type { PpdsReviewSources, StoredPpdsLabel } from '@/lib/server/ppds-labels'
+import { LooseFoodAllergenLabel } from './LooseFoodAllergenLabel'
 
 type HistoryEntry = { id: string; date: string; actor: string; documents: string[]; approved: boolean; classification: PpdsClassification }
 type Review = {
   canApprove: boolean
+  canCreateLooseLabel: boolean
   fingerprint: string
   foodName: string
   ingredientDeclaration: string | null
@@ -65,9 +67,9 @@ export function PpdsLabelEditor({ siteSlug, jurisdiction, item }: {
 
   return (
     <section className="space-y-4 rounded-xl border border-gray-200 bg-white p-5">
-      <h3 className="text-lg font-bold">{isIrishLocation ? 'Optional ingredient labels' : 'Ingredient and PPDS labels'}</h3>
+      <h3 className="text-lg font-bold">{isIrishLocation ? 'Ingredient and allergen labels' : 'Allergen and PPDS labels'}</h3>
       {isIrishLocation ? (
-        <p className="text-sm">Create an optional, printable ingredient declaration from verified menu and supplier data. This is not a complete food package label or a check of all local requirements. Confirm the full label separately before use.</p>
+        <p className="text-sm">Create an ingredient declaration or an allergen-only label for food served loose. Check any additional package labelling requirements separately.</p>
       ) : (
         <p className="text-sm">Classify an item for this location. A sandwich sealed in advance and sold from the same café is an example of PPDS. <a href={href} className="font-semibold underline">PPDS guidance</a></p>
       )}
@@ -82,6 +84,7 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
 }) {
   const endpoint = `/api/sites/${encodeURIComponent(siteSlug)}/ppds`
   const [review, setReview] = useState<Review | null>(null)
+  const [labelType, setLabelType] = useState<'ingredients' | 'allergens'>('ingredients')
   const [loadAttempt, setLoadAttempt] = useState(0)
   const [answers, setAnswers] = useState<Partial<PpdsAnswers>>({})
   const [foodName, setFoodName] = useState('')
@@ -340,8 +343,29 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
   ) : <p role="status" className="text-sm">Loading label review…</p>
 
   const canEditLabel = review.canApprove && (isIrishLocation || classification === 'ppds')
+  const typeControl = review.canApprove && review.canCreateLooseLabel && (
+    <label className="block max-w-sm space-y-1 text-sm font-semibold">
+      Label type
+      <select className={fieldClass} value={labelType} disabled={busy}
+        onChange={event => setLabelType(event.target.value === 'allergens' ? 'allergens' : 'ingredients')}>
+        <option value="ingredients">Full ingredient label</option>
+        <option value="allergens">Allergen-only label for loose or made-to-order food</option>
+      </select>
+    </label>
+  )
+  if (typeControl && labelType === 'allergens') {
+    return (
+      <div className="space-y-4">
+        {typeControl}
+        <LooseFoodAllergenLabel key={review.fingerprint} endpoint={endpoint} itemId={itemId}
+          fingerprint={review.fingerprint} foodName={review.foodName} sources={review.sources}
+          onReload={() => load(AbortSignal.timeout(30_000), { revisionId: review.current?.id ?? null, specifications })} />
+      </div>
+    )
+  }
   return (
     <div className="space-y-4">
+      {typeControl}
       {review.stale && <p className="rounded-lg bg-amber-50 p-3 text-sm font-semibold text-amber-900" role="status">{review.stale}</p>}
       {review.current && <p className="text-sm">
         Saved review <strong>{PPDS_CLASSIFICATIONS[review.current.classification].title}</strong>

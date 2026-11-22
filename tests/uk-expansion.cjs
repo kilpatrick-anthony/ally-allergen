@@ -206,6 +206,38 @@ test('a single allergen name cannot substitute for the ingredients list of a mul
   assert.deepEqual(label.rendered.ingredients.filter(run => run.bold).map(run => run.text), ['soya'])
 })
 
+test('the allergen-only label uses the selected variants without ingredient text or datasheet dates', async () => {
+  const { buildLooseFoodAllergenLabel } = load('lib/server/ppds-labels.ts')
+  const { makeLooseFoodAllergenLabelPdf } = load('lib/pdf/loose-food-allergen-label.ts')
+  const { source, input } = multipleVariantLabelFixture()
+  source.item.name = 'Matcha Latte (w/Coconut Milk)'
+  source.item.ingredient_declaration = null
+  source.specifications = []
+  source.variants[0].variant.allergen_warnings = {
+    ...completeReview().allergen_warnings, soybeans: 'contains', sesame: 'may_contain',
+  }
+  const [first, second] = input.specifications.map(({ sourceId, variantId }) => ({ sourceId, variantId }))
+  const label = buildLooseFoodAllergenLabel(source, [first])
+  assert.deepEqual(label.contains, ['soybeans'])
+  assert.deepEqual(label.precautions, ['May contain sesame seeds'])
+  assert.deepEqual(buildLooseFoodAllergenLabel(source, [first, second]).contains, ['soybeans', 'eggs'])
+  const file = Buffer.from(makeLooseFoodAllergenLabelPdf(label).output('arraybuffer'))
+  assert.ok(file.toString().includes('Contains soybeans'))
+  assert.ok(file.toString().includes('For food served loose or prepared to order'))
+  const pdf = await PDFDocument.load(file)
+  assert.equal(pdf.getPageCount(), 1)
+  assert.ok(Math.abs(pdf.getPage(0).getWidth() * 25.4 / 72 - 80) < 0.001)
+  assert.throws(() => buildLooseFoodAllergenLabel(source, []), /Select the supplier variants/)
+  assert.throws(() => buildLooseFoodAllergenLabel(source, [{ ...first, sourceId: uuid(75) }]), /from this recipe/)
+  source.variants[0].variant.assessment_status = 'needs_review'
+  assert.throws(() => buildLooseFoodAllergenLabel(source, [first]), /Complete the selected variant assessments/)
+  source.variants[0].variant.assessment_status = 'assessed'
+  source.variants[0].variant.allergen_warnings.nuts = 'contains'
+  assert.throws(() => buildLooseFoodAllergenLabel(source, [first]), /specific cereal or tree nut/)
+  source.item.item_type = 'packaged_product'
+  assert.throws(() => buildLooseFoodAllergenLabel(source, [second]), /food served loose/)
+})
+
 test('a recipe label only requires allergen assessments for its selected sources', () => {
   const { buildPpdsLabel } = load('lib/server/ppds-labels.ts')
   const { input, source } = multipleVariantLabelFixture()
@@ -281,6 +313,18 @@ test('Irish ingredient labels can preview and approve without UK PPDS answers', 
 
   const { foodName, ingredients, precaution, areaCm2, widthMm, heightMm } = input
   const layout = { foodName, ingredients, precaution, areaCm2, widthMm, heightMm }
+  const loose = confirmedLooseFood => route.POST(new Request('https://example.test/api/sites/dublin/ppds', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      itemId: uuid(40), expected: fingerprint, intent: 'download-loose-label', confirmedLooseFood,
+      selections: input.specifications.map(({ sourceId, variantId }) => ({ sourceId, variantId })),
+    }),
+  }), { params: Promise.resolve({ slug: 'dublin' }) })
+  assert.equal((await loose(false)).status, 400)
+  const looseDownload = await loose(true)
+  assert.equal(looseDownload.status, 200)
+  assert.equal(looseDownload.headers.get('content-type'), 'application/pdf')
+  assert.equal(saved.length, 0)
   const reviewDate = source.specifications[1].next_review_date
   source.specifications[1].next_review_date = null
   const draft = await post('preview-layout', { layout })
