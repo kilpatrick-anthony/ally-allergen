@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useListReturnPath } from '@/lib/hooks/useListReturnPath'
+import { ItemLabelLink } from '@/components/admin/ItemLabelLink'
 import ItemViewNavigation from '@/components/admin/ItemViewNavigation'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { 
@@ -213,6 +214,7 @@ export default function ViewIngredientPage() {
           </div>
         </div>
         <div className="flex gap-3 flex-shrink-0">
+          <ItemLabelLink kind="ingredient" id={ingredientId} compact={false} />
           <Link href={withReturnTo(`/admin/ingredients/${ingredientId}/edit`)}>
             <Button icon={<Edit className="h-4 w-4" />}>
               {t('team.edit')}

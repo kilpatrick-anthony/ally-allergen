@@ -18,6 +18,7 @@ type Revision = {
   recorded_at: string
   recorded_by: string
 }
+type HistoryRevision = Pick<Revision, 'id' | 'classification' | 'label' | 'source' | 'recorded_at' | 'recorded_by'>
 
 const itemIdInput = z.string().uuid()
 const reviewInput = z.object({
@@ -38,16 +39,39 @@ async function readSource(actor: Actor, itemId: string) {
   return data as { source: PpdsSource; fingerprint: string }
 }
 
-async function readRevisions(actor: Actor, itemId: string) {
+async function readCurrentRevision(actor: Actor, itemId: string) {
   const { data, error } = await actor.supabase.from('site_ppds_revisions')
     .select('id,classification,answers,label,source_fingerprint,source,recorded_at,recorded_by')
     .eq('site_id', actor.site.id).eq('menu_item_id', itemId)
-    .order('recorded_at', { ascending: false }).order('id', { ascending: false }).limit(20)
+    .order('recorded_at', { ascending: false }).order('id', { ascending: false }).limit(1)
   if (error) throw error
-  return (data || []) as Revision[]
+  return ((data || [])[0] || null) as Revision | null
 }
 
-function staleReason(revision: Revision | undefined, source: PpdsSource, fingerprint: string) {
+async function readRevisionHistory(actor: Actor, itemId: string) {
+  const { data, error } = await actor.supabase.from('site_ppds_revisions')
+    .select('id,classification,label,source,recorded_at,recorded_by')
+    .eq('site_id', actor.site.id).eq('menu_item_id', itemId)
+    .order('recorded_at', { ascending: false }).order('id', { ascending: false }).limit(20)
+  if (error) throw error
+  return (data || []) as HistoryRevision[]
+}
+
+function mapHistory(revisions: HistoryRevision[]) {
+  return revisions.map(revision => {
+    const documents = ppdsReviewSources(revision.source).flatMap(row => row.documents)
+    return {
+      id: revision.id, date: revision.recorded_at, approved: Boolean(revision.label), actor: revision.recorded_by,
+      classification: revision.classification,
+      documents: revision.label?.input.specifications.map(spec => {
+        const doc = documents.find(item => item.id === spec.documentId)
+        return doc ? [doc.name, doc.version].filter(Boolean).join(' · ') : spec.documentId
+      }) || [],
+    }
+  })
+}
+
+function staleReason(revision: Revision | null | undefined, source: PpdsSource, fingerprint: string) {
   if (!revision?.label) return null
   if (revision.source_fingerprint !== fingerprint) return 'Recipe or supplier data changed. Review the sources and approve a new label.'
   const documents = ppdsReviewSources(source).flatMap(row => row.documents)
@@ -67,10 +91,13 @@ export async function GET(request: Request, { params }: RouteParams) {
     }
     const itemId = itemIdInput.safeParse(query.get('item'))
     if (!itemId.success) return NextResponse.json({ error: 'Choose a valid menu item.' }, { status: 400 })
-    const [{ source, fingerprint }, revisions] = await Promise.all([
-      readSource(actor, itemId.data), readRevisions(actor, itemId.data),
+    if (query.get('history') === 'true') {
+      const history = await readRevisionHistory(actor, itemId.data)
+      return NextResponse.json({ history: mapHistory(history) }, { headers: { 'Cache-Control': 'private, no-store' } })
+    }
+    const [{ source, fingerprint }, current] = await Promise.all([
+      readSource(actor, itemId.data), readCurrentRevision(actor, itemId.data),
     ])
-    const current = revisions[0]
     const stale = staleReason(current, source, fingerprint)
 
     if (printId !== null) {
@@ -88,6 +115,7 @@ export async function GET(request: Request, { params }: RouteParams) {
     }
 
     return NextResponse.json({
+      canApprove: actor.role !== 'staff',
       fingerprint,
       foodName: source.item.name,
       ingredientDeclaration: source.item.ingredient_declaration,
@@ -97,17 +125,7 @@ export async function GET(request: Request, { params }: RouteParams) {
         id: current.id, classification: current.classification, answers: current.answers,
         label: current.label, date: current.recorded_at,
       } : null,
-      history: revisions.map(revision => {
-        const documents = ppdsReviewSources(revision.source).flatMap(row => row.documents)
-        return {
-          id: revision.id, date: revision.recorded_at, approved: Boolean(revision.label), actor: revision.recorded_by,
-          classification: revision.classification,
-          documents: revision.label?.input.specifications.map(spec => {
-            const doc = documents.find(item => item.id === spec.documentId)
-            return doc ? [doc.name, doc.version].filter(Boolean).join(' · ') : spec.documentId
-          }) || [],
-        }
-      }),
+      history: [],
     }, { headers: { 'Cache-Control': 'private, no-store' } })
   } catch (error) {
     return locationAllergenFailure(error)

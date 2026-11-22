@@ -91,6 +91,7 @@ export async function GET(request: NextRequest) {
 
       if (ingredientsError) {
         console.error('Error fetching menu item ingredients:', ingredientsError)
+        return NextResponse.json({ error: 'Failed to fetch menu item ingredients' }, { status: 500 })
       } else if (menuIngredients) {
         ingredientsByMenuItem = menuIngredients.reduce((acc, row) => {
           const list = acc.get(row.menu_item_id) || []

@@ -12,6 +12,7 @@ import { FormValidationSummary, FormFieldError } from '@/components/admin/FormVa
 import { useUnsavedChanges } from '@/lib/hooks/useUnsavedChanges'
 import { RegularFormActions } from '@/components/admin/RegularFormActions'
 import { useListReturnPath } from '@/lib/hooks/useListReturnPath'
+import { ItemLabelLink } from '@/components/admin/ItemLabelLink'
 import { useNotification } from '@/lib/hooks/useNotification'
 import {
   Package, ArrowLeft, Save, X, AlertCircle, Plus, Trash2,
@@ -323,14 +324,18 @@ export default function EditIngredientPage() {
       </div>
 
       <div className="mb-8">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-gradient-to-br from-[#42b8ac] to-[#003842] rounded-xl flex-shrink-0">
-            <Package className="h-8 w-8 text-white" />
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-gradient-to-br from-[#42b8ac] to-[#003842] rounded-xl flex-shrink-0">
+              <Package className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{t('admin.editIngredient')}</h1>
+              <p className="text-gray-600 dark:text-gray-300">{t('ingredientsPortal.editIngredientDescription')}</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">{t('admin.editIngredient')}</h1>
-            <p className="text-gray-600 dark:text-gray-300">{t('ingredientsPortal.editIngredientDescription')}</p>
-          </div>
+          <ItemLabelLink kind="ingredient" id={ingredientId} compact={false}
+            onClick={event => { if (!confirmLeave()) event.preventDefault() }} />
         </div>
       </div>
 

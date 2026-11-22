@@ -8,7 +8,6 @@ import { downloadLocationGuide, fetchLocationGuide } from '@/lib/location-guide-
 import { JURISDICTIONS, KIOSK_BACKUP, locationAllergenGuidance, locationGuidePath, publishedDate, type Jurisdiction } from '@/lib/location-jurisdiction'
 import { specificAllergens } from '@/lib/ppds'
 import { getAllergenLevelText } from '@/types/allergen'
-import { PpdsLabelEditor } from '@/components/admin/PpdsLabelEditor'
 
 interface Review {
   canApprove: boolean
@@ -212,9 +211,6 @@ export function LocationAllergenTools({ siteId, siteSlug, siteName, businessSlug
         )}
       </section>
 
-      {review && (
-        <PpdsLabelEditor siteSlug={siteSlug} jurisdiction={jurisdiction} items={review.items} canApprove={review.canApprove} />
-      )}
     </div>
   )
 }

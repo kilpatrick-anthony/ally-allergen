@@ -9,6 +9,7 @@ import React, { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { useListReturnPath } from '@/lib/hooks/useListReturnPath'
+import { ItemLabelLink } from '@/components/admin/ItemLabelLink'
 import ItemViewNavigation from '@/components/admin/ItemViewNavigation'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { isAllergenAssessmentComplete } from '@/lib/allergen-assessment'
@@ -250,6 +251,7 @@ export default function ViewMenuItemPage() {
           </div>
         </div>
         <div className="flex gap-3 flex-shrink-0">
+          <ItemLabelLink kind="menu-item" id={menuItemId} compact={false} />
           <Link href={withReturnTo(`/admin/menu-builder/${menuItemId}/edit`)}>
             <Button icon={<Edit />} className="bg-[#42b8ac] text-white hover:bg-[#3a9d95]">
               {t('team.edit')}

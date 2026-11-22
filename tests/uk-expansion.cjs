@@ -171,4 +171,53 @@ test('Irish ingredient labels can preview and approve without UK PPDS answers', 
   assert.ok(saved[0].p_label)
 })
 
+test('label review reads the current revision first and loads history separately', async () => {
+  const fingerprint = 'b'.repeat(32)
+  const selectedColumns = []
+  const query = {
+    select(columns) { selectedColumns.push(columns); return this },
+    eq() { return this },
+    order() { return this },
+    limit: async () => ({ data: [], error: null }),
+  }
+  const source = {
+    item: { id: uuid(50), name: 'Oat bar', allergen_warnings: {} },
+    directSupplier: null,
+    recipeLinkCount: 0,
+    ingredients: [],
+    variants: [],
+    specifications: [],
+  }
+  const actor = {
+    site: { id: uuid(51), jurisdiction: 'IE' },
+    businessId: uuid(52), userId: uuid(53), role: 'manager',
+    supabase: {
+      rpc: async () => ({ data: { source, fingerprint }, error: null }),
+      from: () => query,
+    },
+  }
+  const route = loader({
+    'next/server': { NextResponse: Response },
+    '@/lib/server/quick-add': { QuickAddError: class QuickAddError extends Error {} },
+    '@/lib/server/location-allergens': {
+      locationAllergenContext: async () => actor,
+      locationAllergenFailure: error => Response.json({ error: error.message }, { status: 500 }),
+      sourceFingerprint: require('zod').z.string().regex(/^[0-9a-f]{32}$/),
+    },
+  })('app/api/sites/[slug]/ppds/route.ts')
+  const params = { params: Promise.resolve({ slug: 'dublin' }) }
+
+  const review = await route.GET(new Request(`https://example.test/api/sites/dublin/ppds?item=${uuid(50)}`), params)
+  assert.equal(review.status, 200)
+  const reviewData = await review.json()
+  assert.deepEqual(reviewData.history, [])
+  assert.equal(reviewData.canApprove, true)
+  assert.deepEqual(selectedColumns, ['id,classification,answers,label,source_fingerprint,source,recorded_at,recorded_by'])
+
+  const history = await route.GET(new Request(`https://example.test/api/sites/dublin/ppds?item=${uuid(50)}&history=true`), params)
+  assert.equal(history.status, 200)
+  assert.deepEqual((await history.json()).history, [])
+  assert.deepEqual(selectedColumns[1], 'id,classification,label,source,recorded_at,recorded_by')
+})
+
 module.exports = { loader, labelFixture }

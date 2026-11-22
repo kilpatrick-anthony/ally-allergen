@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { ManagementListHeader } from '@/components/admin/ManagementListHeader'
 import { listContextHref } from '@/lib/list-navigation'
+import { ItemLabelLink } from '@/components/admin/ItemLabelLink'
 import React from 'react'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { 
@@ -900,6 +901,7 @@ export default function IngredientsPage() {
                   </td>
                   <td className="w-24 py-3 px-4">
                     <div className="flex items-center gap-1">
+                      <ItemLabelLink kind="ingredient" id={ingredient.id} />
                       <Link href={listContextHref(`/admin/ingredients/${ingredient.id}`, ingredientListReturnPath)}>
                         <Button
                           variant="ghost"
@@ -988,6 +990,7 @@ export default function IngredientsPage() {
               </div>
 
               <div className="flex items-center justify-end gap-1 pt-4 border-t dark:border-gray-700 mt-4">
+                <ItemLabelLink kind="ingredient" id={ingredient.id} />
                 <Link href={listContextHref(`/admin/ingredients/${ingredient.id}`, ingredientListReturnPath)}>
                   <Button variant="ghost" size="sm" icon={Eye} title={t('admin.view')} />
                 </Link>

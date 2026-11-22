@@ -10,13 +10,13 @@ import type { PpdsReviewSources, StoredPpdsLabel } from '@/lib/server/ppds-label
 
 type HistoryEntry = { id: string; date: string; actor: string; documents: string[]; approved: boolean; classification: PpdsClassification }
 type Review = {
+  canApprove: boolean
   fingerprint: string
   foodName: string
   ingredientDeclaration: string | null
   sources: PpdsReviewSources
   stale: string | null
   current: { id: string; answers: Partial<PpdsAnswers>; classification: PpdsClassification; label: StoredPpdsLabel | null; date: string } | null
-  history: HistoryEntry[]
 }
 type Preview = { label: PpdsPrintLabel; xHeight: number; minimumXHeight: number }
 type Intent = 'classify' | 'review' | 'preview' | 'approve'
@@ -53,34 +53,10 @@ const classificationFields: {
 const fieldClass = 'min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900'
 const actionClass = 'inline-flex min-h-11 items-center justify-center rounded-lg border border-[#003842] px-4 py-2 text-sm font-semibold text-[#003842] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 
-export function PpdsLabelEditor({ siteSlug, jurisdiction, items, canApprove }: {
-  siteSlug: string; jurisdiction: Jurisdiction; items: { id: string; name: string }[]; canApprove: boolean
+export function PpdsLabelEditor({ siteSlug, jurisdiction, item }: {
+  siteSlug: string; jurisdiction: Jurisdiction; item: { id: string; name: string }
 }) {
   const isIrishLocation = jurisdiction === 'IE'
-  const [itemId, setItemId] = useState('')
-  const [statuses, setStatuses] = useState<Record<string, PpdsClassification | 'approved'>>({})
-  const [statusError, setStatusError] = useState('')
-  const overviewPath = `/api/sites/${encodeURIComponent(siteSlug)}/ppds`
-  const refreshStatuses = useCallback(async (signal?: AbortSignal) => {
-    try {
-      const response = await fetch(overviewPath, { cache: 'no-store', signal })
-      const payload = await response.json()
-      if (!response.ok) throw new Error(payload.error)
-      if (!signal?.aborted) {
-        setStatuses(Object.fromEntries(payload.items.map((item: { itemId: string; state: string }) => [item.itemId, item.state])))
-        setStatusError('')
-      }
-    } catch {
-      if (!signal?.aborted) setStatusError('Could not refresh label statuses.')
-    }
-  }, [overviewPath])
-  useEffect(() => {
-    const controller = new AbortController()
-    void refreshStatuses(controller.signal)
-    return () => controller.abort()
-  }, [refreshStatuses])
-
-  const reviewCount = items.filter(item => statuses[item.id] === 'review').length
   const href = jurisdiction === 'SCT'
     ? 'https://www.foodstandards.gov.scot/business-guidance/running-a-food-business/packaging-and-labelling/prepacked-for-direct-sale'
     : 'https://www.gov.uk/government/publications/food-allergen-labelling-and-information-requirements-technical-guidance'
@@ -93,24 +69,14 @@ export function PpdsLabelEditor({ siteSlug, jurisdiction, items, canApprove }: {
       ) : (
         <p className="text-sm">Classify an item for this location. A sandwich sealed in advance and sold from the same café is an example of PPDS. <a href={href} className="font-semibold underline">PPDS guidance</a></p>
       )}
-      {reviewCount > 0 && <p className="text-sm font-semibold text-amber-900">{reviewCount} {reviewCount === 1 ? 'item needs' : 'items need'} label review.</p>}
-      {statusError && <p role="status" className="text-sm text-amber-900">{statusError}</p>}
-      <label className="block space-y-1 text-sm font-semibold">Menu item
-        <select className={fieldClass} value={itemId} onChange={event => setItemId(event.target.value)}>
-          <option value="">Choose an active menu item</option>
-          {items.map(item => <option key={item.id} value={item.id}>{item.name}
-            {statuses[item.id] === 'review' ? ' · Needs review' : statuses[item.id] === 'approved' ? ' · Label approved' : ''}
-          </option>)}
-        </select>
-      </label>
-      {items.some(item => item.id === itemId) && <LabelReview key={itemId} siteSlug={siteSlug} itemId={itemId}
-        isIrishLocation={isIrishLocation} canApprove={canApprove} onUpdated={refreshStatuses} />}
+      <p className="text-sm font-semibold">Menu item: {item.name}</p>
+      <LabelReview key={item.id} siteSlug={siteSlug} itemId={item.id} isIrishLocation={isIrishLocation} />
     </section>
   )
 }
 
-function LabelReview({ siteSlug, itemId, isIrishLocation, canApprove, onUpdated }: {
-  siteSlug: string; itemId: string; isIrishLocation: boolean; canApprove: boolean; onUpdated: () => Promise<void>
+function LabelReview({ siteSlug, itemId, isIrishLocation }: {
+  siteSlug: string; itemId: string; isIrishLocation: boolean
 }) {
   const endpoint = `/api/sites/${encodeURIComponent(siteSlug)}/ppds`
   const [review, setReview] = useState<Review | null>(null)
@@ -130,6 +96,10 @@ function LabelReview({ siteSlug, itemId, isIrishLocation, canApprove, onUpdated 
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [preview, setPreview] = useState<Preview | null>(null)
+  const [history, setHistory] = useState<HistoryEntry[]>([])
+  const [historyLoaded, setHistoryLoaded] = useState(false)
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyError, setHistoryError] = useState('')
 
   const load = useCallback(async (signal?: AbortSignal) => {
     const response = await fetch(`${endpoint}?item=${itemId}`, { cache: 'no-store', signal })
@@ -137,6 +107,9 @@ function LabelReview({ siteSlug, itemId, isIrishLocation, canApprove, onUpdated 
     if (!response.ok) throw new Error(data.error || 'Could not load the label review.')
     if (signal?.aborted) return
     setReview(data)
+    setHistory([])
+    setHistoryLoaded(false)
+    setHistoryError('')
     setAnswers(data.current?.answers || {})
     const label = data.current?.label?.input
     setFoodName(label?.foodName ?? data.foodName)
@@ -167,7 +140,7 @@ function LabelReview({ siteSlug, itemId, isIrishLocation, canApprove, onUpdated 
       }
     }).finally(() => {
       window.clearTimeout(timeoutId)
-      if (timedOut) setError('Loading the label review timed out. Check your connection and retry.')
+      if (timedOut) setError('The server did not finish loading this item’s label review within 30 seconds. The PDF download has not started yet. Retry, and contact support if it happens again.')
     })
     return () => {
       window.clearTimeout(timeoutId)
@@ -194,6 +167,27 @@ function LabelReview({ siteSlug, itemId, isIrishLocation, canApprove, onUpdated 
     }
   }
 
+  async function loadHistory() {
+    if (historyLoading || historyLoaded) return
+    setHistoryLoading(true)
+    setHistoryError('')
+    const timeout = AbortSignal.timeout(30_000)
+    try {
+      const response = await fetch(`${endpoint}?item=${itemId}&history=true`, { cache: 'no-store', signal: timeout })
+      const data = await response.json() as { history?: HistoryEntry[]; error?: string }
+      if (!response.ok) throw new Error(data.error || 'Could not load revision history.')
+      if (!Array.isArray(data.history)) throw new Error('The revision history could not be read.')
+      setHistory(data.history)
+      setHistoryLoaded(true)
+    } catch (error) {
+      setHistoryError(timeout.aborted
+        ? 'Loading revision history timed out. Retry if you need to view older versions.'
+        : error instanceof Error ? error.message : 'Could not load revision history.')
+    } finally {
+      setHistoryLoading(false)
+    }
+  }
+
   const parsedAnswers = ppdsAnswers.safeParse(answers)
   const classification = isIrishLocation ? 'ingredient_label' : parsedAnswers.success ? classifyPpds(parsedAnswers.data) : null
   const classificationChanged = Boolean(!isIrishLocation && review?.current && classification &&
@@ -212,37 +206,56 @@ function LabelReview({ siteSlug, itemId, isIrishLocation, canApprove, onUpdated 
       })),
       recipeVerified: verified, templateSuitable: suitable,
     } : undefined
-    const response = await fetch(endpoint, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        itemId, expected: review.fingerprint, previous: review.current?.id || null,
-        answers: parsedAnswers.success ? parsedAnswers.data : undefined, intent, label,
-      }),
-    })
+    const request = AbortSignal.timeout(30_000)
+    let response: Response
+    try {
+      response = await fetch(endpoint, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          itemId, expected: review.fingerprint, previous: review.current?.id || null,
+          answers: parsedAnswers.success ? parsedAnswers.data : undefined, intent, label,
+        }),
+        signal: request,
+      })
+    } catch (error) {
+      if (request.aborted) throw new Error('Saving the label review timed out. Retry, and contact support if it happens again.')
+      throw error
+    }
     const data = await response.json()
     if (!response.ok) throw new Error(data.error || 'Could not save the classification or label.')
     if (intent === 'preview') {
       setPreview(data)
     } else {
-      await Promise.all([load(), onUpdated()])
+      await load()
       setNotice(intent === 'approve' ? 'Label approved. Download it and print at Actual size (100%).' : 'Classification saved.')
     }
   }
 
   async function printLabel() {
     if (!review?.current) return
-    const response = await fetch(`${endpoint}?item=${itemId}&print=${review.current.id}`, { cache: 'no-store' })
-    if (!response.ok) {
-      const failure = await response.json()
-      await Promise.all([load(), onUpdated()])
-      throw new Error(failure.error || 'Could not fetch the approved label.')
+    const request = new AbortController()
+    const timeoutId = window.setTimeout(() => request.abort(), 30_000)
+    try {
+      const response = await fetch(`${endpoint}?item=${itemId}&print=${review.current.id}`, { cache: 'no-store', signal: request.signal })
+      if (!response.ok) {
+        const failure = await response.json()
+        await load()
+        throw new Error(failure.error || 'Could not fetch the approved label.')
+      }
+      const pdf = URL.createObjectURL(await response.blob())
+      const link = document.createElement('a')
+      link.href = pdf
+      link.download = `${isIrishLocation ? 'ingredient-label' : 'ppds'}-${review.current.id}.pdf`
+      link.click()
+      window.setTimeout(() => URL.revokeObjectURL(pdf), 30_000)
+    } catch (error) {
+      if (request.signal.aborted) {
+        throw new Error('Downloading the approved label timed out. Retry, and contact support if it happens again.')
+      }
+      throw error
+    } finally {
+      window.clearTimeout(timeoutId)
     }
-    const pdf = URL.createObjectURL(await response.blob())
-    const link = document.createElement('a')
-    link.href = pdf
-    link.download = `${isIrishLocation ? 'ingredient-label' : 'ppds'}-${review.current.id}.pdf`
-    link.click()
-    window.setTimeout(() => URL.revokeObjectURL(pdf), 30_000)
   }
 
   if (!review) return error ? (
@@ -261,7 +274,7 @@ function LabelReview({ siteSlug, itemId, isIrishLocation, canApprove, onUpdated 
         Saved review <strong>{PPDS_CLASSIFICATIONS[review.current.classification].title}</strong>
         {review.current.label && !review.stale && ` · Label approved ${publishedDate(review.current.date)}`}
       </p>}
-      {!isIrishLocation && canApprove ? (
+      {!isIrishLocation && review.canApprove ? (
         <fieldset className="grid gap-3 rounded-lg border border-gray-200 p-4 sm:grid-cols-2" disabled={busy}>
           <legend className="px-1 text-sm font-bold">How this location sells the item</legend>
           {classificationFields.map(({ key, label, options }) => (
@@ -286,9 +299,9 @@ function LabelReview({ siteSlug, itemId, isIrishLocation, canApprove, onUpdated 
             </div>
           </div>}
         </fieldset>
-      ) : !canApprove ? <p className="text-sm">An owner or manager can approve and print labels.</p> : null}
+      ) : !review.canApprove ? <p className="text-sm">An owner or manager can approve and print labels.</p> : null}
 
-      {canApprove && (isIrishLocation || classification === 'ppds') && (
+      {review.canApprove && (isIrishLocation || classification === 'ppds') && (
         <>
           <fieldset className="space-y-3 rounded-lg border border-gray-200 p-4" disabled={busy}>
             <legend className="px-1 text-sm font-bold">Recipe and supplier specifications</legend>
@@ -389,25 +402,33 @@ function LabelReview({ siteSlug, itemId, isIrishLocation, canApprove, onUpdated 
         </div>
       )}
 
-      {canApprove && review.current?.label && !review.stale && !classificationChanged && (
+      {review.canApprove && review.current?.label && !review.stale && !classificationChanged && (
         <button type="button" className={actionClass} disabled={busy} onClick={() => void run(printLabel)}>
           Download approved label at actual size
         </button>
       )}
-      {canApprove && <button type="button" className={`${actionClass} ml-2`} disabled={busy} onClick={() => void run(async () => { await Promise.all([load(), onUpdated()]) })}>Reload recipe and sources</button>}
+      {review.canApprove && <button type="button" className={`${actionClass} ml-2`} disabled={busy} onClick={() => void run(load)}>Reload recipe and sources</button>}
       {error && <p className="text-sm font-medium text-red-800" role="alert">{error}</p>}
       {notice && <p className="text-sm font-medium text-teal-800" role="status">{notice}</p>}
 
-      {review.history.length > 0 && <details className="rounded-lg border border-gray-200 p-3">
+      <details className="rounded-lg border border-gray-200 p-3" onToggle={event => {
+        if (event.currentTarget.open) void loadHistory()
+      }}>
         <summary className="cursor-pointer text-sm font-semibold">Recent revision history</summary>
-        <ul className="mt-2 divide-y divide-gray-200 break-words text-sm">
-          {review.history.map(entry => <li key={entry.id} className="py-2">
+        {historyLoading && <p role="status" className="mt-2 text-sm">Loading revision history…</p>}
+        {historyError && <div className="mt-2 space-y-2">
+          <p role="alert" className="text-sm text-red-800">{historyError}</p>
+          <button type="button" className={actionClass} onClick={() => void loadHistory()}>Retry loading history</button>
+        </div>}
+        {historyLoaded && history.length === 0 && <p className="mt-2 text-sm">No revisions recorded yet.</p>}
+        {historyLoaded && history.length > 0 && <ul className="mt-2 divide-y divide-gray-200 break-words text-sm">
+          {history.map(entry => <li key={entry.id} className="py-2">
             <p>{publishedDate(entry.date)} · {entry.approved ? 'Label approved' : PPDS_CLASSIFICATIONS[entry.classification].title}</p>
             <p className="text-xs">Revision {entry.id}</p>
             {entry.documents.length > 0 && <p className="text-xs">Specifications {entry.documents.join(', ')}</p>}
           </li>)}
-        </ul>
-      </details>}
+        </ul>}
+      </details>
     </div>
   )
 }
