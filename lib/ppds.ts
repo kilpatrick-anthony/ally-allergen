@@ -30,10 +30,18 @@ export const PPDS_CLASSIFICATIONS: Record<PpdsClassification, { title: string; d
   ingredient_label: { title: 'Optional ingredient label', detail: 'This is an ingredient declaration, not a complete food package label or a check of all local requirements.' },
 }
 
+const printableLabelLine = /^[\u0020-\u007e\u00a0-\u00ff‘’“”–—]+$/
+
 function labelText(max: number) {
-  return z.string().trim().min(1).max(max).regex(/^[\u0020-\u007e\u00a0-\u00ff‘’“”–—]+$/,
+  return z.string().trim().min(1).max(max).regex(printableLabelLine,
     'Use characters that the label font can print.')
 }
+
+export const LOOSE_FOOD_LABEL_NOTE_LIMIT = 400
+export const looseFoodLabelNotes = z.string().trim().min(1).max(LOOSE_FOOD_LABEL_NOTE_LIMIT)
+  .refine(value => value.split(/\r\n?|\n/).every(line => !line || printableLabelLine.test(line)),
+    'Use characters that the label font can print.')
+  .transform(value => value.replace(/\r\n?/g, '\n'))
 
 export const PPDS_LABEL_SIZE = { minimumWidthMm: 20, minimumHeightMm: 15, defaultWidthMm: 50, defaultHeightMm: 30 }
 

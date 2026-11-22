@@ -8,11 +8,12 @@ const generatedDate = new Intl.DateTimeFormat('en-IE', {
   timeZone: 'Europe/Dublin', timeZoneName: 'short',
 })
 
-export function makeLooseFoodAllergenLabelPdf({ foodName, contains, precautions, ingredients }: {
+export function makeLooseFoodAllergenLabelPdf({ foodName, contains, precautions, ingredients, notes }: {
   foodName: string
   contains: string[]
   precautions: string[]
   ingredients?: LabelTextRun[]
+  notes?: string
 }, generatedAt = new Date()) {
   const width = 80
   const margin = 4
@@ -32,6 +33,11 @@ export function makeLooseFoodAllergenLabelPdf({ foodName, contains, precautions,
       separator,
       { text: 'Precautionary warnings', size: 11, bold: true },
       ...precautions.map(text => ({ text, size: 11, bold: false })),
+    ] : []),
+    ...(notes ? [
+      separator,
+      { text: 'Notes', size: 11, bold: true },
+      { text: notes, size: 10, bold: false },
     ] : []),
     separator,
     { text: 'For food served loose or prepared to order', size: 10, bold: false },

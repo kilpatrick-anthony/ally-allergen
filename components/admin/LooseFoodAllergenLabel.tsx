@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { looseFoodAllergenStatements, looseFoodIngredientEntries, looseFoodIngredientRuns, type LabelTextRun, type LooseFoodIngredientEntry } from '@/lib/ppds'
+import { LOOSE_FOOD_LABEL_NOTE_LIMIT, looseFoodAllergenStatements, looseFoodIngredientEntries, looseFoodIngredientRuns, looseFoodLabelNotes, type LabelTextRun, type LooseFoodIngredientEntry } from '@/lib/ppds'
 import type { PpdsReviewSources } from '@/lib/server/ppds-labels'
 
 const buttonClass = 'inline-flex min-h-11 items-center rounded-lg border border-[#003842] px-4 py-2 text-sm font-semibold text-[#003842] disabled:cursor-not-allowed disabled:opacity-50'
@@ -20,6 +20,8 @@ export function LooseFoodAllergenLabel({ endpoint, itemId, fingerprint, foodName
     row.variants.length === 1 ? [row.variants[0].id] : [])))
   const [confirmedVariantIds, setConfirmedVariantIds] = useState<Set<string>>(() => new Set())
   const [includeIngredients, setIncludeIngredients] = useState(false)
+  const [includeNotes, setIncludeNotes] = useState(false)
+  const [notes, setNotes] = useState('')
   const [ingredientDraft, setIngredientDraft] = useState<LooseFoodIngredientEntry[]>([])
   const [confirmed, setConfirmed] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -58,7 +60,10 @@ export function LooseFoodAllergenLabel({ endpoint, itemId, fingerprint, foodName
       }
     }
   }
-  const canDownload = complete && confirmed && !needsSpecificNames && !ingredientError
+  const parsedNotes = includeNotes && notes.trim() ? looseFoodLabelNotes.safeParse(notes) : null
+  const printableNotes = parsedNotes?.success ? parsedNotes.data : undefined
+  const notesError = parsedNotes?.success === false
+  const canDownload = complete && confirmed && !needsSpecificNames && !ingredientError && !notesError
 
   function saveIngredientDraft(entries: LooseFoodIngredientEntry[]) {
     setIngredientDraft(entries)
@@ -110,6 +115,7 @@ export function LooseFoodAllergenLabel({ endpoint, itemId, fingerprint, foodName
           confirmedLooseFood: confirmed,
           confirmedVariantIds: confirmedVariantIds.size ? [...confirmedVariantIds] : undefined,
           ingredientEntries: includeIngredients ? ingredientEntries : undefined,
+          notes: printableNotes,
           selections: selectedRows.flatMap(({ row, variants }) =>
             variants.map(variant => ({ sourceId: row.id, variantId: variant.id }))),
         }),
@@ -232,6 +238,20 @@ export function LooseFoodAllergenLabel({ endpoint, itemId, fingerprint, foodName
           </>
         )}
       </fieldset>
+      <fieldset className="space-y-2" disabled={busy}>
+        <label className="flex min-h-9 items-center gap-2 font-medium">
+          <input type="checkbox" checked={includeNotes} onChange={event => setIncludeNotes(event.target.checked)} />
+          Add notes to label
+        </label>
+        {includeNotes && (
+          <label className="block space-y-1 font-medium">Label notes
+            <textarea value={notes} maxLength={LOOSE_FOOD_LABEL_NOTE_LIMIT} rows={3} aria-invalid={notesError}
+              className="block w-full rounded-lg border border-gray-300 px-3 py-2 font-normal"
+              onChange={event => setNotes(event.target.value)} />
+            {notesError && <span className="block text-amber-900">Use characters the label can print.</span>}
+          </label>
+        )}
+      </fieldset>
       {complete && !needsSpecificNames && (
         <div className="divide-y divide-gray-300 rounded-lg border border-gray-300 px-4" data-no-translate>
           <p className="py-3 font-semibold">{foodName}</p>
@@ -246,6 +266,12 @@ export function LooseFoodAllergenLabel({ endpoint, itemId, fingerprint, foodName
             <section className="space-y-1 py-3">
               <h4 className="font-semibold">Precautionary warnings</h4>
               {precautions.map(statement => <p key={statement}>{statement}</p>)}
+            </section>
+          )}
+          {printableNotes && (
+            <section className="space-y-1 py-3">
+              <h4 className="font-semibold">Notes</h4>
+              <p className="whitespace-pre-wrap">{printableNotes}</p>
             </section>
           )}
           <p className="py-3">

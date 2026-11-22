@@ -230,6 +230,7 @@ test('the allergen-only label uses the selected variants without ingredient text
   assert.match(file.toString(), /\(allyjen\.ie\)/)
   assert.match(file.toString(), /\/URI \(https:\/\/allyjen\.ie\)/)
   assert.match(file.toString(), /Generated 22 Nov 2026, 16:08 GMT/)
+  assert.doesNotMatch(file.toString(), /\(Notes\)/)
   assert.ok(file.toString().includes('For food served loose or prepared to order'))
   const pdf = await PDFDocument.load(file)
   assert.equal(pdf.getPageCount(), 1)
@@ -400,6 +401,12 @@ test('Irish ingredient labels can preview and approve without UK PPDS answers', 
   const withEntries = await loose(true, { ingredientEntries: [{ sourceId: input.specifications[0].sourceId, description: 'Sandwich mix' }] })
   assert.equal(withEntries.status, 200)
   assert.match(Buffer.from(await withEntries.arrayBuffer()).toString(), /\(wheat/)
+  const withNotes = await loose(true, { notes: 'Serve chilled.\r\nAsk for a lid.' })
+  assert.equal(withNotes.status, 200)
+  const notesPdf = Buffer.from(await withNotes.arrayBuffer()).toString()
+  assert.match(notesPdf, /\(Notes\)[\s\S]*\(Serve chilled\.\)[\s\S]*\(Ask for a lid\.\)/)
+  assert.equal((notesPdf.match(/^S$/gm) ?? []).length, 5)
+  assert.equal((await loose(true, { notes: 'x'.repeat(401) })).status, 400)
   assert.equal(saved.length, 0)
   const reviewDate = source.specifications[1].next_review_date
   source.specifications[1].next_review_date = null
