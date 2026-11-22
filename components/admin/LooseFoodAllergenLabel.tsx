@@ -175,7 +175,7 @@ export function LooseFoodAllergenLabel({ endpoint, itemId, fingerprint, foodName
                       {variant.assessmentComplete ? (
                         <>
                           <p>{recorded.contains.length ? `Recorded as containing ${recorded.contains.join(', ')}.` : 'No contained allergens are recorded.'}
-                            {recorded.precautions.length ? ` ${recorded.precautions.join('. ')}.` : ''}
+                            {recorded.precautions.length ? ` ${recorded.precautions.map(({ text }) => text).join('. ')}.` : ''}
                           </p>
                           {supportingFiles.map(doc => <p key={doc.id}>
                             <a className={linkClass} href={doc.href ?? undefined} target="_blank" rel="noreferrer">{doc.name}</a>
@@ -265,7 +265,10 @@ export function LooseFoodAllergenLabel({ endpoint, itemId, fingerprint, foodName
           {precautions.length > 0 && (
             <section className="space-y-1 py-3">
               <h4 className="font-semibold">Precautionary warnings</h4>
-              {precautions.map(statement => <p key={statement}>{statement}</p>)}
+              {precautions.map(statement => (
+                <p key={statement.text}>{statement.runs.map(({ text, bold }, index) =>
+                  bold ? <strong key={index}>{text}</strong> : text)}</p>
+              ))}
             </section>
           )}
           {printableNotes && (

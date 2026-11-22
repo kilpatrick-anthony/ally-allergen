@@ -219,7 +219,15 @@ test('the allergen-only label uses the selected variants without ingredient text
   const [first, second] = input.specifications.map(({ sourceId, variantId }) => ({ sourceId, variantId }))
   const label = buildLooseFoodAllergenLabel(source, [first])
   assert.deepEqual(label.contains, ['soybeans'])
-  assert.deepEqual(label.precautions, ['May contain mustard, sesame seeds'])
+  assert.deepEqual(label.precautions, [{
+    text: 'May contain mustard, sesame seeds',
+    runs: [
+      { text: 'May contain ', bold: false },
+      { text: 'mustard', bold: true },
+      { text: ', ', bold: false },
+      { text: 'sesame seeds', bold: true },
+    ],
+  }])
   assert.deepEqual(buildLooseFoodAllergenLabel(source, [first, second]).contains, ['soybeans', 'eggs'])
   const generatedAt = new Date('2026-11-22T16:08:00Z')
   const file = Buffer.from(makeLooseFoodAllergenLabelPdf(label, generatedAt).output('arraybuffer'))
@@ -261,6 +269,7 @@ test('loose labels can show recipe ingredients with inline emphasis and separate
   source.ingredients[0].ingredient.name = 'Oat Milk'
   source.variants[0].variant.allergen_warnings = {
     ...neutral, cereals_gluten: 'contains', cereals_gluten_levels: { oats: 'contains', barley: 'may_contain' },
+    nuts: 'traces', nuts_levels: { brazil_nuts: 'traces' }, eggs: 'not_suitable',
   }
   const matcha = { ...source.ingredients[0].ingredient, id: uuid(70), name: 'PerfectTed Matcha Powder', allergen_warnings: neutral }
   source.ingredients.push({ ingredient: matcha, link: {} })
@@ -269,14 +278,24 @@ test('loose labels can show recipe ingredients with inline emphasis and separate
   const selections = [{ sourceId, variantId }]
   const label = buildLooseFoodAllergenLabel(source, selections, { ingredients: 'Oat milk (water, oats), PerfectTed Matcha Powder' })
   assert.deepEqual(label.ingredients.filter(run => run.bold).map(run => run.text), ['Oat', 'oats'])
-  assert.deepEqual(label.precautions, ['May contain barley'])
+  assert.deepEqual(label.precautions.map(({ text, runs }) => [text, runs.filter(run => run.bold).map(run => run.text)]), [
+    ['May contain barley', ['barley']],
+    ['Not suitable for eggs allergy', ['eggs']],
+    ['May contain traces of Brazil nuts', ['Brazil nuts']],
+  ])
   const raw = makeLooseFoodAllergenLabelPdf(label).output()
   assert.match(raw, /\(Allergens in bold\)/)
   assert.doesNotMatch(raw, /\(Allergens\)/)
   assert.match(raw, /\(Ingredients:\)/)
   assert.match(raw, /\(Matcha\)/)
   assert.match(raw, /\/F2 11 Tf[\s\S]*?\(oats\)/)
-  assert.match(raw, /May contain barley/)
+  const textBlocks = raw.split('\nET')
+  for (const word of ['barley', 'eggs', 'Brazil', 'nuts']) {
+    assert.match(textBlocks.find(block => block.includes(`(${word}) Tj`)) ?? '', /\/F2 11 Tf/)
+  }
+  for (const word of ['May', 'allergy', 'traces']) {
+    assert.match(textBlocks.find(block => block.includes(`(${word}) Tj`)) ?? '', /\/F1 11 Tf/)
+  }
   assert.doesNotMatch(raw, /Contains oats/)
   assert.throws(() => buildLooseFoodAllergenLabel(source, selections, { ingredients: 'PerfectTed Matcha Powder' }), /Name oats/)
 })

@@ -133,9 +133,22 @@ export function looseFoodAllergenStatements(allergens: SpecificAllergen[]) {
     names.add(name)
     precautionNames.set(level, names)
   }
-  const precautions = [...precautionNames].flatMap(([level, names]) => level === 'not_suitable'
-    ? [...names].map(name => getAllergenLevelText(level, name))
-    : [getAllergenLevelText(level, [...names].join(', '))])
+  const precautions = [...precautionNames].flatMap(([level, names]) => {
+    const groups = level === 'not_suitable' ? [...names].map(name => [name]) : [[...names]]
+    return groups.map(group => {
+      const list = group.join(', ')
+      const text = getAllergenLevelText(level, list)
+      const start = text.indexOf(list)
+      const suffix = text.slice(start + list.length)
+      const runs: LabelTextRun[] = [{ text: text.slice(0, start), bold: false }]
+      group.forEach((name, index) => {
+        if (index) runs.push({ text: ', ', bold: false })
+        runs.push({ text: name, bold: true })
+      })
+      if (suffix) runs.push({ text: suffix, bold: false })
+      return { text, runs }
+    })
+  })
   return {
     contains,
     precautions,

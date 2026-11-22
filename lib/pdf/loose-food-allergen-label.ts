@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf'
-import type { LabelTextRun } from '@/lib/ppds'
+import type { LabelTextRun, looseFoodAllergenStatements } from '@/lib/ppds'
 import { drawLabelTextLine, wrapLabelText } from '@/lib/pdf/label-text'
 
 const generatedDate = new Intl.DateTimeFormat('en-IE', {
@@ -11,7 +11,7 @@ const generatedDate = new Intl.DateTimeFormat('en-IE', {
 export function makeLooseFoodAllergenLabelPdf({ foodName, contains, precautions, ingredients, notes }: {
   foodName: string
   contains: string[]
-  precautions: string[]
+  precautions: ReturnType<typeof looseFoodAllergenStatements>['precautions']
   ingredients?: LabelTextRun[]
   notes?: string
 }, generatedAt = new Date()) {
@@ -32,7 +32,7 @@ export function makeLooseFoodAllergenLabelPdf({ foodName, contains, precautions,
     ...(precautions.length ? [
       separator,
       { text: 'Precautionary warnings', size: 11, bold: true },
-      ...precautions.map(text => ({ text, size: 11, bold: false })),
+      ...precautions.map(({ runs }) => ({ runs, size: 11 })),
     ] : []),
     ...(notes ? [
       separator,
