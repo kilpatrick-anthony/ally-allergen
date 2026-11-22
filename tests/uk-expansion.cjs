@@ -214,12 +214,12 @@ test('the allergen-only label uses the selected variants without ingredient text
   source.item.ingredient_declaration = null
   source.specifications = []
   source.variants[0].variant.allergen_warnings = {
-    ...completeReview().allergen_warnings, soybeans: 'contains', sesame: 'may_contain',
+    ...completeReview().allergen_warnings, soybeans: 'contains', sesame: 'may_contain', mustard: 'may_contain',
   }
   const [first, second] = input.specifications.map(({ sourceId, variantId }) => ({ sourceId, variantId }))
   const label = buildLooseFoodAllergenLabel(source, [first])
   assert.deepEqual(label.contains, ['soybeans'])
-  assert.deepEqual(label.precautions, ['May contain sesame seeds'])
+  assert.deepEqual(label.precautions, ['May contain mustard, sesame seeds'])
   assert.deepEqual(buildLooseFoodAllergenLabel(source, [first, second]).contains, ['soybeans', 'eggs'])
   const file = Buffer.from(makeLooseFoodAllergenLabelPdf(label).output('arraybuffer'))
   assert.ok(file.toString().includes('Contains soybeans'))

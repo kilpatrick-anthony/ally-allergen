@@ -107,8 +107,16 @@ export function specificAllergens(warnings: AllergenWarnings): SpecificAllergen[
 
 export function looseFoodAllergenStatements(allergens: SpecificAllergen[]) {
   const contains = [...new Set(allergens.filter(entry => entry.level === 'contains').map(entry => entry.name))]
-  const precautions = [...new Set(allergens.filter(entry => entry.level !== 'contains' && entry.level !== 'none' &&
-    !contains.includes(entry.name)).map(entry => getAllergenLevelText(entry.level, entry.name)))]
+  const precautionNames = new Map<AllergenLevel, Set<string>>()
+  for (const { level, name } of allergens) {
+    if (level === 'contains' || level === 'none' || contains.includes(name)) continue
+    const names = precautionNames.get(level) ?? new Set<string>()
+    names.add(name)
+    precautionNames.set(level, names)
+  }
+  const precautions = [...precautionNames].flatMap(([level, names]) => level === 'not_suitable'
+    ? [...names].map(name => getAllergenLevelText(level, name))
+    : [getAllergenLevelText(level, [...names].join(', '))])
   return {
     contains,
     precautions,
