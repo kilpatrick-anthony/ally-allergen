@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { Jurisdiction } from '@/lib/location-jurisdiction'
 import { publishedDate } from '@/lib/location-jurisdiction'
-import { classifyPpds, PPDS_CLASSIFICATIONS, ppdsAnswers, type PpdsAnswers, type PpdsClassification } from '@/lib/ppds'
+import { classifyPpds, PPDS_CLASSIFICATIONS, ppdsAnswers, type PpdsAnswers, type PpdsClassification, type PpdsLabelInput } from '@/lib/ppds'
 import type { PpdsPrintLabel } from '@/lib/pdf/ppds-label'
 import type { PpdsReviewSources, StoredPpdsLabel } from '@/lib/server/ppds-labels'
 
@@ -21,6 +21,7 @@ type Review = {
 type Preview = { label: PpdsPrintLabel; xHeight: number; minimumXHeight: number }
 type Intent = 'classify' | 'review' | 'preview' | 'approve'
 type SourceSelections = Record<string, Record<string, string>>
+type DraftSources = { revisionId: string | null; specifications: PpdsLabelInput['specifications'] }
 
 const classificationFields: {
   key: keyof PpdsAnswers
@@ -101,7 +102,7 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
   const [historyLoading, setHistoryLoading] = useState(false)
   const [historyError, setHistoryError] = useState('')
 
-  const load = useCallback(async (signal?: AbortSignal) => {
+  const load = useCallback(async (signal?: AbortSignal, draft?: DraftSources) => {
     const response = await fetch(`${endpoint}?item=${itemId}`, { cache: 'no-store', signal })
     const data = await response.json() as Review & { error?: string }
     if (!response.ok) throw new Error(data.error || 'Could not load the label review.')
@@ -110,16 +111,20 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
     setHistory([])
     setHistoryLoaded(false)
     setHistoryError('')
-    setAnswers(data.current?.answers || {})
     const label = data.current?.label?.input
-    setFoodName(label?.foodName ?? data.foodName)
-    setIngredients(label?.ingredients ?? data.ingredientDeclaration ?? '')
-    setPrecaution(label?.precaution ?? '')
-    setArea(label ? String(label.areaCm2) : '')
-    setWidth(label ? String(label.widthMm) : '')
-    setHeight(label ? String(label.heightMm) : '')
+    const keepDraft = draft && draft.revisionId === (data.current?.id ?? null)
+    if (!keepDraft) {
+      setAnswers(data.current?.answers || {})
+      setFoodName(label?.foodName ?? data.foodName)
+      setIngredients(label?.ingredients ?? data.ingredientDeclaration ?? '')
+      setPrecaution(label?.precaution ?? '')
+      setArea(label ? String(label.areaCm2) : '')
+      setWidth(label ? String(label.widthMm) : '')
+      setHeight(label ? String(label.heightMm) : '')
+      setSuitable(false)
+    }
     const savedSelections: SourceSelections = {}
-    for (const { sourceId, variantId, documentId } of label?.specifications || []) {
+    for (const { sourceId, variantId, documentId } of (keepDraft ? draft.specifications : label?.specifications) ?? []) {
       const row = data.sources.find(source => source.id === sourceId)
       if (!row || (row.variants.length ? !row.variants.some(variant => variant.id === variantId) : variantId)) continue
       savedSelections[sourceId] ??= {}
@@ -128,7 +133,7 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
     setSelections(savedSelections)
     setPreview(null)
     setVerified(false)
-    setSuitable(false)
+    if (draft && !keepDraft) setNotice('A newer review was saved. The latest version is now open.')
   }, [endpoint, itemId])
 
   useEffect(() => {
@@ -335,7 +340,7 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
         <>
           <fieldset className="space-y-3 rounded-lg border border-gray-200 p-4" disabled={busy}>
             <legend className="px-1 text-sm font-bold">Recipe and supplier specifications</legend>
-            <p className="text-sm">Select every assessed supplier variant used together in this product. Open and check a current specification for each selected variant and each ingredient without variants. For a bought-in product, use its current product specification.</p>
+            <p className="text-sm">Select the supplier variants used in this batch. You can choose a variant or specification that needs review while preparing the label. Before previewing, check that each selected variant has a completed assessment and each source has a current specification.</p>
             {review.sources.map(row => (
               <div key={row.id} role="group" aria-label={row.name} className="space-y-2 border-t border-gray-200 pt-2 text-sm">
                 <p className="font-semibold">{row.name}</p>
@@ -345,16 +350,25 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
                   return (
                     <div key={variant.id} className="space-y-2 rounded-lg border border-gray-200 p-3">
                       <label className="flex items-center gap-2 font-medium">
-                        <input type="checkbox" checked={selected} disabled={!variant.assessed && !selected}
+                        <input type="checkbox" checked={selected}
                           onChange={event => selectSpecification(row.id, variant.id, event.target.checked ? '' : null)} />
                         {variant.name}{variant.assessed ? '' : ' · needs assessment'}
                       </label>
-                      {selected && <SpecificationSelect
-                        label={`Specification for ${variant.name}`}
-                        documents={row.documents.filter(doc => variant.documentIds.includes(doc.id))}
-                        value={documentId}
-                        onChange={value => selectSpecification(row.id, variant.id, value)}
-                      />}
+                      {selected && (
+                        <>
+                          {!variant.assessed && (
+                            <p className="text-amber-900">
+                              Complete this variant’s allergen assessment in <Link href={`/admin/ingredients/${encodeURIComponent(row.id)}/edit`} target="_blank" rel="noreferrer" className="font-semibold underline">Ingredients</Link> before previewing.
+                            </p>
+                          )}
+                          <SpecificationSelect
+                            label={`Specification for ${variant.name}`}
+                            documents={row.documents.filter(doc => variant.documentIds.includes(doc.id))}
+                            value={documentId}
+                            onChange={value => selectSpecification(row.id, variant.id, value)}
+                          />
+                        </>
+                      )}
                     </div>
                   )
                 }) : (
@@ -437,7 +451,8 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
       {review.canApprove && review.current?.label && !review.stale && specificationsChanged && (
         <p role="status" className="text-sm">Approve a new label for the selected specifications before downloading.</p>
       )}
-      {review.canApprove && <button type="button" className={`${actionClass} ml-2`} disabled={busy} onClick={() => void run(load)}>Reload recipe and sources</button>}
+      {review.canApprove && <button type="button" className={`${actionClass} ml-2`} disabled={busy}
+        onClick={() => void run(() => load(undefined, { revisionId: review.current?.id ?? null, specifications }))}>Reload recipe and sources</button>}
       {error && <p className="text-sm font-medium text-red-800" role="alert">{error}</p>}
       {notice && <p className="text-sm font-medium text-teal-800" role="status">{notice}</p>}
 
@@ -474,8 +489,8 @@ function SpecificationSelect({ label, documents, value, onChange }: {
     <div className="space-y-2">
       <label className="block font-medium">{label}
         <select className={fieldClass} value={selectedDocument ? value : ''} onChange={event => onChange(event.target.value)}>
-          <option value="">Choose a current document</option>
-          {documents.map(doc => <option key={doc.id} value={doc.id} disabled={!doc.current}>
+          <option value="">Choose a specification</option>
+          {documents.map(doc => <option key={doc.id} value={doc.id}>
             {[doc.name, doc.supplier, doc.version, doc.current ? `review by ${doc.reviewDate}` : 'needs review'].filter(Boolean).join(' · ')}
           </option>)}
         </select>
@@ -483,8 +498,8 @@ function SpecificationSelect({ label, documents, value, onChange }: {
       {selectedDocument?.href && (
         <a className="font-semibold underline" href={selectedDocument.href} target="_blank" rel="noreferrer">Open selected specification</a>
       )}
-      {!documents.some(doc => doc.current) && (
-        <p className="text-amber-900">Add or update a specification with a review date in <Link className="font-semibold underline" href="/admin/downloads/datasheets">Datasheets</Link>.</p>
+      {(selectedDocument ? !selectedDocument.current : !documents.some(doc => doc.current)) && (
+        <p className="text-amber-900">Choose a current specification or update it in <Link className="font-semibold underline" href="/admin/downloads/datasheets" target="_blank" rel="noreferrer">Datasheets</Link> before previewing.</p>
       )}
     </div>
   )

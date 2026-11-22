@@ -404,7 +404,8 @@ export default function HelpPage() {
       19: [
         'In Ingredients or Menu Builder, open a record and choose Create / print label. If you start from an ingredient, choose an active menu item that uses it. Then choose the location.',
         'For UK locations, first complete the product classification. Only items classified as PPDS can be approved as UK PPDS on-pack labels. Republic of Ireland locations use the optional ingredient-label flow without PPDS classification.',
-        'Under Recipe and supplier specifications, tick each assessed variant used in the product and choose a current specification for each one. You can tick several variants of the same ingredient when they are used together.',
+        'Under Recipe and supplier specifications, tick each variant used in the product and choose its specification. You can tick several variants of the same ingredient when they are used together.',
+        'You can make selections while a variant or document is awaiting review. Complete any outstanding checks for the selected sources, then choose Reload recipe and sources to continue with your draft. Recipe-based labels use the selected sources without a separate menu-item review.',
         'If you switch between supplier variants for different batches, review and approve the label using the variants used in the batch you are labelling. For ingredients without variants and for bought-in products, choose the current specification for the ingredient or product.',
         'Enter the food name and complete ingredient declaration in descending weight at manufacture. Include compound ingredients where required and name declarable allergens specifically.',
         'Keep any approved “May contain” statement separate from the ingredients. Enter the largest package surface and label dimensions, then review the preview and fit check.',

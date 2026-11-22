@@ -156,6 +156,40 @@ test('one label validates and highlights allergens from all selected variants of
   assert.throws(() => buildPpdsLabel(expired, input), /review date/)
 })
 
+test('a recipe label only requires allergen assessments for its selected sources', () => {
+  const { buildPpdsLabel } = load('lib/server/ppds-labels.ts')
+  const { input, source } = multipleVariantLabelFixture()
+  source.item.allergen_warnings = { assessment_incomplete: true }
+  source.ingredients[0].ingredient.allergen_warnings = { assessment_incomplete: true }
+  source.variants[1].variant.assessment_status = 'needs_review'
+
+  const [verified, awaitingReview] = input.specifications
+  const verifiedRecipe = { ...input, ingredients: input.ingredients.replace(', egg', ''), specifications: [verified] }
+  assert.doesNotThrow(() => buildPpdsLabel(source, verifiedRecipe))
+  assert.throws(() => buildPpdsLabel(source, { ...input, specifications: [verified, awaitingReview] }), /assessed supplier variant/)
+
+  source.variants = []
+  assert.throws(() => buildPpdsLabel(source, { ...verifiedRecipe, specifications: [{ ...verified, variantId: null }] }), /Complete the allergen assessment/)
+})
+
+test('bought-in products still require an assessment for the product itself', () => {
+  const { buildPpdsLabel } = load('lib/server/ppds-labels.ts')
+  const { input, source } = labelFixture()
+  const product = {
+    ...source,
+    item: { ...source.item, ingredient_declaration: input.ingredients },
+    directSupplier: source.variants[0].supplier,
+    recipeLinkCount: 0,
+    ingredients: [],
+    variants: [],
+    specifications: [{ ...source.specifications[0], ingredient_id: null, menu_item_id: source.item.id }],
+  }
+  const label = { ...input, specifications: [{ sourceId: product.item.id, documentId: product.specifications[0].id, variantId: null }] }
+  assert.doesNotThrow(() => buildPpdsLabel(product, label))
+  product.item.allergen_warnings = { assessment_incomplete: true }
+  assert.throws(() => buildPpdsLabel(product, label), /Complete the bought-in product’s allergen assessment/)
+})
+
 test('Irish ingredient labels can preview and approve without UK PPDS answers', async () => {
   const { input, source } = multipleVariantLabelFixture()
   const fingerprint = 'a'.repeat(32)

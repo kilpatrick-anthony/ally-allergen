@@ -90,9 +90,6 @@ function currentSpecification(spec: Specification) {
 }
 
 export function buildPpdsLabel(source: PpdsSource, input: PpdsLabelInput) {
-  if (!isAllergenAssessmentComplete(source.item.allergen_warnings)) {
-    throw new Error('Complete the menu item’s allergen assessment before approving a label.')
-  }
   if (source.ingredients.length !== source.recipeLinkCount) {
     throw new Error('One or more linked recipe ingredients could not be verified.')
   }
@@ -118,9 +115,8 @@ export function buildPpdsLabel(source: PpdsSource, input: PpdsLabelInput) {
       throw new Error(`Select one current specification per supplier variant for ${row.name}.`)
     }
     const ingredient = source.ingredients.find(({ ingredient }) => ingredient.id === row.id)?.ingredient
-    if (ingredient && (ingredient.status !== 'active' ||
-        !isIngredientAssessmentComplete(ingredient.allergen_warnings, ingredient.supplier_profiles))) {
-      throw new Error(`Complete the allergen assessment for ${row.name}.`)
+    if (ingredient && ingredient.status !== 'active') {
+      throw new Error(`Use an active recipe ingredient for ${row.name}.`)
     }
 
     return choices.map(choice => {
@@ -133,11 +129,17 @@ export function buildPpdsLabel(source: PpdsSource, input: PpdsLabelInput) {
         if (choice.variantId || !source.directSupplier || !matchesSupplier(spec, source.directSupplier.name)) {
           throw new Error('Select a specification from the supplier recorded on this product.')
         }
+        if (!isAllergenAssessmentComplete(source.item.allergen_warnings)) {
+          throw new Error('Complete the bought-in product’s allergen assessment before approving a label.')
+        }
         return source.item.allergen_warnings
       }
       if (!row.variants.length) {
         if (choice.variantId || (ingredient.suppliers?.length && !ingredient.suppliers.some(name => matchesSupplier(spec, name)))) {
           throw new Error(`Select a specification for a recorded supplier of ${row.name}.`)
+        }
+        if (!isIngredientAssessmentComplete(ingredient.allergen_warnings, ingredient.supplier_profiles)) {
+          throw new Error(`Complete the allergen assessment for ${row.name}.`)
         }
         return ingredient.allergen_warnings
       }
