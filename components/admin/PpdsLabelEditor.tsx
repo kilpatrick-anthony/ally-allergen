@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { Jurisdiction } from '@/lib/location-jurisdiction'
 import { publishedDate } from '@/lib/location-jurisdiction'
-import { classifyPpds, FULL_INGREDIENT_LABEL_ENABLED, isSingleAllergenName, missingDeclaredAllergens, PPDS_CLASSIFICATIONS, PPDS_LABEL_SIZE, ppdsAnswers, selectedLabelAllergenSources, type PpdsAnswers, type PpdsClassification, type PpdsLabelInput } from '@/lib/ppds'
+import { classifyPpds, isSingleAllergenName, missingDeclaredAllergens, PPDS_CLASSIFICATIONS, PPDS_LABEL_SIZE, ppdsAnswers, selectedLabelAllergenSources, type PpdsAnswers, type PpdsClassification, type PpdsLabelInput } from '@/lib/ppds'
 import type { PpdsPrintLabel } from '@/lib/pdf/ppds-label'
 import type { PpdsReviewSources, StoredPpdsLabel } from '@/lib/server/ppds-labels'
 import { LooseFoodAllergenLabel } from './LooseFoodAllergenLabel'
@@ -57,36 +57,30 @@ const classificationFields: {
 const fieldClass = 'min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900'
 const actionClass = 'inline-flex min-h-11 items-center justify-center rounded-lg border border-[#003842] px-4 py-2 text-sm font-semibold text-[#003842] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 
-export function PpdsLabelEditor({ siteSlug, jurisdiction, item }: {
-  siteSlug: string; jurisdiction: Jurisdiction; item: { id: string; name: string }
+export function PpdsLabelEditor({ siteSlug, jurisdiction, item, labelType }: {
+  siteSlug: string; jurisdiction: Jurisdiction; item: { id: string; name: string }; labelType: 'loose' | 'ppds'
 }) {
-  const isIrishLocation = jurisdiction === 'IE'
   const href = jurisdiction === 'SCT'
     ? 'https://www.foodstandards.gov.scot/business-guidance/running-a-food-business/packaging-and-labelling/prepacked-for-direct-sale'
-    : 'https://www.gov.uk/government/publications/food-allergen-labelling-and-information-requirements-technical-guidance'
+    : 'https://www.gov.uk/government/publications/labelling-guidance-for-prepacked-for-direct-sale-ppds-food-products/labelling-guidance-for-prepacked-for-direct-sale-ppds-food-products'
 
   return (
     <section className="space-y-4 rounded-xl border border-gray-200 bg-white p-5">
-      <h3 className="text-lg font-bold">{FULL_INGREDIENT_LABEL_ENABLED
-        ? isIrishLocation ? 'Ingredient and allergen labels' : 'Allergen and PPDS labels'
-        : 'Allergen-only label for loose or made-to-order food'}</h3>
-      {FULL_INGREDIENT_LABEL_ENABLED && (isIrishLocation ? (
-        <p className="text-sm">Create an ingredient declaration or an allergen-only label for food served loose. Check any additional package labelling requirements separately.</p>
-      ) : (
-        <p className="text-sm">Classify an item for this location. A sandwich sealed in advance and sold from the same café is an example of PPDS. <a href={href} className="font-semibold underline">PPDS guidance</a></p>
-      ))}
+      <h3 className="text-lg font-bold">{labelType === 'ppds' ? 'UK PPDS label' : 'Allergen-only label for loose or made-to-order food'}</h3>
+      {labelType === 'ppds' && (
+        <p className="text-sm">Classify the item for this location. A sandwich sealed in advance and sold from the same café is an example of PPDS. <a href={href} className="font-semibold underline">PPDS guidance</a></p>
+      )}
       <p className="text-sm font-semibold">Menu item: {item.name}</p>
-      <LabelReview key={item.id} siteSlug={siteSlug} itemId={item.id} isIrishLocation={isIrishLocation} />
+      <LabelReview siteSlug={siteSlug} itemId={item.id} labelType={labelType} />
     </section>
   )
 }
 
-function LabelReview({ siteSlug, itemId, isIrishLocation }: {
-  siteSlug: string; itemId: string; isIrishLocation: boolean
+function LabelReview({ siteSlug, itemId, labelType }: {
+  siteSlug: string; itemId: string; labelType: 'loose' | 'ppds'
 }) {
   const endpoint = `/api/sites/${encodeURIComponent(siteSlug)}/ppds`
   const [review, setReview] = useState<Review | null>(null)
-  const [labelType, setLabelType] = useState<'ingredients' | 'allergens'>('ingredients')
   const [loadAttempt, setLoadAttempt] = useState(0)
   const [answers, setAnswers] = useState<Partial<PpdsAnswers>>({})
   const [foodName, setFoodName] = useState('')
@@ -219,8 +213,8 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
   }
 
   const parsedAnswers = ppdsAnswers.safeParse(answers)
-  const classification = isIrishLocation ? 'ingredient_label' : parsedAnswers.success ? classifyPpds(parsedAnswers.data) : null
-  const classificationChanged = Boolean(!isIrishLocation && review?.current && classification &&
+  const classification = parsedAnswers.success ? classifyPpds(parsedAnswers.data) : null
+  const classificationChanged = Boolean(review?.current &&
     classificationFields.some(({ key }) => answers[key] !== review.current?.answers[key]))
   const specifications = review?.sources.flatMap(row => Object.entries(selections[row.id] ?? {}).map(([variantId, documentId]) => ({
     sourceId: row.id, documentId, variantId: variantId || null,
@@ -270,7 +264,7 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
   }
 
   async function submit(intent: Intent) {
-    if (!review || (!isIrishLocation && !parsedAnswers.success)) return
+    if (!review || !parsedAnswers.success) return
     const widthMm = width ? Number(width) : PPDS_LABEL_SIZE.defaultWidthMm
     const heightMm = height ? Number(height) : PPDS_LABEL_SIZE.defaultHeightMm
     // Estimate an unmeasured draft with the larger font. Approval uses the measured surface.
@@ -322,7 +316,7 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
       const pdf = URL.createObjectURL(await response.blob())
       const link = document.createElement('a')
       link.href = pdf
-      link.download = `${isIrishLocation ? 'ingredient-label' : 'ppds'}-${review.current.id}.pdf`
+      link.download = `ppds-${review.current.id}.pdf`
       link.click()
       window.setTimeout(() => URL.revokeObjectURL(pdf), 30_000)
     } catch (error) {
@@ -344,42 +338,26 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
     </div>
   ) : <p role="status" className="text-sm">Loading label review…</p>
 
-  const canEditLabel = review.canApprove && (isIrishLocation || classification === 'ppds')
-  const canCreateLooseLabel = review.canApprove && review.canCreateLooseLabel
-  const typeControl = FULL_INGREDIENT_LABEL_ENABLED && canCreateLooseLabel && (
-    <label className="block max-w-sm space-y-1 text-sm font-semibold">
-      Label type
-      <select className={fieldClass} value={labelType} disabled={busy}
-        onChange={event => setLabelType(event.target.value === 'allergens' ? 'allergens' : 'ingredients')}>
-        <option value="ingredients">Full ingredient label</option>
-        <option value="allergens">Allergen-only label for loose or made-to-order food</option>
-      </select>
-    </label>
-  )
-  if (canCreateLooseLabel && (!FULL_INGREDIENT_LABEL_ENABLED || labelType === 'allergens')) {
+  if (labelType === 'loose') {
+    if (!review.canApprove) return <p className="text-sm">An owner or manager can print allergen labels.</p>
+    if (!review.canCreateLooseLabel) return <p className="text-sm">Allergen-only labels require a linked recipe for food served loose or prepared to order.</p>
     return (
-      <div className="space-y-4">
-        {typeControl}
-        <LooseFoodAllergenLabel endpoint={endpoint} itemId={itemId}
-          fingerprint={review.fingerprint} foodName={review.foodName} sources={review.sources}
-          onReload={() => load(AbortSignal.timeout(30_000), { revisionId: review.current?.id ?? null, specifications })} />
-      </div>
+      <LooseFoodAllergenLabel endpoint={endpoint} itemId={itemId}
+        fingerprint={review.fingerprint} foodName={review.foodName} sources={review.sources}
+        onReload={() => load(AbortSignal.timeout(30_000), { revisionId: review.current?.id ?? null, specifications })} />
     )
   }
-  if (!FULL_INGREDIENT_LABEL_ENABLED) {
-    return <p className="text-sm">{review.canApprove
-      ? 'Allergen-only labels require a linked recipe for food served loose or prepared to order.'
-      : 'An owner or manager can print allergen labels.'}</p>
-  }
+
+  const canEditLabel = review.canApprove && classification === 'ppds'
+  const approvedPpds = review.current?.classification === 'ppds' && review.current.label && !review.stale
   return (
     <div className="space-y-4">
-      {typeControl}
       {review.stale && <p className="rounded-lg bg-amber-50 p-3 text-sm font-semibold text-amber-900" role="status">{review.stale}</p>}
       {review.current && <p className="text-sm">
         Saved review <strong>{PPDS_CLASSIFICATIONS[review.current.classification].title}</strong>
         {review.current.label && !review.stale && ` · Label approved ${publishedDate(review.current.date)}`}
       </p>}
-      {!isIrishLocation && review.canApprove ? (
+      {review.canApprove ? (
         <fieldset className="grid gap-3 rounded-lg border border-gray-200 p-4 sm:grid-cols-2" disabled={busy}>
           <legend className="px-1 text-sm font-bold">How this location sells the item</legend>
           {classificationFields.map(({ key, label, options }) => (
@@ -404,7 +382,7 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
             </div>
           </div>}
         </fieldset>
-      ) : !review.canApprove ? <p className="text-sm">An owner or manager can approve and print labels.</p> : null}
+      ) : <p className="text-sm">An owner or manager can approve and print labels.</p>}
 
       {canEditLabel && (
         <>
@@ -551,12 +529,12 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
         </div>
       )}
 
-      {review.canApprove && review.current?.label && !review.stale && !classificationChanged && !specificationsChanged && (
+      {canEditLabel && approvedPpds && !classificationChanged && !specificationsChanged && (
         <button type="button" className={actionClass} disabled={busy} onClick={() => void run(printLabel)}>
           Download approved label at actual size
         </button>
       )}
-      {review.canApprove && review.current?.label && !review.stale && specificationsChanged && (
+      {canEditLabel && approvedPpds && specificationsChanged && (
         <p role="status" className="text-sm">Approve a new label for the selected specifications before downloading.</p>
       )}
       {error && <p className="text-sm font-medium text-red-800" role="alert">{error}</p>}

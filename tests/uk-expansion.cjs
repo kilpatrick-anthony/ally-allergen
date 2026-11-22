@@ -361,7 +361,7 @@ test('bought-in products still require an assessment for the product itself', ()
   assert.throws(() => buildPpdsLabel(product, label), /Complete the bought-in product’s allergen assessment/)
 })
 
-test('Irish ingredient labels can preview and approve without UK PPDS answers', async () => {
+test('label routes apply the correct classification and approval rules for Irish and UK locations', async () => {
   const { input, source } = multipleVariantLabelFixture()
   const fingerprint = 'a'.repeat(32)
   const revisionId = uuid(45)
@@ -395,10 +395,11 @@ test('Irish ingredient labels can preview and approve without UK PPDS answers', 
       sourceFingerprint: require('zod').z.string().regex(/^[0-9a-f]{32}$/),
     },
   })('app/api/sites/[slug]/ppds/route.ts')
-  const post = (intent, fields = { label: input }) => route.POST(new Request('https://example.test/api/sites/dublin/ppds', {
+  const siteSlug = () => actor.site.jurisdiction === 'IE' ? 'dublin' : 'belfast'
+  const post = (intent, fields = { label: input }) => route.POST(new Request(`https://example.test/api/sites/${siteSlug()}/ppds`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ itemId: uuid(40), expected: fingerprint, previous: null, intent, ...fields }),
-  }), { params: Promise.resolve({ slug: 'dublin' }) })
+  }), { params: Promise.resolve({ slug: siteSlug() }) })
 
   const { foodName, ingredients, precaution, areaCm2, widthMm, heightMm } = input
   const layout = { foodName, ingredients, precaution, areaCm2, widthMm, heightMm }
@@ -454,8 +455,8 @@ test('Irish ingredient labels can preview and approve without UK PPDS answers', 
   assert.deepEqual(saved[0].p_answers, {})
   assert.deepEqual(saved[0].p_label.input.specifications, input.specifications)
 
-  const print = () => route.GET(new Request(`https://example.test/api/sites/dublin/ppds?item=${uuid(40)}&print=${revisionId}`), {
-    params: Promise.resolve({ slug: 'dublin' }),
+  const print = () => route.GET(new Request(`https://example.test/api/sites/${siteSlug()}/ppds?item=${uuid(40)}&print=${revisionId}`), {
+    params: Promise.resolve({ slug: siteSlug() }),
   })
   const download = await print()
   assert.equal(download.status, 200)
@@ -463,6 +464,20 @@ test('Irish ingredient labels can preview and approve without UK PPDS answers', 
   assert.equal((await PDFDocument.load(await download.arrayBuffer())).getPageCount(), 1)
   source.specifications[1].next_review_date = '2000-01-01'
   assert.equal((await print()).status, 409)
+
+  actor.site.jurisdiction = 'NI'
+  current = undefined
+  source.specifications[1].next_review_date = reviewDate
+  assert.equal((await post('preview')).status, 400)
+  assert.equal((await post('approve', { label: input, answers: { ...sameCafe, timing: 'after_choice' } })).status, 400)
+  assert.equal((await post('preview', { label: input, answers: sameCafe })).status, 200)
+  assert.equal((await post('approve', { label: input, answers: sameCafe })).status, 200)
+  assert.equal(saved[1].p_classification, 'ppds')
+  assert.deepEqual(saved[1].p_answers, sameCafe)
+  const ppdsDownload = await print()
+  assert.equal(ppdsDownload.status, 200)
+  assert.match(ppdsDownload.headers.get('content-disposition'), /ppds-.*\.pdf/)
+  assert.equal((await PDFDocument.load(await ppdsDownload.arrayBuffer())).getPageCount(), 1)
 })
 
 test('label review reads the current revision first and loads history separately', async () => {

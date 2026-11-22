@@ -1,10 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { MapPin, Tag } from 'lucide-react'
+import { Tag } from 'lucide-react'
 import { PpdsLabelEditor } from '@/components/admin/PpdsLabelEditor'
 import { isJurisdiction } from '@/lib/location-jurisdiction'
-import { FULL_INGREDIENT_LABEL_ENABLED } from '@/lib/ppds'
 
 type Location = {
   id: string
@@ -35,6 +34,7 @@ export default function LabelCreatorPage() {
   const [requestedIngredientId, setRequestedIngredientId] = useState('')
   const [selectedMenuItemId, setSelectedMenuItemId] = useState('')
   const [selectedLocationId, setSelectedLocationId] = useState('')
+  const [menuLabelType, setMenuLabelType] = useState<'loose' | 'ppds' | null>(null)
 
   const loadLocations = useCallback(async (signal?: AbortSignal) => {
     setLoadingLocations(true)
@@ -100,8 +100,11 @@ export default function LabelCreatorPage() {
       : item.ingredients.includes(requestedIngredientId)
   ), [menuItems, requestedItemId, requestedIngredientId])
   const selectedMenuItem = candidateMenuItems.find(item => item.id === selectedMenuItemId) || null
+  const labelType = requestedIngredientId ? 'loose' : menuLabelType
   const eligibleLocations = selectedMenuItem
-    ? activeLocations.filter(location => !selectedMenuItem.site_id || selectedMenuItem.site_id === location.id)
+    ? activeLocations.filter(location =>
+      (!selectedMenuItem.site_id || selectedMenuItem.site_id === location.id) &&
+      (labelType !== 'ppds' || (isJurisdiction(location.jurisdiction) && location.jurisdiction !== 'IE')))
     : []
   const selectedLocation = eligibleLocations.find(location => location.id === selectedLocationId) || null
   const selectedJurisdiction = selectedLocation && isJurisdiction(selectedLocation.jurisdiction)
@@ -135,11 +138,6 @@ export default function LabelCreatorPage() {
             <p className="text-sm text-gray-600">Labels are opened from an ingredient or menu item.</p>
           </div>
         </div>
-        <p className="mt-4 text-sm text-gray-700">
-          {FULL_INGREDIENT_LABEL_ENABLED
-            ? 'Ingredient labels are optional and should be checked against the complete product and local requirements before use.'
-            : 'Create a printable allergen label for food served loose or prepared to order.'}
-        </p>
       </header>
 
       {!hasItemTarget ? (
@@ -181,8 +179,33 @@ export default function LabelCreatorPage() {
               </select>
             </label>
           )}
-          {eligibleLocations.length === 0 ? (
-            <p className="text-sm text-gray-700">There are no active locations available for this menu item.</p>
+          {requestedItemId && (
+            <fieldset>
+              <legend className="mb-2 text-sm font-semibold text-gray-900">Choose a label for {selectedMenuItem?.name}</legend>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-300 p-4 has-[:checked]:border-[#003842] has-[:checked]:bg-teal-50">
+                  <input className="mt-1 accent-[#003842]" type="radio" name="label-type" checked={labelType === 'loose'}
+                    onChange={() => setMenuLabelType('loose')} />
+                  <span className="space-y-1 text-sm">
+                    <span className="block font-semibold">Allergen label</span>
+                    <span className="block text-gray-700">For loose or made-to-order food. Add an ingredients list or notes if needed.</span>
+                  </span>
+                </label>
+                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-300 p-4 has-[:checked]:border-[#003842] has-[:checked]:bg-teal-50">
+                  <input className="mt-1 accent-[#003842]" type="radio" name="label-type" checked={labelType === 'ppds'}
+                    onChange={() => setMenuLabelType('ppds')} />
+                  <span className="space-y-1 text-sm">
+                    <span className="block font-semibold">UK PPDS label</span>
+                    <span className="block text-gray-700">For food prepacked for direct sale. Check how the item is sold before creating an on-pack label.</span>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+          )}
+          {labelType && (eligibleLocations.length === 0 ? (
+            <p className="text-sm text-gray-700">{labelType === 'ppds'
+              ? 'UK PPDS labels require an active UK location where this menu item is available.'
+              : 'There are no active locations available for this menu item.'}</p>
           ) : (
             <label className="block space-y-1 text-sm font-semibold text-gray-900">
               Location
@@ -198,16 +221,17 @@ export default function LabelCreatorPage() {
                 ))}
               </select>
             </label>
-          )}
-          {selectedMenuItem && selectedLocation && selectedJurisdiction && (
+          ))}
+          {labelType && selectedMenuItem && selectedLocation && selectedJurisdiction && (
             <PpdsLabelEditor
-              key={`${selectedLocation.slug}:${selectedMenuItem.id}`}
+              key={`${selectedLocation.slug}:${selectedMenuItem.id}:${labelType}`}
               siteSlug={selectedLocation.slug}
               jurisdiction={selectedJurisdiction}
               item={selectedMenuItem}
+              labelType={labelType}
             />
           )}
-          {selectedLocation && !selectedJurisdiction && (
+          {labelType && selectedLocation && !selectedJurisdiction && (
             <p role="alert" className="text-sm text-red-800">Set a valid jurisdiction for this location before creating labels.</p>
           )}
         </section>

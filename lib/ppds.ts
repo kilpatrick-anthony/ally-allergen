@@ -1,8 +1,6 @@
 import { z } from 'zod'
 import { ALLERGEN_LIST, getAllergenLevelText, type AllergenId, type AllergenLevel, type AllergenWarnings } from '@/types/allergen'
 
-export const FULL_INGREDIENT_LABEL_ENABLED = false
-
 export const ppdsAnswers = z.object({
   packer: z.enum(['same_business', 'other_business', 'uncertain']),
   place: z.enum(['same_site', 'mobile_or_temporary', 'different_fixed_site', 'uncertain']),

@@ -4,7 +4,6 @@
 import { useState } from 'react'
 import React from 'react'
 import { quickAddHelp } from '@/lib/quick-add-help'
-import { FULL_INGREDIENT_LABEL_ENABLED } from '@/lib/ppds'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { 
   HelpCircle, Book, FileText, MessageCircle, 
@@ -403,29 +402,25 @@ export default function HelpPage() {
         'Packaged-product compliance requires label evidence, an ingredient declaration and label verification. Linking a supplier is also strongly recommended.',
       ],
       19: [
-        'In Ingredients or Menu Builder, use the printer icon or choose Create / print label. If you start from an ingredient, choose an active menu item that uses it. Check the selected location.',
-        FULL_INGREDIENT_LABEL_ENABLED
-          ? 'For food served loose or prepared to order, choose Allergen-only label under Label type.'
-          : 'The label maker opens to the allergen-only label for food served loose or prepared to order.',
-        'Under Ingredients used in this batch, select every supplier variant you actually used. You can select several variants of the same ingredient if they were used together.',
+        'In Ingredients or Menu Builder, use the printer icon or choose Create / print label. If you start from an ingredient, choose an active menu item that uses it.',
+        'From a menu item, choose Allergen label for loose or made-to-order food, or UK PPDS label for food prepacked for direct sale at a UK location. From an ingredient, the label maker opens the allergen label.',
+        'For an allergen label, check the selected location. Under Ingredients used in this batch, select every supplier variant you actually used. You can select several variants of the same ingredient if they were used together.',
         'If a selected supplier variant needs review and all allergen answers are recorded, check them against the current supplier label or specification and confirm them for this printout. If answers are missing, complete them in the ingredient record and choose Reload recipe and sources.',
         'The preview pulls allergens from the selected ingredients and variants. “May contain”, “May contain traces of” and “Not suitable for” warnings appear in their own section, with allergen and sub-allergen names in bold.',
         'Tick Include ingredients list to print the recipe on the label. Check the ingredient names, add compound ingredients using the supplier wording, and put the list in weight order. AllyJen adds and bolds the contained allergen names next to their ingredients. The heading changes to “Allergens in bold”.',
         'Tick Add notes to label to add up to 400 characters. Notes appear between their own divider lines in the preview and PDF. Leave the field blank to omit the section.',
         'Check the preview and tick the confirmation that it matches the food you serve. Choose Download allergen-only label or Download label with ingredients. Both PDFs include a link to allyjen.ie and show when the label was generated in Irish local time.',
         'Display the printed label where customers can read it before ordering.',
-        ...(FULL_INGREDIENT_LABEL_ENABLED ? [
-        'For UK locations, first complete the product classification. Only items classified as PPDS can be approved as UK PPDS on-pack labels. Republic of Ireland locations use the optional ingredient-label flow without PPDS classification.',
+        'For a UK PPDS label, select an eligible UK location and answer the questions about how the food is packed and sold. Only items classified as PPDS can be approved for an on-pack label through this flow.',
         'Under Recipe and supplier specifications, tick each variant used in the product and choose its specification. You can tick several variants of the same ingredient when they are used together.',
         'You can make selections and check the label size while sources are awaiting review. If an active specification has no review date or is overdue, open the file, check that it is current and save its next review date directly in the label maker.',
-        'If you switch between supplier variants for different batches, review and approve the label using the variants used in the batch you are labelling. For ingredients without variants and for bought-in products, choose the current specification for the ingredient or product.',
+        'If you switch between supplier variants for different batches, review and approve the label using the variants used in the batch you are labelling. For ingredients without variants, choose the current specification for the ingredient.',
         'Enter the food name and complete ingredient declaration in descending weight at manufacture. Include compound ingredients where required and name declarable allergens specifically.',
         'Allergens from selected ingredient assessments appear automatically. Enter the full ingredients list using the supplier’s wording. The preview and PDF highlight the allergen names in that list automatically.',
         'Keep any approved “May contain” statement separate. The minimum label dimensions are 20 mm wide by 15 mm high. Blank dimensions use 50 mm by 30 mm. Choose Check size and preview for a draft, then enter the actual largest package surface and complete the source checks for the final preview.',
         'An owner or manager must verify and approve the label. Download it and print at 100% (Actual size).',
         'If the recipe or supplier details change, review the sources and approve a new revision before printing.',
         'The PDF covers the ingredient declaration. Check the full package label against the requirements for your location before use.',
-        ] : []),
       ],
       7: [
         'Contains — The allergen is a deliberate, listed ingredient in the recipe.',
