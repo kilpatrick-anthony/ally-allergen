@@ -33,13 +33,15 @@ function labelText(max: number) {
     'Use characters that the label font can print.')
 }
 
+export const PPDS_LABEL_SIZE = { minimumWidthMm: 20, minimumHeightMm: 15, defaultWidthMm: 50, defaultHeightMm: 30 }
+
 export const ppdsLabelLayoutInput = z.object({
   foodName: labelText(160),
   ingredients: labelText(2400),
   precaution: z.union([labelText(200), z.literal('')]),
   areaCm2: z.number().min(10).max(10000),
-  widthMm: z.number().min(20).max(200),
-  heightMm: z.number().min(15).max(280),
+  widthMm: z.number().min(PPDS_LABEL_SIZE.minimumWidthMm).max(200).default(PPDS_LABEL_SIZE.defaultWidthMm),
+  heightMm: z.number().min(PPDS_LABEL_SIZE.minimumHeightMm).max(280).default(PPDS_LABEL_SIZE.defaultHeightMm),
 }).strict()
 
 export const ppdsLabelInput = ppdsLabelLayoutInput.extend({
@@ -101,7 +103,7 @@ const allergenTerms: Record<string, RegExp> = {
   fish: /fish/i,
   peanuts: /peanuts?|groundnuts?/i,
   soybeans: /soybeans?|soya beans?|soy beans?|soya|soy/i,
-  milk: /milk/i,
+  milk: /(?<!\b(?:coconut|soy|soya|oat|almond|rice|cashew|hazelnut|pea|hemp|flax|sesame|pistachio|macadamia|plant-based)[ -]+)milk/i,
   celery: /celery/i,
   mustard: /mustard/i,
   'sesame seeds': /sesame(?: seeds?)?/i,
@@ -116,6 +118,10 @@ function termPattern(term: RegExp) {
 
 function hasTerm(text: string, term: RegExp) {
   return new RegExp(termPattern(term), 'iu').test(text)
+}
+
+export function missingDeclaredAllergens(declaration: string, names: string[]) {
+  return names.filter(name => allergenTerms[name] && !hasTerm(declaration, allergenTerms[name]))
 }
 
 /** Preserve the operator's declaration and emphasise repeated allergen names wherever they appear. */

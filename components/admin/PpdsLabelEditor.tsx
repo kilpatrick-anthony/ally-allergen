@@ -1,10 +1,10 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import type { Jurisdiction } from '@/lib/location-jurisdiction'
 import { publishedDate } from '@/lib/location-jurisdiction'
-import { classifyPpds, PPDS_CLASSIFICATIONS, ppdsAnswers, type PpdsAnswers, type PpdsClassification, type PpdsLabelInput } from '@/lib/ppds'
+import { classifyPpds, missingDeclaredAllergens, PPDS_CLASSIFICATIONS, PPDS_LABEL_SIZE, ppdsAnswers, type PpdsAnswers, type PpdsClassification, type PpdsLabelInput } from '@/lib/ppds'
 import type { PpdsPrintLabel } from '@/lib/pdf/ppds-label'
 import type { PpdsReviewSources, StoredPpdsLabel } from '@/lib/server/ppds-labels'
 
@@ -86,6 +86,7 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
   const [answers, setAnswers] = useState<Partial<PpdsAnswers>>({})
   const [foodName, setFoodName] = useState('')
   const [ingredients, setIngredients] = useState('')
+  const ingredientsField = useRef<HTMLTextAreaElement>(null)
   const [precaution, setPrecaution] = useState('')
   const [area, setArea] = useState('')
   const [width, setWidth] = useState('')
@@ -232,8 +233,30 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
     approvedSpecifications.length !== specifications.length ||
     approvedSpecifications.some(({ sourceId, variantId, documentId }) => selections[sourceId]?.[variantId ?? ''] !== documentId)
   )
-  const canPreview = Boolean(foodName.trim() && ingredients.trim() && area && width && height)
-  const readyForApproval = Boolean(verified && suitable && specificationsSelected)
+  const canPreview = Boolean(foodName.trim() && ingredients.trim())
+  const readyForApproval = Boolean(area && verified && suitable && specificationsSelected)
+  const missingAllergens = review?.sources.flatMap(row => {
+    const sources = row.variants.length
+      ? row.variants.filter(variant => variant.assessed && selections[row.id]?.[variant.id] !== undefined)
+        .map(variant => ({ id: variant.id, name: `${row.name} · ${variant.name}`, allergens: variant.containedAllergens ?? [] }))
+      : [{ id: row.id, name: row.name, allergens: row.containedAllergens ?? [] }]
+    return sources.flatMap(source => missingDeclaredAllergens(ingredients, source.allergens)
+      .map(allergen => ({ sourceId: source.id, sourceName: source.name, allergen })))
+  }) ?? []
+
+  function insertAllergen(name: string) {
+    const field = ingredientsField.current
+    if (!field) return
+    if (field.value.length - (field.selectionEnd - field.selectionStart) + name.length > field.maxLength) {
+      setError('The ingredient declaration has reached its character limit.')
+      return
+    }
+    field.setRangeText(name, field.selectionStart, field.selectionEnd, 'end')
+    setIngredients(field.value)
+    setVerified(false)
+    clearPreview()
+    field.focus()
+  }
 
   async function saveReviewDate(documentId: string, nextReviewDate: string) {
     const response = await fetch(`/api/datasheets/${encodeURIComponent(documentId)}`, {
@@ -252,7 +275,11 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
 
   async function submit(intent: Intent) {
     if (!review || (!isIrishLocation && !parsedAnswers.success)) return
-    const layout = { foodName, ingredients, precaution, areaCm2: Number(area), widthMm: Number(width), heightMm: Number(height) }
+    const widthMm = width ? Number(width) : PPDS_LABEL_SIZE.defaultWidthMm
+    const heightMm = height ? Number(height) : PPDS_LABEL_SIZE.defaultHeightMm
+    // Estimate an unmeasured draft with the larger font. Approval uses the measured surface.
+    const areaCm2 = area ? Number(area) : Math.max(80, widthMm * heightMm / 100)
+    const layout = { foodName, ingredients, precaution, areaCm2, widthMm, heightMm }
     const label = intent === 'approve' || intent === 'preview' ? {
       ...layout,
       specifications,
@@ -320,6 +347,7 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
     </div>
   ) : <p role="status" className="text-sm">Loading label review…</p>
 
+  const canEditLabel = review.canApprove && (isIrishLocation || classification === 'ppds')
   return (
     <div className="space-y-4">
       {review.stale && <p className="rounded-lg bg-amber-50 p-3 text-sm font-semibold text-amber-900" role="status">{review.stale}</p>}
@@ -354,7 +382,7 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
         </fieldset>
       ) : !review.canApprove ? <p className="text-sm">An owner or manager can approve and print labels.</p> : null}
 
-      {review.canApprove && (isIrishLocation || classification === 'ppds') && (
+      {canEditLabel && (
         <>
           <fieldset className="space-y-3 rounded-lg border border-gray-200 p-4" disabled={busy}>
             <legend className="px-1 text-sm font-bold">Recipe and supplier specifications</legend>
@@ -409,13 +437,28 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
               <input className={fieldClass} maxLength={160} value={foodName} onChange={event => { setFoodName(event.target.value); clearPreview() }} />
             </label>
             <label className="sm:col-span-3 text-sm font-medium">Full ingredients list
-              <textarea className={fieldClass} rows={4} maxLength={2400} value={ingredients} onChange={event => {
+              <textarea ref={ingredientsField} className={fieldClass} rows={4} maxLength={2400} value={ingredients} onChange={event => {
                 setIngredients(event.target.value.replace(/\s*\n\s*/g, ' '))
                 setVerified(false)
                 clearPreview()
               }} />
             </label>
             <p className="sm:col-span-3 text-sm">Order ingredients by descending weight at manufacture. Include compound ingredients where required and name each declarable allergen wherever it appears. Use specific cereal and nut names and identify derivatives, for example whey (milk).</p>
+            {missingAllergens.length > 0 && (
+              <div className="space-y-2 rounded-lg bg-amber-50 p-3 text-sm text-amber-950 sm:col-span-3">
+                <p className="font-semibold">Allergens to name in the ingredients list</p>
+                <p>Check the supplier’s wording, then place the cursor where the allergen belongs. The verified preview and PDF emphasise it automatically.</p>
+                <ul className="space-y-2">
+                  {missingAllergens.map(({ sourceId, sourceName, allergen }) => (
+                    <li key={`${sourceId}:${allergen}`} className="flex flex-wrap items-center gap-2">
+                      <span>{sourceName} contains <strong>{allergen}</strong></span>
+                      <button type="button" className={actionClass} onMouseDown={event => event.preventDefault()}
+                        onClick={() => insertAllergen(allergen)}>Insert {allergen}</button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <label className="sm:col-span-3 text-sm font-medium">Separate “May contain” statement (if applicable)
               <input className={fieldClass} maxLength={200} value={precaution} onChange={event => {
                 setPrecaution(event.target.value)
@@ -428,14 +471,16 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
                 onChange={event => { setArea(event.target.value); clearPreview() }} />
             </label>
             <label className="text-sm font-medium">Label width (mm)
-              <input className={fieldClass} type="number" min={20} max={200} step="any" value={width}
+              <input className={fieldClass} type="number" min={PPDS_LABEL_SIZE.minimumWidthMm} max={200} step="any" value={width}
+                placeholder={String(PPDS_LABEL_SIZE.defaultWidthMm)}
                 onChange={event => { setWidth(event.target.value); clearPreview() }} />
             </label>
             <label className="text-sm font-medium">Label height (mm)
-              <input className={fieldClass} type="number" min={15} max={280} step="any" value={height}
+              <input className={fieldClass} type="number" min={PPDS_LABEL_SIZE.minimumHeightMm} max={280} step="any" value={height}
+                placeholder={String(PPDS_LABEL_SIZE.defaultHeightMm)}
                 onChange={event => { setHeight(event.target.value); clearPreview() }} />
             </label>
-            <p className="sm:col-span-3 text-sm">Flag packages under 10 cm² or products that need additional label information for separate review.</p>
+            <p className="sm:col-span-3 text-sm">Minimum label size {PPDS_LABEL_SIZE.minimumWidthMm} × {PPDS_LABEL_SIZE.minimumHeightMm} mm. Blank dimensions use {PPDS_LABEL_SIZE.defaultWidthMm} × {PPDS_LABEL_SIZE.defaultHeightMm} mm. Enter the actual largest package surface before approval. Flag packages under 10 cm² for separate review.</p>
             <label className="flex items-start gap-2 text-sm sm:col-span-3">
               <input type="checkbox" className="mt-1" checked={verified} onChange={event => { setVerified(event.target.checked); clearPreview() }} />
               I checked the complete declaration, ingredient order, compound ingredients and any precautionary statement against the verified recipe and selected specifications.
@@ -446,13 +491,19 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
             </label>
           </fieldset>
 
-          {!canPreview && <p className="text-sm">Enter the food name, ingredients, package area and label dimensions to preview.</p>}
-          <div className="flex flex-wrap gap-2">
-            <button type="button" className={actionClass} disabled={busy || !canPreview}
-              onClick={() => void run(() => submit(readyForApproval ? 'preview' : 'preview-layout'))}>Check size and preview</button>
-            {preview?.verified && <button type="button" className={actionClass} disabled={busy || !readyForApproval} onClick={() => void run(() => submit('approve'))}>Approve this label</button>}
-          </div>
+          {!canPreview && <p className="text-sm">Enter the food name and ingredients to preview.</p>}
         </>
+      )}
+
+      {review.canApprove && (
+        <div className="flex flex-wrap items-center gap-2">
+          {canEditLabel && <button type="button" className={actionClass} disabled={busy || !canPreview}
+            onClick={() => void run(() => submit(readyForApproval ? 'preview' : 'preview-layout'))}>Check size and preview</button>}
+          <button type="button" className={actionClass} disabled={busy}
+            onClick={() => void run(() => load(undefined, { revisionId: review.current?.id ?? null, specifications }))}>Reload recipe and sources</button>
+          {canEditLabel && preview?.verified && <button type="button" className={actionClass} disabled={busy || !readyForApproval}
+            onClick={() => void run(() => submit('approve'))}>Approve this label</button>}
+        </div>
       )}
 
       {preview && (
@@ -474,8 +525,6 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
       {review.canApprove && review.current?.label && !review.stale && specificationsChanged && (
         <p role="status" className="text-sm">Approve a new label for the selected specifications before downloading.</p>
       )}
-      {review.canApprove && <button type="button" className={`${actionClass} ml-2`} disabled={busy}
-        onClick={() => void run(() => load(undefined, { revisionId: review.current?.id ?? null, specifications }))}>Reload recipe and sources</button>}
       {error && <p className="text-sm font-medium text-red-800" role="alert">{error}</p>}
       {notice && <p className="text-sm font-medium text-teal-800" role="status">{notice}</p>}
 

@@ -59,21 +59,36 @@ function matchesSupplier(spec: Specification, name: string) {
   return spec.supplier_name?.trim().toLowerCase() === name.trim().toLowerCase()
 }
 
+function containedAllergens(warnings: AllergenWarnings) {
+  return specificAllergens(warnings).filter(allergen => allergen.level === 'contains').map(allergen => allergen.name)
+}
+
 export function ppdsReviewSources(source: PpdsSource) {
   const ingredientSources = source.ingredients.map(({ ingredient }) => ingredient)
   const rows = ingredientSources.length ? ingredientSources : [{ id: source.item.id, name: source.item.name }]
   return rows.map(row => {
+    const ingredient = 'status' in row ? row : null
     const specifications = source.specifications
       .filter(spec => ingredientSources.length ? spec.ingredient_id === row.id : spec.menu_item_id === row.id)
+    const variants = source.variants.filter(({ variant }) => variant.ingredient_id === row.id).map(({ variant, supplier }) => {
+      const assessed = variant.assessment_status === 'assessed' && isAllergenAssessmentComplete(variant.allergen_warnings)
+      return {
+        id: variant.id,
+        name: [supplier.name, variant.brand].filter(Boolean).join(' · '),
+        assessed,
+        containedAllergens: assessed ? containedAllergens(variant.allergen_warnings) : [],
+        documentIds: specifications.filter(spec => matchesSupplier(spec, supplier.name)).map(spec => spec.id),
+      }
+    })
+    const assessment = ingredient ? ingredient.allergen_warnings : source.item.allergen_warnings
+    const assessed = ingredient
+      ? ingredient.status === 'active' && isIngredientAssessmentComplete(assessment, ingredient.supplier_profiles)
+      : isAllergenAssessmentComplete(assessment)
     return {
       id: row.id,
       name: row.name,
-      variants: source.variants.filter(({ variant }) => variant.ingredient_id === row.id).map(({ variant, supplier }) => ({
-        id: variant.id,
-        name: [supplier.name, variant.brand].filter(Boolean).join(' · '),
-        assessed: variant.assessment_status === 'assessed' && isAllergenAssessmentComplete(variant.allergen_warnings),
-        documentIds: specifications.filter(spec => matchesSupplier(spec, supplier.name)).map(spec => spec.id),
-      })),
+      variants,
+      containedAllergens: !variants.length && assessed ? containedAllergens(assessment) : [],
       documents: specifications.map(spec => ({
         id: spec.id, name: spec.file_name, supplier: spec.supplier_name, version: spec.version, reviewDate: spec.next_review_date,
         href: spec.file_path?.startsWith('/api/') || spec.file_path?.startsWith('https://') ? spec.file_path : null,

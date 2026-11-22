@@ -139,6 +139,37 @@ test('PPDS blocks missing, mismatched, unverified or expired specifications and 
   assert.throws(() => buildPpdsLabel(source, { ...input, widthMm: 28, heightMm: 15 }), /overflows|too wide/)
 })
 
+test('blank label dimensions use 50 × 30 mm and preserve the 20 × 15 mm minimum', () => {
+  const { ppdsLabelLayoutInput, ppdsLabelInput } = load('lib/ppds.ts')
+  const { input } = labelFixture()
+  const { widthMm, heightMm, specifications, recipeVerified, templateSuitable, ...layout } = input
+  assert.deepEqual(ppdsLabelLayoutInput.parse(layout), { ...layout, widthMm: 50, heightMm: 30 })
+  assert.deepEqual(ppdsLabelInput.parse({ ...input, widthMm: undefined, heightMm: undefined }), { ...input, widthMm: 50, heightMm: 30 })
+  assert.equal(ppdsLabelLayoutInput.safeParse({ ...layout, widthMm: 20, heightMm: 15 }).success, true)
+  assert.equal(ppdsLabelLayoutInput.safeParse({ ...layout, heightMm: 14 }).success, false)
+  assert.equal(ppdsLabelInput.safeParse({ ...input, areaCm2: undefined }).success, false)
+})
+
+test('a coconut milk variant identifies soy and the declaration emphasises it without treating coconut milk as dairy', () => {
+  const { labelIngredients, missingDeclaredAllergens, specificAllergens } = load('lib/ppds.ts')
+  const { ppdsReviewSources } = load('lib/server/ppds-labels.ts')
+  const { source } = labelFixture()
+  source.ingredients[0].ingredient.name = 'Coconut Milk'
+  const warnings = { ...completeReview().allergen_warnings, soybeans: 'contains' }
+  source.variants[0].variant.allergen_warnings = warnings
+  const variantNames = ppdsReviewSources(source)[0].variants[0].containedAllergens
+  assert.deepEqual(variantNames, ['soybeans'])
+  assert.deepEqual(missingDeclaredAllergens('Coconut milk, matcha', variantNames), ['soybeans'])
+  assert.deepEqual(missingDeclaredAllergens('Coconut milk (soya lecithin), matcha', variantNames), [])
+  const declaration = 'Coconut milk (soya lecithin), matcha'
+  assert.deepEqual(labelIngredients(declaration, specificAllergens(warnings)).filter(run => run.bold).map(run => run.text), ['soya'])
+  assert.throws(() => labelIngredients('Coconut milk, goat milk', specificAllergens(warnings)), /Name soybeans/)
+  assert.throws(() => labelIngredients('Coconut milk (soy), goat milk', specificAllergens(warnings)), /Check the declaration for milk/)
+  assert.throws(() => labelIngredients(declaration, specificAllergens({ ...warnings, milk: 'contains' })), /Name milk/)
+  assert.deepEqual(labelIngredients(declaration + ', skimmed milk', specificAllergens({ ...warnings, milk: 'contains' }))
+    .filter(run => run.bold).map(run => run.text), ['soya', 'milk'])
+})
+
 test('one label validates and highlights allergens from all selected variants of one ingredient', () => {
   const { buildPpdsLabel, ppdsReviewSources } = load('lib/server/ppds-labels.ts')
   const { input, source } = multipleVariantLabelFixture()
