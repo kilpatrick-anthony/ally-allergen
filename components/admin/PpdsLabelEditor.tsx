@@ -357,7 +357,7 @@ function LabelReview({ siteSlug, itemId, isIrishLocation }: {
     return (
       <div className="space-y-4">
         {typeControl}
-        <LooseFoodAllergenLabel key={review.fingerprint} endpoint={endpoint} itemId={itemId}
+        <LooseFoodAllergenLabel endpoint={endpoint} itemId={itemId}
           fingerprint={review.fingerprint} foodName={review.foodName} sources={review.sources}
           onReload={() => load(AbortSignal.timeout(30_000), { revisionId: review.current?.id ?? null, specifications })} />
       </div>

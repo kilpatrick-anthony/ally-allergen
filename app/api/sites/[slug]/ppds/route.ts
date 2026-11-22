@@ -5,7 +5,7 @@ import { locationAllergenContext, locationAllergenFailure, sourceFingerprint } f
 import { buildLooseFoodAllergenLabel, buildPpdsLabel, canCreateLooseFoodLabel, ppdsReviewSources, type PpdsSource, type StoredPpdsLabel } from '@/lib/server/ppds-labels'
 import { makeLooseFoodAllergenLabelPdf } from '@/lib/pdf/loose-food-allergen-label'
 import { makePpdsLabelPdf } from '@/lib/pdf/ppds-label'
-import { classifyPpds, emphasiseDeclaredAllergens, ppdsAnswers, ppdsLabelDraftLayoutInput, ppdsLabelInput, ppdsLabelSourceSelection, selectedLabelAllergenSources, type PpdsAnswers, type PpdsClassification } from '@/lib/ppds'
+import { classifyPpds, emphasiseDeclaredAllergens, ppdsAnswers, ppdsLabelDraftLayoutInput, ppdsLabelInput, ppdsLabelLayoutInput, ppdsLabelSourceSelection, selectedLabelAllergenSources, type PpdsAnswers, type PpdsClassification } from '@/lib/ppds'
 
 type RouteParams = { params: Promise<{ slug: string }> }
 type Actor = Awaited<ReturnType<typeof locationAllergenContext>>
@@ -41,6 +41,8 @@ const reviewInput = z.discriminatedUnion('intent', [
     expected: sourceFingerprint,
     confirmedLooseFood: z.literal(true),
     selections: z.array(ppdsLabelSourceSelection.extend({ variantId: z.string().uuid() })).max(100),
+    confirmedVariantIds: z.array(z.string().uuid()).max(100).optional(),
+    ingredients: ppdsLabelLayoutInput.shape.ingredients.optional(),
   }).strict(),
 ])
 
@@ -164,12 +166,12 @@ export async function POST(request: Request, { params }: RouteParams) {
 
     if (input.intent === 'download-loose-label') {
       try {
-        const label = buildLooseFoodAllergenLabel(source, input.selections)
+        const label = buildLooseFoodAllergenLabel(source, input.selections, input)
         const pdf = makeLooseFoodAllergenLabelPdf(label)
         return new NextResponse(pdf.output('arraybuffer'), {
           headers: {
             'Content-Type': 'application/pdf',
-            'Content-Disposition': 'attachment; filename="allergen-only-label.pdf"',
+            'Content-Disposition': `attachment; filename="${label.ingredients ? 'allergen-and-ingredients-label' : 'allergen-only-label'}.pdf"`,
             'Cache-Control': 'private, no-store',
           },
         })

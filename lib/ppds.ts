@@ -170,6 +170,14 @@ export function isSingleAllergenName(declaration: string, names: string[]) {
     new RegExp(`^(?:${allergenTerms[name].source})[.,;]*$`, 'iu').test(declaration.trim()))
 }
 
+export function labelRecipeIngredients(declaration: string, allergens: SpecificAllergen[], recipeCount: number) {
+  const contained = allergens.filter(allergen => allergen.level === 'contains').map(allergen => allergen.name)
+  if (recipeCount > 1 && isSingleAllergenName(declaration, contained)) {
+    throw new Error('Enter the full recipe in the ingredients list, including all ingredients and any compound ingredients required.')
+  }
+  return labelIngredients(declaration, allergens)
+}
+
 /** Preserve the operator's declaration and emphasise repeated allergen names wherever they appear. */
 export function labelIngredients(declaration: string, required: SpecificAllergen[]): LabelTextRun[] {
   if (/(?:^ingredients\s*:|\b(?:may contain|not suitable for)\b)/i.test(declaration)) {

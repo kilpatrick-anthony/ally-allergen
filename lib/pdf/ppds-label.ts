@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf'
 import type { LabelTextRun } from '@/lib/ppds'
+import { drawLabelTextLine, wrapLabelText } from '@/lib/pdf/label-text'
 
 export interface PpdsPrintLabel {
   foodName: string
@@ -39,43 +40,13 @@ export function makePpdsLabelPdf(label: PpdsPrintLabel) {
     doc.setFontSize(size)
     const em = size * 25.4 / 72
     const lineHeight = em * 1.3
-    // Keep words whole even when a change of emphasis occurs inside parentheses.
-    const words: LabelTextRun[][] = [[]]
-    for (const run of runs) {
-      for (const chunk of run.text.split(/( +)/).filter(Boolean)) {
-        if (/^ +$/.test(chunk)) {
-          if (words[words.length - 1].length) words.push([])
-        } else {
-          words[words.length - 1].push({ text: chunk, bold: run.bold })
-        }
-      }
-    }
-
-    let x = inset
-    for (const word of words.filter(word => word.length)) {
-      const widths = word.map(run => {
-        doc.setFont('helvetica', run.bold ? 'bold' : 'normal')
-        return doc.getTextWidth(run.text)
-      })
-      const width = widths.reduce((total, part) => total + part, 0)
-      const right = widthMm - inset
-      if (inset + width > right) throw new Error('A word is too wide for this label. Choose a wider label or send the product for review.')
-      const space = x > inset ? doc.getTextWidth(' ') : 0
-      if (x + space + width > right) {
-        x = inset
-        y += lineHeight
-      } else {
-        x += space
-      }
-
+    const lines = wrapLabelText(doc, runs, widthMm - inset * 2)
+    for (const [index, line] of lines.entries()) {
+      if (index > 0) y += lineHeight
       if (y + em * 1.05 > heightMm - inset) {
         throw new Error('The declaration overflows this label. Choose a larger label or send the product for review.')
       }
-      word.forEach((run, index) => {
-        doc.setFont('helvetica', run.bold ? 'bold' : 'normal')
-        doc.text(run.text, x, y + em * 0.82)
-        x += widths[index]
-      })
+      drawLabelTextLine(doc, line, inset, y + em * 0.82)
     }
     y += lineHeight + 0.25
   }

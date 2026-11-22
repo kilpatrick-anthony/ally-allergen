@@ -1,5 +1,5 @@
 import { isAllergenAssessmentComplete, isIngredientAssessmentComplete } from '@/lib/allergen-assessment'
-import { isSingleAllergenName, labelIngredients, looseFoodAllergenStatements, ppdsLabelLayoutInput, specificAllergens, validatePrecaution, type PpdsLabelInput } from '@/lib/ppds'
+import { labelRecipeIngredients, looseFoodAllergenStatements, ppdsLabelLayoutInput, specificAllergens, validatePrecaution, type PpdsLabelInput } from '@/lib/ppds'
 import { makePpdsLabelPdf, type PpdsPrintLabel } from '@/lib/pdf/ppds-label'
 import type { AllergenWarnings } from '@/types/allergen'
 
@@ -67,14 +67,16 @@ export function ppdsReviewSources(source: PpdsSource) {
     const specifications = source.specifications
       .filter(spec => ingredientSources.length ? spec.ingredient_id === row.id : spec.menu_item_id === row.id)
     const variants = source.variants.filter(({ variant }) => variant.ingredient_id === row.id).map(({ variant, supplier }) => {
-      const assessed = variant.assessment_status === 'assessed' && isAllergenAssessmentComplete(variant.allergen_warnings)
-      const allergens = assessed ? specificAllergens(variant.allergen_warnings) : []
+      const assessmentComplete = isAllergenAssessmentComplete(variant.allergen_warnings)
+      const assessed = variant.assessment_status === 'assessed' && assessmentComplete
+      const allergens = assessmentComplete ? specificAllergens(variant.allergen_warnings) : []
       return {
         id: variant.id,
         name: [supplier.name, variant.brand].filter(Boolean).join(' · '),
         assessed,
+        assessmentComplete,
         allergens,
-        containedAllergens: allergens.filter(entry => entry.level === 'contains').map(entry => entry.name),
+        containedAllergens: assessed ? allergens.filter(entry => entry.level === 'contains').map(entry => entry.name) : [],
         documentIds: specifications.filter(spec => matchesSupplier(spec, supplier.name)).map(spec => spec.id),
       }
     })
@@ -108,12 +110,15 @@ export function canCreateLooseFoodLabel(source: PpdsSource) {
     source.ingredients.length === source.recipeLinkCount
 }
 
-export function buildLooseFoodAllergenLabel(source: PpdsSource, selections: { sourceId: string; variantId: string }[]) {
+export function buildLooseFoodAllergenLabel(source: PpdsSource, selections: { sourceId: string; variantId: string }[], {
+  confirmedVariantIds = [], ingredients,
+}: { confirmedVariantIds?: string[]; ingredients?: string } = {}) {
   if (!canCreateLooseFoodLabel(source)) throw new Error('An allergen-only label requires a complete linked recipe for food served loose.')
   const foodName = ppdsLabelLayoutInput.shape.foodName.safeParse(source.item.name)
   if (!foodName.success) throw new Error('Use a menu item name that can be printed on the label.')
 
   const rows = ppdsReviewSources(source)
+  const confirmed = new Set(confirmedVariantIds)
   const variantsBySource = new Map<string, Set<string>>()
   for (const { sourceId, variantId } of selections) {
     const row = rows.find(entry => entry.id === sourceId)
@@ -132,12 +137,18 @@ export function buildLooseFoodAllergenLabel(source: PpdsSource, selections: { so
     }
     const selected = row.variants.filter(variant => variantsBySource.get(row.id)?.has(variant.id))
     if (!selected.length) throw new Error(`Select the supplier variants used for ${row.name}.`)
-    if (selected.some(variant => !variant.assessed)) throw new Error(`Complete the selected variant assessments for ${row.name}.`)
+    if (selected.some(variant => !variant.assessmentComplete || (!variant.assessed && !confirmed.has(variant.id)))) {
+      throw new Error(`Complete the selected variant assessments for ${row.name} or confirm the recorded answers against the supplier evidence for this label.`)
+    }
     return selected.flatMap(variant => variant.allergens)
   })
   const statements = looseFoodAllergenStatements(allergens)
   if (statements.needsSpecificNames) throw new Error('Identify the specific cereal or tree nut in the selected allergen assessments.')
-  return { foodName: foodName.data, ...statements }
+  return {
+    foodName: foodName.data,
+    ...statements,
+    ingredients: ingredients === undefined ? undefined : labelRecipeIngredients(ingredients, allergens, rows.length),
+  }
 }
 
 function currentSpecification(spec: Specification) {
@@ -212,11 +223,8 @@ export function buildPpdsLabel(source: PpdsSource, input: PpdsLabelInput) {
   // hide another source's precautionary warning for the same allergen.
   const allergens = assessments.flatMap(specificAllergens)
   const contains = new Set(allergens.filter(({ level }) => level === 'contains').map(({ name }) => name))
-  if (source.ingredients.length > 1 && isSingleAllergenName(input.ingredients, [...contains])) {
-    throw new Error('Enter the full recipe in the ingredients list, including all ingredients and any compound ingredients required.')
-  }
   const relevant = allergens.filter(({ name, level }) => level === 'contains' || !contains.has(name))
-  const ingredients = labelIngredients(input.ingredients, relevant)
+  const ingredients = labelRecipeIngredients(input.ingredients, relevant, source.ingredients.length)
   validatePrecaution(input.precaution, relevant)
   const rendered: PpdsPrintLabel = {
     foodName: input.foodName, ingredients, precaution: input.precaution, areaCm2: input.areaCm2,

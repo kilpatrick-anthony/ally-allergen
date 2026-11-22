@@ -231,11 +231,43 @@ test('the allergen-only label uses the selected variants without ingredient text
   assert.throws(() => buildLooseFoodAllergenLabel(source, [{ ...first, sourceId: uuid(75) }]), /from this recipe/)
   source.variants[0].variant.assessment_status = 'needs_review'
   assert.throws(() => buildLooseFoodAllergenLabel(source, [first]), /Complete the selected variant assessments/)
+  const confirmedVariantIds = [first.variantId]
+  assert.deepEqual(buildLooseFoodAllergenLabel(source, [first], { confirmedVariantIds }).contains, ['soybeans'])
+  const assessment = source.variants[0].variant.allergen_warnings
+  source.variants[0].variant.allergen_warnings = { soybeans: 'contains' }
+  assert.throws(() => buildLooseFoodAllergenLabel(source, [first], { confirmedVariantIds }), /Complete the selected variant assessments/)
+  source.variants[0].variant.allergen_warnings = assessment
   source.variants[0].variant.assessment_status = 'assessed'
   source.variants[0].variant.allergen_warnings.nuts = 'contains'
   assert.throws(() => buildLooseFoodAllergenLabel(source, [first]), /specific cereal or tree nut/)
   source.item.item_type = 'packaged_product'
   assert.throws(() => buildLooseFoodAllergenLabel(source, [second]), /food served loose/)
+})
+
+test('loose labels can show recipe ingredients with inline emphasis and separate subtype precautions', () => {
+  const { buildLooseFoodAllergenLabel } = load('lib/server/ppds-labels.ts')
+  const { makeLooseFoodAllergenLabelPdf } = load('lib/pdf/loose-food-allergen-label.ts')
+  const { source, input } = labelFixture()
+  const neutral = completeReview().allergen_warnings
+  source.ingredients[0].ingredient.name = 'Oat Milk'
+  source.variants[0].variant.allergen_warnings = {
+    ...neutral, cereals_gluten: 'contains', cereals_gluten_levels: { oats: 'contains', barley: 'may_contain' },
+  }
+  const matcha = { ...source.ingredients[0].ingredient, id: uuid(70), name: 'PerfectTed Matcha Powder', allergen_warnings: neutral }
+  source.ingredients.push({ ingredient: matcha, link: {} })
+  source.recipeLinkCount = 2
+  const [{ sourceId, variantId }] = input.specifications
+  const selections = [{ sourceId, variantId }]
+  const label = buildLooseFoodAllergenLabel(source, selections, { ingredients: 'Oat milk (water, oats), PerfectTed Matcha Powder' })
+  assert.deepEqual(label.ingredients.filter(run => run.bold).map(run => run.text), ['Oat', 'oats'])
+  assert.deepEqual(label.precautions, ['May contain barley'])
+  const raw = makeLooseFoodAllergenLabelPdf(label).output()
+  assert.match(raw, /\(Ingredients:\)/)
+  assert.match(raw, /\(Matcha\)/)
+  assert.match(raw, /\/F2 11 Tf[\s\S]*?\(oats\)/)
+  assert.match(raw, /May contain barley/)
+  assert.doesNotMatch(raw, /Contains oats/)
+  assert.throws(() => buildLooseFoodAllergenLabel(source, selections, { ingredients: 'PerfectTed Matcha Powder' }), /Name oats/)
 })
 
 test('a recipe label only requires allergen assessments for its selected sources', () => {
@@ -313,17 +345,21 @@ test('Irish ingredient labels can preview and approve without UK PPDS answers', 
 
   const { foodName, ingredients, precaution, areaCm2, widthMm, heightMm } = input
   const layout = { foodName, ingredients, precaution, areaCm2, widthMm, heightMm }
-  const loose = confirmedLooseFood => route.POST(new Request('https://example.test/api/sites/dublin/ppds', {
+  const loose = (confirmedLooseFood, fields = {}) => route.POST(new Request('https://example.test/api/sites/dublin/ppds', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       itemId: uuid(40), expected: fingerprint, intent: 'download-loose-label', confirmedLooseFood,
       selections: input.specifications.map(({ sourceId, variantId }) => ({ sourceId, variantId })),
+      ...fields,
     }),
   }), { params: Promise.resolve({ slug: 'dublin' }) })
   assert.equal((await loose(false)).status, 400)
   const looseDownload = await loose(true)
   assert.equal(looseDownload.status, 200)
   assert.equal(looseDownload.headers.get('content-type'), 'application/pdf')
+  const withIngredients = await loose(true, { ingredients })
+  assert.equal(withIngredients.status, 200)
+  assert.match(withIngredients.headers.get('content-disposition'), /allergen-and-ingredients-label\.pdf/)
   assert.equal(saved.length, 0)
   const reviewDate = source.specifications[1].next_review_date
   source.specifications[1].next_review_date = null

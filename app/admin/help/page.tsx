@@ -404,6 +404,8 @@ export default function HelpPage() {
       19: [
         'In Ingredients or Menu Builder, open a record and choose Create / print label. If you start from an ingredient, choose an active menu item that uses it. Then choose the location.',
         'For food served loose or prepared to order, choose Allergen-only label under Label type. Select the supplier variants used, check the automatic allergen declaration, confirm it matches the food served and download the PDF. Display it where customers can read it before ordering.',
+        'If a selected supplier variant needs review and all allergen answers are recorded, check the answers against the supplier label or specification and confirm them for this printout. Complete any missing answers in the ingredient record.',
+        'Choose Include ingredients list to print the ingredients on a loose-food label. Check the recipe names, add compound ingredients using the supplier wording, and put the list in weight order. Contained allergens are highlighted in the list. Precautionary warnings appear separately.',
         'For UK locations, first complete the product classification. Only items classified as PPDS can be approved as UK PPDS on-pack labels. Republic of Ireland locations use the optional ingredient-label flow without PPDS classification.',
         'Under Recipe and supplier specifications, tick each variant used in the product and choose its specification. You can tick several variants of the same ingredient when they are used together.',
         'You can make selections and check the label size while sources are awaiting review. If an active specification has no review date or is overdue, open the file, check that it is current and save its next review date directly in the label maker.',
