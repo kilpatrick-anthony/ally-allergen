@@ -33,13 +33,16 @@ function labelText(max: number) {
     'Use characters that the label font can print.')
 }
 
-export const ppdsLabelInput = z.object({
+export const ppdsLabelLayoutInput = z.object({
   foodName: labelText(160),
   ingredients: labelText(2400),
   precaution: z.union([labelText(200), z.literal('')]),
   areaCm2: z.number().min(10).max(10000),
   widthMm: z.number().min(20).max(200),
   heightMm: z.number().min(15).max(280),
+}).strict()
+
+export const ppdsLabelInput = ppdsLabelLayoutInput.extend({
   specifications: z.array(z.object({
     sourceId: z.string().uuid(),
     documentId: z.string().uuid(),

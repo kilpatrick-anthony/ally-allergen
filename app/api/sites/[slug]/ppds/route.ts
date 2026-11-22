@@ -4,7 +4,7 @@ import { QuickAddError } from '@/lib/server/quick-add'
 import { locationAllergenContext, locationAllergenFailure, sourceFingerprint } from '@/lib/server/location-allergens'
 import { buildPpdsLabel, ppdsReviewSources, type PpdsSource, type StoredPpdsLabel } from '@/lib/server/ppds-labels'
 import { makePpdsLabelPdf } from '@/lib/pdf/ppds-label'
-import { classifyPpds, ppdsAnswers, ppdsLabelInput, type PpdsAnswers, type PpdsClassification } from '@/lib/ppds'
+import { classifyPpds, ppdsAnswers, ppdsLabelInput, ppdsLabelLayoutInput, type PpdsAnswers, type PpdsClassification } from '@/lib/ppds'
 
 type RouteParams = { params: Promise<{ slug: string }> }
 type Actor = Awaited<ReturnType<typeof locationAllergenContext>>
@@ -21,14 +21,16 @@ type Revision = {
 type HistoryRevision = Pick<Revision, 'id' | 'classification' | 'label' | 'source' | 'recorded_at' | 'recorded_by'>
 
 const itemIdInput = z.string().uuid()
-const reviewInput = z.object({
+const reviewContext = z.object({
   itemId: itemIdInput,
   expected: sourceFingerprint,
   previous: z.string().uuid().nullable(),
   answers: ppdsAnswers.optional(),
-  intent: z.enum(['classify', 'review', 'preview', 'approve']),
-  label: ppdsLabelInput.optional(),
 }).strict()
+const reviewInput = z.discriminatedUnion('intent', [
+  reviewContext.extend({ intent: z.enum(['classify', 'review', 'preview', 'approve']), label: ppdsLabelInput.optional() }),
+  reviewContext.extend({ intent: z.literal('preview-layout'), layout: ppdsLabelLayoutInput }),
+])
 
 async function readSource(actor: Actor, itemId: string) {
   const { data, error } = await actor.supabase.rpc('review_site_ppds_source', {
@@ -161,11 +163,20 @@ export async function POST(request: Request, { params }: RouteParams) {
       classification = input.intent === 'review' ? 'review' : classifyPpds(input.answers)
     }
     let label: StoredPpdsLabel | null = null
-    if (input.intent === 'preview' || input.intent === 'approve') {
-      if ((!isIrishLocation && classification !== 'ppds') || !input.label) {
-        return NextResponse.json({ error: isIrishLocation ? 'Complete the ingredient declaration.' : 'Complete the PPDS classification and label declaration.' }, { status: 400 })
+    if (input.intent === 'preview-layout' || input.intent === 'preview' || input.intent === 'approve') {
+      if (!isIrishLocation && classification !== 'ppds') {
+        return NextResponse.json({ error: 'Complete the PPDS classification and label declaration.' }, { status: 400 })
       }
       try {
+        if (input.intent === 'preview-layout') {
+          const { ingredients, ...layout } = input.layout
+          const rendered = { ...layout, ingredients: [{ text: ingredients, bold: false }] }
+          const { xHeight, minimumXHeight } = makePpdsLabelPdf(rendered)
+          return NextResponse.json({ label: rendered, xHeight, minimumXHeight })
+        }
+        if (!input.label) {
+          return NextResponse.json({ error: 'Complete the ingredient declaration.' }, { status: 400 })
+        }
         const built = buildPpdsLabel(source, input.label)
         label = built.label
         if (input.intent === 'preview') {

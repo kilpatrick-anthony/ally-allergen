@@ -78,6 +78,7 @@ export function ppdsReviewSources(source: PpdsSource) {
         id: spec.id, name: spec.file_name, supplier: spec.supplier_name, version: spec.version, reviewDate: spec.next_review_date,
         href: spec.file_path?.startsWith('/api/') || spec.file_path?.startsWith('https://') ? spec.file_path : null,
         current: currentSpecification(spec),
+        canSetReviewDate: spec.status === 'active' && Boolean(spec.file_path),
       })),
     }
   })

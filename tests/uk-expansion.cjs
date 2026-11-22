@@ -224,10 +224,23 @@ test('Irish ingredient labels can preview and approve without UK PPDS answers', 
       sourceFingerprint: require('zod').z.string().regex(/^[0-9a-f]{32}$/),
     },
   })('app/api/sites/[slug]/ppds/route.ts')
-  const post = intent => route.POST(new Request('https://example.test/api/sites/dublin/ppds', {
+  const post = (intent, fields = { label: input }) => route.POST(new Request('https://example.test/api/sites/dublin/ppds', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ itemId: uuid(40), expected: fingerprint, previous: null, intent, label: input }),
+    body: JSON.stringify({ itemId: uuid(40), expected: fingerprint, previous: null, intent, ...fields }),
   }), { params: Promise.resolve({ slug: 'dublin' }) })
+
+  const { foodName, ingredients, precaution, areaCm2, widthMm, heightMm } = input
+  const layout = { foodName, ingredients, precaution, areaCm2, widthMm, heightMm }
+  const reviewDate = source.specifications[1].next_review_date
+  source.specifications[1].next_review_date = null
+  const draft = await post('preview-layout', { layout })
+  assert.equal(draft.status, 200)
+  assert.deepEqual((await draft.json()).label.ingredients, [{ text: ingredients, bold: false }])
+  assert.equal((await post('preview-layout', { layout: { ...layout, widthMm: 25, heightMm: 15 } })).status, 409)
+  assert.equal((await post('approve', { layout })).status, 400)
+  assert.equal((await post('approve')).status, 409)
+  assert.equal(saved.length, 0)
+  source.specifications[1].next_review_date = reviewDate
 
   const preview = await post('preview')
   assert.equal(preview.status, 200)
