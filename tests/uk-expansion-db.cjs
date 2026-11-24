@@ -6,7 +6,7 @@ const { createReviewDb, completeReview, uuid } = require('./helpers/quick-add-re
 const uk = uuid(10), ireland = uuid(5), business = uuid(1), supplier = uuid(6), staff = uuid(3), manager = uuid(4)
 const sharedItem = uuid(11), irishItem = uuid(12), ukItem = uuid(13), ingredient = uuid(14), spec = uuid(15)
 const migration = 'supabase/migrations/20261120133040_uk_locations_allergen_publications_and_ppds.sql'
-const guideSourceMigration = 'supabase/migrations/20261124205447_guide_assessment_source_details.sql'
+const guideSourceMigration = 'supabase/migrations/20261124211135_guide_assessment_source_details.sql'
 const labelMigration = 'supabase/migrations/20261120143800_optional_ingredient_labels_for_all_locations.sql'
 
 async function setup() {
