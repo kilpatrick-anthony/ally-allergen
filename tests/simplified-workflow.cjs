@@ -127,6 +127,60 @@ test('the guide wraps long item details across A4 pages without repeating or dro
   }
 })
 
+test('the Menu Items Report leaves space for the legend and keeps the footer logo clear', async () => {
+  const { jsPDF } = require('jspdf')
+  const { autoTable } = require('jspdf-autotable')
+  const branding = load('lib/pdf/pdfBranding.ts')
+  const bundledLogo = `data:image/png;base64,${fs.readFileSync('public/allyjen-logo.png').toString('base64')}`
+  const rowGaps = []
+  let legendRight = 0
+  let footerLogo
+  let output
+
+  const { generateMenuItemsReportPDF } = load('lib/pdf/menuItemsReportPDF.ts', {
+    './pdfBranding': { ...branding, fetchAllyJenLogoDataUrl: async () => bundledLogo },
+    jspdf: function () {
+      const doc = new jsPDF()
+      const { text, addImage } = doc
+      doc.text = (value, x, ...args) => {
+        if (value === 'Not present') legendRight = x + doc.getTextWidth(value)
+        return text.call(doc, value, x, ...args)
+      }
+      doc.addImage = (image, format, x, y, width, height) => {
+        if (y > doc.internal.pageSize.getHeight() / 2) footerLogo = { x, width, height }
+        return addImage.call(doc, image, format, x, y, width, height)
+      }
+      doc.save = () => { output = Buffer.from(doc.output('arraybuffer')) }
+      return doc
+    },
+    'jspdf-autotable': (doc, options) => autoTable(doc, {
+      ...options,
+      didDrawPage: ({ cursor }) => {
+        const legendTop = doc.internal.pageSize.getHeight() - 28
+        rowGaps.push(legendTop - cursor.y)
+      },
+    }),
+  })
+
+  await generateMenuItemsReportPDF({
+    business: { id: 'fixture', name: 'AllyJen Footer Check' },
+    menuItems: Array.from({ length: 49 }, (_, i) => ({
+      name: `Menu item ${i + 1}`, category: 'Lunch', description: 'Prepared for the lunch menu', is_active: true,
+    })),
+  })
+
+  const { numpages, text } = await require('pdf-parse')(output)
+  assert.equal(numpages, 2)
+  assert.equal(rowGaps.length, numpages)
+  assert.ok(rowGaps.every(gap => gap >= 3.99), `Table to legend gaps in mm: ${rowGaps.join(', ')}`)
+  assert.ok(rowGaps.some(gap => gap < 8), 'fixture fills at least one page nearly to the footer')
+  assert.ok(footerLogo && footerLogo.x > legendRight)
+  assert.equal(footerLogo.width, footerLogo.height)
+  for (const label of ['Contains (high severity)', 'May contain / Traces / Cross-contamination', 'Not present', 'Page 1 of 2', 'Page 2 of 2']) {
+    assert.ok(text.includes(label), label)
+  }
+})
+
 test('all workflow messages are available in all supported languages', () => {
   const { workflowTranslations } = load('lib/workflow-translations.ts')
   for (const values of Object.values(workflowTranslations)) assert.deepEqual(Object.keys(values), Object.keys(workflowTranslations.en))
