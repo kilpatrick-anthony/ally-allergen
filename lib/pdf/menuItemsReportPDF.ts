@@ -89,7 +89,8 @@ export async function generateMenuItemsReportPDF(options: MenuItemsReportOptions
       head: [['Name', 'Description', 'Status']],
       body: tableData,
       startY: y,
-      margin: { bottom: 22 },
+      // The legend starts 28 mm from the bottom. Allow a 4 mm gap above it.
+      margin: { bottom: 32 },
       styles: { fontSize: 8, cellPadding: 3 },
       headStyles: { fillColor: primaryRgb, textColor: 255, fontSize: 9, fontStyle: 'bold' },
       alternateRowStyles: { fillColor: [248, 250, 252] },
@@ -104,7 +105,7 @@ export async function generateMenuItemsReportPDF(options: MenuItemsReportOptions
   }
 
   const generatedDate = `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`
-  await drawPageFooters(doc, allyjenLogoDataUrl, generatedDate)
+  await drawPageFooters(doc, allyjenLogoDataUrl, generatedDate, true, undefined, 'right')
 
   const fileName = `${business.name.replace(/[^a-zA-Z0-9]/g, '_')}_Menu_Items_Report_${new Date().toISOString().split('T')[0]}.pdf`
   doc.save(fileName)

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ALLERGEN_LIST, type AllergenId, type AllergenLevel, type AllergenWarnings } from '@/types/allergen'
+import { ALLERGEN_LIST, getAllergenLevelText, type AllergenId, type AllergenLevel, type AllergenWarnings } from '@/types/allergen'
 
 export const ppdsAnswers = z.object({
   packer: z.enum(['same_business', 'other_business', 'uncertain']),
@@ -28,18 +28,31 @@ export const PPDS_CLASSIFICATIONS: Record<PpdsClassification, { title: string; d
   ingredient_label: { title: 'Optional ingredient label', detail: 'This is an ingredient declaration, not a complete food package label or a check of all local requirements.' },
 }
 
+const printableLabelLine = /^[\u0020-\u007e\u00a0-\u00ff‘’“”–—]+$/
+
 function labelText(max: number) {
-  return z.string().trim().min(1).max(max).regex(/^[\u0020-\u007e\u00a0-\u00ff‘’“”–—]+$/,
+  return z.string().trim().min(1).max(max).regex(printableLabelLine,
     'Use characters that the label font can print.')
 }
 
-export const ppdsLabelInput = z.object({
+export const LOOSE_FOOD_LABEL_NOTE_LIMIT = 400
+export const looseFoodLabelNotes = z.string().trim().min(1).max(LOOSE_FOOD_LABEL_NOTE_LIMIT)
+  .refine(value => value.split(/\r\n?|\n/).every(line => !line || printableLabelLine.test(line)),
+    'Use characters that the label font can print.')
+  .transform(value => value.replace(/\r\n?/g, '\n'))
+
+export const PPDS_LABEL_SIZE = { minimumWidthMm: 20, minimumHeightMm: 15, defaultWidthMm: 50, defaultHeightMm: 30 }
+
+export const ppdsLabelLayoutInput = z.object({
   foodName: labelText(160),
   ingredients: labelText(2400),
   precaution: z.union([labelText(200), z.literal('')]),
   areaCm2: z.number().min(10).max(10000),
-  widthMm: z.number().min(20).max(200),
-  heightMm: z.number().min(15).max(280),
+  widthMm: z.number().min(PPDS_LABEL_SIZE.minimumWidthMm).max(200).default(PPDS_LABEL_SIZE.defaultWidthMm),
+  heightMm: z.number().min(PPDS_LABEL_SIZE.minimumHeightMm).max(280).default(PPDS_LABEL_SIZE.defaultHeightMm),
+}).strict()
+
+export const ppdsLabelInput = ppdsLabelLayoutInput.extend({
   specifications: z.array(z.object({
     sourceId: z.string().uuid(),
     documentId: z.string().uuid(),
@@ -49,10 +62,41 @@ export const ppdsLabelInput = z.object({
   templateSuitable: z.literal(true),
 }).strict()
 
+export const ppdsLabelDraftLayoutInput = ppdsLabelLayoutInput.extend({
+  ingredients: z.union([labelText(2400), z.literal('')]),
+})
+
+export const ppdsLabelSourceSelection = z.object({
+  sourceId: z.string().uuid(),
+  variantId: z.string().uuid().nullable(),
+}).strict()
+
+const looseFoodIngredientEntry = z.object({
+  sourceId: z.string().uuid(),
+  description: labelText(2400),
+}).strict()
+
+export const looseFoodIngredientEntries = z.array(looseFoodIngredientEntry).min(1).max(100)
+
+export type LooseFoodIngredientEntry = z.infer<typeof looseFoodIngredientEntry>
+
 export type PpdsLabelInput = z.infer<typeof ppdsLabelInput>
 export interface LabelTextRun { text: string; bold: boolean }
+type LabelSourceSelection = z.infer<typeof ppdsLabelSourceSelection>
+type LabelAllergenSource = { id: string; name: string; containedAllergens?: string[] }
 
-type SpecificAllergen = { id: AllergenId; name: string; level: AllergenLevel }
+export function selectedLabelAllergenSources(
+  sources: (LabelAllergenSource & { variants: LabelAllergenSource[] })[],
+  selections: LabelSourceSelection[],
+) {
+  return sources.flatMap(source => source.variants.length
+    ? source.variants.filter(variant => selections.some(selection =>
+      selection.sourceId === source.id && selection.variantId === variant.id))
+      .map(variant => ({ ...variant, name: `${source.name} · ${variant.name}` }))
+    : [source])
+}
+
+export type SpecificAllergen = { id: AllergenId; name: string; level: AllergenLevel }
 
 const specificNames: Partial<Record<AllergenId, Record<string, string>>> = {
   cereals_gluten: { wheat: 'wheat', rye: 'rye', barley: 'barley', oats: 'oats', spelt: 'spelt wheat', kamut: 'Khorasan wheat' },
@@ -78,6 +122,38 @@ export function specificAllergens(warnings: AllergenWarnings): SpecificAllergen[
   })
 }
 
+export function looseFoodAllergenStatements(allergens: SpecificAllergen[]) {
+  const contains = [...new Set(allergens.filter(entry => entry.level === 'contains').map(entry => entry.name))]
+  const precautionNames = new Map<AllergenLevel, Set<string>>()
+  for (const { level, name } of allergens) {
+    if (level === 'contains' || level === 'none' || contains.includes(name)) continue
+    const names = precautionNames.get(level) ?? new Set<string>()
+    names.add(name)
+    precautionNames.set(level, names)
+  }
+  const precautions = [...precautionNames].flatMap(([level, names]) => {
+    const groups = level === 'not_suitable' ? [...names].map(name => [name]) : [[...names]]
+    return groups.map(group => {
+      const list = group.join(', ')
+      const text = getAllergenLevelText(level, list)
+      const start = text.indexOf(list)
+      const suffix = text.slice(start + list.length)
+      const runs: LabelTextRun[] = [{ text: text.slice(0, start), bold: false }]
+      group.forEach((name, index) => {
+        if (index) runs.push({ text: ', ', bold: false })
+        runs.push({ text: name, bold: true })
+      })
+      if (suffix) runs.push({ text: suffix, bold: false })
+      return { text, runs }
+    })
+  })
+  return {
+    contains,
+    precautions,
+    needsSpecificNames: contains.some(name => name === 'cereals containing gluten' || name === 'tree nuts'),
+  }
+}
+
 const allergenTerms: Record<string, RegExp> = {
   wheat: /wheat(?:s)?/i,
   rye: /rye/i,
@@ -98,7 +174,7 @@ const allergenTerms: Record<string, RegExp> = {
   fish: /fish/i,
   peanuts: /peanuts?|groundnuts?/i,
   soybeans: /soybeans?|soya beans?|soy beans?|soya|soy/i,
-  milk: /milk/i,
+  milk: /(?<!\b(?:coconut|soy|soya|oat|almond|rice|cashew|hazelnut|pea|hemp|flax|sesame|pistachio|macadamia|plant-based)[ -]+)milk/i,
   celery: /celery/i,
   mustard: /mustard/i,
   'sesame seeds': /sesame(?: seeds?)?/i,
@@ -115,10 +191,51 @@ function hasTerm(text: string, term: RegExp) {
   return new RegExp(termPattern(term), 'iu').test(text)
 }
 
+export function missingDeclaredAllergens(declaration: string, names: string[]) {
+  return names.filter(name => allergenTerms[name] && !hasTerm(declaration, allergenTerms[name]))
+}
+
+export function isSingleAllergenName(declaration: string, names: string[]) {
+  return names.some(name => allergenTerms[name] &&
+    new RegExp(`^(?:${allergenTerms[name].source})[.,;]*$`, 'iu').test(declaration.trim()))
+}
+
+export function labelRecipeIngredients(declaration: string, allergens: SpecificAllergen[], recipeCount: number) {
+  const contained = allergens.filter(allergen => allergen.level === 'contains').map(allergen => allergen.name)
+  if (recipeCount > 1 && isSingleAllergenName(declaration, contained)) {
+    throw new Error('Enter the full recipe in the ingredients list, including all ingredients and any compound ingredients required.')
+  }
+  return labelIngredients(declaration, allergens)
+}
+
+export function looseFoodIngredientRuns(entries: LooseFoodIngredientEntry[], sources: {
+  id: string
+  allergens: SpecificAllergen[]
+}[]): LabelTextRun[] {
+  const allergensBySource = new Map(sources.map(source => [source.id, source.allergens]))
+  const entryIds = new Set(entries.map(entry => entry.sourceId))
+  if (entries.length !== sources.length || entryIds.size !== sources.length ||
+      sources.some(source => !entryIds.has(source.id))) {
+    throw new Error('Include each recipe ingredient once in the ingredients list.')
+  }
+
+  return entries.flatMap(({ sourceId, description }, index) => {
+    const allergens = allergensBySource.get(sourceId) ?? []
+    const { contains } = looseFoodAllergenStatements(allergens)
+    const missing = missingDeclaredAllergens(description, contains)
+    const declaration = missing.length ? `${description} (contains ${missing.join(', ')})` : description
+    const runs = labelIngredients(declaration, allergens)
+    return index ? [{ text: ', ', bold: false }, ...runs] : runs
+  })
+}
+
 /** Preserve the operator's declaration and emphasise repeated allergen names wherever they appear. */
 export function labelIngredients(declaration: string, required: SpecificAllergen[]): LabelTextRun[] {
   if (/(?:^ingredients\s*:|\b(?:may contain|not suitable for)\b)/i.test(declaration)) {
     throw new Error('Enter the ingredients only. Put any precautionary statement in its own field.')
+  }
+  if (/(?:^|[.;])\s*contains\s*:/i.test(declaration)) {
+    throw new Error('Name contained allergens within the ingredients list where they occur.')
   }
 
   const open = declaration.match(/[([]/g)?.length || 0
@@ -142,7 +259,12 @@ export function labelIngredients(declaration: string, required: SpecificAllergen
     if (hasTerm(declaration, term)) throw new Error(`Check the declaration for ${name} against the verified source assessments.`)
   }
 
-  const pattern = names.map(name => allergenTerms[name]).sort((a, b) => b.source.length - a.source.length)
+  return emphasiseDeclaredAllergens(declaration, names)
+}
+
+export function emphasiseDeclaredAllergens(declaration: string, names: string[]): LabelTextRun[] {
+  const pattern = [...new Set(names)].filter(name => allergenTerms[name]).map(name => allergenTerms[name])
+    .sort((a, b) => b.source.length - a.source.length)
     .map(termPattern).join('|')
   if (!pattern) return [{ text: declaration, bold: false }]
 

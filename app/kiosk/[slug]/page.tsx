@@ -20,7 +20,8 @@ import Link from 'next/link'
 import { translations, type LanguageCode } from '@/lib/translations'
 import AllergenTableView from '@/components/kiosk/AllergenTableView'
 import { generateAllergenTablePDF } from '@/lib/pdf/allergenTablePDF'
-import { GLUTEN_TYPES, TREE_NUT_TYPES, type GlutenType, type TreeNutType } from '@/types/allergen'
+import { ALLERGEN_LIST, GLUTEN_TYPES, TREE_NUT_TYPES, type GlutenType, type TreeNutType } from '@/types/allergen'
+import { evaluateAllergen, evaluateAllergenSelections, hasIncompleteSubtypeAssessment, type AllergenSelection } from '@/lib/allergen-assessment'
 import { sendKioskAnalyticsEvent, resetAnalyticsSession } from '@/lib/analytics/client'
 import { hasAnalyticsConsent } from '@/lib/cookie-consent'
 import { useAnalyticsConsent } from '@/lib/hooks/useAnalyticsConsent'
@@ -700,7 +701,7 @@ export default function KioskPage() {
   useEffect(() => {
     if (analyticsAllowed && searchQuery.trim() && !loading && business && kioskStarted) {
       const timeoutId = setTimeout(() => {
-        trackSearch(slug, searchQuery.trim(), filterMenuItems().length, totalActiveFilters > 0, siteIdParam)
+        trackSearch(slug, searchQuery.trim(), filterMenuItems().items.length, totalActiveFilters > 0, siteIdParam)
       }, 500)
       
       return () => clearTimeout(timeoutId)
@@ -828,81 +829,63 @@ export default function KioskPage() {
     setShowFilterResults(false)
   }
 
-  function getAllergensForItem(item: MenuItem): string[] {
-    return ALLERGENS
-      .filter(allergen => item[allergen.id as keyof MenuItem] === true)
-      .map(allergen => allergen.name)
+  function renderItemAllergens(item: MenuItem) {
+    const levelLabels = {
+      contains: filterLabels.contains, may_contain: t.mayContain, traces: t.tracesLabel,
+      not_suitable: t.notSuitable, cross_contamination: t.crossContaminationLabel,
+    }
+    const details = ALLERGEN_LIST.map(({ id, name, color }) => ({
+      id, name: getAllergenDisplayName(`contains_${id}`, name), color,
+      assessment: evaluateAllergen(item.allergen_warnings, { allergen: id }, item),
+    }))
+    const warnings = details.filter(({ assessment }) => assessment.status === 'warning')
+    const missing = details.filter(({ id, assessment }) => assessment.status === 'incomplete' ||
+      (assessment.status === 'warning' && (id === 'nuts' || id === 'cereals_gluten') &&
+        hasIncompleteSubtypeAssessment(item.allergen_warnings, id, item)))
+    const namedMissing = missing.filter(({ id, assessment }) =>
+      assessment.status === 'warning' || !item.allergen_warnings?.assessment_incomplete ||
+      item.allergen_warnings.assessment_indeterminate?.includes(id) ||
+      item.allergen_warnings[id] == null)
+    const incompleteNotice = namedMissing.length && namedMissing.length < ALLERGEN_LIST.length
+      ? t.kioskPortal.incompleteNamedItemNotice.replace('{allergens}', namedMissing.map(({ name }) => name).join(', '))
+      : t.kioskPortal.incompleteItemNotice
+    return (
+      <>
+        {warnings.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-gray-200 pt-4">
+            {warnings.map(({ id, name, color, assessment }) => assessment.status === 'warning' && (
+              <span key={id} className="rounded-lg border px-2 py-1 text-xs font-medium text-gray-900"
+                style={{ borderColor: `${color}60`, backgroundColor: `${color}15` }}>
+                {name} · {levelLabels[assessment.level]}
+              </span>
+            ))}
+          </div>
+        )}
+        {missing.length > 0 && <p className="mt-3 text-sm text-amber-900">{incompleteNotice}</p>}
+      </>
+    )
   }
 
   function filterMenuItems() {
-    return menuItems.filter(item => {
-      const normalizedQuery = searchQuery.toLowerCase()
-      if (
-        searchQuery &&
-        !item.name.toLowerCase().includes(normalizedQuery) &&
-        !(item.description || '').toLowerCase().includes(normalizedQuery)
-      ) {
-        return false
-      }
-      
-      // Check regular allergens — supports both legacy boolean fields and new allergen_warnings JSONB
-      if (selectedAllergens.length > 0) {
-        const hasSelectedAllergen = selectedAllergens.some(allergenId => {
-          // Legacy: contains_milk, contains_eggs, etc.
-          if (item[allergenId as keyof MenuItem] === true) return true
-          // New allergen_warnings system: strip 'contains_' prefix to get key, e.g. 'milk'
-          const warningKey = allergenId.replace(/^contains_/, '')
-          const warningLevel = (item.allergen_warnings as Record<string, string> | undefined)?.[warningKey]
-          return warningLevel && warningLevel !== 'none'
-        })
-        if (hasSelectedAllergen) {
-          return false
-        }
-      }
-      
-      // Check specific gluten types
-      const itemHasGluten =
-        item.contains_cereals_gluten === true ||
-        ((item.allergen_warnings as Record<string, string> | undefined)?.cereals_gluten ?? 'none') !== 'none'
-      if (selectedGlutenTypes.length > 0 && itemHasGluten) {
-        const itemGlutenLevels = (item as any).cereals_gluten_levels
-        if (itemGlutenLevels) {
-          const hasSelectedGluten = selectedGlutenTypes.some(glutenType => {
-            const level = itemGlutenLevels[glutenType]
-            return level && level !== 'none'
-          })
-          if (hasSelectedGluten) return false
-        } else {
-          return false
-        }
-      }
-      
-      // Check specific tree nut types
-      const itemHasNuts =
-        item.contains_nuts === true ||
-        ((item.allergen_warnings as Record<string, string> | undefined)?.nuts ?? 'none') !== 'none'
-      if (selectedTreeNutTypes.length > 0 && itemHasNuts) {
-        const itemNutLevels = (item as any).nuts_levels
-        if (itemNutLevels) {
-          const hasSelectedNut = selectedTreeNutTypes.some(nutType => {
-            const level = itemNutLevels[nutType]
-            return level && level !== 'none'
-          })
-          if (hasSelectedNut) return false
-        } else {
-          return false
-        }
-      }
-      
-      // Dietary preference filter — INCLUDE logic: item must have ALL selected dietary attrs
-      if (selectedDietary.length > 0) {
-        const itemDietary: string[] = Array.isArray(item.dietary) ? item.dietary : []
-        const matchesAll = selectedDietary.every(d => itemDietary.includes(d))
-        if (!matchesAll) return false
-      }
+    const selections: AllergenSelection[] = [
+      ...ALLERGEN_LIST.filter(({ id }) => selectedAllergens.includes(`contains_${id}`)).map(({ id }) => ({ allergen: id })),
+      ...selectedGlutenTypes.map(subtype => ({ allergen: 'cereals_gluten' as const, subtype })),
+      ...selectedTreeNutTypes.map(subtype => ({ allergen: 'nuts' as const, subtype })),
+    ]
+    const normalizedQuery = searchQuery.toLowerCase()
+    let hasIncompleteItems = false
+    const items = menuItems.filter(item => {
+      if (normalizedQuery && !item.name.toLowerCase().includes(normalizedQuery) &&
+        !(item.description || '').toLowerCase().includes(normalizedQuery)) return false
 
-      return true
+      const dietary = Array.isArray(item.dietary) ? item.dietary : []
+      if (!selectedDietary.every(label => dietary.includes(label))) return false
+
+      const { matches, incomplete } = evaluateAllergenSelections(item.allergen_warnings, selections, item)
+      hasIncompleteItems ||= incomplete
+      return matches
     })
+    return { items, hasIncompleteItems }
   }
 
   function getCategoryDisplayName(category: string): string {
@@ -1269,7 +1252,8 @@ export default function KioskPage() {
   }
 
   // ===== MENU DISPLAY =====
-  const filteredItems = sortByCategoryAndName(filterMenuItems())
+  const { items: matchingItems, hasIncompleteItems } = filterMenuItems()
+  const filteredItems = sortByCategoryAndName(matchingItems)
   const categories = getOrderedCategories(filteredItems)
   const sortedMenuItems = sortByCategoryAndName(menuItems)
   const sortedIngredients = [...(ingredients || [])].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))
@@ -1913,6 +1897,9 @@ export default function KioskPage() {
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-[#003842] mb-6">{t.menuItems}</h2>
 
+              {hasIncompleteItems && (
+                <p role="status" className="mb-4 text-sm text-amber-900">{t.kioskPortal.incompleteFilterNotice}</p>
+              )}
               {filteredItems.length === 0 ? (
                 <Card className="text-center py-12">
                   <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -1937,9 +1924,6 @@ export default function KioskPage() {
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {categoryItems.map((item, categoryIndex) => {
-                            const itemAllergens = getAllergensForItem(item)
-                            const allergenDetails = ALLERGENS.filter(allergen => item[allergen.id as keyof MenuItem] === true)
-
                             return (
                               <React.Fragment key={item.id}>{startsSubcategory(categoryItems, categoryIndex) && <h4 className="col-span-full text-lg font-semibold text-[#003842] pl-4 border-l-2 border-[#42b8ac]">{item.subcategory}</h4>}<Card key={item.id} className="h-full border border-slate-200 shadow-md hover:shadow-lg transition-shadow overflow-hidden" style={item.color ? { borderLeftColor: item.color, borderLeftWidth: '4px', backgroundColor: `${item.color}0d` } : undefined}>
                                 <div className="p-6">
@@ -1957,27 +1941,7 @@ export default function KioskPage() {
                                   </div>
                                   {item.description && <p className="mt-3 text-gray-600">{item.description}</p>}
 
-                                  {allergenDetails.length > 0 && (
-                                    <div className="mt-4 pt-4 border-t border-gray-200">
-                                      <p className="text-sm font-medium text-gray-700 mb-2">{filterLabels.contains}:</p>
-                                      <div className="flex flex-wrap gap-2">
-                                        {allergenDetails.map(allergen => (
-                                          <div 
-                                            key={allergen.id} 
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
-                                            style={{
-                                              backgroundColor: `${allergen.bgColor}15`,
-                                              color: allergen.bgColor,
-                                              borderColor: `${allergen.bgColor}40`
-                                            }}
-                                          >
-                                            <span style={{ color: allergen.bgColor }}>{React.createElement(allergen.icon as unknown as React.ComponentType<{className: string}>, { className: 'w-4 h-4' })}</span>
-                                            <span>{getAllergenDisplayName(allergen.id, allergen.name)}</span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
+                                  {renderItemAllergens(item)}
                                   {Array.isArray(item.dietary) && item.dietary.length > 0 && (
                                     <div className="mt-3 flex flex-wrap gap-1.5">
                                       {item.dietary.map(d => {
@@ -2069,6 +2033,9 @@ export default function KioskPage() {
                 <p className="text-xs text-gray-500 -mt-3 mb-4">{t.tableViewDisabled}</p>
               )}
 
+              {hasIncompleteItems && (
+                <p role="status" className="mb-4 text-sm text-amber-900">{t.kioskPortal.incompleteFilterNotice}</p>
+              )}
               {filteredItems.length === 0 ? (
                 <Card className="text-center py-12">
                   <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -2111,9 +2078,6 @@ export default function KioskPage() {
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {categoryItems.map((item, categoryIndex) => {
-                            const itemAllergens = getAllergensForItem(item)
-                            const allergenDetails = ALLERGENS.filter(allergen => item[allergen.id as keyof MenuItem] === true)
-
                             return (
                               <React.Fragment key={item.id}>{startsSubcategory(categoryItems, categoryIndex) && <h4 className="col-span-full text-lg font-semibold text-[#003842] pl-4 border-l-2 border-[#42b8ac]">{item.subcategory}</h4>}<Card key={item.id} className="h-full border border-slate-200 shadow-md hover:shadow-lg transition-shadow overflow-hidden" style={item.color ? { borderLeftColor: item.color, borderLeftWidth: '4px', backgroundColor: `${item.color}0d` } : undefined}>
                                 <div className="p-6">
@@ -2131,27 +2095,7 @@ export default function KioskPage() {
                                   </div>
                                   {item.description && <p className="mt-3 text-gray-600">{item.description}</p>}
 
-                                  {allergenDetails.length > 0 && (
-                                    <div className="mt-4 pt-4 border-t border-gray-200">
-                                      <p className="text-sm font-medium text-gray-700 mb-2">{filterLabels.contains}:</p>
-                                      <div className="flex flex-wrap gap-2">
-                                        {allergenDetails.map(allergen => (
-                                          <div 
-                                            key={allergen.id} 
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-all"
-                                            style={{
-                                              backgroundColor: `${allergen.bgColor}15`,
-                                              color: allergen.bgColor,
-                                              borderColor: `${allergen.bgColor}40`
-                                            }}
-                                          >
-                                            <span style={{ color: allergen.bgColor }}>{React.createElement(allergen.icon as unknown as React.ComponentType<{className: string}>, { className: 'w-4 h-4' })}</span>
-                                            <span>{getAllergenDisplayName(allergen.id, allergen.name)}</span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
+                                  {renderItemAllergens(item)}
                                   {Array.isArray(item.dietary) && item.dietary.length > 0 && (
                                     <div className="mt-3 flex flex-wrap gap-1.5">
                                       {item.dietary.map(d => {

@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
     const scope = searchParams.get('scope')
     const includeGlobal = searchParams.get('include_global') === 'true'
     const limit = searchParams.get('limit')
+    const itemId = searchParams.get('item_id')
+    const ingredientId = searchParams.get('ingredient_id')
 
     const cookieStore = await cookies()
     const authToken = cookieStore.get('auth-token')?.value
@@ -52,10 +54,34 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
 
+    let ingredientMenuItemIds: string[] | null = null
+    if (!itemId && ingredientId) {
+      const { data: links, error: linksError } = await supabase
+        .from('menu_item_ingredients')
+        .select('menu_item_id')
+        .eq('ingredient_id', ingredientId)
+
+      if (linksError) {
+        console.error('Error fetching menu item ingredients:', linksError)
+        return NextResponse.json({ error: 'Failed to fetch menu item ingredients' }, { status: 500 })
+      }
+
+      ingredientMenuItemIds = [...new Set((links || []).map(link => link.menu_item_id))]
+      if (ingredientMenuItemIds.length === 0) {
+        return NextResponse.json({ menuItems: [] })
+      }
+    }
+
     let query = supabase
       .from('menu_items')
       .select('*')
       .eq('business_id', businessId)
+
+    if (itemId) {
+      query = query.eq('id', itemId)
+    } else if (ingredientMenuItemIds) {
+      query = query.in('id', ingredientMenuItemIds)
+    }
 
     if (scope === 'global') {
       query = query.is('site_id', null)
@@ -91,6 +117,7 @@ export async function GET(request: NextRequest) {
 
       if (ingredientsError) {
         console.error('Error fetching menu item ingredients:', ingredientsError)
+        return NextResponse.json({ error: 'Failed to fetch menu item ingredients' }, { status: 500 })
       } else if (menuIngredients) {
         ingredientsByMenuItem = menuIngredients.reduce((acc, row) => {
           const list = acc.get(row.menu_item_id) || []

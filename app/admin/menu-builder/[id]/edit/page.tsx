@@ -10,6 +10,7 @@ import { changedAttachments } from '@/lib/regular-form-state'
 import { useRegularFormValidation } from '@/lib/hooks/useRegularFormValidation'
 import { FormValidationSummary, FormFieldError } from '@/components/admin/FormValidationSummary'
 import { useUnsavedChanges } from '@/lib/hooks/useUnsavedChanges'
+import { ItemLabelLink } from '@/components/admin/ItemLabelLink'
 import { IngredientPicker } from '@/components/admin/IngredientPicker'
 import { MenuDietaryFields } from '@/components/admin/MenuDietaryFields'
 import { RegularFormActions } from '@/components/admin/RegularFormActions'
@@ -398,12 +399,18 @@ export default function EditMenuItemPage() {
             <ArrowLeft className="h-4 w-4" />
             {t('admin.backToMenuBuilder')}
           </Link>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            {t('admin.editMenuItem')}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            {t('admin.updateDetailsFor')}: <strong>{menuItem.name}</strong>
-          </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+                {t('admin.editMenuItem')}
+              </h1>
+              <p className="text-gray-600 dark:text-gray-300">
+                {t('admin.updateDetailsFor')}: <strong>{menuItem.name}</strong>
+              </p>
+            </div>
+            <ItemLabelLink kind="menu-item" id={itemId} compact={false}
+              onClick={event => { if (!confirmLeave()) event.preventDefault() }} />
+          </div>
         </div>
 
         <FormValidationSummary issues={issues} />

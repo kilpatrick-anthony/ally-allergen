@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { QuickAddError } from '@/lib/server/quick-add'
 import { locationAllergenContext, locationAllergenFailure, sourceFingerprint } from '@/lib/server/location-allergens'
-import { buildPpdsLabel, ppdsReviewSources, type PpdsSource, type StoredPpdsLabel } from '@/lib/server/ppds-labels'
+import { buildLooseFoodAllergenLabel, buildPpdsLabel, canCreateLooseFoodLabel, ppdsReviewSources, type PpdsSource, type StoredPpdsLabel } from '@/lib/server/ppds-labels'
+import { makeLooseFoodAllergenLabelPdf } from '@/lib/pdf/loose-food-allergen-label'
 import { makePpdsLabelPdf } from '@/lib/pdf/ppds-label'
-import { classifyPpds, ppdsAnswers, ppdsLabelInput, type PpdsAnswers, type PpdsClassification } from '@/lib/ppds'
+import { classifyPpds, emphasiseDeclaredAllergens, looseFoodIngredientEntries, looseFoodLabelNotes, ppdsAnswers, ppdsLabelDraftLayoutInput, ppdsLabelInput, ppdsLabelLayoutInput, ppdsLabelSourceSelection, selectedLabelAllergenSources, type PpdsAnswers, type PpdsClassification } from '@/lib/ppds'
 
 type RouteParams = { params: Promise<{ slug: string }> }
 type Actor = Awaited<ReturnType<typeof locationAllergenContext>>
@@ -18,16 +19,34 @@ type Revision = {
   recorded_at: string
   recorded_by: string
 }
+type HistoryRevision = Pick<Revision, 'id' | 'classification' | 'label' | 'source' | 'recorded_at' | 'recorded_by'>
 
 const itemIdInput = z.string().uuid()
-const reviewInput = z.object({
+const reviewContext = z.object({
   itemId: itemIdInput,
   expected: sourceFingerprint,
   previous: z.string().uuid().nullable(),
   answers: ppdsAnswers.optional(),
-  intent: z.enum(['classify', 'review', 'preview', 'approve']),
-  label: ppdsLabelInput.optional(),
 }).strict()
+const reviewInput = z.discriminatedUnion('intent', [
+  reviewContext.extend({ intent: z.enum(['classify', 'review', 'preview', 'approve']), label: ppdsLabelInput.optional() }),
+  reviewContext.extend({
+    intent: z.literal('preview-layout'),
+    layout: ppdsLabelDraftLayoutInput,
+    selections: z.array(ppdsLabelSourceSelection).max(100).default([]),
+  }),
+  z.object({
+    intent: z.literal('download-loose-label'),
+    itemId: itemIdInput,
+    expected: sourceFingerprint,
+    confirmedLooseFood: z.literal(true),
+    selections: z.array(ppdsLabelSourceSelection.extend({ variantId: z.string().uuid() })).max(100),
+    confirmedVariantIds: z.array(z.string().uuid()).max(100).optional(),
+    ingredients: ppdsLabelLayoutInput.shape.ingredients.optional(),
+    ingredientEntries: looseFoodIngredientEntries.optional(),
+    notes: looseFoodLabelNotes.optional(),
+  }).strict(),
+])
 
 async function readSource(actor: Actor, itemId: string) {
   const { data, error } = await actor.supabase.rpc('review_site_ppds_source', {
@@ -38,16 +57,39 @@ async function readSource(actor: Actor, itemId: string) {
   return data as { source: PpdsSource; fingerprint: string }
 }
 
-async function readRevisions(actor: Actor, itemId: string) {
+async function readCurrentRevision(actor: Actor, itemId: string) {
   const { data, error } = await actor.supabase.from('site_ppds_revisions')
     .select('id,classification,answers,label,source_fingerprint,source,recorded_at,recorded_by')
     .eq('site_id', actor.site.id).eq('menu_item_id', itemId)
-    .order('recorded_at', { ascending: false }).order('id', { ascending: false }).limit(20)
+    .order('recorded_at', { ascending: false }).order('id', { ascending: false }).limit(1)
   if (error) throw error
-  return (data || []) as Revision[]
+  return ((data || [])[0] || null) as Revision | null
 }
 
-function staleReason(revision: Revision | undefined, source: PpdsSource, fingerprint: string) {
+async function readRevisionHistory(actor: Actor, itemId: string) {
+  const { data, error } = await actor.supabase.from('site_ppds_revisions')
+    .select('id,classification,label,source,recorded_at,recorded_by')
+    .eq('site_id', actor.site.id).eq('menu_item_id', itemId)
+    .order('recorded_at', { ascending: false }).order('id', { ascending: false }).limit(20)
+  if (error) throw error
+  return (data || []) as HistoryRevision[]
+}
+
+function mapHistory(revisions: HistoryRevision[]) {
+  return revisions.map(revision => {
+    const documents = ppdsReviewSources(revision.source).flatMap(row => row.documents)
+    return {
+      id: revision.id, date: revision.recorded_at, approved: Boolean(revision.label), actor: revision.recorded_by,
+      classification: revision.classification,
+      documents: revision.label?.input.specifications.map(spec => {
+        const doc = documents.find(item => item.id === spec.documentId)
+        return doc ? [doc.name, doc.version].filter(Boolean).join(' · ') : spec.documentId
+      }) || [],
+    }
+  })
+}
+
+function staleReason(revision: Revision | null | undefined, source: PpdsSource, fingerprint: string) {
   if (!revision?.label) return null
   if (revision.source_fingerprint !== fingerprint) return 'Recipe or supplier data changed. Review the sources and approve a new label.'
   const documents = ppdsReviewSources(source).flatMap(row => row.documents)
@@ -67,10 +109,13 @@ export async function GET(request: Request, { params }: RouteParams) {
     }
     const itemId = itemIdInput.safeParse(query.get('item'))
     if (!itemId.success) return NextResponse.json({ error: 'Choose a valid menu item.' }, { status: 400 })
-    const [{ source, fingerprint }, revisions] = await Promise.all([
-      readSource(actor, itemId.data), readRevisions(actor, itemId.data),
+    if (query.get('history') === 'true') {
+      const history = await readRevisionHistory(actor, itemId.data)
+      return NextResponse.json({ history: mapHistory(history) }, { headers: { 'Cache-Control': 'private, no-store' } })
+    }
+    const [{ source, fingerprint }, current] = await Promise.all([
+      readSource(actor, itemId.data), readCurrentRevision(actor, itemId.data),
     ])
-    const current = revisions[0]
     const stale = staleReason(current, source, fingerprint)
 
     if (printId !== null) {
@@ -88,6 +133,8 @@ export async function GET(request: Request, { params }: RouteParams) {
     }
 
     return NextResponse.json({
+      canApprove: actor.role !== 'staff',
+      canCreateLooseLabel: canCreateLooseFoodLabel(source),
       fingerprint,
       foodName: source.item.name,
       ingredientDeclaration: source.item.ingredient_declaration,
@@ -97,17 +144,7 @@ export async function GET(request: Request, { params }: RouteParams) {
         id: current.id, classification: current.classification, answers: current.answers,
         label: current.label, date: current.recorded_at,
       } : null,
-      history: revisions.map(revision => {
-        const documents = ppdsReviewSources(revision.source).flatMap(row => row.documents)
-        return {
-          id: revision.id, date: revision.recorded_at, approved: Boolean(revision.label), actor: revision.recorded_by,
-          classification: revision.classification,
-          documents: revision.label?.input.specifications.map(spec => {
-            const doc = documents.find(item => item.id === spec.documentId)
-            return doc ? [doc.name, doc.version].filter(Boolean).join(' · ') : spec.documentId
-          }) || [],
-        }
-      }),
+      history: [],
     }, { headers: { 'Cache-Control': 'private, no-store' } })
   } catch (error) {
     return locationAllergenFailure(error)
@@ -129,6 +166,22 @@ export async function POST(request: Request, { params }: RouteParams) {
       return NextResponse.json({ error: 'Recipe or supplier data changed. Reload the item and review its sources.' }, { status: 409 })
     }
 
+    if (input.intent === 'download-loose-label') {
+      try {
+        const label = buildLooseFoodAllergenLabel(source, input.selections, input)
+        const pdf = makeLooseFoodAllergenLabelPdf({ ...label, notes: input.notes })
+        return new NextResponse(pdf.output('arraybuffer'), {
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="${label.ingredients ? 'allergen-and-ingredients-label' : 'allergen-only-label'}.pdf"`,
+            'Cache-Control': 'private, no-store',
+          },
+        })
+      } catch (error) {
+        return NextResponse.json({ error: error instanceof Error ? error.message : 'Could not create the allergen-only label.' }, { status: 409 })
+      }
+    }
+
     const isIrishLocation = actor.site.jurisdiction === 'IE'
     let classification: PpdsClassification
     if (isIrishLocation && (input.intent === 'classify' || input.intent === 'review')) {
@@ -143,11 +196,22 @@ export async function POST(request: Request, { params }: RouteParams) {
       classification = input.intent === 'review' ? 'review' : classifyPpds(input.answers)
     }
     let label: StoredPpdsLabel | null = null
-    if (input.intent === 'preview' || input.intent === 'approve') {
-      if ((!isIrishLocation && classification !== 'ppds') || !input.label) {
-        return NextResponse.json({ error: isIrishLocation ? 'Complete the ingredient declaration.' : 'Complete the PPDS classification and label declaration.' }, { status: 400 })
+    if (input.intent === 'preview-layout' || input.intent === 'preview' || input.intent === 'approve') {
+      if (!isIrishLocation && classification !== 'ppds') {
+        return NextResponse.json({ error: 'Complete the PPDS classification and label declaration.' }, { status: 400 })
       }
       try {
+        if (input.intent === 'preview-layout') {
+          const { ingredients, ...layout } = input.layout
+          const allergens = selectedLabelAllergenSources(ppdsReviewSources(source), input.selections)
+            .flatMap(entry => entry.containedAllergens ?? [])
+          const rendered = { ...layout, ingredients: emphasiseDeclaredAllergens(ingredients, allergens) }
+          const { xHeight, minimumXHeight } = makePpdsLabelPdf(rendered)
+          return NextResponse.json({ label: rendered, xHeight, minimumXHeight })
+        }
+        if (!input.label) {
+          return NextResponse.json({ error: 'Complete the ingredient declaration.' }, { status: 400 })
+        }
         const built = buildPpdsLabel(source, input.label)
         label = built.label
         if (input.intent === 'preview') {
