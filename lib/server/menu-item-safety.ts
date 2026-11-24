@@ -1,4 +1,4 @@
-import { isAllergenAssessmentComplete, isIngredientAssessmentComplete, mergeAllergenAssessments } from '@/lib/allergen-assessment'
+import { ingredientAssessmentWarnings, isAllergenAssessmentComplete, isIngredientAssessmentComplete, mergeAllergenAssessments } from '@/lib/allergen-assessment'
 import type { AllergenWarnings } from '@/types/allergen'
 
 const STANDARD_DIETARY = new Set([
@@ -48,7 +48,7 @@ export async function deriveMenuItemSafety(
 
   const assessmentComplete = ingredientRows.every((row: any) =>
     (!row.status || row.status === 'active') && isIngredientAssessmentComplete(row.allergen_warnings, row.supplier_profiles))
-  const allergenWarnings = mergeAllergenAssessments(ingredientRows.map((row: any) => (row.allergen_warnings || {}) as AllergenWarnings))
+  const allergenWarnings = mergeAllergenAssessments(ingredientRows.map(ingredientAssessmentWarnings))
   if (!assessmentComplete) allergenWarnings.assessment_incomplete = true
   return { assessmentComplete, allergenWarnings, dietary: Array.from(new Set([...inheritedDietary, ...customDietary])) }
 }

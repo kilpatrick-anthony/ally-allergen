@@ -2,24 +2,41 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { QRCodeCanvas } from 'qrcode.react'
-import { isAllergenAssessmentComplete } from '@/lib/allergen-assessment'
+import { isAllergenAssessmentComplete, type IngredientAssessmentIssue } from '@/lib/allergen-assessment'
 import type { MenuItem } from '@/lib/hooks/useOfflineKioskData'
 import { downloadLocationGuide, fetchLocationGuide } from '@/lib/location-guide-client'
 import { JURISDICTIONS, KIOSK_BACKUP, locationAllergenGuidance, locationGuidePath, publishedDate, type Jurisdiction } from '@/lib/location-jurisdiction'
 import { specificAllergens } from '@/lib/ppds'
-import { getAllergenLevelText } from '@/types/allergen'
+import { ALLERGEN_LIST, getAllergenLevelText } from '@/types/allergen'
 
 interface Review {
   canApprove: boolean
   fingerprint: string | null
   items: MenuItem[]
-  incomplete: string[]
+  incomplete: {
+    id: string
+    name: string
+    problems: (IngredientAssessmentIssue & { ingredientId?: string; ingredientName?: string })[]
+  }[]
   publication: { id: string; publishedAt: string } | null
   unpublishedChanges: boolean
 }
 
 const actionClass = 'inline-flex min-h-11 items-center justify-center rounded-lg border border-[#003842] px-4 py-2 text-sm font-semibold text-[#003842] focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
 const fieldClass = 'min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900'
+
+function assessmentProblemText(problem: IngredientAssessmentIssue) {
+  const allergen = ALLERGEN_LIST.find(({ id }) => id === problem.allergen)?.name
+  switch (problem.kind) {
+    case 'missing': return `Missing answer for ${allergen}`
+    case 'invalid': return `Invalid answer for ${allergen}`
+    case 'inconsistent_subtypes': return `The ${allergen} answer and subtype warnings need to be reconciled`
+    case 'invalid_profiles': return 'Supplier variant assessments could not be read'
+    case 'inactive': return problem.status ? `Linked ingredient has status “${problem.status}”` : 'Linked ingredient has no active status'
+    case 'unavailable': return 'Linked ingredient is unavailable'
+    case 'incomplete': return 'The saved assessment is marked incomplete'
+  }
+}
 
 export function LocationAllergenTools({ siteId, siteSlug, siteName, businessSlug, jurisdiction }: {
   siteId: string; siteSlug: string; siteName: string; businessSlug: string; jurisdiction: Jurisdiction
@@ -128,7 +145,31 @@ export function LocationAllergenTools({ siteId, siteSlug, siteName, businessSlug
               : jurisdiction === 'IE' ? 'This Irish location uses the existing live guide until you publish a reviewed version.'
               : 'Publish a reviewed version to make this location’s guide available.'}</p>
             {review.unpublishedChanges && <p className="text-sm font-semibold text-amber-900">Menu changes are waiting for review. Replace printed copies after publishing.</p>}
-            {review.incomplete.length > 0 && <p className="text-sm text-amber-900">Complete the assessment for {review.incomplete.join(', ')} before publishing.</p>}
+            {review.incomplete.length > 0 && (
+              <section className="space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
+                <h4 className="font-semibold">Complete these allergen assessments before publishing</h4>
+                <ul className="space-y-2">
+                  {review.incomplete.map(item => (
+                    <li key={item.id}>
+                      <a className="font-semibold underline" href={`/admin/menu-builder/${encodeURIComponent(item.id)}/edit`}>{item.name}</a>
+                      <ul className="ml-5 list-disc">
+                        {item.problems.map((problem, index) => (
+                          <li key={index}>
+                            {problem.ingredientId && (
+                              <><a className="font-semibold underline" href={`/admin/ingredients/${encodeURIComponent(problem.ingredientId)}/edit`}>
+                                {problem.ingredientName || 'Linked ingredient'}
+                              </a>{' · '}</>
+                            )}
+                            {problem.variant && <>{problem.variant}{' · '}</>}
+                            {assessmentProblemText(problem)}
+                          </li>
+                        ))}
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
             <details className="rounded-lg border border-gray-200 p-3">
               <summary className="cursor-pointer font-semibold">Review current menu ({review.items.length})</summary>
               {review.items.length === 0 && <p className="mt-2 text-sm">There are no active menu items for this location.</p>}

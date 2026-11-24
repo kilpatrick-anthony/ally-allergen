@@ -4,8 +4,9 @@
 import { orderSubcategories, startsSubcategory } from '@/lib/item-category-tree'
 import React, { useRef, useState, useEffect, useCallback } from 'react'
 import { Check, AlertCircle, AlertTriangle, Info } from 'lucide-react'
-import { ALLERGENS, getAllergensForItem, type AllergenInfo } from '@/lib/allergens'
-import { AllergenWarnings, getAllergenLevelText, getAllergenSeverity, formatSubtypes, GLUTEN_TYPES, TREE_NUT_TYPES, type GlutenType, type TreeNutType, type AllergenLevel } from '@/types/allergen'
+import { ALLERGENS } from '@/lib/allergens'
+import { evaluateAllergen, type AllergenSelection } from '@/lib/allergen-assessment'
+import { GLUTEN_TYPES, TREE_NUT_TYPES, type AllergenId } from '@/types/allergen'
 import type { MenuItem } from '@/lib/hooks/useOfflineKioskData'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 
@@ -68,100 +69,13 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
       }]
     }
   })
-  // Get cell content for an allergen
-  const getCellContent = (item: MenuItem, allergen: AllergenInfo) => {
-    // Check new allergen_warnings system first
-    if (item.allergen_warnings) {
-      const warnings = item.allergen_warnings
-      let level: string = 'none'
-      let subtypes: string[] | undefined
-      
-      // Map allergen ID to warning key
-      if (allergen.id === 'cereals_gluten') {
-        level = warnings.cereals_gluten || 'none'
-        subtypes = warnings.cereals_gluten_types
-      } else if (allergen.id === 'nuts') {
-        level = warnings.nuts || 'none'
-        subtypes = warnings.nuts_types
-      } else {
-        level = (warnings as any)[allergen.id] || 'none'
-      }
-
-      if (level === 'none') return null
-
-      const severity = getAllergenSeverity(level as any)
-      const displayText = levelLabel(level)
-      
-      return {
-        level,
-        severity,
-        displayText,
-        hasSubtypes: !!subtypes && subtypes.length > 0
-      }
+  function getCellContent(item: MenuItem, selection: AllergenSelection) {
+    const assessment = evaluateAllergen(item.allergen_warnings, selection, item)
+    if (assessment.status === 'clear') return null
+    if (assessment.status === 'warning') {
+      return { level: assessment.level, displayText: levelLabel(assessment.level) }
     }
-    
-    // Fallback to legacy boolean system
-    if ((item as any)[allergen.id] === true) {
-      return {
-        level: 'contains',
-        severity: 'high',
-        displayText: t('containsShort'),
-        hasSubtypes: false
-      }
-    }
-    
-    return null
-  }
-
-  // Get cell content for a specific gluten or nut subtype
-  const getSubtypeCellContent = (item: MenuItem, subtypeKey: GlutenType | TreeNutType, isGluten: boolean) => {
-    if (item.allergen_warnings) {
-      const warnings = item.allergen_warnings
-      let level: AllergenLevel = 'none'
-      
-      if (isGluten && warnings.cereals_gluten_levels) {
-        level = warnings.cereals_gluten_levels[subtypeKey as GlutenType] || 'none'
-      } else if (!isGluten && warnings.nuts_levels) {
-        level = warnings.nuts_levels[subtypeKey as TreeNutType] || 'none'
-      }
-      
-      // If no specific level, check legacy contains flags
-      if (level === 'none') {
-        if (isGluten && (item as any).contains_cereals_gluten) {
-          level = 'contains'
-        } else if (!isGluten && (item as any).contains_nuts) {
-          level = 'contains'
-        }
-      }
-
-      if (level === 'none') return null
-
-      const severity = getAllergenSeverity(level)
-      const displayText = levelLabel(level)
-      
-      return {
-        level,
-        severity,
-        displayText
-      }
-    }
-    
-    // Fallback to legacy boolean system
-    if (isGluten && (item as any).contains_cereals_gluten) {
-      return {
-        level: 'contains',
-        severity: 'high',
-        displayText: t('containsShort')
-      }
-    } else if (!isGluten && (item as any).contains_nuts) {
-      return {
-        level: 'contains',
-        severity: 'high',
-        displayText: t('containsShort')
-      }
-    }
-    
-    return null
+    return { level: 'incomplete', displayText: t('kioskPortal.incompleteCell') }
   }
 
   const normalizeCategory = (category?: string | null) => {
@@ -423,9 +337,9 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                       </div>
                     </td>
                     {ALLERGENS.map(allergen => {
-                      const content = getCellContent(item, allergen)
+                      const content = getCellContent(item, { allergen: allergen.id as AllergenId })
                 
-                const renderCell = (key: string, cellContent: any, bgClass?: string) => {
+                const renderCell = (key: string, cellContent: ReturnType<typeof getCellContent>, bgClass?: string) => {
                   if (!cellContent) {
                     return (
                       <td 
@@ -462,6 +376,10 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                       bgColor = 'bg-amber-200'
                       textColor = 'text-amber-800'
                       break
+                    case 'incomplete':
+                      bgColor = 'bg-amber-50'
+                      textColor = 'text-amber-900'
+                      break
                     default:
                       bgColor = 'bg-gray-100'
                       textColor = 'text-gray-800'
@@ -492,7 +410,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                     >
                       <div className="flex flex-col items-center gap-0.5">
                         <span className={textColor}>{renderIcon()}</span>
-                        {!compact && (
+                        {(!compact || cellContent.level === 'incomplete') && (
                           <span className={`text-[9px] leading-tight font-medium ${textColor}`}>
                             {cellContent.displayText}
                           </span>
@@ -508,7 +426,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                     <React.Fragment key={allergen.id}>
                       {renderCell(allergen.id, content)}
                       {GLUTEN_TYPES.map(glutenType => {
-                        const subtypeContent = getSubtypeCellContent(item, glutenType.key, true)
+                        const subtypeContent = getCellContent(item, { allergen: 'cereals_gluten', subtype: glutenType.key })
                         return renderCell(`${allergen.id}-${glutenType.key}`, subtypeContent)
                       })}
                     </React.Fragment>
@@ -521,7 +439,7 @@ const AllergenTableView: React.FC<AllergenTableViewProps> = ({
                     <React.Fragment key={allergen.id}>
                       {renderCell(allergen.id, content)}
                       {TREE_NUT_TYPES.map(nutType => {
-                        const subtypeContent = getSubtypeCellContent(item, nutType.key, false)
+                        const subtypeContent = getCellContent(item, { allergen: 'nuts', subtype: nutType.key })
                         return renderCell(`${allergen.id}-${nutType.key}`, subtypeContent)
                       })}
                     </React.Fragment>
