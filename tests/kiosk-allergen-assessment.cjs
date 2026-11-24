@@ -13,10 +13,10 @@ function loader(mocks = {}) {
     const source = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
       compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022, esModuleInterop: true },
     }).outputText
-    new Function('exports', 'require', 'localStorage', 'window', 'document', 'fetch', source)(
+    new Function('exports', 'require', 'localStorage', 'window', 'document', 'fetch', 'FileReader', source)(
       exports,
       name => Object.hasOwn(mocks, name) ? mocks[name] : name.startsWith('@/') ? loadFile(name.slice(2) + '.ts') : require(name),
-      mocks.localStorage, mocks.window, mocks.document, mocks.fetch,
+      mocks.localStorage, mocks.window, mocks.document, mocks.fetch, mocks.FileReader,
     )
     return exports
   }
@@ -278,10 +278,22 @@ test('incomplete kiosk messages are available in all six languages', () => {
   }
 })
 
-test('downloadable guide identifies the particular allergen with incomplete information', async () => {
+test('downloadable guide identifies incomplete allergens and embeds the bundled AllyJen logo in its footer', async () => {
+  const branding = loader({
+    fetch: async url => {
+      assert.equal(url, '/allyjen-logo.png')
+      return new Response(fs.readFileSync('public/allyjen-logo.png'), { headers: { 'Content-Type': 'image/png' } })
+    },
+    FileReader: class {
+      async readAsDataURL(blob) {
+        this.result = `data:${blob.type};base64,${Buffer.from(await blob.arrayBuffer()).toString('base64')}`
+        this.onloadend()
+      }
+    },
+  })('lib/pdf/pdfBranding.ts')
   const { generateAllergenTablePDF } = loader({
     './menuItemSource': load('lib/pdf/menuItemSource.ts'),
-    './pdfBranding': { hexToRgb: () => [0, 56, 66], fetchAllyJenLogoDataUrl: async () => null, drawPageFooters: async () => {} },
+    './pdfBranding': branding,
   })('lib/pdf/allergenTablePDF.ts')
   const output = await generateAllergenTablePDF({
     business: { name: 'Café' }, outputMode: 'base64',
@@ -290,7 +302,18 @@ test('downloadable guide identifies the particular allergen with incomplete info
       { id: 'cake', name: 'Cake', itemType: 'menu_item', category: 'Lunch', allergen_warnings: { ...complete, nuts: 'traces' } },
     ],
   })
-  const { text } = await require('pdf-parse')(Buffer.from(output, 'base64'))
+  const bytes = Buffer.from(output, 'base64')
+  const { PDFDocument, PDFName, PDFDict, PDFNumber } = require('pdf-lib')
+  const pdf = await PDFDocument.load(bytes)
+  const [page] = pdf.getPages()
+  const images = page.node.Resources().lookup(PDFName.of('XObject'), PDFDict)
+  const [[imageName, imageRef]] = images.entries()
+  const { dict: image } = pdf.context.lookup(imageRef)
+  assert.equal(image.lookup(PDFName.of('Width'), PDFNumber).asNumber(), 512)
+  assert.equal(image.lookup(PDFName.of('Height'), PDFNumber).asNumber(), 512)
+  assert.equal(page.node.Contents().getContentsString().split(`${imageName} Do`).length - 1, 2, 'header and footer both draw the logo')
+
+  const { text } = await require('pdf-parse')(bytes)
   assert.match(text, /Incomplete allergen information\s*\(Eggs\).*Check\s+with staff/)
   assert.match(text, /Incomplete allergen information\s*\(Tree Nuts\)/)
   assert.ok(text.includes('?'))
@@ -308,7 +331,7 @@ test('downloadable guide identifies the particular allergen with incomplete info
     'Cake May contain: Tree Nuts Incomplete allergen information (Tree Nuts). Check with staff.',
     'Soup Incomplete allergen information (Eggs). Check with staff. ?',
   ]
-  assert.ok(extracted.endsWith(expected.join(' ')), extracted)
+  assert.ok(extracted.includes(expected.join(' ')), extracted)
   assert.equal(extracted.match(/\b(?:Cake|Soup)\b/g)?.length, 2)
   assert.doesNotMatch(text, /\u0000/)
 })
