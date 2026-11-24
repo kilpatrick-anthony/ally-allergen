@@ -1,12 +1,11 @@
 import { categoryFields } from '@/lib/item-category-tree'
-import { isIngredientAssessmentComplete } from '@/lib/allergen-assessment'
+import { ingredientAssessmentWarnings, isIngredientAssessmentComplete, mergeAllergenAssessments } from '@/lib/allergen-assessment'
 import { getJwtSecret } from '@/lib/auth'
 // app/api/ingredients/[id]/route.ts
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
-import { computeWorstCaseAllergens } from '@/types/allergen'
 import { recordAuditLog, diffRecordFields, INGREDIENT_AUDIT_FIELDS } from '@/lib/audit'
 import {
   buildCompleteSupplierProfiles,
@@ -276,7 +275,8 @@ export async function PUT(
 
           const { data: ingredientRows } = await supabase
             .from('ingredients')
-            .select('certifications, allergen_warnings')
+            .select('id, certifications, allergen_warnings, supplier_profiles, status')
+            .eq('business_id', userBusiness.business_id)
             .in('id', ingredientIds)
 
           if (!ingredientRows) return
@@ -304,18 +304,17 @@ export async function PUT(
           const combined = Array.from(new Set([...manualEntries, ...mergedCerts]))
 
           // Worst-case allergen merge: if any ingredient has an allergen, the menu item has it
-          const allergenProfiles = ingredientRows
-            .map((r: { allergen_warnings: Record<string, unknown> | null }) => r.allergen_warnings)
-            .filter((w): w is Record<string, unknown> => !!w)
-          const mergedAllergens = allergenProfiles.length > 0
-            ? computeWorstCaseAllergens(allergenProfiles as Parameters<typeof computeWorstCaseAllergens>[0])
-            : undefined
+          const ingredientsById = new Map(ingredientRows.map(row => [row.id, row]))
+          const mergedAllergens = mergeAllergenAssessments(ingredientIds.map(ingredientId => {
+            const row = ingredientsById.get(ingredientId)
+            return row && ingredientAssessmentWarnings(row)
+          }))
 
           await supabase
             .from('menu_items')
             .update({
               dietary: combined,
-              ...(mergedAllergens !== undefined && { allergen_warnings: mergedAllergens }),
+              allergen_warnings: mergedAllergens,
             })
             .eq('id', menuItemId)
         }))

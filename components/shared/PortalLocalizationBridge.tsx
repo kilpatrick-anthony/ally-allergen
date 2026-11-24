@@ -138,7 +138,9 @@ function buildLookup(language: LanguageCode): TranslationLookup {
 function preserveWhitespace(original: string, translated: string): string {
   const leading = original.match(/^\s*/)?.[0] || ''
   const trailing = original.match(/\s*$/)?.[0] || ''
-  return `${leading}${translated}${trailing}`
+  // Fragment translation may retain the original padding. Restore it once so
+  // the observer's own text change does not trigger an endless series of edits.
+  return `${leading}${translated.trim()}${trailing}`
 }
 
 function isWithinPortalScope(node: Node): boolean {
@@ -211,6 +213,7 @@ export default function PortalLocalizationBridge() {
       const current = textNode.data
       const metadata = textMetadata.get(textNode)
       const currentNormalized = normalize(current)
+      if (!currentNormalized) return
       const previousSource = metadata && currentNormalized === normalize(metadata.applied)
         ? metadata.source
         : undefined

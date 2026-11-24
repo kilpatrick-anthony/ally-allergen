@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { isAllergenAssessmentComplete, isIngredientAssessmentComplete, mergeAllergenAssessments } from '@/lib/allergen-assessment'
+import { allergenAnswerIssues, ingredientAssessmentIssues, ingredientAssessmentWarnings, mergeAllergenAssessments, type IngredientAssessmentIssue, type IngredientAssessmentSource } from '@/lib/allergen-assessment'
 import { getGuidePublication, locationAllergenContext, locationAllergenFailure, sourceFingerprint } from '@/lib/server/location-allergens'
 import type { MenuItem } from '@/lib/hooks/useOfflineKioskData'
 
-import type { AllergenWarnings } from '@/types/allergen'
+type AssessmentProblem = IngredientAssessmentIssue & { ingredientId?: string; ingredientName?: string }
+type DishAssessmentProblems = { id: string; name: string; problems: AssessmentProblem[] }
 
 function normalized(value: unknown): string {
   if (Array.isArray(value)) return '[' + value.map(normalized).join(',') + ']'
@@ -24,18 +25,36 @@ async function guideReview(context: Awaited<ReturnType<typeof locationAllergenCo
   if (error) throw error
   if (!data) return null
   const candidate = data as { fingerprint: string; items: (MenuItem & {
-    ingredient_assessments: { allergen_warnings: AllergenWarnings; status: string | null; supplier_profiles: unknown }[]
+    ingredient_assessments: (IngredientAssessmentSource & { id?: string | null; name?: string | null })[]
   })[] }
+  const incomplete: DishAssessmentProblems[] = []
   const items = candidate.items.map(({ ingredient_assessments, ...item }) => {
-    if (!ingredient_assessments.length) return item
-    const allergens = mergeAllergenAssessments(ingredient_assessments.map(source => source.allergen_warnings || {}))
-    if (ingredient_assessments.some(source =>
-      source.status !== 'active' || !isIngredientAssessmentComplete(source.allergen_warnings, source.supplier_profiles))) {
-      allergens.assessment_incomplete = true
+    const linked = ingredient_assessments.length > 0
+    const warnings = linked
+      ? mergeAllergenAssessments(ingredient_assessments.map(ingredientAssessmentWarnings))
+      : item.allergen_warnings
+    const problems: AssessmentProblem[] = linked
+      ? ingredient_assessments.flatMap<AssessmentProblem>(source => source.id === null
+        ? [{ kind: 'unavailable' as const }]
+        : ingredientAssessmentIssues(source).map(issue => ({
+          ...issue, ingredientId: source.id || undefined, ingredientName: source.name || undefined,
+        })))
+      : allergenAnswerIssues(warnings)
+    if (linked) {
+      for (const issue of allergenAnswerIssues(warnings)) {
+        if (!problems.some(problem => problem.kind === issue.kind && problem.allergen === issue.allergen)) {
+          // The rollup flag repeats the source failures already shown above.
+          if (issue.kind !== 'incomplete' || !problems.length) problems.push(issue)
+        }
+      }
     }
-    return { ...item, allergen_warnings: allergens }
+    if (problems.length) {
+      incomplete.push({ id: item.id, name: item.name, problems })
+      if (linked && warnings) warnings.assessment_incomplete = true
+    }
+    return { ...item, allergen_warnings: warnings }
   })
-  return { fingerprint: candidate.fingerprint, items }
+  return { fingerprint: candidate.fingerprint, items, incomplete }
 }
 
 export async function GET(_request: Request, { params }: Context) {
@@ -50,7 +69,7 @@ export async function GET(_request: Request, { params }: Context) {
       canApprove: context.role !== 'staff',
       fingerprint: candidate?.fingerprint ?? null,
       items,
-      incomplete: items.filter(item => !isAllergenAssessmentComplete(item.allergen_warnings)).map(item => item.name),
+      incomplete: candidate?.incomplete ?? [],
       publication: publication && { id: publication.id, publishedAt: publication.published_at },
       unpublishedChanges: Boolean(publication && normalized(publication.items) !== normalized(items)),
     }, { headers: { 'Cache-Control': 'private, no-store' } })
@@ -70,7 +89,7 @@ export async function POST(request: Request, { params }: Context) {
     if (!candidate || candidate.fingerprint !== input.data.fingerprint) {
       return NextResponse.json({ error: 'Menu changed. Reload it and review before publishing.' }, { status: 409 })
     }
-    if (candidate.items.some(item => !isAllergenAssessmentComplete(item.allergen_warnings))) {
+    if (candidate.incomplete.length > 0) {
       return NextResponse.json({ error: 'Complete the allergen assessment for each active menu item before publishing.' }, { status: 409 })
     }
     const { data, error } = await context.supabase.rpc('publish_site_allergens', {

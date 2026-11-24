@@ -92,6 +92,21 @@ function labelFixture() {
   return { input, source }
 }
 
+function multipleVariantLabelFixture() {
+  const { input, source } = labelFixture()
+  const secondVariant = {
+    ...source.variants[0].variant, id: uuid(60),
+    allergen_warnings: { ...completeReview().allergen_warnings, eggs: 'contains' },
+  }
+  source.variants.push({ variant: secondVariant, supplier: { id: uuid(61), name: 'Second Supplier' } })
+  source.specifications.push({
+    ...source.specifications[0], id: uuid(62), supplier_name: 'Second Supplier', file_name: 'Second specification.pdf',
+  })
+  input.ingredients += ', egg'
+  input.specifications.push({ sourceId: secondVariant.ingredient_id, documentId: uuid(62), variantId: secondVariant.id })
+  return { input, source }
+}
+
 test('approved in-store sandwich declaration has repeated allergen emphasis, separate precaution and actual PDF dimensions', async () => {
   const { buildPpdsLabel } = load('lib/server/ppds-labels.ts')
   const { input, source } = labelFixture()
@@ -124,16 +139,239 @@ test('PPDS blocks missing, mismatched, unverified or expired specifications and 
   assert.throws(() => buildPpdsLabel(source, { ...input, widthMm: 28, heightMm: 15 }), /overflows|too wide/)
 })
 
-test('Irish ingredient labels can preview and approve without UK PPDS answers', async () => {
+test('blank label dimensions use 50 × 30 mm and preserve the 20 × 15 mm minimum', () => {
+  const { ppdsLabelLayoutInput, ppdsLabelInput } = load('lib/ppds.ts')
+  const { input } = labelFixture()
+  const { widthMm, heightMm, specifications, recipeVerified, templateSuitable, ...layout } = input
+  assert.deepEqual(ppdsLabelLayoutInput.parse(layout), { ...layout, widthMm: 50, heightMm: 30 })
+  assert.deepEqual(ppdsLabelInput.parse({ ...input, widthMm: undefined, heightMm: undefined }), { ...input, widthMm: 50, heightMm: 30 })
+  assert.equal(ppdsLabelLayoutInput.safeParse({ ...layout, widthMm: 20, heightMm: 15 }).success, true)
+  assert.equal(ppdsLabelLayoutInput.safeParse({ ...layout, heightMm: 14 }).success, false)
+  assert.equal(ppdsLabelInput.safeParse({ ...input, areaCm2: undefined }).success, false)
+})
+
+test('a coconut milk variant identifies soy and the declaration emphasises it without treating coconut milk as dairy', () => {
+  const { labelIngredients, missingDeclaredAllergens, specificAllergens } = load('lib/ppds.ts')
+  const { ppdsReviewSources } = load('lib/server/ppds-labels.ts')
+  const { source } = labelFixture()
+  source.ingredients[0].ingredient.name = 'Coconut Milk'
+  const warnings = { ...completeReview().allergen_warnings, soybeans: 'contains' }
+  source.variants[0].variant.allergen_warnings = warnings
+  const variantNames = ppdsReviewSources(source)[0].variants[0].containedAllergens
+  assert.deepEqual(variantNames, ['soybeans'])
+  assert.deepEqual(missingDeclaredAllergens('Coconut milk, matcha', variantNames), ['soybeans'])
+  assert.deepEqual(missingDeclaredAllergens('Coconut milk (soya lecithin), matcha', variantNames), [])
+  const declaration = 'Coconut milk (soya lecithin), matcha'
+  assert.deepEqual(labelIngredients(declaration, specificAllergens(warnings)).filter(run => run.bold).map(run => run.text), ['soya'])
+  assert.throws(() => labelIngredients('Coconut milk, goat milk', specificAllergens(warnings)), /Name soybeans/)
+  assert.throws(() => labelIngredients('Coconut milk (soy), goat milk', specificAllergens(warnings)), /Check the declaration for milk/)
+  assert.throws(() => labelIngredients(declaration, specificAllergens({ ...warnings, milk: 'contains' })), /Name milk/)
+  assert.deepEqual(labelIngredients(declaration + ', skimmed milk', specificAllergens({ ...warnings, milk: 'contains' }))
+    .filter(run => run.bold).map(run => run.text), ['soya', 'milk'])
+})
+
+test('one label validates and highlights allergens from all selected variants of one ingredient', () => {
+  const { buildPpdsLabel, ppdsReviewSources } = load('lib/server/ppds-labels.ts')
+  const { input, source } = multipleVariantLabelFixture()
+  const [first, second] = input.specifications
+  assert.deepEqual(ppdsReviewSources(source)[0].variants.map(variant => variant.documentIds), [[first.documentId], [second.documentId]])
+  const { label } = buildPpdsLabel(source, input)
+  assert.deepEqual(label.input.specifications, [first, second])
+  assert.deepEqual(label.rendered.ingredients.filter(run => run.bold).map(run => run.text), ['wheat', 'milk', 'wheat', 'milk', 'egg'])
+  assert.throws(() => buildPpdsLabel(source, { ...input, ingredients: input.ingredients.replace(', egg', '') }), /Name eggs/)
+  assert.throws(() => buildPpdsLabel(source, { ...input, specifications: [first, first] }), /one current specification per supplier variant/)
+  assert.throws(() => buildPpdsLabel(source, {
+    ...input, specifications: [first, { ...second, documentId: first.documentId }],
+  }), /matching specification/)
+  const expired = { ...source, specifications: [source.specifications[0], { ...source.specifications[1], next_review_date: '2000-01-01' }] }
+  assert.throws(() => buildPpdsLabel(expired, input), /review date/)
+})
+
+test('a single allergen name cannot substitute for the ingredients list of a multi-ingredient recipe', () => {
+  const { buildPpdsLabel } = load('lib/server/ppds-labels.ts')
   const { input, source } = labelFixture()
+  const neutralWarnings = completeReview().allergen_warnings
+  const coconut = source.ingredients[0].ingredient
+  const matcha = { ...coconut, id: uuid(65), name: 'Matcha', allergen_warnings: neutralWarnings }
+  source.ingredients.push({ ingredient: matcha, link: {} })
+  source.recipeLinkCount = 2
+  source.variants[0].variant.allergen_warnings = { ...neutralWarnings, soybeans: 'contains' }
+  source.specifications.push({ ...source.specifications[0], id: uuid(66), ingredient_id: matcha.id })
+  input.specifications.push({ sourceId: matcha.id, documentId: uuid(66), variantId: null })
+  input.precaution = ''
+  assert.throws(() => buildPpdsLabel(source, { ...input, ingredients: 'soybeans' }), /Enter the full recipe/)
+  assert.throws(() => buildPpdsLabel(source, { ...input, ingredients: 'Soybeans.' }), /Enter the full recipe/)
+  assert.throws(() => buildPpdsLabel(source, { ...input, ingredients: 'Coconut milk, matcha. Contains: soybeans' }), /within the ingredients list/)
+  const { label } = buildPpdsLabel(source, { ...input, ingredients: 'Coconut milk (soya lecithin), matcha' })
+  assert.deepEqual(label.rendered.ingredients.filter(run => run.bold).map(run => run.text), ['soya'])
+})
+
+test('the allergen-only label uses the selected variants without ingredient text or datasheet dates', async () => {
+  const { buildLooseFoodAllergenLabel } = load('lib/server/ppds-labels.ts')
+  const { makeLooseFoodAllergenLabelPdf } = load('lib/pdf/loose-food-allergen-label.ts')
+  const { source, input } = multipleVariantLabelFixture()
+  source.item.name = 'Matcha Latte (w/Coconut Milk)'
+  source.item.ingredient_declaration = null
+  source.specifications = []
+  source.variants[0].variant.allergen_warnings = {
+    ...completeReview().allergen_warnings, soybeans: 'contains', sesame: 'may_contain', mustard: 'may_contain',
+  }
+  const [first, second] = input.specifications.map(({ sourceId, variantId }) => ({ sourceId, variantId }))
+  const label = buildLooseFoodAllergenLabel(source, [first])
+  assert.deepEqual(label.contains, ['soybeans'])
+  assert.deepEqual(label.precautions, [{
+    text: 'May contain mustard, sesame seeds',
+    runs: [
+      { text: 'May contain ', bold: false },
+      { text: 'mustard', bold: true },
+      { text: ', ', bold: false },
+      { text: 'sesame seeds', bold: true },
+    ],
+  }])
+  assert.deepEqual(buildLooseFoodAllergenLabel(source, [first, second]).contains, ['soybeans', 'eggs'])
+  const generatedAt = new Date('2026-11-22T16:08:00Z')
+  const file = Buffer.from(makeLooseFoodAllergenLabelPdf(label, generatedAt).output('arraybuffer'))
+  assert.ok(file.toString().includes('Contains soybeans'))
+  assert.ok(file.toString().includes('(Allergens)'))
+  assert.ok(file.toString().includes('(Precautionary warnings)'))
+  assert.equal((file.toString().match(/^S$/gm) ?? []).length, 4)
+  assert.match(file.toString(), /\(allyjen\.ie\)/)
+  assert.match(file.toString(), /\/URI \(https:\/\/allyjen\.ie\)/)
+  assert.match(file.toString(), /Generated 22 Nov 2026, 16:08 GMT/)
+  assert.doesNotMatch(file.toString(), /\(Notes\)/)
+  assert.ok(file.toString().includes('For food served loose or prepared to order'))
+  const pdf = await PDFDocument.load(file)
+  assert.equal(pdf.getPageCount(), 1)
+  assert.equal(pdf.getCreationDate().toISOString(), generatedAt.toISOString())
+  assert.ok(Math.abs(pdf.getPage(0).getWidth() * 25.4 / 72 - 80) < 0.001)
+  assert.throws(() => buildLooseFoodAllergenLabel(source, []), /Select the supplier variants/)
+  assert.throws(() => buildLooseFoodAllergenLabel(source, [{ ...first, sourceId: uuid(75) }]), /from this recipe/)
+  source.variants[0].variant.assessment_status = 'needs_review'
+  assert.throws(() => buildLooseFoodAllergenLabel(source, [first]), /Complete the selected variant assessments/)
+  const confirmedVariantIds = [first.variantId]
+  assert.deepEqual(buildLooseFoodAllergenLabel(source, [first], { confirmedVariantIds }).contains, ['soybeans'])
+  const assessment = source.variants[0].variant.allergen_warnings
+  source.variants[0].variant.allergen_warnings = { soybeans: 'contains' }
+  assert.throws(() => buildLooseFoodAllergenLabel(source, [first], { confirmedVariantIds }), /Complete the selected variant assessments/)
+  source.variants[0].variant.allergen_warnings = assessment
+  source.variants[0].variant.assessment_status = 'assessed'
+  source.variants[0].variant.allergen_warnings.nuts = 'contains'
+  assert.throws(() => buildLooseFoodAllergenLabel(source, [first]), /specific cereal or tree nut/)
+  source.item.item_type = 'packaged_product'
+  assert.throws(() => buildLooseFoodAllergenLabel(source, [second]), /food served loose/)
+})
+
+test('loose labels can show recipe ingredients with inline emphasis and separate subtype precautions', () => {
+  const { buildLooseFoodAllergenLabel } = load('lib/server/ppds-labels.ts')
+  const { makeLooseFoodAllergenLabelPdf } = load('lib/pdf/loose-food-allergen-label.ts')
+  const { source, input } = labelFixture()
+  const neutral = completeReview().allergen_warnings
+  source.ingredients[0].ingredient.name = 'Oat Milk'
+  source.variants[0].variant.allergen_warnings = {
+    ...neutral, cereals_gluten: 'contains', cereals_gluten_levels: { oats: 'contains', barley: 'may_contain' },
+    nuts: 'traces', nuts_levels: { brazil_nuts: 'traces' }, eggs: 'not_suitable',
+  }
+  const matcha = { ...source.ingredients[0].ingredient, id: uuid(70), name: 'PerfectTed Matcha Powder', allergen_warnings: neutral }
+  source.ingredients.push({ ingredient: matcha, link: {} })
+  source.recipeLinkCount = 2
+  const [{ sourceId, variantId }] = input.specifications
+  const selections = [{ sourceId, variantId }]
+  const label = buildLooseFoodAllergenLabel(source, selections, { ingredients: 'Oat milk (water, oats), PerfectTed Matcha Powder' })
+  assert.deepEqual(label.ingredients.filter(run => run.bold).map(run => run.text), ['Oat', 'oats'])
+  assert.deepEqual(label.precautions.map(({ text, runs }) => [text, runs.filter(run => run.bold).map(run => run.text)]), [
+    ['May contain barley', ['barley']],
+    ['Not suitable for eggs allergy', ['eggs']],
+    ['May contain traces of Brazil nuts', ['Brazil nuts']],
+  ])
+  const raw = makeLooseFoodAllergenLabelPdf(label).output()
+  assert.match(raw, /\(Allergens in bold\)/)
+  assert.doesNotMatch(raw, /\(Allergens\)/)
+  assert.match(raw, /\(Ingredients:\)/)
+  assert.match(raw, /\(Matcha\)/)
+  assert.match(raw, /\/F2 11 Tf[\s\S]*?\(oats\)/)
+  const textBlocks = raw.split('\nET')
+  for (const word of ['barley', 'eggs', 'Brazil', 'nuts']) {
+    assert.match(textBlocks.find(block => block.includes(`(${word}) Tj`)) ?? '', /\/F2 11 Tf/)
+  }
+  for (const word of ['May', 'allergy', 'traces']) {
+    assert.match(textBlocks.find(block => block.includes(`(${word}) Tj`)) ?? '', /\/F1 11 Tf/)
+  }
+  assert.doesNotMatch(raw, /Contains oats/)
+  assert.throws(() => buildLooseFoodAllergenLabel(source, selections, { ingredients: 'PerfectTed Matcha Powder' }), /Name oats/)
+})
+
+test('the optional recipe list adds contained allergens to the right ingredients automatically', () => {
+  const { buildLooseFoodAllergenLabel } = load('lib/server/ppds-labels.ts')
+  const { source, input } = labelFixture()
+  const neutral = completeReview().allergen_warnings
+  const coconut = source.ingredients[0].ingredient
+  coconut.name = 'Coconut Milk'
+  source.variants[0].variant.allergen_warnings = { ...neutral, soybeans: 'contains' }
+  const matcha = { ...coconut, id: uuid(71), name: 'PerfectTed Matcha Powder', allergen_warnings: neutral }
+  source.ingredients.push({ ingredient: matcha, link: {} })
+  source.recipeLinkCount = 2
+  const [{ sourceId, variantId }] = input.specifications
+  const selections = [{ sourceId, variantId }]
+  const ingredientEntries = [
+    { sourceId: matcha.id, description: matcha.name },
+    { sourceId: coconut.id, description: coconut.name },
+  ]
+  const { ingredients } = buildLooseFoodAllergenLabel(source, selections, { ingredientEntries })
+  assert.equal(ingredients.map(run => run.text).join(''), 'PerfectTed Matcha Powder, Coconut Milk (contains soybeans)')
+  assert.deepEqual(ingredients.filter(run => run.bold).map(run => run.text), ['soybeans'])
+  ingredientEntries[1].description = 'Coconut milk (soya lecithin)'
+  const named = buildLooseFoodAllergenLabel(source, selections, { ingredientEntries }).ingredients
+  assert.equal(named.map(run => run.text).join(''), 'PerfectTed Matcha Powder, Coconut milk (soya lecithin)')
+  assert.deepEqual(named.filter(run => run.bold).map(run => run.text), ['soya'])
+  assert.throws(() => buildLooseFoodAllergenLabel(source, selections, { ingredientEntries: [ingredientEntries[0]] }),
+    /Include each recipe ingredient once/)
+})
+
+test('a recipe label only requires allergen assessments for its selected sources', () => {
+  const { buildPpdsLabel } = load('lib/server/ppds-labels.ts')
+  const { input, source } = multipleVariantLabelFixture()
+  source.item.allergen_warnings = { assessment_incomplete: true }
+  source.ingredients[0].ingredient.allergen_warnings = { assessment_incomplete: true }
+  source.variants[1].variant.assessment_status = 'needs_review'
+
+  const [verified, awaitingReview] = input.specifications
+  const verifiedRecipe = { ...input, ingredients: input.ingredients.replace(', egg', ''), specifications: [verified] }
+  assert.doesNotThrow(() => buildPpdsLabel(source, verifiedRecipe))
+  assert.throws(() => buildPpdsLabel(source, { ...input, specifications: [verified, awaitingReview] }), /assessed supplier variant/)
+
+  source.variants = []
+  assert.throws(() => buildPpdsLabel(source, { ...verifiedRecipe, specifications: [{ ...verified, variantId: null }] }), /Complete the allergen assessment/)
+})
+
+test('bought-in products still require an assessment for the product itself', () => {
+  const { buildPpdsLabel } = load('lib/server/ppds-labels.ts')
+  const { input, source } = labelFixture()
+  const product = {
+    ...source,
+    item: { ...source.item, ingredient_declaration: input.ingredients },
+    directSupplier: source.variants[0].supplier,
+    recipeLinkCount: 0,
+    ingredients: [],
+    variants: [],
+    specifications: [{ ...source.specifications[0], ingredient_id: null, menu_item_id: source.item.id }],
+  }
+  const label = { ...input, specifications: [{ sourceId: product.item.id, documentId: product.specifications[0].id, variantId: null }] }
+  assert.doesNotThrow(() => buildPpdsLabel(product, label))
+  product.item.allergen_warnings = { assessment_incomplete: true }
+  assert.throws(() => buildPpdsLabel(product, label), /Complete the bought-in product’s allergen assessment/)
+})
+
+test('label routes apply the correct classification and approval rules for Irish and UK locations', async () => {
+  const { input, source } = multipleVariantLabelFixture()
   const fingerprint = 'a'.repeat(32)
   const revisionId = uuid(45)
   const saved = []
+  let current
   const query = {
     select() { return this },
     eq() { return this },
     order() { return this },
-    limit: async () => ({ data: [], error: null }),
+    limit: async () => ({ data: current ? [current] : [], error: null }),
   }
   const actor = {
     site: { id: uuid(46), jurisdiction: 'IE' },
@@ -142,6 +380,7 @@ test('Irish ingredient labels can preview and approve without UK PPDS answers', 
       rpc: async (name, args) => {
         if (name === 'review_site_ppds_source') return { data: { source, fingerprint }, error: null }
         saved.push(args)
+        current = { id: revisionId, source_fingerprint: fingerprint, label: args.p_label, classification: args.p_classification }
         return { data: revisionId, error: null }
       },
       from: () => query,
@@ -156,10 +395,56 @@ test('Irish ingredient labels can preview and approve without UK PPDS answers', 
       sourceFingerprint: require('zod').z.string().regex(/^[0-9a-f]{32}$/),
     },
   })('app/api/sites/[slug]/ppds/route.ts')
-  const post = intent => route.POST(new Request('https://example.test/api/sites/dublin/ppds', {
+  const siteSlug = () => actor.site.jurisdiction === 'IE' ? 'dublin' : 'belfast'
+  const post = (intent, fields = { label: input }) => route.POST(new Request(`https://example.test/api/sites/${siteSlug()}/ppds`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ itemId: uuid(40), expected: fingerprint, previous: null, intent, label: input }),
+    body: JSON.stringify({ itemId: uuid(40), expected: fingerprint, previous: null, intent, ...fields }),
+  }), { params: Promise.resolve({ slug: siteSlug() }) })
+
+  const { foodName, ingredients, precaution, areaCm2, widthMm, heightMm } = input
+  const layout = { foodName, ingredients, precaution, areaCm2, widthMm, heightMm }
+  const loose = (confirmedLooseFood, fields = {}) => route.POST(new Request('https://example.test/api/sites/dublin/ppds', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      itemId: uuid(40), expected: fingerprint, intent: 'download-loose-label', confirmedLooseFood,
+      selections: input.specifications.map(({ sourceId, variantId }) => ({ sourceId, variantId })),
+      ...fields,
+    }),
   }), { params: Promise.resolve({ slug: 'dublin' }) })
+  assert.equal((await loose(false)).status, 400)
+  const looseDownload = await loose(true)
+  assert.equal(looseDownload.status, 200)
+  assert.equal(looseDownload.headers.get('content-type'), 'application/pdf')
+  const withIngredients = await loose(true, { ingredients })
+  assert.equal(withIngredients.status, 200)
+  assert.match(withIngredients.headers.get('content-disposition'), /allergen-and-ingredients-label\.pdf/)
+  const withEntries = await loose(true, { ingredientEntries: [{ sourceId: input.specifications[0].sourceId, description: 'Sandwich mix' }] })
+  assert.equal(withEntries.status, 200)
+  assert.match(Buffer.from(await withEntries.arrayBuffer()).toString(), /\(wheat/)
+  const withNotes = await loose(true, { notes: 'Serve chilled.\r\nAsk for a lid.' })
+  assert.equal(withNotes.status, 200)
+  const notesPdf = Buffer.from(await withNotes.arrayBuffer()).toString()
+  assert.match(notesPdf, /\(Notes\)[\s\S]*\(Serve chilled\.\)[\s\S]*\(Ask for a lid\.\)/)
+  assert.equal((notesPdf.match(/^S$/gm) ?? []).length, 5)
+  assert.equal((await loose(true, { notes: 'x'.repeat(401) })).status, 400)
+  assert.equal(saved.length, 0)
+  const reviewDate = source.specifications[1].next_review_date
+  source.specifications[1].next_review_date = null
+  const draft = await post('preview-layout', { layout })
+  assert.equal(draft.status, 200)
+  assert.deepEqual((await draft.json()).label.ingredients, [{ text: ingredients, bold: false }])
+  const emptyDraft = await post('preview-layout', { layout: { ...layout, ingredients: '' } })
+  assert.equal(emptyDraft.status, 200)
+  const selections = input.specifications.slice(0, 1).map(({ sourceId, variantId }) => ({ sourceId, variantId }))
+  const draftWithSources = await post('preview-layout', { layout, selections })
+  assert.equal(draftWithSources.status, 200)
+  assert.deepEqual((await draftWithSources.json()).label.ingredients.filter(run => run.bold).map(run => run.text),
+    ['wheat', 'milk', 'wheat', 'milk'])
+  assert.equal((await post('preview-layout', { layout: { ...layout, widthMm: 25, heightMm: 15 } })).status, 409)
+  assert.equal((await post('approve', { layout })).status, 400)
+  assert.equal((await post('approve')).status, 409)
+  assert.equal(saved.length, 0)
+  source.specifications[1].next_review_date = reviewDate
 
   const preview = await post('preview')
   assert.equal(preview.status, 200)
@@ -168,7 +453,80 @@ test('Irish ingredient labels can preview and approve without UK PPDS answers', 
   assert.equal(approved.status, 200)
   assert.equal(saved[0].p_classification, 'ingredient_label')
   assert.deepEqual(saved[0].p_answers, {})
-  assert.ok(saved[0].p_label)
+  assert.deepEqual(saved[0].p_label.input.specifications, input.specifications)
+
+  const print = () => route.GET(new Request(`https://example.test/api/sites/${siteSlug()}/ppds?item=${uuid(40)}&print=${revisionId}`), {
+    params: Promise.resolve({ slug: siteSlug() }),
+  })
+  const download = await print()
+  assert.equal(download.status, 200)
+  assert.equal(download.headers.get('content-type'), 'application/pdf')
+  assert.equal((await PDFDocument.load(await download.arrayBuffer())).getPageCount(), 1)
+  source.specifications[1].next_review_date = '2000-01-01'
+  assert.equal((await print()).status, 409)
+
+  actor.site.jurisdiction = 'NI'
+  current = undefined
+  source.specifications[1].next_review_date = reviewDate
+  assert.equal((await post('preview')).status, 400)
+  assert.equal((await post('approve', { label: input, answers: { ...sameCafe, timing: 'after_choice' } })).status, 400)
+  assert.equal((await post('preview', { label: input, answers: sameCafe })).status, 200)
+  assert.equal((await post('approve', { label: input, answers: sameCafe })).status, 200)
+  assert.equal(saved[1].p_classification, 'ppds')
+  assert.deepEqual(saved[1].p_answers, sameCafe)
+  const ppdsDownload = await print()
+  assert.equal(ppdsDownload.status, 200)
+  assert.match(ppdsDownload.headers.get('content-disposition'), /ppds-.*\.pdf/)
+  assert.equal((await PDFDocument.load(await ppdsDownload.arrayBuffer())).getPageCount(), 1)
+})
+
+test('label review reads the current revision first and loads history separately', async () => {
+  const fingerprint = 'b'.repeat(32)
+  const selectedColumns = []
+  const query = {
+    select(columns) { selectedColumns.push(columns); return this },
+    eq() { return this },
+    order() { return this },
+    limit: async () => ({ data: [], error: null }),
+  }
+  const source = {
+    item: { id: uuid(50), name: 'Oat bar', allergen_warnings: {} },
+    directSupplier: null,
+    recipeLinkCount: 0,
+    ingredients: [],
+    variants: [],
+    specifications: [],
+  }
+  const actor = {
+    site: { id: uuid(51), jurisdiction: 'IE' },
+    businessId: uuid(52), userId: uuid(53), role: 'manager',
+    supabase: {
+      rpc: async () => ({ data: { source, fingerprint }, error: null }),
+      from: () => query,
+    },
+  }
+  const route = loader({
+    'next/server': { NextResponse: Response },
+    '@/lib/server/quick-add': { QuickAddError: class QuickAddError extends Error {} },
+    '@/lib/server/location-allergens': {
+      locationAllergenContext: async () => actor,
+      locationAllergenFailure: error => Response.json({ error: error.message }, { status: 500 }),
+      sourceFingerprint: require('zod').z.string().regex(/^[0-9a-f]{32}$/),
+    },
+  })('app/api/sites/[slug]/ppds/route.ts')
+  const params = { params: Promise.resolve({ slug: 'dublin' }) }
+
+  const review = await route.GET(new Request(`https://example.test/api/sites/dublin/ppds?item=${uuid(50)}`), params)
+  assert.equal(review.status, 200)
+  const reviewData = await review.json()
+  assert.deepEqual(reviewData.history, [])
+  assert.equal(reviewData.canApprove, true)
+  assert.deepEqual(selectedColumns, ['id,classification,answers,label,source_fingerprint,source,recorded_at,recorded_by'])
+
+  const history = await route.GET(new Request(`https://example.test/api/sites/dublin/ppds?item=${uuid(50)}&history=true`), params)
+  assert.equal(history.status, 200)
+  assert.deepEqual((await history.json()).history, [])
+  assert.deepEqual(selectedColumns[1], 'id,classification,label,source,recorded_at,recorded_by')
 })
 
 module.exports = { loader, labelFixture }

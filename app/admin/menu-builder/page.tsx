@@ -7,6 +7,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { ManagementListHeader } from '@/components/admin/ManagementListHeader'
 import { listContextHref } from '@/lib/list-navigation'
+import { ItemLabelLink } from '@/components/admin/ItemLabelLink'
 import { useNotification } from '@/lib/hooks/useNotification'
 import { useTranslation } from '@/lib/hooks/useTranslation'
 import { Plus, Search, Trash2, Edit, ChefHat, FilterIcon, ChevronDown, SortAsc, SortDesc, Grid, List, Package, MapPin, Eye, Building, Copy } from 'lucide-react'
@@ -489,6 +490,7 @@ export default function MenuBuilderPage() {
                     {item.ingredients.length} {t('admin.ingredientCountLabel')}
                   </span>
                   <div className="flex items-center gap-1">
+                    <ItemLabelLink kind="menu-item" id={item.id} />
                     <Link href={listContextHref(`/admin/menu-builder/${item.id}`, menuListReturnPath)}>
                       <Button variant="ghost" size="sm" icon={<Eye className="h-4 w-4" />} title={t('admin.view')} />
                     </Link>
@@ -570,6 +572,7 @@ export default function MenuBuilderPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <ItemLabelLink kind="menu-item" id={item.id} />
                         <Link href={listContextHref(`/admin/menu-builder/${item.id}`, menuListReturnPath)}>
                           <Button variant="ghost" size="sm" icon={<Eye className="h-4 w-4" />} title={t('admin.view')} />
                         </Link>

@@ -6,6 +6,7 @@ const { createReviewDb, completeReview, uuid } = require('./helpers/quick-add-re
 const uk = uuid(10), ireland = uuid(5), business = uuid(1), supplier = uuid(6), staff = uuid(3), manager = uuid(4)
 const sharedItem = uuid(11), irishItem = uuid(12), ukItem = uuid(13), ingredient = uuid(14), spec = uuid(15)
 const migration = 'supabase/migrations/20261120133040_uk_locations_allergen_publications_and_ppds.sql'
+const guideSourceMigration = 'supabase/migrations/20261124211135_guide_assessment_source_details.sql'
 const labelMigration = 'supabase/migrations/20261120143800_optional_ingredient_labels_for_all_locations.sql'
 
 async function setup() {
@@ -21,6 +22,7 @@ async function setup() {
     alter table datasheets add column if not exists version text;`)
   await db.exec(fs.readFileSync(migration, 'utf8'))
   await db.exec(fs.readFileSync(labelMigration, 'utf8'))
+  await db.exec(fs.readFileSync(guideSourceMigration, 'utf8'))
   await db.query("insert into sites(id, business_id, name, jurisdiction) values ($1,$2,'Belfast','NI')", [uk, business])
   const warnings = JSON.stringify(completeReview().allergen_warnings)
   await db.query(`insert into menu_items(id,business_id,name,category,is_active,site_id,allergen_warnings,item_type)
@@ -51,6 +53,9 @@ test('legacy Irish locations default to IE and location publication stays scoped
     const ni = await value(db, 'select review_site_allergens($1,$2) result', [uk, business])
     assert.deepEqual(ie.items.map(i => i.id), [sharedItem, irishItem])
     assert.deepEqual(ni.items.map(i => i.id), [sharedItem, ukItem])
+    const [source] = ni.items.find(item => item.id === ukItem).ingredient_assessments
+    assert.equal(source.id, ingredient)
+    assert.equal(source.name, 'Bread')
     assert.equal(await value(db, 'select review_site_allergens($1,$2) result', [uk, uuid(2)]), null)
     const publication = 'select publish_site_allergens($1,$2,$3,$4,$5::jsonb) result'
     await assert.rejects(value(db, publication, [uk, business, staff, ni.fingerprint, JSON.stringify(ni.items)]), /permission/i)

@@ -1,6 +1,7 @@
 // app/layout.tsx
 import type { Metadata } from "next";
-import { Atkinson_Hyperlegible, Arsenal, Inter, Nunito } from "next/font/google";
+import { Atkinson_Hyperlegible, Arsenal, Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import AccessibilityPanel from "@/components/shared/AccessibilityPanel";
@@ -32,9 +33,9 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-const nunito = Nunito({
-  weight: ["400", "600", "700", "800"],
-  subsets: ["latin"],
+const nunito = localFont({
+  src: "./fonts/Nunito-variable.woff2",
+  weight: "400 800",
   display: "swap",
   variable: "--font-nunito",
 });

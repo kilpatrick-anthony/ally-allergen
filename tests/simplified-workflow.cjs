@@ -71,6 +71,114 @@ test('generated allergen PDF includes bought-in supplier and brand without addin
   assert.match(parsed.text, /Supplier: Rio Supplier/); assert.match(parsed.text, /Brand: Rio Brand/)
   assert.match(parsed.text, /Ingredients: Yoghurt, Berries/)
   assert.doesNotMatch(parsed.text, /Hidden Supplier|Hidden Brand/)
+  for (const detail of ['Supplier: Rio Supplier', 'Brand: Rio Brand', 'Ingredients: Yoghurt, Berries']) {
+    assert.equal(parsed.text.split(detail).length - 1, 1, detail)
+  }
+})
+
+test('the guide wraps long item details across A4 pages without repeating or dropping text', async () => {
+  const { generateAllergenTablePDF } = load('lib/pdf/allergenTablePDF.ts', {
+    './pdfBranding': { hexToRgb: () => [0,56,66], fetchAllyJenLogoDataUrl: async () => null, drawPageFooters: async () => {} },
+  })
+  const { ALLERGEN_LIST } = load('types/allergen.ts')
+  const warnings = Object.fromEntries(ALLERGEN_LIST.map(({ id }) => [id, 'none']))
+  const { eggs: _eggs, ...missingEggs } = warnings
+  const supplier = Array.from({ length: 65 }, (_, index) => `Regional Produce Office ${String(index + 1).padStart(2, '0')}`).join(' ')
+  const name = 'Baked seasonal chocolate cake with a very long name for the printed menu'
+  const fillers = Array.from({ length: 24 }, (_, index) => ({
+    id: `dish-${index}`, name: `Prepared dish ${index + 1}`, category: 'Lunch', allergen_warnings: warnings,
+  }))
+  const output = await generateAllergenTablePDF({
+    business: { name: 'Rio' }, outputMode: 'base64',
+    items: [
+      { id: 'starter', name: 'Appetiser', category: 'Lunch', allergen_warnings: warnings },
+      { id: 'cake', name, category: 'Lunch', item_type: 'packaged_product', supplier_name: supplier, manufacturer: 'Valley Bakes',
+        allergen_warnings: { ...missingEggs, milk: 'contains', nuts: 'traces' } },
+      ...fillers,
+    ],
+  })
+  const bytes = Buffer.from(output, 'base64')
+  const { numpages, text } = await require('pdf-parse')(bytes)
+  assert.ok(numpages >= 3)
+  assert.ok((text.match(/\?/g)?.length ?? 0) >= 2, 'each fragment of the long row shows the missing-answer marker')
+  assert.equal(text.split('\n').filter(line => line === 'Item').length, numpages)
+  for (const label of ['Gluten', 'Crustaceans']) {
+    assert.equal(text.split(label).length - 1, numpages, label)
+  }
+
+  // Repeated headers can occur between continuation lines of the supplier name.
+  const extracted = text.replace(/\s+/g, ' ')
+  const markers = ['Appetiser', name, 'Supplier: Regional Produce Office 01', 'Regional Produce Office 65',
+    'Brand: Valley Bakes', 'Contains: Milk', 'May contain: Tree Nuts', 'Prepared dish 24']
+  let previous = -1
+  for (const marker of markers) {
+    const index = extracted.indexOf(marker)
+    assert.ok(index > previous, marker)
+    assert.equal(extracted.lastIndexOf(marker), index, marker)
+    previous = index
+  }
+
+  const { PDFDocument } = require('pdf-lib')
+  const pdf = await PDFDocument.load(bytes)
+  assert.equal(pdf.getPageCount(), numpages)
+  for (const page of pdf.getPages()) {
+    const { width, height } = page.getSize()
+    assert.ok(Math.abs(width - 841.89) < 0.1 && Math.abs(height - 595.28) < 0.1)
+  }
+})
+
+test('the Menu Items Report leaves space for the legend and keeps the footer logo clear', async () => {
+  const { jsPDF } = require('jspdf')
+  const { autoTable } = require('jspdf-autotable')
+  const branding = load('lib/pdf/pdfBranding.ts')
+  const bundledLogo = `data:image/png;base64,${fs.readFileSync('public/allyjen-logo.png').toString('base64')}`
+  const rowGaps = []
+  let legendRight = 0
+  let footerLogo
+  let output
+
+  const { generateMenuItemsReportPDF } = load('lib/pdf/menuItemsReportPDF.ts', {
+    './pdfBranding': { ...branding, fetchAllyJenLogoDataUrl: async () => bundledLogo },
+    jspdf: function () {
+      const doc = new jsPDF()
+      const { text, addImage } = doc
+      doc.text = (value, x, ...args) => {
+        if (value === 'Not present') legendRight = x + doc.getTextWidth(value)
+        return text.call(doc, value, x, ...args)
+      }
+      doc.addImage = (image, format, x, y, width, height) => {
+        if (y > doc.internal.pageSize.getHeight() / 2) footerLogo = { x, width, height }
+        return addImage.call(doc, image, format, x, y, width, height)
+      }
+      doc.save = () => { output = Buffer.from(doc.output('arraybuffer')) }
+      return doc
+    },
+    'jspdf-autotable': (doc, options) => autoTable(doc, {
+      ...options,
+      didDrawPage: ({ cursor }) => {
+        const legendTop = doc.internal.pageSize.getHeight() - 28
+        rowGaps.push(legendTop - cursor.y)
+      },
+    }),
+  })
+
+  await generateMenuItemsReportPDF({
+    business: { id: 'fixture', name: 'AllyJen Footer Check' },
+    menuItems: Array.from({ length: 49 }, (_, i) => ({
+      name: `Menu item ${i + 1}`, category: 'Lunch', description: 'Prepared for the lunch menu', is_active: true,
+    })),
+  })
+
+  const { numpages, text } = await require('pdf-parse')(output)
+  assert.equal(numpages, 2)
+  assert.equal(rowGaps.length, numpages)
+  assert.ok(rowGaps.every(gap => gap >= 3.99), `Table to legend gaps in mm: ${rowGaps.join(', ')}`)
+  assert.ok(rowGaps.some(gap => gap < 8), 'fixture fills at least one page nearly to the footer')
+  assert.ok(footerLogo && footerLogo.x > legendRight)
+  assert.equal(footerLogo.width, footerLogo.height)
+  for (const label of ['Contains (high severity)', 'May contain / Traces / Cross-contamination', 'Not present', 'Page 1 of 2', 'Page 2 of 2']) {
+    assert.ok(text.includes(label), label)
+  }
 })
 
 test('all workflow messages are available in all supported languages', () => {

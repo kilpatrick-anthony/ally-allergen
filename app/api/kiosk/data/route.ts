@@ -1,7 +1,10 @@
+import { ingredientAssessmentWarnings, mergeAllergenAssessments, retainRecordedAllergenWarnings, type IngredientAssessmentSource } from '@/lib/allergen-assessment'
 import { isJurisdiction } from '@/lib/location-jurisdiction'
 import { getGuidePublication } from '@/lib/server/location-allergens'
 import { createServiceClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+
+type LinkedIngredient = IngredientAssessmentSource & { business_id: string; name: string }
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
@@ -72,7 +75,7 @@ export async function GET(request: NextRequest) {
 
     let menuQuery = supabase
       .from('menu_items')
-      .select('*')
+      .select('*, recipe:menu_item_ingredients(ingredient:ingredients(business_id, name, allergen_warnings, supplier_profiles, status))')
       .eq('business_id', business.id)
       .eq('is_active', true)
       .order('display_order')
@@ -90,62 +93,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to load menu data' }, { status: 500 })
     }
 
-    const menuItemIds = (menuItems || []).map((item: any) => item.id).filter(Boolean)
-    const ingredientNamesByMenuItem = new Map<string, string[]>()
-
-    if (menuItemIds.length > 0) {
-      const { data: menuItemIngredients, error: menuItemIngredientsError } = await supabase
-        .from('menu_item_ingredients')
-        .select('menu_item_id, ingredient_id')
-        .in('menu_item_id', menuItemIds)
-
-      if (menuItemIngredientsError) {
-        console.error('Error fetching menu item ingredient links:', menuItemIngredientsError)
-      } else {
-        const ingredientIds = Array.from(
-          new Set((menuItemIngredients || []).map((row: any) => row.ingredient_id).filter(Boolean))
-        )
-
-        const ingredientNameById = new Map<string, string>()
-        if (ingredientIds.length > 0) {
-          const { data: ingredients, error: ingredientsError } = await supabase
-            .from('ingredients')
-            .select('id, name')
-            .in('id', ingredientIds)
-
-          if (ingredientsError) {
-            console.error('Error fetching ingredient names:', ingredientsError)
-          } else {
-            for (const ingredient of ingredients || []) {
-              ingredientNameById.set(String((ingredient as any).id), String((ingredient as any).name || ''))
-            }
-          }
-        }
-
-        for (const link of menuItemIngredients || []) {
-          const menuItemId = String((link as any).menu_item_id)
-          const ingredientId = String((link as any).ingredient_id)
-          const ingredientName = ingredientNameById.get(ingredientId)
-          if (!ingredientName) continue
-
-          const existing = ingredientNamesByMenuItem.get(menuItemId) || []
-          if (!existing.includes(ingredientName)) {
-            ingredientNamesByMenuItem.set(menuItemId, [...existing, ingredientName])
-          }
-        }
-      }
-    }
-
     const { data: suppliers, error: suppliersError } = await supabase
       .from('suppliers').select('id, name').eq('business_id', business.id)
     if (suppliersError) throw suppliersError
     const supplierNames = new Map((suppliers || []).map(supplier => [supplier.id, supplier.name]))
 
-    const menuItemsWithIngredients = (menuItems || []).map((item: any) => ({
-      ...item,
-      supplier_name: supplierNames.get(item.supplier_id) || null,
-      ingredient_names: ingredientNamesByMenuItem.get(String(item.id)) || [],
-    }))
+    const menuItemsWithIngredients = (menuItems || []).map(({ recipe, ...item }) => {
+      const links: { ingredient: LinkedIngredient | null }[] = recipe
+      const sources = links.map(({ ingredient }) => ingredient?.business_id === business.id ? ingredient : null)
+      let warnings = item.allergen_warnings
+      if (sources.length) {
+        const derived = mergeAllergenAssessments(sources.map(source => source ? ingredientAssessmentWarnings(source) : undefined))
+        warnings = retainRecordedAllergenWarnings(derived, warnings)
+        warnings.assessment_indeterminate ??= []
+      }
+      return {
+        ...item,
+        allergen_warnings: warnings,
+        supplier_name: supplierNames.get(item.supplier_id) || null,
+        ingredient_names: Array.from(new Set(sources.flatMap(source => source?.name ? [source.name] : []))),
+      }
+    })
 
     const { data: ingredients, error: ingredientsListError } = await supabase
       .from('ingredients')
@@ -157,7 +125,6 @@ export async function GET(request: NextRequest) {
     if (ingredientsListError) {
       console.error('Error fetching ingredient list:', ingredientsListError)
     }
-
 
     return NextResponse.json({
       business: businessData,
