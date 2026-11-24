@@ -294,4 +294,21 @@ test('downloadable guide identifies the particular allergen with incomplete info
   assert.match(text, /Incomplete allergen information\s*\(Eggs\).*Check\s+with staff/)
   assert.match(text, /Incomplete allergen information\s*\(Tree Nuts\)/)
   assert.ok(text.includes('?'))
+
+  const lines = text.trim().split('\n')
+  const extracted = lines.join(' ').replace(/\s+/g, ' ')
+  for (const heading of ['Allergen Information', 'Item']) {
+    assert.equal(lines.filter(line => line === heading).length, 1, heading)
+  }
+  // pdf-parse joins rotated labels whose baselines share the same Y coordinate.
+  for (const label of ['Gluten', 'Crustaceans']) {
+    assert.equal(text.split(label).length - 1, 1, label)
+  }
+  const expected = [
+    'Cake May contain: Tree Nuts Incomplete allergen information (Tree Nuts). Check with staff.',
+    'Soup Incomplete allergen information (Eggs). Check with staff. ?',
+  ]
+  assert.ok(extracted.endsWith(expected.join(' ')), extracted)
+  assert.equal(extracted.match(/\b(?:Cake|Soup)\b/g)?.length, 2)
+  assert.doesNotMatch(text, /\u0000/)
 })

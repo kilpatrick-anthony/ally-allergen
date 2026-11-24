@@ -8,7 +8,7 @@ import { menuItemSourceLines } from './menuItemSource'
 //   • Compliant with EU Regulation No. 1169/2011 (FIC Regulation)
 
 import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
+import autoTable, { type CellInput } from 'jspdf-autotable'
 import { ALLERGENS } from '@/lib/allergens'
 import { evaluateAllergen, hasIncompleteSubtypeAssessment } from '@/lib/allergen-assessment'
 import {
@@ -110,21 +110,12 @@ function getHeaderTextColor(rgb: [number, number, number]): [number, number, num
   return luminance > 165 ? [17, 24, 39] : [255, 255, 255]
 }
 
-/**
- * Builds the allergen detail lines that appear beneath the item name.
- * Allergen names are wrapped in ** to signal bold rendering via didParseCell.
- *   Contains: **Gluten (Wheat, Oats)**, **Milk**
- *   May contain: **Nuts (Almonds)**, **Sesame**
- * (The ** markers are stripped when the cell is rendered; bold is applied via fontStyle)
- *
- * Actually — jsPDF/autoTable doesn't support inline bold. Instead we store the
- * plain text lines and apply bold to the entire warning sub-line via willDrawCell.
- * We prefix warning lines with a special invisible marker so didParseCell can
- * detect them and set fontStyle = 'bold'.
- */
-const WARN_PREFIX = '\u200B' // zero-width space used as a marker
+interface WarningLine {
+  text: string
+  prefix?: string
+}
 
-function buildWarningLines(item: MenuItem): string[] {
+function buildWarningLines(item: MenuItem): WarningLine[] {
   const contains: string[] = []
   const mayContain: string[] = []
   const incomplete: string[] = []
@@ -154,12 +145,12 @@ function buildWarningLines(item: MenuItem): string[] {
     }
   })
 
-  const lines: string[] = []
-  if (contains.length > 0)   lines.push(`${WARN_PREFIX}Contains: ${contains.join(', ')}`)
-  if (mayContain.length > 0) lines.push(`${WARN_PREFIX}May contain: ${mayContain.join(', ')}`)
+  const lines: WarningLine[] = []
+  if (contains.length) lines.push({ prefix: 'Contains: ', text: contains.join(', ') })
+  if (mayContain.length) lines.push({ prefix: 'May contain: ', text: mayContain.join(', ') })
   if (incomplete.length) {
     const detail = incomplete.length === ALLERGENS.length ? '' : ` (${incomplete.join(', ')})`
-    lines.push(`${WARN_PREFIX}Incomplete allergen information${detail}. Check with staff.`)
+    lines.push({ text: `Incomplete allergen information${detail}. Check with staff.` })
   }
   return lines
 }
@@ -262,7 +253,7 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
 
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
     const pageWidth  = doc.internal.pageSize.getWidth()
-    const pageHeight = doc.internal.pageSize.getHeight()
+    doc.setCharSpace(0)
     let currentY = 12
 
     // ── Business logo — top left, aspect-ratio preserved ─────────────────────
@@ -332,79 +323,42 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
     // ── Table headers (col 0 label set per section) ─────────────────────────
     const allergenHeaders = ALLERGENS.map(a => a.shortName || a.name)
 
-    // ── Item/ingredient name cell layout ─────────────────────────────────────
-    // Shared by didParseCell (row-height measurement) and didDrawCell (actual
-    // drawing) so the two can never disagree about how many lines a cell needs —
-    // that mismatch previously caused the last warning line to be clipped by
-    // the next row.
-    const NAME_CELL_PAD_TOP = 2.5
-    const NAME_CELL_PAD_BOTTOM = 3.5
-    const NAME_CELL_LINE_HEIGHT = 4.2
+    const nameCellPadding = { top: 2.5, bottom: 3.5, left: 3, right: 3 }
+    const nameFontSize = 9
+    const nameLineHeight = 4.2
 
     interface NameCellSegment {
       text: string
       font: 'normal' | 'bold' | 'italic'
       size: number
     }
-    interface NameCellLine {
-      segments: NameCellSegment[]
-    }
 
-    function layoutNameCellLines(doc: jsPDF, rawLines: string[], textWidth: number): NameCellLine[] {
-      const lines: NameCellLine[] = []
-      const markLines = rawLines.filter(l => l.startsWith(WARN_PREFIX))
-      const ingredientLines = rawLines.filter(l => !l.startsWith(WARN_PREFIX) && l.startsWith('Ingredients: '))
-      const nameLines = rawLines.filter(l => !l.startsWith(WARN_PREFIX) && !l.startsWith('Ingredients: '))
-
-      doc.setFont('helvetica', 'normal')
-      doc.setFontSize(9)
-      for (const line of nameLines) {
-        for (const wl of doc.splitTextToSize(line, textWidth)) {
-          lines.push({ segments: [{ text: wl, font: 'normal', size: 9 }] })
-        }
+    function layoutNameCell(item: MenuItem): NameCellSegment[][] {
+      const width = nameColWidth - nameCellPadding.left - nameCellPadding.right
+      const lines: NameCellSegment[][] = []
+      function appendText(text: string, font: NameCellSegment['font'], size: number) {
+        doc.setFont('helvetica', font)
+        doc.setFontSize(size)
+        const wrapped: string[] = doc.splitTextToSize(text, width)
+        for (const line of wrapped) lines.push([{ text: line, font, size }])
       }
 
-      doc.setFont('helvetica', 'italic')
-      doc.setFontSize(7)
-      for (const line of ingredientLines) {
-        for (const wl of doc.splitTextToSize(line, textWidth)) {
-          lines.push({ segments: [{ text: wl, font: 'italic', size: 7 }] })
-        }
-      }
-
-      doc.setFontSize(7)
-      for (const line of markLines) {
-        const text = line.replace(WARN_PREFIX, '')
-        const prefix = text.startsWith('Contains: ')
-          ? 'Contains: '
-          : text.startsWith('May contain: ')
-          ? 'May contain: '
-          : ''
-        const value = text.slice(prefix.length)
-
+      appendText(item.name, 'normal', nameFontSize)
+      for (const text of getIngredientLines(item)) appendText(text, 'italic', 7)
+      for (const { text, prefix } of buildWarningLines(item)) {
         doc.setFont('helvetica', 'normal')
+        doc.setFontSize(7)
         const prefixWidth = prefix ? doc.getTextWidth(prefix) : 0
-
-        // Only the first line shares its width with the prefix — continuation
-        // lines start at the left margin and get the full cell width.
         doc.setFont('helvetica', 'bold')
-        const firstChunk = doc.splitTextToSize(value, Math.max(1, textWidth - prefixWidth))
-        const firstLine = firstChunk[0] || ''
-        const remainder = value.slice(firstLine.length).trim()
-        const restLines = remainder ? doc.splitTextToSize(remainder, textWidth) : []
-
-        if (prefix) {
-          const segments: NameCellSegment[] = [{ text: prefix, font: 'normal', size: 7 }]
-          if (firstLine) segments.push({ text: firstLine, font: 'bold', size: 7 })
-          lines.push({ segments })
-        } else if (firstLine) {
-          lines.push({ segments: [{ text: firstLine, font: 'bold', size: 7 }] })
-        }
-        for (const rl of restLines) {
-          lines.push({ segments: [{ text: rl, font: 'bold', size: 7 }] })
-        }
+        // Match the first line's available width to the normal-weight prefix.
+        const wrapped: string[] = doc.splitTextToSize(text, width, { textIndent: prefixWidth })
+        wrapped.forEach((line, index) => {
+          const segments: NameCellSegment[] = []
+          if (index === 0 && prefix) segments.push({ text: prefix, font: 'normal', size: 7 })
+          if (line) segments.push({ text: line, font: 'bold', size: 7 })
+          lines.push(segments)
+        })
       }
-
       return lines
     }
 
@@ -417,8 +371,6 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
       col0Label = 'Item / Ingredient'
     ): number => {
       if (sectionItems.length === 0) return startY
-
-      const headers = [col0Label, ...allergenHeaders]
 
       // Section heading
       doc.setFontSize(16)
@@ -437,26 +389,29 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
         doc.setTextColor(0, 0, 0)
       }
 
-      const tickMap = new Map<string, AllergenLevel>()
-      const tableData = sectionItems.map((item, rowIndex) => {
-        const ingredientLines = getIngredientLines(item)
-        const warningLines = buildWarningLines(item)
-        const nameCell =
-          ingredientLines.length + warningLines.length > 0
-            ? `${item.name}\n${ingredientLines.join('\n')}${ingredientLines.length > 0 && warningLines.length > 0 ? '\n' : ''}${warningLines.join('\n')}`
-            : item.name
-
-        const row: string[] = [nameCell]
-        ALLERGENS.forEach((allergen, colOffset) => {
-          const level = getLevel(item, allergen.id)
-          if (level !== 'none' && level !== 'incomplete') tickMap.set(`${rowIndex}-${colOffset + 1}`, level)
-          row.push(level === 'incomplete' ? '?' : '')
-        })
+      const layoutByRow = new Map<unknown, { lines: NameCellSegment[][]; levels: GuideLevel[] }>()
+      const tableData = sectionItems.map((item, index) => {
+        const lines = layoutNameCell(item)
+        const levels = ALLERGENS.map(allergen => getLevel(item, allergen.id))
+        // AutoTable paginates the line indices. A split row keeps its original
+        // raw row and receives only the indices that belong on that page.
+        const row: CellInput[] = [{
+          content: lines.map((_, line) => String(line)).join('\n'),
+          styles: { fillColor: index % 2 === 0 ? [249, 250, 251] : 255 },
+        }, ...levels.map<CellInput>(level => ({
+          content: '',
+          styles: { fillColor: cellFill(level) ?? false },
+        }))]
+        layoutByRow.set(row, { lines, levels })
         return row
       })
 
+      let nameLineIndices: string[] = []
+      const previousLineHeight = doc.getLineHeightFactor()
+      doc.setLineHeightFactor(nameLineHeight * doc.internal.scaleFactor / nameFontSize)
+
       autoTable(doc, {
-        head: [headers],
+        head: [[col0Label, ...allergenHeaders.map(() => '')]],
         body: tableData,
         startY,
         theme: 'grid',
@@ -477,18 +432,18 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
           textColor: [255, 255, 255],
           fontStyle: 'bold',
           halign: 'center',
-          valign: 'bottom',
-          fontSize: 8,
+          valign: 'middle',
+          fontSize: 9,
           minCellHeight: 30,
           cellPadding: 1,
         },
         columnStyles: {
           0: {
-            halign: 'left',
             cellWidth: nameColWidth,
             fontStyle: 'normal',
-            fontSize: 7,
-            cellPadding: { top: 2.5, right: 3, bottom: 2.5, left: 3 },
+            fontSize: nameFontSize,
+            overflow: lines => lines,
+            cellPadding: nameCellPadding,
           },
           ...Object.fromEntries(
             ALLERGENS.map((_, i) => [
@@ -497,108 +452,61 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
             ])
           ),
         },
-        didDrawCell: data => {
-          if (data.section === 'head' && data.column.index === 0) {
-            const cell = data.cell
-            doc.setFillColor(...primaryRgb)
-            doc.rect(cell.x, cell.y, cell.width, cell.height, 'F')
-            doc.setTextColor(255, 255, 255)
-            doc.setFontSize(9)
-            doc.setFont('helvetica', 'bold')
-            const headerText = headers[0]
-            const wrapped = doc.splitTextToSize(headerText, cell.width - 4)
-            const totalTextH = wrapped.length * 4.5
-            let ty = cell.y + (cell.height - totalTextH) / 2 + 3.5
-            for (const line of wrapped) {
-              doc.text(line, cell.x + cell.width / 2, ty, { align: 'center' })
-              ty += 4.5
-            }
-          }
-
-          if (data.section === 'head' && data.column.index > 0) {
-            const cell = data.cell
-            const text  = headers[data.column.index]
-            const allergenColor = hexToRgb(ALLERGENS[data.column.index - 1]?.bgColor)
-            const headerTextColor = getHeaderTextColor(allergenColor)
-            doc.setFillColor(...allergenColor)
-            doc.rect(cell.x, cell.y, cell.width, cell.height, 'F')
-            doc.setTextColor(...headerTextColor)
-            doc.setFontSize(8)
-            doc.setFont('helvetica', 'bold')
+        didParseCell: ({ section, column, cell }) => {
+          if (section !== 'head' || column.index === 0) return
+          const color = hexToRgb(ALLERGENS[column.index - 1].bgColor)
+          cell.styles.fillColor = color
+          cell.styles.textColor = getHeaderTextColor(color)
+        },
+        willDrawCell: ({ section, column, cell }) => {
+          if (section !== 'body' || column.index !== 0) return
+          nameLineIndices = cell.text
+          cell.text = []
+        },
+        didDrawCell: ({ section, column, row, cell }) => {
+          if (section === 'head' && column.index > 0) {
             doc.saveGraphicsState()
-            doc.text(text, cell.x + cell.width / 2 + 1, cell.y + cell.height - 2, {
-              angle: 90,
-              align: 'left',
-            })
+            doc.setFontSize(8)
+            doc.text(allergenHeaders[column.index - 1], cell.x + cell.width / 2 + 1, cell.y + cell.height - 2, { angle: 90 })
             doc.restoreGraphicsState()
           }
 
-          if (data.section === 'body' && data.column.index > 0) {
-            const key = `${data.row.index}-${data.column.index}`
-            const level = tickMap.get(key)
-            if (level) {
-              const { x, y, width, height } = data.cell
-              const high = getAllergenSeverity(level) === 'high'
-              if (high) {
-                drawWarningTriangle(doc, x, y, width, height)
-              } else {
-                drawCheckmark(doc, x, y, width, height, high)
+          if (section !== 'body') return
+          if (column.index === 0) {
+            cell.text = nameLineIndices
+            const lines = layoutByRow.get(row.raw)?.lines
+            if (!lines) return
+
+            doc.saveGraphicsState()
+            let y = cell.y + nameCellPadding.top + nameLineHeight * 0.75
+            for (const index of nameLineIndices) {
+              let x = cell.x + nameCellPadding.left
+              for (const { text, font, size } of lines[Number(index)]) {
+                doc.setFont('helvetica', font)
+                doc.setFontSize(size)
+                doc.setTextColor(font === 'italic' ? 55 : 0, font === 'italic' ? 65 : 0, font === 'italic' ? 81 : 0)
+                doc.text(text, x, y)
+                x += doc.getTextWidth(text)
               }
+              y += nameLineHeight
             }
-          }
-
-          if (data.section === 'body' && data.column.index === 0) {
-            const rawLines = (tableData[data.row.index]?.[0] as string || '').split('\n')
-            if (rawLines.every(l => l.trim() === '')) return
-
-            const cell = data.cell
-            const padLeft  = 3
-            const padRight = 3
-            const textWidth = cell.width - padLeft - padRight
-
-            const bgColor: [number, number, number] = data.row.index % 2 === 0 ? [249, 250, 251] : [255, 255, 255]
-            doc.setFillColor(...bgColor)
-            doc.rect(cell.x + 0.16, cell.y + 0.16, cell.width - 0.32, cell.height - 0.32, 'F')
-
-            const cellLines = layoutNameCellLines(doc, rawLines, textWidth)
-
-            let drawY = cell.y + NAME_CELL_PAD_TOP + NAME_CELL_LINE_HEIGHT * 0.75
-            for (const line of cellLines) {
-              let drawX = cell.x + padLeft
-              for (const seg of line.segments) {
-                doc.setFont('helvetica', seg.font)
-                doc.setFontSize(seg.size)
-                doc.setTextColor(seg.font === 'italic' ? 55 : 0, seg.font === 'italic' ? 65 : 0, seg.font === 'italic' ? 81 : 0)
-                doc.text(seg.text, drawX, drawY)
-                drawX += doc.getTextWidth(seg.text)
-              }
-              drawY += NAME_CELL_LINE_HEIGHT
+            doc.restoreGraphicsState()
+          } else {
+            const level = layoutByRow.get(row.raw)?.levels[column.index - 1]
+            if (!level || level === 'none') return
+            const { x, y, width, height } = cell
+            // Show the indicators alongside every page fragment of a split row.
+            if (level === 'incomplete') {
+              doc.text('?', x + width / 2, y + height / 2, { align: 'center', baseline: 'middle' })
+            } else if (getAllergenSeverity(level) === 'high') {
+              drawWarningTriangle(doc, x, y, width, height)
+            } else {
+              drawCheckmark(doc, x, y, width, height, false)
             }
-
-            doc.setFont('helvetica', 'normal')
-            doc.setFontSize(7)
-            doc.setTextColor(0, 0, 0)
-          }
-        },
-        didParseCell: data => {
-          if (data.section === 'body' && data.column.index > 0) {
-            const level = getLevel(sectionItems[data.row.index], ALLERGENS[data.column.index - 1].id)
-            const fill  = cellFill(level)
-            if (fill) data.cell.styles.fillColor = fill
-          }
-          if (data.section === 'body' && data.column.index === 0) {
-            data.cell.styles.fillColor =
-              data.row.index % 2 === 0 ? [249, 250, 251] : [255, 255, 255]
-
-            const rawLines = (tableData[data.row.index]?.[0] as string || '').split('\n')
-            const textWidth = nameColWidth - 6
-            const cellLines = layoutNameCellLines(data.doc as jsPDF, rawLines, textWidth)
-
-            data.cell.styles.minCellHeight =
-              NAME_CELL_PAD_TOP + NAME_CELL_PAD_BOTTOM + Math.max(1, cellLines.length) * NAME_CELL_LINE_HEIGHT
           }
         },
       })
+      doc.setLineHeightFactor(previousLineHeight)
 
       return (doc as any).lastAutoTable?.finalY ?? startY
     }
@@ -696,7 +604,7 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
 
     // ── Footer on every page (page numbers, legend, AllyJen logo, timestamp) ──
     const generatedDate = `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`
-    await drawPageFooters(doc, allyjenLogoDataUrl, generatedDate, showLegend, FIC_NOTE)
+    await drawPageFooters(doc, allyjenLogoDataUrl, generatedDate, showLegend, FIC_NOTE, 'right')
 
     const fileName = `${business.name.replace(/[^a-z0-9]/gi, '_')}_allergen_guide.pdf`
 
