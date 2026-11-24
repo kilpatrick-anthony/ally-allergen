@@ -10,12 +10,14 @@ import { menuItemSourceLines } from './menuItemSource'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { ALLERGENS } from '@/lib/allergens'
+import { evaluateAllergen, hasIncompleteSubtypeAssessment } from '@/lib/allergen-assessment'
 import {
   getAllergenSeverity,
   GLUTEN_TYPES,
   TREE_NUT_TYPES,
   type GlutenType,
   type TreeNutType,
+  type AllergenId,
   type AllergenLevel,
 } from '@/types/allergen'
 import type { Business, MenuItem } from '@/lib/hooks/useOfflineKioskData'
@@ -40,14 +42,11 @@ interface PDFOptions {
 
 // ---------- helpers ----------------------------------------------------------
 
-/** Returns the AllergenLevel for a given allergen on a menu item. */
-function getLevel(item: MenuItem, allergenId: string): AllergenLevel {
-  if (item.allergen_warnings) {
-    return ((item.allergen_warnings as any)[allergenId] as AllergenLevel) || 'none'
-  }
-  // Legacy boolean fallback
-  if ((item as any)[allergenId] === true) return 'contains'
-  return 'none'
+type GuideLevel = AllergenLevel | 'incomplete'
+
+function getLevel(item: MenuItem, allergenId: string): GuideLevel {
+  const assessment = evaluateAllergen(item.allergen_warnings, { allergen: allergenId as AllergenId }, item)
+  return assessment.status === 'warning' ? assessment.level : assessment.status === 'clear' ? 'none' : 'incomplete'
 }
 
 /**
@@ -128,11 +127,20 @@ const WARN_PREFIX = '\u200B' // zero-width space used as a marker
 function buildWarningLines(item: MenuItem): string[] {
   const contains: string[] = []
   const mayContain: string[] = []
+  const incomplete: string[] = []
 
   ALLERGENS.forEach(allergen => {
     const level = getLevel(item, allergen.id)
     if (level === 'none') return
+    if (level === 'incomplete') {
+      incomplete.push(allergen.name)
+      return
+    }
 
+    if ((allergen.id === 'nuts' || allergen.id === 'cereals_gluten') &&
+      hasIncompleteSubtypeAssessment(item.allergen_warnings, allergen.id, item)) {
+      incomplete.push(allergen.name)
+    }
     const subtypes = getSubtypeNames(item, allergen.id)
     const label =
       subtypes.length > 0
@@ -149,17 +157,23 @@ function buildWarningLines(item: MenuItem): string[] {
   const lines: string[] = []
   if (contains.length > 0)   lines.push(`${WARN_PREFIX}Contains: ${contains.join(', ')}`)
   if (mayContain.length > 0) lines.push(`${WARN_PREFIX}May contain: ${mayContain.join(', ')}`)
+  if (incomplete.length) {
+    const detail = incomplete.length === ALLERGENS.length ? '' : ` (${incomplete.join(', ')})`
+    lines.push(`${WARN_PREFIX}Incomplete allergen information${detail}. Check with staff.`)
+  }
   return lines
 }
 
 /**
  * Light cell fill colour for allergen indicator cells.
  */
-function cellFill(level: AllergenLevel): [number, number, number] | null {
+function cellFill(level: GuideLevel): [number, number, number] | null {
   switch (level) {
     case 'contains':
     case 'not_suitable':
       return [254, 202, 202] // red-200
+    case 'incomplete':
+      return [243, 244, 246]
     case 'may_contain':
     case 'traces':
     case 'cross_contamination':
@@ -435,8 +449,8 @@ export async function generateAllergenTablePDF(options: PDFOptions): Promise<str
         const row: string[] = [nameCell]
         ALLERGENS.forEach((allergen, colOffset) => {
           const level = getLevel(item, allergen.id)
-          if (level !== 'none') tickMap.set(`${rowIndex}-${colOffset + 1}`, level)
-          row.push('')
+          if (level !== 'none' && level !== 'incomplete') tickMap.set(`${rowIndex}-${colOffset + 1}`, level)
+          row.push(level === 'incomplete' ? '?' : '')
         })
         return row
       })

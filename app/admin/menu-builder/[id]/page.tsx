@@ -195,7 +195,7 @@ export default function ViewMenuItemPage() {
 
   const allergenWarnings = menuItem.allergen_warnings || {}
   const activeAllergens = Object.entries(allergenWarnings)
-    .filter(([key, value]) => key !== 'assessment_incomplete' && value !== 'none' && !key.endsWith('_levels') && !key.endsWith('_types'))
+    .filter(([key, value]) => !key.startsWith('assessment_') && value !== 'none' && !key.endsWith('_levels') && !key.endsWith('_types'))
     .map(([key, value]) => {
       // Check if this allergen has sub-levels
       const levelsKey = `${key}_levels`

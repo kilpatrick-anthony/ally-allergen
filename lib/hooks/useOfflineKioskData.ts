@@ -93,6 +93,11 @@ const STORAGE_KEY_PREFIX = 'kiosk_data_v2_';
 const emptyData: KioskData = { business: null, menuItems: [], ingredients: [], lastUpdated: 0 };
 class KioskLocationUnavailable extends Error {}
 
+function isLegacyLiveRecipe(item: MenuItem) {
+  return Boolean(item.ingredient_names?.length && item.allergen_warnings &&
+    !Array.isArray(item.allergen_warnings.assessment_indeterminate));
+}
+
 export function useOfflineKioskData(slug: string, siteId?: string | null) {
   const cacheKey = `${STORAGE_KEY_PREFIX}${slug}:${siteId || 'business'}`;
   const loadSequence = useRef(0);
@@ -179,14 +184,22 @@ export function useOfflineKioskData(slug: string, siteId?: string | null) {
     const cachedData = getCachedData();
     
     if (cachedData) {
-      // Use cached data immediately
-      setData(cachedData);
+      // Older live recipe rollups can contain generated 'none' answers with
+      // no completeness flag. Keep their declarations while the source data refreshes.
+      const recipesNeedRefresh = !cachedData.business?.location?.publicationId &&
+        cachedData.menuItems.some(isLegacyLiveRecipe);
+      setData(recipesNeedRefresh ? {
+        ...cachedData,
+        menuItems: cachedData.menuItems.map(item => isLegacyLiveRecipe(item) && item.allergen_warnings
+          ? { ...item, allergen_warnings: { ...item.allergen_warnings, assessment_incomplete: true } }
+          : item),
+      } : cachedData);
       setLoadedKey(cacheKey);
-      setIsStale(Boolean(siteId) || isCacheStale(cachedData.lastUpdated));
+      setIsStale(Boolean(siteId) || recipesNeedRefresh || isCacheStale(cachedData.lastUpdated));
       setLoading(false);
 
       // If cache is fresh enough, we're done
-      if (!siteId && !isCacheStale(cachedData.lastUpdated)) {
+      if (!siteId && !recipesNeedRefresh && !isCacheStale(cachedData.lastUpdated)) {
         console.log('✅ [Cache] Using fresh cached data');
         return;
       }

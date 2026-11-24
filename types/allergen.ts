@@ -132,11 +132,14 @@ export const TREE_NUT_TYPES: { key: TreeNutType; name: string }[] = [
 ];
 
 export type AllergenId = typeof ALLERGEN_LIST[number]['id'];
+export type AllergenAssessmentKey = AllergenId | GlutenType | TreeNutType;
 
 // Allergen warnings object for menu items
 export type AllergenWarnings = Record<AllergenId, AllergenLevel> & {
   // Derived previews retain known warnings while signalling unassessed inputs.
   assessment_incomplete?: boolean;
+  // Aggregate selections whose source assessments do not establish a clear answer.
+  assessment_indeterminate?: AllergenAssessmentKey[];
   // Optional subtype specifications (legacy - kept for backwards compatibility)
   cereals_gluten_types?: GlutenType[];
   nuts_types?: TreeNutType[];
