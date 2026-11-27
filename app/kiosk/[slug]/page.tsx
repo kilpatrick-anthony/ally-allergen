@@ -1127,12 +1127,13 @@ export default function KioskPage() {
       </main>
     )
   }
-  const locationNotice = location && (
+  const showLocationStatus = isOffline || isStale
+  const locationNotice = location && (kioskStarted || location.publishedAt || showLocationStatus) && (
     <div className="mx-auto max-w-4xl px-4 py-3 text-center text-sm">
-      <p className="font-semibold">{location.name} · {JURISDICTIONS[location.jurisdiction]}</p>
+      {kioskStarted && <p className="font-semibold">{location.name} · {JURISDICTIONS[location.jurisdiction]}</p>}
       {location.publishedAt && <p>Published {publishedDate(location.publishedAt)}</p>}
-      {(isOffline || isStale) && <p>Check the current printed guide with staff before ordering.</p>}
-      <a className="underline underline-offset-2" href={locationGuidance?.href}>{locationGuidance?.regulator} guidance</a>
+      {showLocationStatus && <p>Check the current printed guide with staff before ordering.</p>}
+      {kioskStarted && <a className="underline underline-offset-2" href={locationGuidance?.href}>{locationGuidance?.regulator} guidance</a>}
     </div>
   )
 
@@ -1190,7 +1191,7 @@ export default function KioskPage() {
         data-context="kiosk"
         onClick={enterFullscreen}
       >
-        <div className="relative z-10 text-white">{locationNotice}</div>
+        {locationNotice && <div className="relative z-10 text-white">{locationNotice}</div>}
         {/* Decorative blobs for depth */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div
