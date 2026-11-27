@@ -335,3 +335,34 @@ test('downloadable guide identifies incomplete allergens and embeds the bundled 
   assert.equal(extracted.match(/\b(?:Cake|Soup)\b/g)?.length, 2)
   assert.doesNotMatch(text, /\u0000/)
 })
+
+test('bowl defaults, removals and swaps preserve warnings from the remaining ingredients', () => {
+  const { defaultBowlChoices, evaluateBowl } = load('lib/bowl-selection.ts')
+  const base = { id: 'base', name: 'Base', warnings: complete, dietary: ['Vegan', 'Vegetarian'] }
+  const nutWarnings = { ...complete, nuts: 'contains', nuts_levels: { almonds: 'contains' } }
+  const granola = { ...base, id: 'granola', name: 'Granola', warnings: nutWarnings }
+  const flakes = { ...base, id: 'flakes', name: 'Flakes', warnings: nutWarnings }
+  const crumble = { ...base, id: 'crumble', warnings: withoutEggs, dietary: [] }
+  const drizzle = { ...base, id: 'drizzle', warnings: { ...complete, milk: 'may_contain' }, dietary: ['Vegetarian'] }
+  const groups = [
+    { name: 'Base', kind: 'required', defaults: ['base'], options: [base] },
+    { name: 'Toppings', kind: 'multiple', defaults: ['granola'], options: [granola, flakes, crumble] },
+    { name: 'Drizzle', kind: 'optional', defaults: [], options: [drizzle] },
+  ]
+  const defaults = defaultBowlChoices(groups)
+  const allergens = [{ allergen: 'nuts', subtype: 'almonds' }, eggs, milk]
+  assert.deepEqual(evaluateBowl(groups, defaults, allergens).assessments[0].warnings.map(row => row.ingredient.id), ['granola'])
+  const swapped = evaluateBowl(groups, { ...defaults, Toppings: ['flakes', 'crumble'], Drizzle: ['drizzle'] }, allergens)
+  assert.deepEqual(swapped.assessments[0].warnings.map(row => row.ingredient.id), ['flakes'])
+  assert.deepEqual(swapped.assessments[1].incomplete.map(row => row.id), ['crumble'])
+  assert.equal(swapped.assessments[2].warnings[0].level, 'may_contain')
+  assert.deepEqual(swapped.dietary, [])
+  const cleared = evaluateBowl(groups, { ...defaults, Toppings: [], Drizzle: ['drizzle'] }, allergens)
+  assert.ok(!cleared.assessments[0].warnings.length && !cleared.assessments[1].incomplete.length)
+  assert.deepEqual(cleared.dietary, ['Vegetarian'])
+  for (const choices of [{ ...defaults, Base: [] }, { ...defaults, Toppings: ['unknown'] }]) {
+    const invalid = evaluateBowl(groups, choices, allergens)
+    assert.equal(invalid.ready, false)
+    assert.deepEqual(invalid.dietary, [])
+  }
+})
