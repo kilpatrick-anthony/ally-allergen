@@ -1127,12 +1127,11 @@ export default function KioskPage() {
       </main>
     )
   }
-  const showLocationStatus = isOffline || isStale
-  const locationNotice = location && (kioskStarted || location.publishedAt || showLocationStatus) && (
+  const locationNotice = location && (kioskStarted || location.publishedAt) && (
     <div className="mx-auto max-w-4xl px-4 py-3 text-center text-sm">
       {kioskStarted && <p className="font-semibold">{location.name} · {JURISDICTIONS[location.jurisdiction]}</p>}
       {location.publishedAt && <p>Published {publishedDate(location.publishedAt)}</p>}
-      {showLocationStatus && <p>Check the current printed guide with staff before ordering.</p>}
+      {kioskStarted && (isOffline || isStale) && <p>Check the current printed guide with staff before ordering.</p>}
       {kioskStarted && <a className="underline underline-offset-2" href={locationGuidance?.href}>{locationGuidance?.regulator} guidance</a>}
     </div>
   )
