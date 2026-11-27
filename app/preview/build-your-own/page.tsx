@@ -19,7 +19,7 @@ function ingredient(
 const bowl: readonly BowlGroup[] = [
   {
     name: 'Base', kind: 'required', defaults: ['acai'],
-    options: [ingredient('acai', 'Açaí'), ingredient('banana', 'Banana base')],
+    options: [ingredient('acai', 'Açaí'), ingredient('oats', 'Oat base', { cereals_gluten: 'contains', cereals_gluten_levels: { oats: 'contains' } })],
   },
   {
     name: 'Toppings', kind: 'multiple', defaults: ['granola', 'berries'],
@@ -50,7 +50,7 @@ export default function BowlPreviewPage() {
           <h1 className="text-4xl font-extrabold sm:text-5xl">Build your bowl</h1>
           <p className="max-w-xl text-sm text-slate-700">This demo uses sample ingredients and allergen records. Use the venue’s current guide for food served at OAKBERRY.</p>
         </header>
-        <BowlBuilder groups={bowl} />
+        <BowlBuilder groups={bowl} fixed={[ingredient('fixed', 'Sliced banana')]} />
       </div>
     </main>
   )

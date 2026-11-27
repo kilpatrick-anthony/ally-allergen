@@ -11,6 +11,7 @@ import { useRegularFormValidation } from '@/lib/hooks/useRegularFormValidation'
 import { FormValidationSummary, FormFieldError } from '@/components/admin/FormValidationSummary'
 import { useUnsavedChanges } from '@/lib/hooks/useUnsavedChanges'
 import { ItemLabelLink } from '@/components/admin/ItemLabelLink'
+import { BowlConfigurationEditor } from '@/components/admin/BowlConfigurationEditor'
 import { IngredientPicker } from '@/components/admin/IngredientPicker'
 import { MenuDietaryFields } from '@/components/admin/MenuDietaryFields'
 import { RegularFormActions } from '@/components/admin/RegularFormActions'
@@ -743,6 +744,9 @@ export default function EditMenuItemPage() {
           </div>
         </div>
 
+        {menuItem.item_type === 'prepared' && (
+          <BowlConfigurationEditor itemId={menuItem.id} sites={sites.filter(site => !menuItem.site_id || site.id === menuItem.site_id)} />
+        )}
         <RegularFormActions feedback={saveStatus === 'idle' ? undefined : { text: saveMessage, error: saveStatus === 'error' }} onSave={handleSave} onCancel={() => { if (confirmLeave()) router.push(returnTo) }} saveLabel={saving ? t('admin.savingMenuItem') : documentRetry ? t('regularItemSave.saveAndRetry') : t('admin.saveMenuItem')} disabled={false} busy={saving || uploadingIcon || deleting} />
       </fieldset>
       </Container>
