@@ -133,6 +133,9 @@ test('bowl draft is location-scoped and option assessments are versioned with th
     await db.query('insert into menu_item_ingredients(menu_item_id,ingredient_id) values ($1,$2)', [ukItem, fixed])
 
     const config = { fixed: [fixed], groups: [{ name: 'Base', kind: 'required', options: [ingredient, alternative], defaults: [ingredient] }] }
+    const bundledConfig = { ...config, groups: [{ ...config.groups[0], options: [
+      { id: ingredient, label: 'Fixture bundle', additionalIngredientIds: [alternative] },
+    ] }] }
     const source = 'select site_bowl_source($1,$2,$3,$4::jsonb) result'
     const save = 'select save_site_bowl_configuration($1,$2,$3,$4,$5::jsonb,$6::jsonb) result'
     const review = 'select review_site_allergens($1,$2) result'
@@ -154,6 +157,12 @@ test('bowl draft is location-scoped and option assessments are versioned with th
     const data = await readSource(config)
     assert.deepEqual(new Set(data.recipe), new Set([fixed, ingredient]))
     assert.deepEqual(new Set(data.ingredients.map(row => row.id)), new Set([fixed, ingredient, alternative]))
+    const bundled = await readSource(bundledConfig)
+    assert.deepEqual(new Set(bundled.ingredients.map(row => row.id)), new Set([fixed, ingredient, alternative]))
+    assert.deepEqual(bundled.configuration, bundledConfig)
+    const outOfScope = structuredClone(bundledConfig)
+    outOfScope.groups[0].options[0].additionalIngredientIds.push(foreign)
+    assert.ok(!(await readSource(outOfScope)).ingredients.some(row => row.id === foreign))
     await assert.rejects(value(db, save, saveArgs(config, data, uuid(7))), /permission/)
     await value(db, save, saveArgs(config, data))
     const competing = await readSource(config, uk, sharedItem)

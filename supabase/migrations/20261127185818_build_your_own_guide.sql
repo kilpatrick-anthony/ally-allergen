@@ -39,8 +39,13 @@ returns jsonb language sql stable security invoker set search_path = '' as $$
       where ingredient.business_id = p_business and ingredient.id in (
         select fixed::uuid from jsonb_array_elements_text(p_config->'fixed') fixed
         union
-        select option_id::uuid from jsonb_array_elements(p_config->'groups') groups
-        cross join lateral jsonb_array_elements_text(groups->'options') option_id
+        select (case jsonb_typeof(option.value) when 'string' then option.value #>> '{}' else option.value->>'id' end)::uuid
+        from jsonb_array_elements(p_config->'groups') groups
+        cross join lateral jsonb_array_elements(groups->'options') option
+        union
+        select ingredient_id::uuid from jsonb_array_elements(p_config->'groups') groups
+        cross join lateral jsonb_array_elements(groups->'options') option
+        cross join lateral jsonb_array_elements_text(option.value->'additionalIngredientIds') ingredient_id
       )
     ), '[]'::jsonb)
   )

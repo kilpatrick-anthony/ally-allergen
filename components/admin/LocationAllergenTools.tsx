@@ -286,11 +286,17 @@ function BowlReviewIngredient({ option, isDefault }: { option: BowlIngredient; i
   const incompleteSubtypes = (['nuts', 'cereals_gluten'] as const).filter(allergen => hasIncompleteSubtypeAssessment(option.warnings, allergen))
   return (
     <li>
-      <a className="underline" href={`/admin/ingredients/${encodeURIComponent(option.id)}/edit`}>{option.name}</a>
+      {option.linkedIngredients ? <strong>{option.name}</strong>
+        : <a className="underline" href={`/admin/ingredients/${encodeURIComponent(option.id)}/edit`}>{option.name}</a>}
       {isDefault && ' (default)'} · {[...warnings].join('. ') || 'No warning recorded'}
       {incompleteSubtypes.includes('nuts') && ' · Tree nut subtype information incomplete'}
       {incompleteSubtypes.includes('cereals_gluten') && ' · Cereal subtype information incomplete'}
       {!!option.dietary.length && <span> · {option.dietary.join(', ')}</span>}
+      {option.linkedIngredients && <ul className="ml-5 list-disc">
+        {option.linkedIngredients.map(ingredient => <li key={ingredient.id}>
+          <a className="underline" href={`/admin/ingredients/${encodeURIComponent(ingredient.id)}/edit`}>{ingredient.name}</a>
+        </li>)}
+      </ul>}
     </li>
   )
 }

@@ -445,3 +445,66 @@ test('fictional bowl checks the full saved recipe, all choices and distinct supp
   assert.notEqual(incomplete.bowl.sourceVersion, bowl.sourceVersion)
   assert.deepEqual(evaluateBowl(incomplete.bowl.groups, defaults, [eggs], bowl.fixed).assessments[0].incomplete.map(row => row.id), [flakes])
 })
+
+test('a fixed base and 28 ordered, optional toppings retain all source warnings', () => {
+  const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
+  const { reviewBowlSource, validateBowlSource } = load('lib/server/bowl-guide.ts')
+  const { defaultBowlChoices, evaluateBowl } = load('lib/bowl-selection.ts')
+  const sourceIngredient = (id, name, warnings = {}, variants = []) =>
+    ({ id, name, status: 'active', allergen_warnings: { ...complete, ...warnings }, certifications: [], variants })
+  const optionIds = Array.from({ length: 28 }, (_, index) => id(index + 1))
+  const [spread, whey] = optionIds
+  const almonds = optionIds.at(-1)
+  const base = id(100), backup = id(101)
+  const group = {
+    name: 'Toppings | Unlimited', kind: 'multiple', defaults: [],
+    options: [
+      { id: spread, label: 'Fixture chocolate cream', additionalIngredientIds: [backup] },
+      { id: whey, label: 'Fixture whey (dry scoop)', additionalIngredientIds: [] },
+      ...optionIds.slice(2),
+    ],
+  }
+  const source = {
+    configuration: { fixed: [base], groups: [group] },
+    recipe: [base],
+    ingredients: [
+      sourceIngredient(base, 'Fixture Açaí'),
+      sourceIngredient(backup, 'Fixture backup spread', { soybeans: 'contains' }),
+      ...optionIds.map((id, index) => {
+        if (id === spread) return sourceIngredient(id, 'Fixture spread', { milk: 'contains' })
+        if (id !== almonds) return sourceIngredient(id, `Fixture topping ${index + 1}`)
+        const nuts = { nuts: 'contains', nuts_levels: { almonds: 'contains' } }
+        return sourceIngredient(id, 'Fixture almonds', nuts, [
+          { supplier: 'Fixture A', status: 'assessed', warnings: { ...complete, ...nuts, peanuts: 'may_contain' } },
+          { supplier: 'Fixture B', status: 'assessed', warnings: { ...complete, ...nuts, sesame: 'may_contain' } },
+        ])
+      }),
+    ],
+  }
+  const { bowl, problems } = reviewBowlSource(source)
+  assert.deepEqual(problems, [])
+  assert.deepEqual(bowl.groups[0].options.map(option => option.id), optionIds)
+  assert.equal(bowl.groups[0].options[1].name, 'Fixture whey (dry scoop)')
+  assert.deepEqual(bowl.groups[0].options[0].linkedIngredients.map(row => row.id), [spread, backup])
+  const allergens = [milk, { allergen: 'soybeans' }, { allergen: 'nuts', subtype: 'almonds' },
+    { allergen: 'peanuts' }, { allergen: 'sesame' }]
+  const run = choices => evaluateBowl(bowl.groups, choices, allergens, bowl.fixed)
+  assert.deepEqual(run(defaultBowlChoices(bowl.groups)).selected.map(row => row.id), [base])
+  assert.deepEqual(run({ [group.name]: [spread, almonds] }).assessments.map(row => row.warnings.map(warning =>
+    [warning.ingredient.id, warning.level])), [
+    [[spread, 'contains']], [[spread, 'contains']], [[almonds, 'contains']],
+    [[almonds, 'may_contain']], [[almonds, 'may_contain']],
+  ])
+  assert.equal(run({ [group.name]: optionIds }).ready, true)
+  assert.equal(run({ [group.name]: optionIds }).selected.length, 29)
+  assert.match(validateBowlSource({ ...source, ingredients: source.ingredients.filter(row => row.id !== backup) }).error,
+    /available/)
+  const pending = structuredClone(source)
+  pending.ingredients[1].variants = [{ supplier: 'Fixture backup', status: 'needs_review', warnings: complete }]
+  assert.ok(reviewBowlSource(pending).problems.some(problem => problem.ingredientId === backup))
+  const defaulted = structuredClone(source)
+  defaulted.configuration.groups[0].defaults.push(spread)
+  assert.match(validateBowlSource(defaulted).error, /standard recipe/)
+  defaulted.recipe.push(spread, backup)
+  assert.ok(validateBowlSource(defaulted).config)
+})

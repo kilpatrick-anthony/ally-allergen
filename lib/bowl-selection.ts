@@ -5,6 +5,7 @@ export type BowlIngredient = {
   id: string
   name: string
   warnings: Partial<AllergenWarnings>
+  linkedIngredients?: readonly { id: string; name: string }[]
   recordedWarnings?: readonly Partial<AllergenWarnings>[]
   dietary: readonly string[]
 }

@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto'
-import { bowlConfiguration, bowlConfigurationIssue, type BowlConfiguration } from '@/lib/bowl-configuration'
-import { ingredientAssessmentIssues, ingredientAssessmentWarnings, type IngredientAssessmentSource } from '@/lib/allergen-assessment'
+import { bowlConfiguration, bowlConfigurationIssue, bowlOptionIngredientIds, type BowlConfiguration, type BowlOptionConfiguration } from '@/lib/bowl-configuration'
+import { ingredientAssessmentIssues, ingredientAssessmentWarnings, mergeAllergenAssessments, type IngredientAssessmentSource } from '@/lib/allergen-assessment'
 import type { BowlIngredient, PublishedBowl } from '@/lib/bowl-selection'
 import type { AllergenWarnings } from '@/types/allergen'
 
@@ -91,9 +91,25 @@ export function reviewBowlSource(source: BowlSource) {
 
   const { fixed, groups } = validated.config
   const resolve = (ids: readonly string[]) => ids.map(id => ingredients.get(id)!)
+  const resolveOption = (option: BowlOptionConfiguration): BowlIngredient => {
+    if (typeof option === 'string') return ingredients.get(option)!
+    const linked = resolve(bowlOptionIngredientIds(option))
+    const [primary] = linked
+    const name = option.label || primary.name
+    if (linked.length === 1) return { ...primary, name }
+
+    return {
+      id: primary.id,
+      name,
+      linkedIngredients: linked.map(({ id, name }) => ({ id, name })),
+      warnings: mergeAllergenAssessments(linked.map(ingredient => ingredient.warnings)),
+      recordedWarnings: linked.flatMap(ingredient => [ingredient.warnings, ...(ingredient.recordedWarnings || [])]),
+      dietary: primary.dietary.filter(claim => linked.every(ingredient => ingredient.dietary.includes(claim))),
+    }
+  }
   const bowl: PublishedBowl = {
     fixed: resolve(fixed),
-    groups: groups.map(group => ({ ...group, options: resolve(group.options) })),
+    groups: groups.map(group => ({ ...group, options: group.options.map(resolveOption) })),
     // Force re-review and a new version even when changed evidence yields the same customer wording.
     sourceVersion: createHash('sha256').update(JSON.stringify(source)).digest('hex'),
   }

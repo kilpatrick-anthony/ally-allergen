@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useId, useState } from 'react'
-import { bowlConfiguration, bowlConfigurationIssue, type BowlConfiguration } from '@/lib/bowl-configuration'
+import { bowlConfiguration, bowlConfigurationIssue, bowlOptionId, type BowlConfiguration, type BowlOptionConfiguration } from '@/lib/bowl-configuration'
 
 type Ingredient = { id: string; name: string; status: string }
 type Draft = {
@@ -126,8 +126,22 @@ function LocationBowlEditor({ itemId, siteId }: { itemId: string; siteId: string
                   <button type="button" className={`${action} self-end`} onClick={() =>
                     setConfiguration({ ...configuration, groups: configuration.groups.filter((_, i) => i !== index) })}>Remove group</button>
                 </div>
-                <IngredientChoices label="Options" selected={group.options} ingredients={draft.ingredients}
-                  onChange={options => updateGroup(index, { ...group, options, defaults: group.defaults.filter(id => options.includes(id)) })} />
+                <IngredientPicker label="Options" ingredients={draft.ingredients.filter(ingredient =>
+                  !group.options.some(option => bowlOptionId(option) === ingredient.id))}
+                  onAdd={id => updateGroup(index, { ...group, options: [...group.options, id] })} />
+                {!!group.options.length && <ol className="space-y-2">
+                  {group.options.map((option, optionIndex) => {
+                    const id = bowlOptionId(option)
+                    return <BowlOptionEditor key={id} option={option} ingredients={draft.ingredients}
+                      onChange={next => updateGroup(index, {
+                        ...group, options: group.options.map((current, i) => i === optionIndex ? next : current),
+                      })}
+                      onRemove={() => updateGroup(index, {
+                        ...group, options: group.options.filter(current => bowlOptionId(current) !== id),
+                        defaults: group.defaults.filter(value => value !== id),
+                      })} />
+                  })}
+                </ol>}
                 <fieldset className="flex flex-wrap gap-x-4">
                   <legend className="font-medium">Default choices</legend>
                   {group.kind === 'optional' && (
@@ -135,14 +149,15 @@ function LocationBowlEditor({ itemId, siteId }: { itemId: string; siteId: string
                       <input type="radio" name={`bowl-default-${index}`} checked={!group.defaults.length} onChange={() => updateGroup(index, { ...group, defaults: [] })} /> No default
                     </label>
                   )}
-                  {group.options.map(id => (
-                    <label key={id} className="flex min-h-11 items-center gap-2">
+                  {group.options.map(option => {
+                    const id = bowlOptionId(option)
+                    return <label key={id} className="flex min-h-11 items-center gap-2">
                       <input type={group.kind === 'multiple' ? 'checkbox' : 'radio'} name={`bowl-default-${index}`} checked={group.defaults.includes(id)}
                         onChange={event => updateGroup(index, { ...group, defaults: group.kind !== 'multiple' ? [id]
                           : event.target.checked ? [...group.defaults, id] : group.defaults.filter(value => value !== id) })} />
-                      {draft.ingredients.find(ingredient => ingredient.id === id)?.name ?? 'Unavailable ingredient'}
+                      {optionName(option, draft.ingredients)}
                     </label>
-                  ))}
+                  })}
                 </fieldset>
               </fieldset>
             ))}
@@ -169,14 +184,8 @@ function IngredientChoices({ label, selected, ingredients, onChange }: {
 }) {
   return (
     <div className="space-y-2">
-      <label className="flex flex-col gap-1 text-sm">
-        {label}
-        <select className={field} value="" onChange={event => { if (event.target.value) onChange([...selected, event.target.value]) }}>
-          <option value="">Add ingredient</option>
-          {ingredients.filter(ingredient => !selected.includes(ingredient.id)).map(ingredient =>
-            <option key={ingredient.id} value={ingredient.id}>{ingredient.name}{ingredient.status !== 'active' ? ' (needs review)' : ''}</option>)}
-        </select>
-      </label>
+      <IngredientPicker label={label} ingredients={ingredients.filter(ingredient => !selected.includes(ingredient.id))}
+        onAdd={id => onChange([...selected, id])} />
       {!!selected.length && <ul className="flex flex-wrap gap-2">
         {selected.map(id => {
           const name = ingredients.find(ingredient => ingredient.id === id)?.name ?? 'Unavailable ingredient'
@@ -185,5 +194,58 @@ function IngredientChoices({ label, selected, ingredients, onChange }: {
         })}
       </ul>}
     </div>
+  )
+}
+
+function IngredientPicker({ label, ingredients, onAdd }: {
+  label: string; ingredients: Ingredient[]; onAdd: (id: string) => void
+}) {
+  return (
+    <label className="flex flex-col gap-1 text-sm">
+      {label}
+      <select className={field} value="" onChange={event => { if (event.target.value) onAdd(event.target.value) }}>
+        <option value="">Add ingredient</option>
+        {ingredients.map(ingredient =>
+          <option key={ingredient.id} value={ingredient.id}>{ingredient.name}{ingredient.status !== 'active' ? ' (needs review)' : ''}</option>)}
+      </select>
+    </label>
+  )
+}
+
+function optionName(option: BowlOptionConfiguration, ingredients: Ingredient[]) {
+  const name = ingredients.find(ingredient => ingredient.id === bowlOptionId(option))?.name ?? 'Unavailable ingredient'
+  return typeof option === 'string' ? name : option.label || name
+}
+
+function BowlOptionEditor({ option, ingredients, onChange, onRemove }: {
+  option: BowlOptionConfiguration; ingredients: Ingredient[]
+  onChange: (option: BowlOptionConfiguration) => void; onRemove: () => void
+}) {
+  const id = bowlOptionId(option)
+  const label = typeof option === 'string' ? '' : option.label
+  const additionalIngredientIds = typeof option === 'string' ? [] : option.additionalIngredientIds
+
+  function update(label: string, additionalIngredientIds: string[]) {
+    onChange(label || additionalIngredientIds.length ? { id, label, additionalIngredientIds } : id)
+  }
+
+  return (
+    <li className="rounded-lg border border-slate-200 p-3">
+      <details>
+        <summary className="cursor-pointer font-medium">{optionName(option, ingredients)}</summary>
+        <div className="mt-2 space-y-2">
+          <p className="text-sm">Ingredient · {optionName(id, ingredients)}</p>
+          <label className="flex flex-col gap-1 text-sm">
+            Customer-facing label
+            <input className={field} maxLength={120} value={label}
+              onChange={event => update(event.target.value, additionalIngredientIds)} />
+          </label>
+          <IngredientChoices label="Additional ingredient records" selected={additionalIngredientIds}
+            ingredients={ingredients.filter(ingredient => ingredient.id !== id)}
+            onChange={ids => update(label, ids)} />
+          <button type="button" className={action} onClick={onRemove}>Remove option</button>
+        </div>
+      </details>
+    </li>
   )
 }
