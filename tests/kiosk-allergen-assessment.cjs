@@ -508,3 +508,41 @@ test('a fixed base and 28 ordered, optional toppings retain all source warnings'
   defaulted.recipe.push(spread, backup)
   assert.ok(validateBowlSource(defaulted).config)
 })
+
+test('Maynooth preview keeps Peanut Butter warnings after Almonds are removed with filters cleared', () => {
+  const { previewBowlSource } = load('app/preview/build-your-own/fixture.ts')
+  const { reviewBowlSource } = load('lib/server/bowl-guide.ts')
+  const { defaultBowlChoices, evaluateBowl } = load('lib/bowl-selection.ts')
+  const { bowl } = reviewBowlSource(previewBowlSource)
+  const [group] = bowl.groups
+  const almond = group.options.find(option => option.name === 'Almonds')
+  const peanutButter = group.options.find(option => option.name === 'Peanut Butter')
+  const allergens = ALLERGEN_LIST.map(({ id }) => ({ allergen: id }))
+  const reset = defaultBowlChoices(bowl.groups)
+  const evaluate = choices => evaluateBowl(bowl.groups, choices, allergens, bowl.fixed)
+  const toggle = (choices, option) => {
+    const picks = choices[group.name]
+    return { ...choices, [group.name]: picks.includes(option.id)
+      ? picks.filter(id => id !== option.id)
+      : [...picks, option.id] }
+  }
+  const warnings = (result, allergen) => result.assessments.find(row => row.allergen.allergen === allergen)
+    .warnings.map(({ ingredient, level }) => [ingredient.name, level])
+
+  assert.deepEqual(evaluate(reset).selected.map(row => row.name), ['Açaí'])
+  const withAlmonds = toggle(reset, almond)
+  const withBoth = toggle(withAlmonds, peanutButter)
+  assert.deepEqual(warnings(evaluate(withBoth), 'peanuts'), [
+    ['Peanut Butter', 'contains'], ['Almonds', 'may_contain'],
+  ])
+  assert.deepEqual(warnings(evaluate(withBoth), 'sesame'), [
+    ['Peanut Butter', 'may_contain'], ['Almonds', 'may_contain'],
+  ])
+
+  const afterRemoval = evaluate(toggle(withBoth, almond))
+  assert.deepEqual(afterRemoval.selected.map(row => row.name), ['Açaí', 'Peanut Butter'])
+  assert.deepEqual(warnings(afterRemoval, 'peanuts'), [['Peanut Butter', 'contains']])
+  assert.deepEqual(warnings(afterRemoval, 'sesame'), [['Peanut Butter', 'may_contain']])
+  assert.deepEqual(warnings(afterRemoval, 'nuts'), [])
+  assert.ok(afterRemoval.assessments.every(row => row.warnings.every(warning => warning.ingredient.id !== almond.id)))
+})
