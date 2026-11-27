@@ -170,17 +170,7 @@ test('Irish live guide uses linked source assessments and serves published snaps
   assert.deepEqual(published.menuItems, items)
 })
 
-test('offline hook loads scoped and ambiguous assessments from its existing cache', async () => {
-  const fresh = await (await kioskRoute()).json()
-  const cached = JSON.stringify({
-    ...fresh,
-    menuItems: [
-      ...fresh.menuItems,
-      { id: 'old', allergen_warnings: { ...complete, assessment_incomplete: true } },
-      { id: 'old-recipe', ingredient_names: ['Stock'], allergen_warnings: complete },
-    ],
-    lastUpdated: Date.now(),
-  })
+async function offlineKiosk(cached, siteId) {
   const slots = []
   const effects = []
   let index = 0
@@ -197,15 +187,30 @@ test('offline hook loads scoped and ambiguous assessments from its existing cach
     useCallback: fn => fn,
     useEffect: fn => { effects.push(fn) },
   }
+  const keys = []
   const { useOfflineKioskData } = loader({
-    react, localStorage: { getItem: () => cached },
+    react, localStorage: { getItem: key => { keys.push(key); return cached } },
     fetch: async () => Response.json({ error: 'Offline' }, { status: 503 }),
   })('lib/hooks/useOfflineKioskData.ts')
-  useOfflineKioskData('cafe')
+  useOfflineKioskData('cafe', siteId)
   effects[0]()
   await new Promise(resolve => setImmediate(resolve))
   index = 0
-  const offline = useOfflineKioskData('cafe')
+  return { ...useOfflineKioskData('cafe', siteId), keys }
+}
+
+test('offline hook loads scoped and ambiguous assessments from its existing cache', async () => {
+  const fresh = await (await kioskRoute()).json()
+  const cached = JSON.stringify({
+    ...fresh,
+    menuItems: [
+      ...fresh.menuItems,
+      { id: 'old', allergen_warnings: { ...complete, assessment_incomplete: true } },
+      { id: 'old-recipe', ingredient_names: ['Stock'], allergen_warnings: complete },
+    ],
+    lastUpdated: Date.now(),
+  })
+  const offline = await offlineKiosk(cached)
   assert.equal(offline.isOffline, true)
   assert.equal(offline.isStale, true)
   const soup = offline.menuItems[0]
@@ -214,6 +219,27 @@ test('offline hook loads scoped and ambiguous assessments from its existing cach
   assert.equal(evaluateAllergenSelections(soup.allergen_warnings, [milk, eggs], soup).incomplete, true)
   assert.equal(evaluateAllergenSelections(old.allergen_warnings, [milk], old).incomplete, true)
   assert.equal(evaluateAllergenSelections(oldRecipe.allergen_warnings, [milk], oldRecipe).incomplete, true)
+})
+
+test('offline location uses the approved bowl snapshot and its location-specific cache entry', async () => {
+  const siteId = 'fixture-location'
+  const { defaultBowlChoices, evaluateBowl } = load('lib/bowl-selection.ts')
+  const fixture = { id: 'acai', name: 'Fixture açaí', warnings: { ...complete, milk: 'may_contain' }, dietary: [] }
+  const bowl = { fixed: [], groups: [{ name: 'Base', kind: 'required', options: [fixture], defaults: [fixture.id] }], sourceVersion: 'approved-source' }
+  const cached = JSON.stringify({
+    business: { location: { id: siteId, publicationId: 'approved' } },
+    menuItems: [{ id: 'standard', bowl }, { id: 'lemonade' }],
+    ingredients: [],
+    lastUpdated: Date.now(),
+  })
+  const offline = await offlineKiosk(cached, siteId)
+  assert.deepEqual(offline.keys, [`kiosk_data_v2_cafe:${siteId}`])
+  assert.equal(offline.isOffline, true)
+  assert.equal(offline.business.location.publicationId, 'approved')
+  assert.equal(offline.menuItems[0].bowl.sourceVersion, 'approved-source')
+  assert.equal(offline.menuItems[1].bowl, undefined)
+  const { groups, fixed } = offline.menuItems[0].bowl
+  assert.equal(evaluateBowl(groups, defaultBowlChoices(groups), [milk], fixed).assessments[0].warnings[0].level, 'may_contain')
 })
 
 test('location review identifies dish, ingredient and supplier answers and blocks publication', async () => {
@@ -334,4 +360,189 @@ test('downloadable guide identifies incomplete allergens and embeds the bundled 
   assert.ok(extracted.includes(expected.join(' ')), extracted)
   assert.equal(extracted.match(/\b(?:Cake|Soup)\b/g)?.length, 2)
   assert.doesNotMatch(text, /\u0000/)
+})
+
+test('bowl defaults, removals and swaps preserve warnings from the remaining ingredients', () => {
+  const { defaultBowlChoices, evaluateBowl } = load('lib/bowl-selection.ts')
+  const base = { id: 'base', name: 'Base', warnings: complete, dietary: ['Vegan', 'Vegetarian'] }
+  const nutWarnings = { ...complete, nuts: 'contains', nuts_levels: { almonds: 'contains' } }
+  const granola = { ...base, id: 'granola', name: 'Granola', warnings: nutWarnings }
+  const flakes = { ...base, id: 'flakes', name: 'Flakes', warnings: nutWarnings }
+  const crumble = { ...base, id: 'crumble', warnings: withoutEggs, dietary: [] }
+  const drizzle = { ...base, id: 'drizzle', warnings: { ...complete, milk: 'may_contain' }, dietary: ['Vegetarian'] }
+  const groups = [
+    { name: 'Base', kind: 'required', defaults: ['base'], options: [base] },
+    { name: 'Toppings', kind: 'multiple', defaults: ['granola'], options: [granola, flakes, crumble] },
+    { name: 'Drizzle', kind: 'optional', defaults: [], options: [drizzle] },
+  ]
+  const defaults = defaultBowlChoices(groups)
+  const allergens = [{ allergen: 'nuts', subtype: 'almonds' }, eggs, milk]
+  assert.deepEqual(evaluateBowl(groups, defaults, allergens).assessments[0].warnings.map(row => row.ingredient.id), ['granola'])
+  const swapped = evaluateBowl(groups, { ...defaults, Toppings: ['flakes', 'crumble'], Drizzle: ['drizzle'] }, allergens)
+  assert.deepEqual(swapped.assessments[0].warnings.map(row => row.ingredient.id), ['flakes'])
+  assert.deepEqual(swapped.assessments[1].incomplete.map(row => row.id), ['crumble'])
+  assert.equal(swapped.assessments[2].warnings[0].level, 'may_contain')
+  assert.deepEqual(swapped.dietary, [])
+  const cleared = evaluateBowl(groups, { ...defaults, Toppings: [], Drizzle: ['drizzle'] }, allergens)
+  assert.ok(!cleared.assessments[0].warnings.length && !cleared.assessments[1].incomplete.length)
+  assert.deepEqual(cleared.dietary, ['Vegetarian'])
+  for (const choices of [{ ...defaults, Base: [] }, { ...defaults, Toppings: ['unknown'] }]) {
+    const invalid = evaluateBowl(groups, choices, allergens)
+    assert.equal(invalid.ready, false)
+    assert.deepEqual(invalid.dietary, [])
+  }
+})
+
+test('fictional bowl checks the full saved recipe, all choices and distinct supplier findings', () => {
+  const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
+  const [base, swap, topping, flakes, drizzle, berries] = [1, 2, 3, 4, 5, 6].map(id)
+  const { reviewBowlSource, validateBowlSource } = load('lib/server/bowl-guide.ts')
+  const { defaultBowlChoices, evaluateBowl } = load('lib/bowl-selection.ts')
+  const certifications = ['Vegan', 'Vegetarian', 'Gluten-Free']
+  const sourceIngredient = (id, name, warnings, variants = [], labels = certifications) =>
+    ({ id, name, status: 'active', allergen_warnings: { ...complete, ...warnings }, certifications: labels, variants })
+  const source = {
+    configuration: {
+      fixed: [berries],
+      groups: [
+        { name: 'Base', kind: 'required', options: [base, swap], defaults: [base] },
+        { name: 'Toppings', kind: 'multiple', options: [topping, flakes], defaults: [topping, flakes] },
+        { name: 'Drizzle', kind: 'optional', options: [drizzle], defaults: [] },
+      ],
+    },
+    recipe: [base, topping, flakes, berries],
+    ingredients: [
+      sourceIngredient(base, 'Fixture açaí', {}),
+      sourceIngredient(swap, 'Fixture oat base', { cereals_gluten: 'contains', cereals_gluten_levels: { oats: 'contains' } }),
+      sourceIngredient(topping, 'Fixture almond granola', { nuts: 'contains', nuts_levels: { almonds: 'contains' } }),
+      sourceIngredient(flakes, 'Fixture almond flakes', { nuts: 'contains', nuts_levels: { almonds: 'contains' } }, [{
+        supplier: 'Fixture supplier', status: 'assessed', certifications,
+        warnings: { ...complete, nuts: 'may_contain', nuts_levels: { almonds: 'may_contain' } },
+      }]),
+      sourceIngredient(drizzle, 'Fixture chocolate drizzle', { milk: 'contains' }, [], ['Vegetarian']),
+      sourceIngredient(berries, 'Fixture fixed berries', {}),
+    ],
+  }
+  assert.match(validateBowlSource({ ...source, recipe: [...source.recipe, id(900)] }).error, /standard recipe/)
+  assert.match(validateBowlSource({ ...source, ingredients: source.ingredients.slice(1) }).error, /available/)
+  const { bowl, problems } = reviewBowlSource(source)
+  assert.deepEqual(problems, [])
+  const defaults = defaultBowlChoices(bowl.groups)
+  const allergens = [{ allergen: 'nuts', subtype: 'almonds' }, { allergen: 'cereals_gluten', subtype: 'oats' }, milk]
+  const run = changes => evaluateBowl(bowl.groups, { ...defaults, ...changes }, allergens, bowl.fixed)
+  assert.deepEqual(new Set(run().selected.map(row => row.id)), new Set(source.recipe))
+  assert.deepEqual(run().dietary, certifications)
+  assert.deepEqual(run({ Toppings: [flakes] }).assessments[0].warnings.map(row => [row.ingredient.id, row.level]),
+    [[flakes, 'contains'], [flakes, 'may_contain']])
+  assert.equal(run({ Base: [swap] }).assessments[1].warnings[0].ingredient.id, swap)
+  assert.ok(!run({ Base: [swap] }).dietary.includes('Gluten-Free'))
+  assert.equal(run({ Drizzle: [drizzle] }).assessments[2].warnings[0].ingredient.id, drizzle)
+  assert.deepEqual(run({ Drizzle: [drizzle] }).dietary, ['Vegetarian'])
+  const incompleteSource = structuredClone(source)
+  delete incompleteSource.ingredients[3].variants[0].warnings.eggs
+  const incomplete = reviewBowlSource(incompleteSource)
+  assert.ok(incomplete.problems.some(problem => problem.ingredientId === flakes && problem.allergen === 'eggs'))
+  assert.notEqual(incomplete.bowl.sourceVersion, bowl.sourceVersion)
+  assert.deepEqual(evaluateBowl(incomplete.bowl.groups, defaults, [eggs], bowl.fixed).assessments[0].incomplete.map(row => row.id), [flakes])
+})
+
+test('a fixed base and 28 ordered, optional toppings retain all source warnings', () => {
+  const id = n => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`
+  const { reviewBowlSource, validateBowlSource } = load('lib/server/bowl-guide.ts')
+  const { defaultBowlChoices, evaluateBowl } = load('lib/bowl-selection.ts')
+  const sourceIngredient = (id, name, warnings = {}, variants = []) =>
+    ({ id, name, status: 'active', allergen_warnings: { ...complete, ...warnings }, certifications: [], variants })
+  const optionIds = Array.from({ length: 28 }, (_, index) => id(index + 1))
+  const [spread, whey] = optionIds
+  const almonds = optionIds.at(-1)
+  const base = id(100), backup = id(101)
+  const group = {
+    name: 'Toppings | Unlimited', kind: 'multiple', defaults: [],
+    options: [
+      { id: spread, label: 'Fixture chocolate cream', additionalIngredientIds: [backup] },
+      { id: whey, label: 'Fixture whey (dry scoop)', additionalIngredientIds: [] },
+      ...optionIds.slice(2),
+    ],
+  }
+  const source = {
+    configuration: { fixed: [base], groups: [group] },
+    recipe: [base],
+    ingredients: [
+      sourceIngredient(base, 'Fixture Açaí'),
+      sourceIngredient(backup, 'Fixture backup spread', { soybeans: 'contains' }),
+      ...optionIds.map((id, index) => {
+        if (id === spread) return sourceIngredient(id, 'Fixture spread', { milk: 'contains' })
+        if (id !== almonds) return sourceIngredient(id, `Fixture topping ${index + 1}`)
+        const nuts = { nuts: 'contains', nuts_levels: { almonds: 'contains' } }
+        return sourceIngredient(id, 'Fixture almonds', nuts, [
+          { supplier: 'Fixture A', status: 'assessed', warnings: { ...complete, ...nuts, peanuts: 'may_contain' } },
+          { supplier: 'Fixture B', status: 'assessed', warnings: { ...complete, ...nuts, sesame: 'may_contain' } },
+        ])
+      }),
+    ],
+  }
+  const { bowl, problems } = reviewBowlSource(source)
+  assert.deepEqual(problems, [])
+  assert.deepEqual(bowl.groups[0].options.map(option => option.id), optionIds)
+  assert.equal(bowl.groups[0].options[1].name, 'Fixture whey (dry scoop)')
+  assert.deepEqual(bowl.groups[0].options[0].linkedIngredients.map(row => row.id), [spread, backup])
+  const allergens = [milk, { allergen: 'soybeans' }, { allergen: 'nuts', subtype: 'almonds' },
+    { allergen: 'peanuts' }, { allergen: 'sesame' }]
+  const run = choices => evaluateBowl(bowl.groups, choices, allergens, bowl.fixed)
+  assert.deepEqual(run(defaultBowlChoices(bowl.groups)).selected.map(row => row.id), [base])
+  assert.deepEqual(run({ [group.name]: [spread, almonds] }).assessments.map(row => row.warnings.map(warning =>
+    [warning.ingredient.id, warning.level])), [
+    [[spread, 'contains']], [[spread, 'contains']], [[almonds, 'contains']],
+    [[almonds, 'may_contain']], [[almonds, 'may_contain']],
+  ])
+  assert.equal(run({ [group.name]: optionIds }).ready, true)
+  assert.equal(run({ [group.name]: optionIds }).selected.length, 29)
+  assert.match(validateBowlSource({ ...source, ingredients: source.ingredients.filter(row => row.id !== backup) }).error,
+    /available/)
+  const pending = structuredClone(source)
+  pending.ingredients[1].variants = [{ supplier: 'Fixture backup', status: 'needs_review', warnings: complete }]
+  assert.ok(reviewBowlSource(pending).problems.some(problem => problem.ingredientId === backup))
+  const defaulted = structuredClone(source)
+  defaulted.configuration.groups[0].defaults.push(spread)
+  assert.match(validateBowlSource(defaulted).error, /standard recipe/)
+  defaulted.recipe.push(spread, backup)
+  assert.ok(validateBowlSource(defaulted).config)
+})
+
+test('Maynooth preview keeps Peanut Butter warnings after Almonds are removed with filters cleared', () => {
+  const { previewBowlSource } = load('app/preview/build-your-own/fixture.ts')
+  const { reviewBowlSource } = load('lib/server/bowl-guide.ts')
+  const { defaultBowlChoices, evaluateBowl } = load('lib/bowl-selection.ts')
+  const { bowl } = reviewBowlSource(previewBowlSource)
+  const [group] = bowl.groups
+  const almond = group.options.find(option => option.name === 'Almonds')
+  const peanutButter = group.options.find(option => option.name === 'Peanut Butter')
+  const allergens = ALLERGEN_LIST.map(({ id }) => ({ allergen: id }))
+  const reset = defaultBowlChoices(bowl.groups)
+  const evaluate = choices => evaluateBowl(bowl.groups, choices, allergens, bowl.fixed)
+  const toggle = (choices, option) => {
+    const picks = choices[group.name]
+    return { ...choices, [group.name]: picks.includes(option.id)
+      ? picks.filter(id => id !== option.id)
+      : [...picks, option.id] }
+  }
+  const warnings = (result, allergen) => result.assessments.find(row => row.allergen.allergen === allergen)
+    .warnings.map(({ ingredient, level }) => [ingredient.name, level])
+
+  assert.deepEqual(evaluate(reset).selected.map(row => row.name), ['Açaí'])
+  const withAlmonds = toggle(reset, almond)
+  const withBoth = toggle(withAlmonds, peanutButter)
+  assert.deepEqual(warnings(evaluate(withBoth), 'peanuts'), [
+    ['Peanut Butter', 'contains'], ['Almonds', 'may_contain'],
+  ])
+  assert.deepEqual(warnings(evaluate(withBoth), 'sesame'), [
+    ['Peanut Butter', 'may_contain'], ['Almonds', 'may_contain'],
+  ])
+
+  const afterRemoval = evaluate(toggle(withBoth, almond))
+  assert.deepEqual(afterRemoval.selected.map(row => row.name), ['Açaí', 'Peanut Butter'])
+  assert.deepEqual(warnings(afterRemoval, 'peanuts'), [['Peanut Butter', 'contains']])
+  assert.deepEqual(warnings(afterRemoval, 'sesame'), [['Peanut Butter', 'may_contain']])
+  assert.deepEqual(warnings(afterRemoval, 'nuts'), [])
+  assert.ok(afterRemoval.assessments.every(row => row.warnings.every(warning => warning.ingredient.id !== almond.id)))
 })

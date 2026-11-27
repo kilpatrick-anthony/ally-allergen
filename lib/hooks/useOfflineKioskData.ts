@@ -2,6 +2,7 @@
 // Custom hook for fetching and caching kiosk data with offline support
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import type { PublishedBowl } from '@/lib/bowl-selection';
 import type { Jurisdiction } from '@/lib/location-jurisdiction';
 import type { AllergenWarnings } from '@/types/allergen';
 
@@ -38,6 +39,7 @@ export interface MenuItem {
   business_id: string;
   is_active: boolean;
   ingredient_names?: string[];
+  bowl?: PublishedBowl;
   item_type?: 'prepared' | 'packaged_product';
   supplier_name?: string | null;
   manufacturer?: string | null;

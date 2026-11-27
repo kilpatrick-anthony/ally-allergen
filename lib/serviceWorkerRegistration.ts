@@ -5,7 +5,7 @@ export function registerServiceWorker() {
   if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
     let hasRefreshed = false
 
-    window.addEventListener('load', () => {
+    const register = () => {
       navigator.serviceWorker
         .register('/service-worker.js')
         .then((registration) => {
@@ -41,7 +41,13 @@ export function registerServiceWorker() {
           window.location.reload()
         }
       });
-    });
+    };
+
+    if (document.readyState === 'complete') {
+      register();
+    } else {
+      window.addEventListener('load', register, { once: true });
+    }
   }
 }
 

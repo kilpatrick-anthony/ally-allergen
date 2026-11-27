@@ -2,9 +2,10 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { allergenAnswerIssues, ingredientAssessmentIssues, ingredientAssessmentWarnings, mergeAllergenAssessments, type IngredientAssessmentIssue, type IngredientAssessmentSource } from '@/lib/allergen-assessment'
 import { getGuidePublication, locationAllergenContext, locationAllergenFailure, sourceFingerprint } from '@/lib/server/location-allergens'
+import { reviewBowlSource, type BowlSource } from '@/lib/server/bowl-guide'
 import type { MenuItem } from '@/lib/hooks/useOfflineKioskData'
 
-type AssessmentProblem = IngredientAssessmentIssue & { ingredientId?: string; ingredientName?: string }
+type AssessmentProblem = (IngredientAssessmentIssue & { ingredientId?: string; ingredientName?: string }) | { kind: 'bowl_configuration'; message: string }
 type DishAssessmentProblems = { id: string; name: string; problems: AssessmentProblem[] }
 
 function normalized(value: unknown): string {
@@ -25,10 +26,11 @@ async function guideReview(context: Awaited<ReturnType<typeof locationAllergenCo
   if (error) throw error
   if (!data) return null
   const candidate = data as { fingerprint: string; items: (MenuItem & {
+    bowl_source?: BowlSource
     ingredient_assessments: (IngredientAssessmentSource & { id?: string | null; name?: string | null })[]
   })[] }
   const incomplete: DishAssessmentProblems[] = []
-  const items = candidate.items.map(({ ingredient_assessments, ...item }) => {
+  const items = candidate.items.map(({ ingredient_assessments, bowl_source, ...item }) => {
     const linked = ingredient_assessments.length > 0
     const warnings = linked
       ? mergeAllergenAssessments(ingredient_assessments.map(ingredientAssessmentWarnings))
@@ -42,17 +44,19 @@ async function guideReview(context: Awaited<ReturnType<typeof locationAllergenCo
       : allergenAnswerIssues(warnings)
     if (linked) {
       for (const issue of allergenAnswerIssues(warnings)) {
-        if (!problems.some(problem => problem.kind === issue.kind && problem.allergen === issue.allergen)) {
+        if (!problems.some(problem => problem.kind === issue.kind && 'allergen' in problem && problem.allergen === issue.allergen)) {
           // The rollup flag repeats the source failures already shown above.
           if (issue.kind !== 'incomplete' || !problems.length) problems.push(issue)
         }
       }
     }
+    if (problems.length && linked && warnings) warnings.assessment_incomplete = true
+    const bowlReview = bowl_source && reviewBowlSource(bowl_source)
+    if (bowlReview) problems.push(...bowlReview.problems)
     if (problems.length) {
       incomplete.push({ id: item.id, name: item.name, problems })
-      if (linked && warnings) warnings.assessment_incomplete = true
     }
-    return { ...item, allergen_warnings: warnings }
+    return { ...item, allergen_warnings: warnings, ...(bowlReview?.bowl && { bowl: bowlReview.bowl }) }
   })
   return { fingerprint: candidate.fingerprint, items, incomplete }
 }

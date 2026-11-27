@@ -19,7 +19,8 @@ async function setup() {
     alter table menu_items add column if not exists icon text;
     alter table menu_items add column if not exists manufacturer text;
     alter table menu_items add column if not exists updated_at timestamptz;
-    alter table datasheets add column if not exists version text;`)
+    alter table datasheets add column if not exists version text;
+    alter table ingredient_supplier_variants add column if not exists brand text;`)
   await db.exec(fs.readFileSync(migration, 'utf8'))
   await db.exec(fs.readFileSync(labelMigration, 'utf8'))
   await db.exec(fs.readFileSync(guideSourceMigration, 'utf8'))
@@ -116,5 +117,80 @@ test('Irish locations can approve optional ingredient labels without UK PPDS cla
       [{ itemId: irishItem, state: 'approved' }])
     const stored = await value(db, 'select jsonb_build_object(\'jurisdiction\',jurisdiction,\'classification\',classification) result from site_ppds_revisions where id=$1', [revision])
     assert.deepEqual(stored, { jurisdiction: 'IE', classification: 'ingredient_label' })
+  } finally { await db.close() }
+})
+
+test('bowl draft is location-scoped and option assessments are versioned with the guide', async () => {
+  const db = await setup()
+  try {
+    const migration = fs.readdirSync('supabase/migrations').find(file => file.endsWith('_build_your_own_guide.sql'))
+    await db.exec(fs.readFileSync(`supabase/migrations/${migration}`, 'utf8'))
+    const fixed = uuid(32), alternative = uuid(33), foreign = uuid(34), otherSite = uuid(8)
+    const warnings = JSON.stringify(completeReview().allergen_warnings)
+    await db.query(`insert into ingredients(id,business_id,name,status,allergen_warnings,certifications)
+      values ($1,$4,'Fixture berries','active',$5,'{Vegan}'), ($2,$4,'Fixture alternative base','active',$5,'{Vegan}'),
+      ($3,$6,'Other business ingredient','active',$5,'{Vegan}')`, [fixed, alternative, foreign, business, warnings, uuid(2)])
+    await db.query('insert into menu_item_ingredients(menu_item_id,ingredient_id) values ($1,$2)', [ukItem, fixed])
+
+    const config = { fixed: [fixed], groups: [{ name: 'Base', kind: 'required', options: [ingredient, alternative], defaults: [ingredient] }] }
+    const bundledConfig = { ...config, groups: [{ ...config.groups[0], options: [
+      { id: ingredient, label: 'Fixture bundle', additionalIngredientIds: [alternative] },
+    ] }] }
+    const source = 'select site_bowl_source($1,$2,$3,$4::jsonb) result'
+    const save = 'select save_site_bowl_configuration($1,$2,$3,$4,$5::jsonb,$6::jsonb) result'
+    const review = 'select review_site_allergens($1,$2) result'
+    const publish = 'select publish_site_allergens($1,$2,$3,$4,$5::jsonb) result'
+    const approvedItems = 'select items result from site_allergen_publications where id=$1'
+    const reviewLocation = () => value(db, review, [uk, business])
+    const item = candidate => candidate.items.find(row => row.id === ukItem)
+    const readSource = (config, site = uk, menuItem = ukItem) => value(db, source, [site, business, menuItem, JSON.stringify(config)])
+    const saveArgs = (config, data, actor = staff) => [uk, business, ukItem, actor, JSON.stringify(config), JSON.stringify(data)]
+    await db.exec('set role service_role')
+
+    const initial = await reviewLocation()
+    const previous = await value(db, publish, [uk, business, manager, initial.fingerprint, JSON.stringify(initial.items)])
+    assert.equal(await readSource(config, ireland), null)
+    assert.equal(await readSource(config, otherSite), null)
+    const sourceWithForeign = await readSource({ ...config, fixed: [foreign] })
+    assert.ok(!sourceWithForeign.ingredients.some(row => row.id === foreign))
+
+    const data = await readSource(config)
+    assert.deepEqual(new Set(data.recipe), new Set([fixed, ingredient]))
+    assert.deepEqual(new Set(data.ingredients.map(row => row.id)), new Set([fixed, ingredient, alternative]))
+    const bundled = await readSource(bundledConfig)
+    assert.deepEqual(new Set(bundled.ingredients.map(row => row.id)), new Set([fixed, ingredient, alternative]))
+    assert.deepEqual(bundled.configuration, bundledConfig)
+    const outOfScope = structuredClone(bundledConfig)
+    outOfScope.groups[0].options[0].additionalIngredientIds.push(foreign)
+    assert.ok(!(await readSource(outOfScope)).ingredients.some(row => row.id === foreign))
+    await assert.rejects(value(db, save, saveArgs(config, data, uuid(7))), /permission/)
+    await value(db, save, saveArgs(config, data))
+    const competing = await readSource(config, uk, sharedItem)
+    await assert.rejects(value(db, save, [uk, business, sharedItem, staff, JSON.stringify(config), JSON.stringify(competing)]), /already has a bowl/)
+    const draft = await reviewLocation()
+    assert.ok(item(draft).bowl_source)
+    assert.equal(draft.items.find(row => row.id === sharedItem).bowl_source, undefined)
+    assert.equal((await value(db, review, [ireland, business])).items.some(row => row.bowl_source), false)
+    assert.equal((await value(db, approvedItems, [previous])).find(row => row.id === ukItem).bowl_source, undefined)
+    await assert.rejects(value(db, publish, [uk, business, staff, draft.fingerprint, JSON.stringify(draft.items)]), /permission/)
+    const firstBowl = await value(db, publish, [uk, business, manager, draft.fingerprint, JSON.stringify(draft.items)])
+    assert.notEqual(firstBowl, previous)
+
+    await db.query(`update ingredient_supplier_variants set allergen_warnings=jsonb_set(allergen_warnings,'{milk}','"traces"') where ingredient_id=$1`, [ingredient])
+    const supplierChanged = await reviewLocation()
+    assert.notEqual(supplierChanged.fingerprint, draft.fingerprint)
+    assert.equal(item(supplierChanged).bowl_source.ingredients.find(row => row.id === ingredient).variants[0].warnings.milk, 'traces')
+    assert.equal((await value(db, approvedItems, [firstBowl])).find(row => row.id === ukItem)
+      .bowl_source.ingredients.find(row => row.id === ingredient).variants[0].warnings.milk, 'none')
+    await assert.rejects(value(db, publish, [uk, business, manager, draft.fingerprint, JSON.stringify(draft.items)]), /Menu changed/)
+    await assert.rejects(value(db, save, saveArgs(config, data)), /ingredients changed/)
+    await db.query(`update ingredients set allergen_warnings=jsonb_set(allergen_warnings,'{eggs}','"may_contain"') where id=$1`, [alternative])
+    assert.notEqual((await reviewLocation()).fingerprint, supplierChanged.fingerprint)
+
+    await value(db, save, [uk, business, ukItem, staff, null, null])
+    assert.equal(item(await reviewLocation()).bowl_source, undefined)
+    await db.exec('reset role; set role authenticated')
+    await assert.rejects(db.query('select * from site_bowl_configurations'), /permission denied/)
+    await assert.rejects(readSource(config), /permission denied/)
   } finally { await db.close() }
 })

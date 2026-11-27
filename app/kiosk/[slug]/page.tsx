@@ -18,6 +18,7 @@ import html2canvas from 'html2canvas'
 import AccessibilityPanel from '@/components/shared/AccessibilityPanel'
 import Link from 'next/link'
 import { translations, type LanguageCode } from '@/lib/translations'
+import { BowlLauncher } from '@/components/kiosk/BowlBuilder'
 import AllergenTableView from '@/components/kiosk/AllergenTableView'
 import { generateAllergenTablePDF } from '@/lib/pdf/allergenTablePDF'
 import { ALLERGEN_LIST, GLUTEN_TYPES, TREE_NUT_TYPES, type GlutenType, type TreeNutType } from '@/types/allergen'
@@ -866,12 +867,13 @@ export default function KioskPage() {
     )
   }
 
+  const allergenSelections: AllergenSelection[] = [
+    ...ALLERGEN_LIST.filter(({ id }) => selectedAllergens.includes(`contains_${id}`)).map(({ id }) => ({ allergen: id })),
+    ...selectedGlutenTypes.map(subtype => ({ allergen: 'cereals_gluten' as const, subtype })),
+    ...selectedTreeNutTypes.map(subtype => ({ allergen: 'nuts' as const, subtype })),
+  ]
+
   function filterMenuItems() {
-    const selections: AllergenSelection[] = [
-      ...ALLERGEN_LIST.filter(({ id }) => selectedAllergens.includes(`contains_${id}`)).map(({ id }) => ({ allergen: id })),
-      ...selectedGlutenTypes.map(subtype => ({ allergen: 'cereals_gluten' as const, subtype })),
-      ...selectedTreeNutTypes.map(subtype => ({ allergen: 'nuts' as const, subtype })),
-    ]
     const normalizedQuery = searchQuery.toLowerCase()
     let hasIncompleteItems = false
     const items = menuItems.filter(item => {
@@ -881,7 +883,7 @@ export default function KioskPage() {
       const dietary = Array.isArray(item.dietary) ? item.dietary : []
       if (!selectedDietary.every(label => dietary.includes(label))) return false
 
-      const { matches, incomplete } = evaluateAllergenSelections(item.allergen_warnings, selections, item)
+      const { matches, incomplete } = evaluateAllergenSelections(item.allergen_warnings, allergenSelections, item)
       hasIncompleteItems ||= incomplete
       return matches
     })
@@ -1254,6 +1256,17 @@ export default function KioskPage() {
   // ===== MENU DISPLAY =====
   const { items: matchingItems, hasIncompleteItems } = filterMenuItems()
   const filteredItems = sortByCategoryAndName(matchingItems)
+  const pilotItem = business?.location?.publicationId ? menuItems.find(item => item.bowl) : undefined
+  const pilotMatchesSearch = pilotItem && [pilotItem.name, pilotItem.description || ''].some(value => value.toLowerCase().includes(searchQuery.toLowerCase()))
+  const pilotInResults = pilotItem && filteredItems.some(item => item.id === pilotItem.id)
+
+  function launchBowl(item: MenuItem, showItemName = false) {
+    if (!item.bowl || item.id !== pilotItem?.id) return null
+    return <BowlLauncher key={`${business?.location?.publicationId}:${item.id}`} itemName={item.name} bowl={item.bowl}
+      initialAllergens={allergenSelections} language={currentLanguage} guidance={business?.kiosk_disclaimer}
+      dietaryName={getDietaryDisplayName} showItemName={showItemName} />
+  }
+
   const categories = getOrderedCategories(filteredItems)
   const sortedMenuItems = sortByCategoryAndName(menuItems)
   const sortedIngredients = [...(ingredients || [])].sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')))
@@ -1900,6 +1913,7 @@ export default function KioskPage() {
               {hasIncompleteItems && (
                 <p role="status" className="mb-4 text-sm text-amber-900">{t.kioskPortal.incompleteFilterNotice}</p>
               )}
+              {pilotMatchesSearch && !pilotInResults && <div className="mb-4">{launchBowl(pilotItem, true)}</div>}
               {filteredItems.length === 0 ? (
                 <Card className="text-center py-12">
                   <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -1965,6 +1979,7 @@ export default function KioskPage() {
                                       })}
                                     </div>
                                   )}
+                                  {launchBowl(item)}
                                 </div>
                               </Card></React.Fragment>
                             )
@@ -2035,6 +2050,9 @@ export default function KioskPage() {
 
               {hasIncompleteItems && (
                 <p role="status" className="mb-4 text-sm text-amber-900">{t.kioskPortal.incompleteFilterNotice}</p>
+              )}
+              {pilotMatchesSearch && (!pilotInResults || menuViewMode === 'table') && (
+                <div className="mb-4">{launchBowl(pilotItem, true)}</div>
               )}
               {filteredItems.length === 0 ? (
                 <Card className="text-center py-12">
@@ -2119,6 +2137,7 @@ export default function KioskPage() {
                                       })}
                                     </div>
                                   )}
+                                  {launchBowl(item)}
                                 </div>
                               </Card></React.Fragment>
                             )
@@ -2265,6 +2284,7 @@ export default function KioskPage() {
             <Card className="p-4">
               <div className="mb-3">
                 <h3 className="text-lg font-semibold text-[#003842]">{t.menuItemsBySubMenu}</h3>
+                {pilotItem && launchBowl(pilotItem, true)}
               </div>
               {sortedMenuItems.length > 0 ? (
                 <AllergenTableView

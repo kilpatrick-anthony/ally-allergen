@@ -84,7 +84,8 @@ self.addEventListener('fetch', (event) => {
 
   // Approved files and private review data must always use current permissions
   // and source revisions. The kiosk hook owns its explicitly marked offline copy.
-  const privateAllergenReview = /^\/api\/sites\/[^/]+\/(?:allergens|ppds)(?:\/|$)/.test(url.pathname);
+  const privateAllergenReview = /^\/api\/sites\/[^/]+\/(?:allergens|ppds)(?:\/|$)/.test(url.pathname) ||
+    /^\/api\/menu-items\/[^/]+\/bowl(?:\/|$)/.test(url.pathname);
   if (request.method !== 'GET' || request.cache === 'no-store' ||
       url.pathname === '/api/kiosk/data' || privateAllergenReview) {
     return;

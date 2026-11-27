@@ -106,7 +106,7 @@ const specificNames: Partial<Record<AllergenId, Record<string, string>>> = {
   },
 }
 
-export function specificAllergens(warnings: AllergenWarnings): SpecificAllergen[] {
+export function specificAllergens(warnings: Partial<AllergenWarnings>): SpecificAllergen[] {
   return ALLERGEN_LIST.flatMap(({ id, name }) => {
     const level = warnings[id]
     if (!level || level === 'none') return []

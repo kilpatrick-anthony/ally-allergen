@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { QRCodeCanvas } from 'qrcode.react'
-import { isAllergenAssessmentComplete, type IngredientAssessmentIssue } from '@/lib/allergen-assessment'
+import { hasIncompleteSubtypeAssessment, isAllergenAssessmentComplete, type IngredientAssessmentIssue } from '@/lib/allergen-assessment'
+import type { BowlIngredient } from '@/lib/bowl-selection'
 import type { MenuItem } from '@/lib/hooks/useOfflineKioskData'
 import { downloadLocationGuide, fetchLocationGuide } from '@/lib/location-guide-client'
 import { JURISDICTIONS, KIOSK_BACKUP, locationAllergenGuidance, locationGuidePath, publishedDate, type Jurisdiction } from '@/lib/location-jurisdiction'
@@ -16,7 +17,7 @@ interface Review {
   incomplete: {
     id: string
     name: string
-    problems: (IngredientAssessmentIssue & { ingredientId?: string; ingredientName?: string })[]
+    problems: ((IngredientAssessmentIssue & { ingredientId?: string; ingredientName?: string }) | { kind: 'bowl_configuration'; message: string })[]
   }[]
   publication: { id: string; publishedAt: string } | null
   unpublishedChanges: boolean
@@ -155,13 +156,17 @@ export function LocationAllergenTools({ siteId, siteSlug, siteName, businessSlug
                       <ul className="ml-5 list-disc">
                         {item.problems.map((problem, index) => (
                           <li key={index}>
-                            {problem.ingredientId && (
-                              <><a className="font-semibold underline" href={`/admin/ingredients/${encodeURIComponent(problem.ingredientId)}/edit`}>
-                                {problem.ingredientName || 'Linked ingredient'}
-                              </a>{' · '}</>
+                            {problem.kind === 'bowl_configuration' ? problem.message : (
+                              <>
+                                {problem.ingredientId && (
+                                  <><a className="font-semibold underline" href={`/admin/ingredients/${encodeURIComponent(problem.ingredientId)}/edit`}>
+                                    {problem.ingredientName || 'Linked ingredient'}
+                                  </a>{' · '}</>
+                                )}
+                                {problem.variant && <>{problem.variant}{' · '}</>}
+                                {assessmentProblemText(problem)}
+                              </>
                             )}
-                            {problem.variant && <>{problem.variant}{' · '}</>}
-                            {assessmentProblemText(problem)}
                           </li>
                         ))}
                       </ul>
@@ -180,6 +185,23 @@ export function LocationAllergenTools({ siteId, siteSlug, siteName, businessSlug
                     <p>{item.allergen_warnings && isAllergenAssessmentComplete(item.allergen_warnings)
                       ? specificAllergens(item.allergen_warnings).map(allergen => getAllergenLevelText(allergen.level, allergen.name)).join('. ') || 'No declarable allergens identified'
                       : 'Assessment incomplete'}</p>
+                    {item.bowl && (
+                      <div className="mt-2 space-y-2 border-l-2 border-teal-200 pl-3">
+                        <p className="font-semibold">Build your bowl ingredient review</p>
+                        {!!item.bowl.fixed.length && (
+                          <div><strong>Fixed ingredients</strong>
+                            <ul className="pl-4">{item.bowl.fixed.map(option => <BowlReviewIngredient key={option.id} option={option} />)}</ul>
+                          </div>
+                        )}
+                        {item.bowl.groups.map(group => (
+                          <div key={group.name}>
+                            <strong>{group.name}</strong> · {group.kind === 'required' ? 'Required single choice' : group.kind === 'optional' ? 'Optional single choice' : 'Multiple choices'}
+                            <ul className="pl-4">{group.options.map(option =>
+                              <BowlReviewIngredient key={option.id} option={option} isDefault={group.defaults.includes(option.id)} />)}</ul>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -187,7 +209,9 @@ export function LocationAllergenTools({ siteId, siteSlug, siteName, businessSlug
             {review.canApprove && (
               <label className="flex items-start gap-2 text-sm">
                 <input type="checkbox" className="mt-1" checked={reviewed} onChange={event => setReviewed(event.target.checked)} />
-                I reviewed the menu items and confirmed the allergen information for this location.
+                {review.items.some(item => item.bowl)
+                  ? 'I reviewed the menu, including all bowl choices, and verified the ingredients and current supplier specifications used at this location.'
+                  : 'I reviewed the menu items and confirmed the allergen information for this location.'}
               </label>
             )}
             <div className="flex flex-wrap gap-3">
@@ -253,5 +277,26 @@ export function LocationAllergenTools({ siteId, siteSlug, siteName, businessSlug
       </section>
 
     </div>
+  )
+}
+
+function BowlReviewIngredient({ option, isDefault }: { option: BowlIngredient; isDefault?: boolean }) {
+  const warnings = new Set([option.warnings, ...(option.recordedWarnings || [])]
+    .flatMap(warnings => specificAllergens(warnings).map(allergen => getAllergenLevelText(allergen.level, allergen.name))))
+  const incompleteSubtypes = (['nuts', 'cereals_gluten'] as const).filter(allergen => hasIncompleteSubtypeAssessment(option.warnings, allergen))
+  return (
+    <li>
+      {option.linkedIngredients ? <strong>{option.name}</strong>
+        : <a className="underline" href={`/admin/ingredients/${encodeURIComponent(option.id)}/edit`}>{option.name}</a>}
+      {isDefault && ' (default)'} · {[...warnings].join('. ') || 'No warning recorded'}
+      {incompleteSubtypes.includes('nuts') && ' · Tree nut subtype information incomplete'}
+      {incompleteSubtypes.includes('cereals_gluten') && ' · Cereal subtype information incomplete'}
+      {!!option.dietary.length && <span> · {option.dietary.join(', ')}</span>}
+      {option.linkedIngredients && <ul className="ml-5 list-disc">
+        {option.linkedIngredients.map(ingredient => <li key={ingredient.id}>
+          <a className="underline" href={`/admin/ingredients/${encodeURIComponent(ingredient.id)}/edit`}>{ingredient.name}</a>
+        </li>)}
+      </ul>}
+    </li>
   )
 }
